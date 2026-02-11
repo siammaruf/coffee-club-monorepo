@@ -1,50 +1,42 @@
 # ============================================================
 # Stage 1: Install all dependencies (including dev for build)
 # ============================================================
-FROM node:24-alpine AS deps
+FROM oven/bun:latest AS deps
 
 WORKDIR /app
 
-# sharp requires vips native libraries on Alpine
-RUN apk add --no-cache vips-dev build-base python3
+# sharp requires vips native libraries
+RUN apt-get update && apt-get install -y libvips-dev build-essential python3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock ./
 
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+RUN bun install --frozen-lockfile
 
 # ============================================================
 # Stage 2: Build the application
 # ============================================================
-FROM node:24-alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+RUN bun run build
 
 # ============================================================
 # Stage 3: Production dependencies only
 # ============================================================
-FROM node:24-alpine AS prod-deps
+FROM oven/bun:latest AS prod-deps
 
 WORKDIR /app
 
-# sharp needs vips-dev at install time for native bindings
-RUN apk add --no-cache vips-dev build-base python3
+# sharp needs vips at install time for native bindings
+RUN apt-get update && apt-get install -y libvips-dev build-essential python3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock ./
 
-RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev; \
-    else \
-      npm install --omit=dev; \
-    fi
+RUN bun install --frozen-lockfile --production
 
 # ============================================================
 # Stage 4: Production runtime

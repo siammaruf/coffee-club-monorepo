@@ -1,22 +1,18 @@
 # ============================================================
 # Stage 1: Install all dependencies (needed for build)
 # ============================================================
-FROM node:24-alpine AS deps
+FROM oven/bun:latest AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock ./
 
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+RUN bun install --frozen-lockfile
 
 # ============================================================
 # Stage 2: Build the SSR application
 # ============================================================
-FROM node:24-alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
@@ -28,22 +24,18 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
-RUN npm run build
+RUN bun run build
 
 # ============================================================
 # Stage 3: Production dependencies only
 # ============================================================
-FROM node:24-alpine AS prod-deps
+FROM oven/bun:latest AS prod-deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock ./
 
-RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev; \
-    else \
-      npm install --omit=dev; \
-    fi
+RUN bun install --frozen-lockfile --production
 
 # ============================================================
 # Stage 4: Production runtime
@@ -67,4 +59,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget -qO- http://localhost:3000/ || exit 1
 
-CMD ["npm", "run", "start"]
+CMD ["node", "build/server/index.js"]

@@ -1,22 +1,18 @@
 # ============================================================
 # Stage 1: Install dependencies
 # ============================================================
-FROM node:24-alpine AS deps
+FROM oven/bun:latest AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* .npmrc* ./
+COPY package.json bun.lock ./
 
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+RUN bun install --frozen-lockfile
 
 # ============================================================
 # Stage 2: Build the SPA
 # ============================================================
-FROM node:24-alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
@@ -27,7 +23,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+RUN bun run build
 
 # ============================================================
 # Stage 3: Serve with Node.js + serve
