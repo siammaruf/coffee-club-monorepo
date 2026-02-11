@@ -130,7 +130,7 @@ export class ImportService {
     this.validateFile(file);
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer);
+    await workbook.xlsx.load(file.buffer as any);
 
     const sheets: ImportPreviewSheet[] = [];
     let totalRows = 0;
@@ -192,7 +192,7 @@ export class ImportService {
     this.validateFile(file);
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer);
+    await workbook.xlsx.load(file.buffer as any);
 
     // Collect parsed data per sheet keyed by sheet name
     const parsedSheets = new Map<
