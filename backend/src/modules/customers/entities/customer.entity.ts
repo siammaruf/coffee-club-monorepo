@@ -36,7 +36,7 @@ export class Customer {
     is_verified: boolean;
 
     @Exclude()
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     otp: string | null;
 
     @Column({ nullable: true, type: 'timestamp' })
