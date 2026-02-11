@@ -29,7 +29,7 @@ export class Customer {
     password: string;
 
     @Exclude()
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     refresh_token: string | null;
 
     @Column({ type: 'boolean', default: false })
