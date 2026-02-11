@@ -28,12 +28,11 @@ export class GoogleDriveService {
       return null;
     }
 
-    const auth = new google.auth.JWT(
-      settings.google_drive_service_account_email,
-      undefined,
-      settings.google_drive_private_key.replace(/\\n/g, '\n'),
-      ['https://www.googleapis.com/auth/drive.file'],
-    );
+    const auth = new google.auth.JWT({
+      email: settings.google_drive_service_account_email,
+      key: settings.google_drive_private_key.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/drive.file'],
+    });
 
     return google.drive({ version: 'v3', auth });
   }
@@ -76,7 +75,7 @@ export class GoogleDriveService {
       fields: 'id, webViewLink',
     });
 
-    const fileId = response.data.id;
+    const fileId = response.data.id || '';
     const webViewLink = response.data.webViewLink || '';
 
     this.logger.log(

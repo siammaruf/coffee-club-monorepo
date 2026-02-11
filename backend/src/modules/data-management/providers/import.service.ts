@@ -61,13 +61,19 @@ interface SheetEntityMapping {
   columns: Record<string, ColumnDef>;
   requiredFields: string[];
   /** Fields to skip during import (e.g., password) */
-  skipFields?: string[];
+  skipFields: string[];
   /**
    * Remap normalized header names to entity property names.
-   * Needed when entity uses camelCase (e.g., "ready_at" -> "readyAt").
    * Key = normalized snake_case header, Value = actual entity property name.
+   * Used for entities with camelCase properties (e.g., OrderToken: "ready_at" -> "readyAt").
    */
-  fieldRemap?: Record<string, string>;
+  fieldRemap: Record<string, string>;
+  /**
+   * Maps FK column header names to relation property names on the entity.
+   * During row conversion, "customer_id: 'uuid'" becomes "customer: { id: 'uuid' }".
+   * Key = normalized snake_case FK column, Value = relation property name.
+   */
+  relationMappings: Record<string, string>;
 }
 
 interface ColumnDef {
@@ -135,7 +141,6 @@ export class ImportService {
       const mapping = this.sheetMappings[sheetName];
 
       if (!mapping) {
-        // Unknown sheet -- report it but do not block
         sheets.push({
           sheet_name: sheetName,
           entity_type: 'unknown',
@@ -198,7 +203,7 @@ export class ImportService {
     workbook.eachSheet((worksheet) => {
       const sheetName = worksheet.name;
       const mapping = this.sheetMappings[sheetName];
-      if (!mapping) return; // skip unknown sheets
+      if (!mapping) return;
 
       const { headers, dataRows } = this.extractSheetData(worksheet);
       const rows: Record<string, any>[] = [];
@@ -347,7 +352,7 @@ export class ImportService {
     const validMimeTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
-      'application/octet-stream', // some clients send this
+      'application/octet-stream',
     ];
     if (file.mimetype && !validMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
@@ -369,19 +374,16 @@ export class ImportService {
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) {
-        // Header row
         row.eachCell((cell, colNumber) => {
           const headerValue = cell.value?.toString()?.trim() || '';
           headers[colNumber - 1] = this.normalizeHeader(headerValue);
         });
       } else {
-        // Data row
         const rowData: (ExcelJS.CellValue | undefined)[] = [];
         for (let col = 1; col <= headers.length; col++) {
           const cell = row.getCell(col);
           rowData[col - 1] = cell.value;
         }
-        // Skip completely empty rows
         const hasData = rowData.some(
           (v) => v !== null && v !== undefined && v !== '',
         );
@@ -400,9 +402,9 @@ export class ImportService {
    */
   private normalizeHeader(header: string): string {
     return header
-      .replace(/([a-z])([A-Z])/g, '$1_$2') // camelCase -> camel_Case
-      .replace(/[\s-]+/g, '_') // spaces/hyphens -> underscores
-      .replace(/[^a-zA-Z0-9_]/g, '') // strip special chars
+      .replace(/([a-z])([A-Z])/g, '$1_$2')
+      .replace(/[\s-]+/g, '_')
+      .replace(/[^a-zA-Z0-9_]/g, '')
       .toLowerCase();
   }
 
@@ -417,7 +419,6 @@ export class ImportService {
   ): Array<{ field: string; message: string }> {
     const errors: Array<{ field: string; message: string }> = [];
 
-    // Check required fields
     for (const requiredField of mapping.requiredFields) {
       const colIndex = headers.indexOf(requiredField);
       if (colIndex === -1) {
@@ -430,22 +431,18 @@ export class ImportService {
       }
     }
 
-    // Validate each column's type
     for (let i = 0; i < headers.length; i++) {
       const fieldName = headers[i];
       if (!fieldName) continue;
 
       const colDef = mapping.columns[fieldName];
-      if (!colDef) continue; // unknown column, skip
+      if (!colDef) continue;
 
-      if (mapping.skipFields?.includes(fieldName)) continue;
+      if (mapping.skipFields.includes(fieldName)) continue;
 
       const value = rowData[i];
       if (value === null || value === undefined || value === '') {
-        if (!colDef.nullable && mapping.requiredFields.includes(fieldName)) {
-          // Already reported as required
-        }
-        continue; // nullable fields are fine when empty
+        continue;
       }
 
       const strValue = this.cellValueToString(value);
@@ -482,7 +479,6 @@ export class ImportService {
             errors.push({ field: fieldName, message: `Invalid date value: "${strValue}"` });
           }
           break;
-        // 'string' and 'time' need no special validation
       }
     }
 
@@ -491,7 +487,7 @@ export class ImportService {
 
   /**
    * Convert a raw data row into a plain object suitable for TypeORM save/upsert.
-   * Handles type coercion for numbers, booleans, dates, and relation IDs.
+   * Handles type coercion, field remapping, and FK-to-relation conversion.
    */
   private convertRow(
     rowData: (ExcelJS.CellValue | undefined)[],
@@ -505,19 +501,16 @@ export class ImportService {
       const headerName = headers[i];
       if (!headerName) continue;
 
-      // Skip fields that should not be imported (e.g., password)
-      if (mapping.skipFields?.includes(headerName)) continue;
+      if (mapping.skipFields.includes(headerName)) continue;
 
       const colDef = mapping.columns[headerName];
       const value = rowData[i];
 
-      // Determine the actual property name to use on the entity object.
-      // If a fieldRemap is defined for this header, use the remapped name.
-      const propertyName = mapping.fieldRemap?.[headerName] ?? headerName;
+      // Apply field remap if defined (e.g. snake_case -> camelCase)
+      const propertyName = mapping.fieldRemap[headerName] || headerName;
 
       if (value === null || value === undefined || value === '') {
-        // Only set null for known nullable columns; skip otherwise
-        if (colDef?.nullable) {
+        if (colDef && colDef.nullable) {
           obj[propertyName] = null;
         }
         continue;
@@ -526,7 +519,6 @@ export class ImportService {
       if (headerName === 'id') hasId = true;
 
       if (!colDef) {
-        // Unknown field: store as-is string
         obj[propertyName] = this.cellValueToString(value);
         continue;
       }
@@ -534,8 +526,26 @@ export class ImportService {
       obj[propertyName] = this.convertValue(value, colDef);
     }
 
-    // Rows without an id are problematic for upsert -- skip if no id
     if (!hasId && !obj['id']) return null;
+
+    // Transform FK columns into relation objects for TypeORM:
+    // e.g. { customer_id: 'uuid' } -> { customer: { id: 'uuid' } }
+    const relationKeys = Object.keys(mapping.relationMappings);
+    for (const fkHeader of relationKeys) {
+      const relationProp = mapping.relationMappings[fkHeader];
+      // Determine the key that was actually set on obj (might be remapped)
+      const resolvedKey = mapping.fieldRemap[fkHeader] || fkHeader;
+
+      if (resolvedKey in obj) {
+        const fkValue = obj[resolvedKey];
+        if (fkValue !== null && fkValue !== undefined) {
+          obj[relationProp] = { id: fkValue };
+        } else {
+          obj[relationProp] = null;
+        }
+        delete obj[resolvedKey];
+      }
+    }
 
     return obj;
   }
@@ -590,7 +600,6 @@ export class ImportService {
     if (value === null || value === undefined) return '';
     if (value instanceof Date) return value.toISOString();
     if (typeof value === 'object') {
-      // ExcelJS rich text or hyperlink objects
       if ('text' in value) return String((value as any).text).trim();
       if ('result' in value) return String((value as any).result).trim();
       if ('richText' in value) {
@@ -693,14 +702,23 @@ export class ImportService {
 
   /**
    * Build the complete mapping of sheet names to entity definitions,
-   * including all column types and validation rules.
+   * including all column types, validation rules, field remapping,
+   * and FK-to-relation mappings.
    */
   private buildSheetMappings(): Record<string, SheetEntityMapping> {
+    // Shorthand for empty objects used by most entities
+    const noRemap: Record<string, string> = {};
+    const noRelations: Record<string, string> = {};
+    const noSkip: string[] = [];
+
     return {
       'Categories': {
         entityName: 'Category',
         tableName: 'categories',
         requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -717,6 +735,9 @@ export class ImportService {
         entityName: 'ExpenseCategory',
         tableName: 'expense_categories',
         requiredFields: ['id', 'name', 'slug'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -732,6 +753,9 @@ export class ImportService {
         entityName: 'Table',
         tableName: 'tables',
         requiredFields: ['id', 'number', 'seat'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           number: { type: 'string' },
@@ -752,6 +776,9 @@ export class ImportService {
         entityName: 'KitchenItems',
         tableName: 'kitchen_items',
         requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -773,7 +800,9 @@ export class ImportService {
         entityName: 'User',
         tableName: 'users',
         requiredFields: ['id', 'first_name', 'last_name', 'phone'],
-        skipFields: ['password'], // Never import passwords
+        skipFields: ['password'],
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           first_name: { type: 'string' },
@@ -808,6 +837,8 @@ export class ImportService {
         tableName: 'customers',
         requiredFields: ['id', 'name', 'phone'],
         skipFields: ['password', 'refresh_token', 'otp', 'otp_expires_at'],
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -833,6 +864,9 @@ export class ImportService {
         entityName: 'Discount',
         tableName: 'discount',
         requiredFields: ['id', 'name', 'discount_type', 'discount_value', 'expiry_date'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -851,6 +885,9 @@ export class ImportService {
         entityName: 'Item',
         tableName: 'items',
         requiredFields: ['id', 'name', 'name_bn', 'slug', 'description', 'regular_price', 'image'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -879,6 +916,9 @@ export class ImportService {
         entityName: 'ItemCategory',
         tableName: 'item_categories',
         requiredFields: ['item_id', 'category_id'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           item_id: { type: 'uuid' },
           category_id: { type: 'uuid' },
@@ -889,6 +929,9 @@ export class ImportService {
         entityName: 'Bank',
         tableName: 'banks',
         requiredFields: ['id', 'bank_name', 'branch_name', 'account_number', 'routing_number'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { user_id: 'user' },
         columns: {
           id: { type: 'uuid' },
           bank_name: { type: 'string' },
@@ -905,6 +948,9 @@ export class ImportService {
         entityName: 'KitchenStock',
         tableName: 'kitchen_stock',
         requiredFields: ['id', 'quantity', 'price', 'total_price'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { kitchen_item_id: 'kitchen_item' },
         columns: {
           id: { type: 'uuid' },
           kitchen_item_id: { type: 'uuid', nullable: true },
@@ -921,6 +967,13 @@ export class ImportService {
         entityName: 'Order',
         tableName: 'orders',
         requiredFields: ['id'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: {
+          customer_id: 'customer',
+          user_id: 'user',
+          discount_id: 'discount',
+        },
         columns: {
           id: { type: 'uuid' },
           order_id: { type: 'string', nullable: true },
@@ -959,6 +1012,12 @@ export class ImportService {
         entityName: 'OrderItem',
         tableName: 'order_items',
         requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: {
+          order_id: 'order',
+          item_id: 'item',
+        },
         columns: {
           id: { type: 'uuid' },
           quantity: { type: 'integer' },
@@ -975,6 +1034,15 @@ export class ImportService {
         entityName: 'OrderToken',
         tableName: 'order_tokens',
         requiredFields: ['id', 'token', 'token_type'],
+        skipFields: noSkip,
+        // OrderToken entity uses camelCase for timestamps and auto-generated FK
+        fieldRemap: {
+          ready_at: 'readyAt',
+          created_at: 'createdAt',
+          updated_at: 'updatedAt',
+        },
+        // The ManyToOne order relation has no @JoinColumn, so TypeORM uses "orderId"
+        relationMappings: { order_id: 'order' },
         columns: {
           id: { type: 'uuid' },
           token: { type: 'string' },
@@ -1003,6 +1071,9 @@ export class ImportService {
         entityName: 'Salary',
         tableName: 'salary',
         requiredFields: ['id', 'month', 'base_salary', 'total_payble'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { user_id: 'user' },
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid', nullable: true },
@@ -1023,6 +1094,9 @@ export class ImportService {
         entityName: 'StuffAttendance',
         tableName: 'stuff_attendance',
         requiredFields: ['id', 'attendance_date'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { user_id: 'user' },
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid', nullable: true },
@@ -1048,6 +1122,10 @@ export class ImportService {
         entityName: 'Leave',
         tableName: 'leave',
         requiredFields: ['id', 'user_id', 'leave_type', 'leave_start_date', 'leave_end_date', 'reason'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        // Leave entity has an explicit user_id @Column, so no relation mapping needed
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid' },
@@ -1067,6 +1145,9 @@ export class ImportService {
         entityName: 'KitchenOrder',
         tableName: 'kitchen_orders',
         requiredFields: ['id'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { user_id: 'user' },
         columns: {
           id: { type: 'uuid' },
           order_id: { type: 'string', nullable: true },
@@ -1083,6 +1164,12 @@ export class ImportService {
         entityName: 'KitchenOrderItem',
         tableName: 'kitchen_order_items',
         requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: {
+          kitchen_order_id: 'kitchen_order',
+          kitchen_stock_id: 'kitchen_stock',
+        },
         columns: {
           id: { type: 'uuid' },
           kitchen_order_id: { type: 'uuid', nullable: true },
@@ -1099,6 +1186,9 @@ export class ImportService {
         entityName: 'Expenses',
         tableName: 'expenses',
         requiredFields: ['id', 'title', 'amount'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { category_id: 'category' },
         columns: {
           id: { type: 'uuid' },
           title: { type: 'string' },
@@ -1120,6 +1210,9 @@ export class ImportService {
         entityName: 'DailyReport',
         tableName: 'daily_reports',
         requiredFields: ['id', 'report_date'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: noRelations,
         columns: {
           id: { type: 'uuid' },
           report_date: { type: 'date' },

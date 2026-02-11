@@ -13,7 +13,6 @@ import * as zlib from 'zlib';
 import * as crypto from 'crypto';
 
 import { BackupHistory } from '../entities/backup-history.entity';
-import { BackupSettings } from '../entities/backup-settings.entity';
 import { BackupType } from '../enums/backup-type.enum';
 import { BackupStatus } from '../enums/backup-status.enum';
 import { BackupData, BackupMetadata } from '../interfaces/backup-metadata.interface';
@@ -120,12 +119,13 @@ export class BackupService {
       .slice(0, 19);
     const filename = `backup_${timestamp}.ccbak`;
 
-    const history = this.historyRepo.create({
-      filename,
-      type,
-      status: BackupStatus.IN_PROGRESS,
-      created_by: user || null,
-    });
+    const history = new BackupHistory();
+    history.filename = filename;
+    history.type = type;
+    history.status = BackupStatus.IN_PROGRESS;
+    if (user) {
+      history.created_by = user;
+    }
     const savedHistory = await this.historyRepo.save(history);
 
     try {
