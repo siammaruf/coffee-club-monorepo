@@ -10,8 +10,6 @@ import * as cookieParser from 'cookie-parser';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as chalk from 'chalk';
-
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
@@ -66,7 +64,7 @@ async function bootstrap() {
   const serverUrl = `http://localhost:${port}`;
   const docsUrl = `${serverUrl}/api/v1/docs`;
   
-  console.log('\n🚀 Application is running on:', chalk.blue.underline(serverUrl));
-  console.log('📚 API Documentation:', chalk.blue.underline(docsUrl), '\n');
+  console.log('\n🚀 Application is running on:', serverUrl);
+  console.log('📚 API Documentation:', docsUrl, '\n');
 }
 bootstrap();
