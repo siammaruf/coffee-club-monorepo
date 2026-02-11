@@ -19,7 +19,8 @@ import {
   DollarSign,
   Ticket,
   Utensils,
-  Table
+  Table,
+  HardDrive
 } from "lucide-react";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
 
@@ -31,6 +32,7 @@ export default function Sidebar() {
     kitchen: true,
     financial: true,
     reports: true,
+    dataManagement: true,
     settings: true,
   });
 

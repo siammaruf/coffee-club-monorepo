@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
+import { Repository, DataSource, SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import * as ExcelJS from 'exceljs';
 
 import { User } from '../../users/entities/user.entity';
@@ -438,7 +438,7 @@ export class ExportService {
   // ---------------------------------------------------------------------------
 
   /** Apply optional date-range filtering on a QueryBuilder's created_at column. */
-  private applyDateFilter<T>(
+  private applyDateFilter<T extends ObjectLiteral>(
     qb: SelectQueryBuilder<T>,
     alias: string,
     dateFrom?: string,
