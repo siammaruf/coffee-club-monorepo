@@ -26,7 +26,7 @@ const BASE = '/data-management';
  * can also read Content-Disposition headers.
  */
 const blobClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
   withCredentials: true,
   timeout: 120000, // longer timeout for large exports / backups
 });
