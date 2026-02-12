@@ -1,5 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
-import { KitchenOrder } from "./kitchen-order.entity";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Relation } from "typeorm";
+import type { KitchenOrder } from "./kitchen-order.entity";
 import { KitchenStock } from "../../kitchen-stock/entities/kitchen-stock.entity";
 
 @Entity('kitchen_order_items')
@@ -7,9 +7,9 @@ export class KitchenOrderItem {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => KitchenOrder, order => order.order_items)
+    @ManyToOne("KitchenOrder", "order_items")
     @JoinColumn({ name: "kitchen_order_id" })
-    kitchen_order: KitchenOrder;
+    kitchen_order: Relation<KitchenOrder>;
 
     @ManyToOne(() => KitchenStock, { eager: true })
     @JoinColumn({ name: "kitchen_stock_id" })
