@@ -24,7 +24,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (initialCheckDone && !isAuthenticated && !loading) {
-      navigate('/login');
+      navigate('/');
     }
   }, [isAuthenticated, loading, navigate, initialCheckDone]);
 
