@@ -40,7 +40,7 @@ export class StuffAttendanceController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number', type: Number })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page', type: Number })
   @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'status', required: false, enum: AttendanceStatus, description: 'Filter by attendance status' })
+  @ApiQuery({ name: 'status', required: false, enum: AttendanceStatus, enumName: 'AttendanceStatus', description: 'Filter by attendance status' })
   @ApiQuery({ name: 'startDate', required: false, type: Date, description: 'Filter by start date (YYYY-MM-DD)' })
   @ApiQuery({ name: 'endDate', required: false, type: Date, description: 'Filter by end date (YYYY-MM-DD)' })
   @ApiResponse({ 

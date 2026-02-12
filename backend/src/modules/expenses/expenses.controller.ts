@@ -14,7 +14,7 @@ export class ExpensesController {
   @Get()
   @ApiOperation({ summary: 'Get all expenses with optional filtering' })
   @ApiQuery({ name: 'categoryId', required: false, type: String, description: 'Filter by category ID' })
-  @ApiQuery({ name: 'status', required: false, enum: ExpenseStatus, description: 'Filter by status' })
+  @ApiQuery({ name: 'status', required: false, enum: ExpenseStatus, enumName: 'ExpenseStatus', description: 'Filter by status' })
   @ApiQuery({ name: 'dateFilter', required: false, enum: ['today', 'week', 'month', 'all'], description: 'Filter by date range' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })

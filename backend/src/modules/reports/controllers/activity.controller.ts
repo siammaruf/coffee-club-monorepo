@@ -27,7 +27,7 @@ export class ActivityController {
   @ApiOperation({ summary: 'Get all activities with filtering and pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 50)' })
-  @ApiQuery({ name: 'activity_type', required: false, enum: ActivityType, description: 'Filter by activity type' })
+  @ApiQuery({ name: 'activity_type', required: false, enum: ActivityType, enumName: 'ActivityType', description: 'Filter by activity type' })
   @ApiQuery({ name: 'entity_type', required: false, type: String, description: 'Filter by entity type' })
   @ApiQuery({ name: 'user_id', required: false, type: String, description: 'Filter by user ID' })
   @ApiQuery({ name: 'start_date', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })
