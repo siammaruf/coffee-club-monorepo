@@ -1,6 +1,6 @@
-import { OrderItem } from 'src/modules/order-items/entities/order-item.entity';
-import { Order } from 'src/modules/orders/entities/order.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import type { OrderItem } from 'src/modules/order-items/entities/order-item.entity';
+import type { Order } from 'src/modules/orders/entities/order.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable, CreateDateColumn, Relation, UpdateDateColumn } from 'typeorm';
 import { OrderTokenPriority } from '../enum/OrderTokenPriority.enum';
 import { OrderTokenStatus } from '../enum/OrderTokenStatus.enum';
 import { TokenType } from '../enum/TokenType.enum';
@@ -16,12 +16,12 @@ export class OrderToken {
     @Column({ type: 'enum', enum: TokenType })
     token_type: TokenType;
 
-    @ManyToOne(() => Order, { nullable: false, onDelete: 'CASCADE' })
-    order: Order;
+    @ManyToOne("Order", { nullable: false, onDelete: 'CASCADE' })
+    order: Relation<Order>;
 
-    @ManyToMany(() => OrderItem, { cascade: true })
+    @ManyToMany("OrderItem", { cascade: true })
     @JoinTable({ name: 'order_token_items' })
-    order_items: OrderItem[];
+    order_items: Relation<OrderItem[]>;
 
     @Column({ type: 'enum', enum: OrderTokenPriority, default: OrderTokenPriority.NORMAL })
     priority: OrderTokenPriority;
