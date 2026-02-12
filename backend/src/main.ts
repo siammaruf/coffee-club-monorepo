@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
