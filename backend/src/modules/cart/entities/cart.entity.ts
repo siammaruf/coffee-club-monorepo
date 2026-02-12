@@ -6,9 +6,10 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { Customer } from '../../customers/entities/customer.entity';
-import { CartItem } from './cart-item.entity';
+import type { CartItem } from './cart-item.entity';
 
 @Entity('carts')
 export class Cart {
@@ -19,8 +20,8 @@ export class Cart {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  @OneToMany(() => CartItem, (cartItem) => cartItem.cart, { cascade: true })
-  items: CartItem[];
+  @OneToMany("CartItem", "cart", { cascade: true })
+  items: Relation<CartItem[]>;
 
   @CreateDateColumn()
   created_at: Date;
