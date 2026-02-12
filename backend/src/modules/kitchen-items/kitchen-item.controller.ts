@@ -16,7 +16,7 @@ export class KitchenItemController {
   @ApiOperation({ summary: 'Get all kitchen items with pagination' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
-  @ApiQuery({ name: 'type', enum: KitchenItemType, required: false, description: 'Filter by kitchen item type' })
+  @ApiQuery({ name: 'type', enum: KitchenItemType, enumName: 'KitchenItemType', required: false, description: 'Filter by kitchen item type' })
   @ApiResponse({ status: 200, description: 'List of kitchen items retrieved successfully' })
   async findAll(
     @Query('page') page: string = '1',

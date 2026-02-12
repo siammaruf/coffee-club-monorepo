@@ -32,7 +32,7 @@ export class TableController {
   @Get()
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Get all tables with optional filtering' })
-  @ApiQuery({ name: 'status', required: false, enum: TableStatus, description: 'Filter by table status' })
+  @ApiQuery({ name: 'status', required: false, enum: TableStatus, enumName: 'TableStatus', description: 'Filter by table status' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by table number or description' })
   @ApiQuery({ name: 'location', required: false, description: 'Filter by table location' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })

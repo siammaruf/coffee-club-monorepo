@@ -170,12 +170,14 @@ export class UserController {
         name: 'status', 
         required: false, 
         enum: UserStatus,
-        description: 'Filter by user status' 
+        enumName: 'UserStatus',
+        description: 'Filter by user status'
     })
-    @ApiQuery({ 
-        name: 'role', 
-        required: false, 
+    @ApiQuery({
+        name: 'role',
+        required: false,
         enum: UserRole,
+        enumName: 'UserRole',
         description: 'Filter by user role/position' 
     })
     @ApiBasicAuth()
