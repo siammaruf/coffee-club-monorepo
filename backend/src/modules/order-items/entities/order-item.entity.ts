@@ -1,6 +1,6 @@
 import { Item } from "../../items/entities/item.entity";
-import { Order } from "../../orders/entities/order.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import type { Order } from "../../orders/entities/order.entity";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 
 @Entity('order_items')
 export class OrderItem {
@@ -16,9 +16,9 @@ export class OrderItem {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     total_price: number;
 
-    @ManyToOne(() => Order, { eager: true })
+    @ManyToOne("Order")
     @JoinColumn({ name: 'order_id' })
-    order: Order;
+    order: Relation<Order>;
 
     @ManyToOne(() => Item, { eager: true })
     @JoinColumn({ name: 'item_id' })
