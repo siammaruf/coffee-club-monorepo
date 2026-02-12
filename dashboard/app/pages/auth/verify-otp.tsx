@@ -79,7 +79,7 @@ export default function VerifyOTP() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => navigate('/auth/forgot-password')} 
+              onClick={() => navigate('/forgot-password')} 
               className="w-full"
             >
               Go Back to Forgot Password
@@ -178,7 +178,7 @@ export default function VerifyOTP() {
       if (response.status === 'success' || response.statusCode === 200){
         setSuccess('OTP verified successfully!');
         setTimeout(() => {
-          navigate(`/auth/reset-password?identity=${response.token}`);
+          navigate(`/reset-password?identity=${response.token}`);
         }, 1000);
       } else {
         if (response.status === 'error' && response.canResend) {
