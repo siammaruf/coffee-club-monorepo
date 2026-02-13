@@ -1,7 +1,7 @@
 # Dependencies
 FROM oven/bun:latest AS deps
 WORKDIR /app
-COPY package.json package-lock.json* bun.lockb* ./
+COPY package.json bun.lockb* ./
 RUN bun install --frozen-lockfile
 
 # Build
@@ -15,6 +15,9 @@ RUN bun run build
 FROM oven/bun:latest
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.ts ./server.ts
+COPY --from=builder /app/package.json ./package.json
+COPY --from=deps /app/node_modules ./node_modules
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
