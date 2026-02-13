@@ -14,7 +14,7 @@ RUN bun run build
 # Runtime
 FROM oven/bun:latest
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/build ./build
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
