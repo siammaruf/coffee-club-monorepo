@@ -1,64 +1,60 @@
-# ============================================================
-# Stage 1: Base with system dependencies (shared)
-# ============================================================
-FROM oven/bun:latest AS base
-RUN apt-get update && apt-get install -y libvips-dev build-essential python3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# ==========================================
+# Stage 1: Build Stage
+# ==========================================
+FROM oven/bun:latest AS builder
 
-# ============================================================
-# Stage 2: Install all dependencies (including dev for build)
-# ============================================================
-FROM base AS deps
 WORKDIR /app
-COPY package.json bun.lock ./
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile
 
-# ============================================================
-# Stage 3: Production dependencies only (parallel with deps)
-# ============================================================
-FROM base AS prod-deps
-WORKDIR /app
-COPY package.json bun.lock ./
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile --production
+# Copy package files
+COPY package.json bun.lockb* package-lock.json* ./
 
-# ============================================================
-# Stage 4: Build the application
-# ============================================================
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Install dependencies with Bun (includes devDependencies needed for build)
+# Note: Will generate bun.lockb if it doesn't exist from package-lock.json
+RUN bun install
+
+# Copy source code
 COPY . .
+
+# Build NestJS application
 RUN bun run build
 
-# ============================================================
-# Stage 5: Production runtime
-# ============================================================
-FROM node:24-alpine AS production
+# ==========================================
+# Stage 2: Production Runtime
+# ==========================================
+FROM oven/bun:latest AS runtime
 
-# sharp runtime dependency (without -dev headers)
-RUN apk add --no-cache vips
+# Install Node.js 24, npm, and PostgreSQL client
+RUN apt-get update && apt-get install -y \
+    curl \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Security: run as non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Install Node.js 24 via nodesource
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
-COPY --from=prod-deps /app/node_modules ./node_modules
+# Copy dependencies and build from builder
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package.json ./package.json
 
-# Create uploads directory (mount persistent volume here in Dokploy)
-RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
+# Copy source files needed for migrations(TypeScript files)
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-USER appuser
-
+# Expose backend port
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD wget -qO- http://localhost:3000/api/v1/docs || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD bun --eval "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
-ENTRYPOINT ["./entrypoint.sh"]
+# Start backend with migrations and seeds
+ENTRYPOINT ["/app/entrypoint.sh"]
