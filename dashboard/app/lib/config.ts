@@ -1,6 +1,8 @@
 export function getConfig(key: string): string {
-  const rc = (window as any).__RUNTIME_CONFIG__;
-  if (rc?.[key]) return rc[key];
+  if (typeof window !== 'undefined') {
+    const rc = (window as any).__RUNTIME_CONFIG__;
+    if (rc?.[key]) return rc[key];
+  }
   return import.meta.env[key] || '';
 }
 
