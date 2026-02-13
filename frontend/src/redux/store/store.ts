@@ -3,8 +3,6 @@ import authReducer from '../features/authSlice'
 import cartReducer from '../features/cartSlice'
 import orderReducer from '../features/orderSlice'
 
-const isServer = typeof window === 'undefined'
-
 export function createStore() {
   const newStore = configureStore({
     reducer: {
@@ -14,8 +12,8 @@ export function createStore() {
     },
   })
 
-  // Persist cart items to localStorage (backward compatible with Zustand persist format)
-  if (!isServer) {
+  // Persist cart items to localStorage (client-only, backward compatible with Zustand persist format)
+  if (typeof window !== 'undefined') {
     newStore.subscribe(() => {
       const { items } = newStore.getState().cart
       try {

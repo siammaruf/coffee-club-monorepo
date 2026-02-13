@@ -1,8 +1,16 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { Search, Calendar, User, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
+
+export const meta: MetaFunction = () => [
+  { title: 'Blog | CoffeeClub' },
+  { name: 'description', content: 'Read the latest articles, stories, and coffee insights from CoffeeClub.' },
+  { property: 'og:title', content: 'Blog | CoffeeClub' },
+  { property: 'og:description', content: 'Read the latest articles, stories, and coffee insights from CoffeeClub.' },
+  { property: 'og:type', content: 'website' },
+]
 import { useBlogPosts } from '@/services/httpServices/queries/useBlog'
 import { formatDate, truncate } from '@/lib/utils'
 import type { BlogPost } from '@/types/blog'
@@ -110,11 +118,6 @@ export default function BlogPage() {
 
   return (
     <>
-      <SEO
-        title="Blog"
-        description="Read the latest articles, stories, and coffee insights from CoffeeClub."
-      />
-
       <PageBanner
         title="Our Blog"
         subtitle="Stories, tips, and insights from the world of coffee and beyond."

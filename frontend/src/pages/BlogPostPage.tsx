@@ -1,11 +1,19 @@
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { Link, useParams, useNavigate } from 'react-router'
 import { Calendar, User, ArrowLeft, BookOpen, Share2, ChevronRight } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { Loading } from '@/components/ui/loading'
 import { Button } from '@/components/ui/button'
 import { useBlogPost } from '@/services/httpServices/queries/useBlog'
 import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
+
+export const meta: MetaFunction = () => [
+  { title: 'Blog Post | CoffeeClub' },
+  { name: 'description', content: 'Read this article on the CoffeeClub blog.' },
+  { property: 'og:title', content: 'Blog Post | CoffeeClub' },
+  { property: 'og:description', content: 'Read this article on the CoffeeClub blog.' },
+  { property: 'og:type', content: 'article' },
+]
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -33,18 +41,13 @@ export default function BlogPostPage() {
 
   if (isLoading) {
     return (
-      <>
-        <SEO title="Loading..." description="Loading blog post..." />
-        <Loading fullPage text="Loading article..." />
-      </>
+      <Loading fullPage text="Loading article..." />
     )
   }
 
   if (isError || !post) {
     return (
-      <>
-        <SEO title="Article Not Found" description="The article you are looking for could not be found." />
-        <div className="flex min-h-[60vh] items-center justify-center bg-warm-bg px-4">
+      <div className="flex min-h-[60vh] items-center justify-center bg-warm-bg px-4">
           <div className="text-center">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
               <BookOpen className="h-12 w-12 text-primary-500" />
@@ -65,18 +68,11 @@ export default function BlogPostPage() {
             </div>
           </div>
         </div>
-      </>
     )
   }
 
   return (
     <>
-      <SEO
-        title={post.title}
-        description={post.excerpt}
-        image={post.image || undefined}
-      />
-
       {/* Hero Banner with Post Image */}
       <section className="relative overflow-hidden bg-dark py-20 sm:py-28">
         {/* Background image overlay */}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router'
 import { ArrowUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Header } from './Header'

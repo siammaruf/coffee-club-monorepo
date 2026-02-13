@@ -13,9 +13,17 @@ import {
   CheckCircle,
   PartyPopper,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { SEO } from '@/components/SEO'
+import type { MetaFunction } from 'react-router'
+import { Link } from 'react-router'
 import { PageBanner } from '@/components/ui/PageBanner'
+
+export const meta: MetaFunction = () => [
+  { title: 'Reserve a Table | CoffeeClub' },
+  { name: 'description', content: 'Book your table at CoffeeClub. Perfect for dining, celebrations, meetings, and private events.' },
+  { property: 'og:title', content: 'Reserve a Table | CoffeeClub' },
+  { property: 'og:description', content: 'Book your table at CoffeeClub. Perfect for dining, celebrations, meetings, and private events.' },
+  { property: 'og:type', content: 'website' },
+]
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCreateReservation } from '@/services/httpServices/queries/useReservations'
@@ -102,8 +110,6 @@ export default function ReservationPage() {
   if (isSuccess) {
     return (
       <>
-        <SEO title="Reservation Confirmed" description="Your reservation has been submitted successfully." />
-
         <PageBanner
           title="Reservation"
           subtitle="Book your table at CoffeeClub."
@@ -143,11 +149,6 @@ export default function ReservationPage() {
 
   return (
     <>
-      <SEO
-        title="Reserve a Table"
-        description="Book your table at CoffeeClub. Perfect for dining, celebrations, meetings, and private events."
-      />
-
       <PageBanner
         title="Reserve a Table"
         subtitle="Secure your spot for a memorable dining experience."

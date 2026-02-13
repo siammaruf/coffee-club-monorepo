@@ -1,12 +1,8 @@
-import { Navigate, useLocation } from 'react-router'
+import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { Loading } from '@/components/ui/loading'
 
-interface GuestRouteProps {
-  children: React.ReactNode
-}
-
-export function GuestRoute({ children }: GuestRouteProps) {
+export default function GuestLayout() {
   const { isAuthenticated, isLoading, initialized } = useAuth()
   const location = useLocation()
 
@@ -15,9 +11,10 @@ export function GuestRoute({ children }: GuestRouteProps) {
   }
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+    const from =
+      (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
     return <Navigate to={from} replace />
   }
 
-  return <>{children}</>
+  return <Outlet />
 }

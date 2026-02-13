@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ChevronRight, Package } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { formatPrice, formatDateTime } from '@/lib/utils'
