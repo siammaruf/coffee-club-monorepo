@@ -9,4 +9,4 @@ window.__RUNTIME_CONFIG__ = {
 EOF
 
 echo "Starting frontend SSR server..."
-exec npx react-router-serve ./build/server/index.js
+exec bunx react-router-serve ./build/server/index.js
