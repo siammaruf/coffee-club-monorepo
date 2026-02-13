@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 
-echo "🚀 Starting frontend application..."
-exec bunx serve -s dist -l 3000
+echo "Starting dashboard application..."
+exec bunx serve -s build/client -l 3000
