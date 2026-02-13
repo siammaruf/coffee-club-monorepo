@@ -2,7 +2,7 @@ import { Injectable, Logger, ConflictException, NotFoundException } from '@nestj
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThan, In } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import * as moment from 'moment-timezone';
+import moment from 'moment-timezone';
 import { DailyReport } from '../entities/report.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { OrderToken } from '../../order-tokens/entities/order-token.entity';
