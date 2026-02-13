@@ -15,6 +15,7 @@ import type {
   RestoreResult,
   DataManagementApiResponse,
 } from '~/types/dataManagement';
+import { API_URL } from '~/lib/config';
 
 const BASE = '/data-management';
 
@@ -26,7 +27,7 @@ const BASE = '/data-management';
  * can also read Content-Disposition headers.
  */
 const blobClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+  baseURL: API_URL,
   withCredentials: true,
   timeout: 120000, // longer timeout for large exports / backups
 });
