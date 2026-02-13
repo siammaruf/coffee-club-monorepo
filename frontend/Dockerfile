@@ -1,18 +1,18 @@
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+FROM oven/bun:latest AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 # Stage 2: Build
-FROM node:20-alpine AS builder
+FROM oven/bun:latest AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Stage 3: Runtime - SSR server
-FROM node:20-alpine
+FROM oven/bun:latest
 WORKDIR /app
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./
@@ -21,5 +21,5 @@ COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://localhost:3000/ || exit 1
+  CMD bun -e "fetch('http://localhost:3000/').then(r => {if(!r.ok) process.exit(1)}).catch(() => process.exit(1))" || exit 1
 ENTRYPOINT ["./entrypoint.sh"]
