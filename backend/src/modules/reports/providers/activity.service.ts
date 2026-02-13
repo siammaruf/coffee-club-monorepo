@@ -5,7 +5,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Activity, ActivityType } from '../entities/activity.entity';
 import { CreateActivityDto } from '../dto/create-activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Injectable()
 export class ActivityService {

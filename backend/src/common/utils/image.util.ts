@@ -1,4 +1,4 @@
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
