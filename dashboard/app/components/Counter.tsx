@@ -1,5 +1,3 @@
-'use client';
-
 import { useAppSelector, useAppDispatch } from '../redux/store/hooks';
 import { increment, decrement } from '../redux/features/counterSlice';
 
