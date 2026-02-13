@@ -42,13 +42,13 @@ function Modal({ isOpen, onClose, title, children, className, size = 'md' }: Mod
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          'relative w-full rounded-2xl bg-dark-card shadow-2xl border border-primary-800/30 animate-fade-in',
+          'relative w-full rounded-2xl bg-white shadow-2xl border border-border animate-fade-in',
           sizeClasses[size],
           className
         )}
@@ -57,11 +57,11 @@ function Modal({ isOpen, onClose, title, children, className, size = 'md' }: Mod
         aria-label={title}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-primary-800/30 px-6 py-4">
-            <h2 className="text-lg font-bold text-cream">{title}</h2>
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h2 className="text-lg font-bold text-text-primary">{title}</h2>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-coffee-light transition-colors hover:bg-primary-800/30 hover:text-cream"
+              className="rounded-lg p-1 text-text-muted transition-colors hover:bg-warm-surface hover:text-text-primary"
               aria-label="Close modal"
             >
               <X className="h-5 w-5" />

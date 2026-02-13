@@ -34,19 +34,19 @@ export function SearchBar({ onSearch, placeholder = 'Search menu items...' }: Se
   return (
     <div className="relative w-full max-w-md">
       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-        <Search className="h-5 w-5 text-coffee-light" />
+        <Search className="h-5 w-5 text-text-muted" />
       </div>
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="h-11 w-full rounded-lg border border-primary-800/40 bg-dark-card pl-11 pr-10 text-base text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+        className="h-11 w-full rounded-lg border border-border bg-white pl-11 pr-10 text-base text-text-primary shadow-sm transition-colors placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
       />
       {value && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 text-coffee-light hover:text-primary-400"
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-primary-600"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />

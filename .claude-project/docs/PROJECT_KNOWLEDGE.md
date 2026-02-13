@@ -36,12 +36,16 @@ CoffeeClub is a **restaurant/cafe management system** with three applications:
 - **Notifications**: Sonner
 
 ### Frontend (`frontend/`)
-- **Framework**: React 19 + Vite
-- **Routing**: React Router
-- **State**: Redux Toolkit + React Query
-- **CSS**: TailwindCSS
-- **Theme**: Dark gold premium restaurant theme (Playfair Display serif headings + Inter body text)
-- **Design**: Dark backgrounds (`#0D0D0D`), gold accents (`#C5961A`), cream text (`#F5F0E1`), serif headings for premium feel
+- **Framework**: React 19.2.4 + Vite 7
+- **Routing**: React Router 7
+- **State**: Redux Toolkit + React Query (TanStack Query)
+- **CSS**: TailwindCSS v4
+- **SSR**: Vite SSR + Express + React 19.2 PPR (Partial Pre-rendering)
+- **SEO**: react-helmet-async for meta tags, JSON-LD structured data
+- **Carousel**: Swiper for hero slider, testimonials
+- **Theme**: Warm light coffee theme (Basilico-inspired) - Playfair Display headings + Inter body + Dancing Script taglines
+- **Design**: Warm cream backgrounds (`#FDF8F3`), coffee brown accents (`#A0782C`), dark brown text (`#2C2118`), serif headings
+- **React 19.2 Features**: PPR, Activity component, cacheSignal, useEffectEvent, Batched Suspense Boundaries
 
 ## Architecture
 
@@ -57,6 +61,9 @@ coffeeclub/
 │       │   ├── public/             # Public endpoints (categories, items, tables) [NEW]
 │       │   ├── cart/               # Shopping cart for customers [NEW]
 │       │   ├── customer-orders/    # Customer order placement & history [NEW]
+│       │   ├── blog/               # Blog posts (public listing + admin CRUD) [NEW]
+│       │   ├── reservations/       # Table/event reservations [NEW]
+│       │   ├── partners/           # Partner logos/brands [NEW]
 │       │   ├── items/              # Menu items/products
 │       │   ├── categories/         # Item categories
 │       │   ├── orders/             # POS order management
@@ -108,19 +115,34 @@ coffeeclub/
 │       ├── styles/                 # CSS (Tailwind + typography)
 │       ├── types/                  # TypeScript type definitions
 │       └── utils/                  # Error handling, validation
-├── frontend/                       # Customer-facing website
+├── frontend/                       # Customer-facing website (SSR-enabled)
+│   ├── server.ts                   # Express SSR server
 │   └── src/
-│       ├── components/             # UI components (layout, home, menu, cart, etc.)
-│       ├── pages/                  # Menu, cart, orders, account, auth pages
+│       ├── entry-client.tsx        # Client hydration entry
+│       ├── entry-server.tsx        # SSR rendering entry (React 19.2 PPR)
+│       ├── routes.ts              # Shared route config (client + server)
+│       ├── components/
+│       │   ├── layout/            # Header (TopBar + Nav), Footer, Layout
+│       │   ├── home/              # HeroSlider, AboutSection, SpecialMenuSection, WhyChooseUs, etc.
+│       │   ├── menu/              # MenuGrid, MenuCard, CategoryFilter, SearchBar
+│       │   ├── cart/              # CartDrawer, CartItem, CartSummary
+│       │   ├── checkout/          # CheckoutForm, DeliveryForm, PaymentSelector
+│       │   ├── orders/            # OrderCard, OrderTimeline
+│       │   ├── auth/              # ProtectedRoute, GuestRoute, LoginForm, RegisterForm
+│       │   ├── profile/           # ProfileForm
+│       │   ├── ui/                # Button, Input, Card, Badge, Modal, SectionHeading, ScrollFadeIn
+│       │   └── SEO.tsx            # Meta tags + structured data
+│       ├── pages/                  # All page components including Blog, Reservation
 │       ├── redux/
 │       │   ├── features/           # authSlice, cartSlice, orderSlice
-│       │   └── store/              # Redux store config + hooks
+│       │   └── store/              # Redux store factory + hooks
+│       ├── hooks/                  # useAuth, useCart, useInView, useCountUp
 │       ├── services/
 │       │   ├── httpService.ts      # Axios base client
-│       │   ├── httpServices/       # Per-resource API services
+│       │   ├── httpServices/       # Per-resource API services (auth, public, cart, order, blog, etc.)
 │       │   └── httpMethods/        # HTTP method wrappers + interceptors
-│       ├── lib/                    # Config, utilities
-│       └── styles/                 # TailwindCSS styles
+│       ├── types/                  # TypeScript types (customer, item, order, blog, reservation, partner)
+│       └── lib/                    # Config (SSR-safe), queryClient, utilities
 └── .claude-project/                # Project documentation
 ```
 

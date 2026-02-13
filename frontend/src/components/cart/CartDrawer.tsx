@@ -27,22 +27,22 @@ export function CartDrawer() {
     <div className="fixed inset-0 z-50">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={closeDrawer}
         aria-hidden="true"
       />
 
       {/* Drawer */}
-      <div className="fixed bottom-0 right-0 top-0 w-full max-w-md animate-slide-in-right bg-dark-card shadow-2xl border-l border-primary-800/30">
+      <div className="fixed bottom-0 right-0 top-0 w-full max-w-md animate-slide-in-right border-l border-border bg-white shadow-2xl">
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-primary-800/30 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary-400" />
-              <h2 className="text-lg font-bold text-cream">
+              <ShoppingBag className="h-5 w-5 text-primary-500" />
+              <h2 className="text-lg font-bold text-text-primary">
                 Your Cart
                 {itemCount > 0 && (
-                  <span className="ml-2 text-sm font-normal text-coffee-light">
+                  <span className="ml-2 text-sm font-normal text-text-muted">
                     ({itemCount} {itemCount === 1 ? 'item' : 'items'})
                   </span>
                 )}
@@ -50,7 +50,7 @@ export function CartDrawer() {
             </div>
             <button
               onClick={closeDrawer}
-              className="rounded-lg p-1.5 text-coffee-light transition-colors hover:bg-primary-800/30 hover:text-cream"
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-warm-surface hover:text-text-primary"
               aria-label="Close cart"
             >
               <X className="h-5 w-5" />
@@ -61,11 +61,11 @@ export function CartDrawer() {
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-900/50">
-                  <ShoppingBag className="h-10 w-10 text-primary-400" />
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100">
+                  <ShoppingBag className="h-10 w-10 text-primary-500" />
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-cream">Your cart is empty</h3>
-                <p className="mt-1 text-sm text-coffee-light">
+                <h3 className="mt-4 text-lg font-bold text-text-primary">Your cart is empty</h3>
+                <p className="mt-1 text-sm text-text-body">
                   Start adding delicious items from our menu!
                 </p>
                 <Link to="/menu" onClick={closeDrawer}>
@@ -86,10 +86,10 @@ export function CartDrawer() {
 
           {/* Footer */}
           {items.length > 0 && (
-            <div className="border-t border-primary-800/30 px-6 py-4">
+            <div className="border-t border-border px-6 py-4">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-base font-medium text-cream">Subtotal</span>
-                <span className="font-heading text-xl font-bold text-primary-400">{formatPrice(total)}</span>
+                <span className="text-base font-medium text-text-primary">Subtotal</span>
+                <span className="font-heading text-xl font-bold text-primary-600">{formatPrice(total)}</span>
               </div>
               <div className="flex gap-3">
                 <Link to="/cart" onClick={closeDrawer} className="flex-1">

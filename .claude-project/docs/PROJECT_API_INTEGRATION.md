@@ -102,11 +102,13 @@ This document maps frontend routes to their corresponding API endpoints for both
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/` | pages/Home | `GET /public/categories`, `GET /public/items` | Complete |
+| `/` | pages/Home | `GET /public/categories`, `GET /public/items`, `GET /public/blog`, `GET /public/partners` | Complete |
 | `/menu` | pages/Menu | `GET /public/categories`, `GET /public/items` | Complete |
-| `/menu/:id` | pages/ItemDetail | `GET /public/items/:id` | Complete |
 | `/about` | pages/About | - | Complete |
 | `/contact` | pages/Contact | - | Complete |
+| `/blog` | pages/Blog | `GET /public/blog` | Pending |
+| `/blog/:slug` | pages/BlogPost | `GET /public/blog/:slug` | Pending |
+| `/reservation` | pages/Reservation | `POST /public/reservations` | Pending |
 
 ### Customer Auth Pages (no auth)
 
@@ -127,6 +129,7 @@ This document maps frontend routes to their corresponding API endpoints for both
 | `/orders` | pages/Orders | `GET /customer-orders` | Complete |
 | `/orders/:id` | pages/OrderDetail | `GET /customer-orders/:id` | Complete |
 | `/account` | pages/Account | `GET /customer-auth/me` | Complete |
+| `/reservations` | pages/MyReservations | `GET /customer/reservations` | Pending |
 
 ---
 
@@ -163,6 +166,9 @@ This document maps frontend routes to their corresponding API endpoints for both
 | cartService | `src/services/httpServices/cartService.ts` | getCart, addItem, updateItem, removeItem, clearCart |
 | orderService | `src/services/httpServices/orderService.ts` | placeOrder, getOrders, getOrderById, cancelOrder |
 | profileService | `src/services/httpServices/profileService.ts` | getProfile, updateProfile |
+| blogService | `src/services/httpServices/blogService.ts` | getBlogPosts, getBlogPost |
+| reservationService | `src/services/httpServices/reservationService.ts` | createReservation, getMyReservations |
+| partnerService | `src/services/httpServices/partnerService.ts` | getPartners |
 
 **React Query Hooks:**
 
@@ -170,6 +176,9 @@ This document maps frontend routes to their corresponding API endpoints for both
 |------|----------|---------|
 | useMenu | `src/services/httpServices/queries/useMenu.ts` | Fetches menu categories and items |
 | useTables | `src/services/httpServices/queries/useTables.ts` | Fetches available tables |
+| useBlog | `src/services/httpServices/queries/useBlog.ts` | Fetches blog posts |
+| usePartners | `src/services/httpServices/queries/usePartners.ts` | Fetches partner logos |
+| useReservations | `src/services/httpServices/queries/useReservations.ts` | Reservation operations |
 
 ## Frontend (Customer) Redux Slices
 

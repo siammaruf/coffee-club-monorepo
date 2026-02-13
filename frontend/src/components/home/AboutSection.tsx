@@ -1,121 +1,92 @@
 import { Link } from 'react-router-dom'
-import { Coffee, ArrowRight, Award, Leaf, Heart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-
-const stats = [
-  { label: 'Years', value: '10+' },
-  { label: 'Items', value: '50+' },
-  { label: 'Customers', value: '10K+' },
-]
-
-const features = [
-  {
-    icon: Award,
-    title: 'Premium Quality',
-    description: 'Only the finest beans and freshest ingredients.',
-  },
-  {
-    icon: Leaf,
-    title: 'Sustainably Sourced',
-    description: 'Direct from premium farms around the world.',
-  },
-  {
-    icon: Heart,
-    title: 'Made with Love',
-    description: 'Every dish crafted with passion and care.',
-  },
-]
+import { ArrowRight, Coffee } from 'lucide-react'
+import { SectionHeading } from '@/components/ui/SectionHeading'
+import { ScrollFadeIn } from '@/components/ui/ScrollFadeIn'
 
 export function AboutSection() {
   return (
-    <section className="bg-dark-light py-16 sm:py-20">
+    <section className="section-light py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          {/* Left: Image / Decorative */}
-          <div className="relative">
-            <div className="aspect-[4/3] overflow-hidden rounded-3xl border border-primary-800/20 bg-dark-card shadow-2xl">
-              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-                <Coffee className="h-24 w-24 text-primary-500/40" />
-                <p className="mt-4 text-lg font-semibold text-cream/80">
-                  CoffeeClub
-                </p>
-                <p className="text-sm text-coffee-light">Since 2014</p>
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* Left: Overlapping images with decorative border */}
+          <ScrollFadeIn>
+            <div className="relative mx-auto max-w-md lg:mx-0">
+              {/* Main image placeholder */}
+              <div className="relative z-10 aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-warm-surface shadow-xl">
+                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                  <Coffee className="h-24 w-24 text-primary-400/40" />
+                  <p className="mt-4 font-heading text-xl font-semibold text-text-primary">
+                    CoffeeClub
+                  </p>
+                  <p className="mt-1 text-sm text-text-muted">Crafted Since 2014</p>
+                </div>
+              </div>
+
+              {/* Secondary overlapping image placeholder */}
+              <div className="absolute -bottom-6 -right-6 z-20 h-48 w-40 overflow-hidden rounded-xl border-4 border-white bg-warm-card shadow-lg sm:h-56 sm:w-48">
+                <div className="flex h-full flex-col items-center justify-center bg-primary-50 p-4 text-center">
+                  <span className="font-heading text-3xl font-bold text-primary-600">15+</span>
+                  <span className="mt-1 text-xs font-medium uppercase tracking-wider text-primary-500">
+                    Years of Excellence
+                  </span>
+                </div>
+              </div>
+
+              {/* Decorative border frame */}
+              <div className="absolute -top-4 -left-4 z-0 h-full w-full rounded-2xl border-2 border-dashed border-primary-300/40" />
+
+              {/* Decorative dots */}
+              <div className="absolute -top-8 -right-8 grid grid-cols-3 gap-2">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-primary-400/20"
+                  />
+                ))}
               </div>
             </div>
+          </ScrollFadeIn>
 
-            {/* 30+ Years Experience Badge */}
-            <div className="absolute -right-4 -top-4 flex h-28 w-28 flex-col items-center justify-center rounded-full border-2 border-primary-500 bg-dark-card shadow-xl">
-              <span className="font-heading text-2xl font-bold text-primary-400">30+</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-coffee-light">Years Exp.</span>
-            </div>
+          {/* Right: Text content */}
+          <ScrollFadeIn delay={200}>
+            <div>
+              <SectionHeading
+                tagline="About Us"
+                title="Our Story & Passion"
+                align="left"
+              />
 
-            {/* Decorative accents */}
-            <div className="absolute -bottom-4 -left-4 h-32 w-32 rounded-2xl border border-primary-800/20 bg-dark/50 -z-10" />
-          </div>
+              <div className="-mt-6 space-y-4">
+                <p className="leading-relaxed text-text-body">
+                  Founded in 2014, CoffeeClub started as a small corner cafe in Dhaka with
+                  a simple mission: serve the best coffee and food in town. What began as
+                  a passion project has grown into a beloved community hub where people
+                  gather to enjoy exceptional coffee, delicious meals, and warm hospitality.
+                </p>
 
-          {/* Right: Text Content */}
-          <div>
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary-400">
-              About Us
-            </span>
-            <h2 className="mt-2 font-heading text-3xl font-bold text-cream sm:text-4xl">
-              Our Story
-            </h2>
-            <div className="gold-underline mt-3" />
+                <p className="leading-relaxed text-text-body">
+                  We source our beans directly from premium farms across Ethiopia, Colombia,
+                  and Brazil, ensuring every cup delivers the rich, full-bodied flavor our
+                  customers love. Our kitchen team crafts each dish with fresh, locally
+                  sourced ingredients and an unwavering commitment to quality.
+                </p>
 
-            <p className="mt-6 leading-relaxed text-coffee-light">
-              Founded in 2014, CoffeeClub started as a small corner cafe in Dhaka with
-              a simple mission: serve the best coffee and food in town. What began as
-              a passion project has grown into a beloved community hub where people
-              gather to enjoy exceptional coffee, delicious meals, and warm hospitality.
-            </p>
+                <p className="leading-relaxed text-text-body">
+                  Today, CoffeeClub is more than just a coffee shop. It is a place where
+                  friendships are forged, ideas are born, and every visit feels like
+                  coming home.
+                </p>
+              </div>
 
-            <p className="mt-4 leading-relaxed text-coffee-light">
-              We source our beans directly from premium farms, ensuring every cup
-              delivers the rich, full-bodied flavor our customers love. Our kitchen
-              team crafts each dish with fresh, locally sourced ingredients and a
-              commitment to quality that you can taste in every bite.
-            </p>
-
-            <p className="mt-4 leading-relaxed text-coffee-light">
-              Today, CoffeeClub is more than just a coffee shop. It is a place where
-              friendships are forged, ideas are born, and every visit feels like
-              coming home.
-            </p>
-
-            {/* Feature icons */}
-            <div className="mt-8 grid grid-cols-3 gap-4">
-              {features.map((feature) => (
-                <div key={feature.title} className="text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500/10">
-                    <feature.icon className="h-6 w-6 text-primary-400" />
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-cream">{feature.title}</p>
-                  <p className="mt-1 text-xs text-coffee-light">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div className="mt-8 flex gap-8">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="font-heading text-3xl font-bold text-primary-400">{stat.value}</p>
-                  <p className="text-sm font-medium text-coffee-light">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="mt-8">
-              <Link to="/about">
-                <Button variant="outline">
-                  Learn More
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+              <Link
+                to="/about"
+                className="mt-8 inline-flex items-center gap-2 font-semibold text-primary-600 transition-colors duration-200 hover:text-primary-700"
+              >
+                Learn More About Us
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-          </div>
+          </ScrollFadeIn>
         </div>
       </div>
     </section>

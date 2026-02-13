@@ -9,15 +9,9 @@ interface MenuCardProps {
   onViewDetail: (item: Item) => void
 }
 
-const gradientMap: Record<string, string> = {
-  BAR: 'from-primary-900/30 to-dark-card',
-  KITCHEN: 'from-emerald-900/30 to-dark-card',
-}
-
 export function MenuCard({ item, onViewDetail }: MenuCardProps) {
   const { addItem } = useCart()
   const price = item.sale_price ?? item.regular_price
-  const gradient = gradientMap[item.type] ?? 'from-primary-900/30 to-dark-card'
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -28,10 +22,10 @@ export function MenuCard({ item, onViewDetail }: MenuCardProps) {
   return (
     <div
       onClick={() => onViewDetail(item)}
-      className="group cursor-pointer overflow-hidden rounded-xl border border-primary-800/30 bg-dark-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary-700/50"
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary-300"
     >
-      {/* Image / Gradient Placeholder */}
-      <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
+      {/* Image / Placeholder */}
+      <div className="relative h-44 overflow-hidden bg-warm-surface">
         {item.image ? (
           <img
             src={item.image}
@@ -39,8 +33,10 @@ export function MenuCard({ item, onViewDetail }: MenuCardProps) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
         ) : (
-          <div className="text-5xl font-black text-primary-500/30 transition-transform duration-300 group-hover:scale-110">
-            {item.name.charAt(0)}
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-100 to-warm-surface">
+            <span className="text-5xl font-black text-primary-300 transition-transform duration-300 group-hover:scale-110">
+              {item.name.charAt(0)}
+            </span>
           </div>
         )}
         {item.sale_price && (
@@ -49,8 +45,8 @@ export function MenuCard({ item, onViewDetail }: MenuCardProps) {
           </div>
         )}
         {item.status === 'UNAVAILABLE' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <span className="rounded-full bg-dark-card px-4 py-1.5 text-sm font-bold text-coffee-light">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-text-primary">
               Unavailable
             </span>
           </div>
@@ -59,24 +55,24 @@ export function MenuCard({ item, onViewDetail }: MenuCardProps) {
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="text-base font-semibold text-cream transition-colors group-hover:text-primary-400">
+        <h3 className="text-base font-semibold text-text-primary transition-colors group-hover:text-primary-600">
           {item.name}
         </h3>
         {item.name_bn && (
-          <p className="text-xs text-coffee-light">{item.name_bn}</p>
+          <p className="text-xs text-text-muted">{item.name_bn}</p>
         )}
-        <p className="mt-1.5 line-clamp-2 text-sm text-coffee-light">
+        <p className="mt-1.5 line-clamp-2 text-sm text-text-body">
           {item.description}
         </p>
 
         {/* Price Row */}
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-heading text-lg font-bold text-primary-400">
+            <span className="font-heading text-lg font-bold text-primary-600">
               {formatPrice(price)}
             </span>
             {item.sale_price && (
-              <span className="text-xs text-coffee-light line-through">
+              <span className="text-xs text-text-muted line-through">
                 {formatPrice(item.regular_price)}
               </span>
             )}
@@ -85,7 +81,7 @@ export function MenuCard({ item, onViewDetail }: MenuCardProps) {
           <button
             onClick={handleAddToCart}
             disabled={item.status === 'UNAVAILABLE'}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 text-dark shadow-sm transition-all hover:from-primary-400 hover:to-primary-500 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-500 text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={`Add ${item.name} to cart`}
           >
             <ShoppingCart className="h-4 w-4" />

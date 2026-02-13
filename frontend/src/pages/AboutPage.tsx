@@ -1,4 +1,5 @@
 import { Coffee, Heart, Award, Users, Target, Sparkles } from 'lucide-react'
+import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 
 const values = [
@@ -34,13 +35,11 @@ const team = [
 export default function AboutPage() {
   return (
     <>
-      <title>About Us | CoffeeClub</title>
-      <meta name="description" content="Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences." />
-      <meta property="og:title" content="About Us | CoffeeClub" />
-      <meta property="og:description" content="Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining." />
-      <meta property="og:type" content="website" />
-      <meta name="robots" content="index, follow" />
-    <div className="bg-dark">
+      <SEO
+        title="About Us"
+        description="Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences."
+      />
+
       {/* Page Banner */}
       <PageBanner
         title="About Us"
@@ -49,116 +48,123 @@ export default function AboutPage() {
       />
 
       {/* Story Section */}
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-primary-400">
-            Our Journey
-          </span>
-          <h2 className="font-heading mt-2 text-3xl font-bold text-cream sm:text-4xl">
-            From a Small Corner to a Community Hub
-          </h2>
-          <div className="mx-auto mt-3 h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400" />
-        </div>
-
-        <div className="mt-10 space-y-6 text-coffee-light leading-relaxed">
-          <p>
-            CoffeeClub was born in 2014 from a simple idea: create a space where people could enjoy
-            exceptional coffee and food in a warm, welcoming environment. Our founder, Ahmed Rahman,
-            spent years traveling across coffee-producing regions, learning the art of roasting and
-            brewing before bringing that expertise home to Dhaka.
-          </p>
-          <p>
-            What started as a small 20-seat cafe in Gulshan has grown into one of the most beloved
-            coffee destinations in the city. But through all the growth, our core mission has remained
-            the same: serve great coffee, make delicious food, and create a space where everyone feels at home.
-          </p>
-          <p>
-            Today, CoffeeClub serves over 500 customers daily, offers more than 50 menu items, and
-            has become the go-to spot for morning coffee, business meetings, study sessions, and
-            weekend brunches. Our online ordering platform makes it easier than ever to enjoy your
-            CoffeeClub favorites wherever you are.
-          </p>
-        </div>
-      </div>
-
-      {/* Mission Section */}
-      <div className="bg-dark-light py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-            <div>
-              <div className="flex items-center gap-3">
-                <Target className="h-8 w-8 text-primary-400" />
-                <h2 className="font-heading text-2xl font-bold text-cream">Our Mission</h2>
-              </div>
-              <p className="mt-4 text-coffee-light leading-relaxed">
-                To be Dhaka&apos;s most loved coffee and dining destination by delivering consistently
-                exceptional products, memorable experiences, and genuine hospitality. We aim to build
-                a community around our shared love for great coffee and food.
-              </p>
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-8 w-8 text-primary-400" />
-                <h2 className="font-heading text-2xl font-bold text-cream">Our Vision</h2>
-              </div>
-              <p className="mt-4 text-coffee-light leading-relaxed">
-                To set the standard for premium cafe culture in Bangladesh, inspiring a new generation
-                of coffee lovers and food enthusiasts. We envision a future where every neighborhood
-                has a CoffeeClub that serves as a pillar of the community.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Values */}
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="text-center">
-          <h2 className="font-heading text-3xl font-bold text-cream">Our Values</h2>
-          <div className="mx-auto mt-3 h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400" />
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((value) => (
-            <div
-              key={value.title}
-              className="rounded-2xl border border-primary-800/30 bg-dark-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary-700/50"
-            >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary-500/10">
-                <value.icon className="h-7 w-7 text-primary-400" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-cream">{value.title}</h3>
-              <p className="mt-2 text-sm text-coffee-light">{value.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Team */}
-      <div className="bg-dark-light py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="section-light">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="text-center">
-            <h2 className="font-heading text-3xl font-bold text-cream">Meet Our Team</h2>
-            <div className="mx-auto mt-3 h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400" />
-            <p className="mx-auto mt-4 max-w-xl text-coffee-light">
-              The passionate people behind your favorite coffee and meals.
+            <span className="text-sm font-semibold uppercase tracking-wider text-primary-500">
+              Our Journey
+            </span>
+            <h2 className="font-heading mt-2 text-3xl font-bold text-text-primary sm:text-4xl">
+              From a Small Corner to a Community Hub
+            </h2>
+            <div className="gold-underline mx-auto mt-3" />
+          </div>
+
+          <div className="mt-10 space-y-6 leading-relaxed text-text-body">
+            <p>
+              CoffeeClub was born in 2014 from a simple idea: create a space where people could enjoy
+              exceptional coffee and food in a warm, welcoming environment. Our founder, Ahmed Rahman,
+              spent years traveling across coffee-producing regions, learning the art of roasting and
+              brewing before bringing that expertise home to Dhaka.
+            </p>
+            <p>
+              What started as a small 20-seat cafe in Gulshan has grown into one of the most beloved
+              coffee destinations in the city. But through all the growth, our core mission has remained
+              the same: serve great coffee, make delicious food, and create a space where everyone feels at home.
+            </p>
+            <p>
+              Today, CoffeeClub serves over 500 customers daily, offers more than 50 menu items, and
+              has become the go-to spot for morning coffee, business meetings, study sessions, and
+              weekend brunches. Our online ordering platform makes it easier than ever to enjoy your
+              CoffeeClub favorites wherever you are.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-12 grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
-            {team.map((member) => (
-              <div key={member.name} className="text-center">
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-400 shadow-lg">
-                  <span className="text-2xl font-bold text-dark">{member.initials}</span>
+      {/* Mission Section */}
+      <section className="section-light-alt">
+        <div className="py-16 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+              <div>
+                <div className="flex items-center gap-3">
+                  <Target className="h-8 w-8 text-primary-500" />
+                  <h2 className="font-heading text-2xl font-bold text-text-primary">Our Mission</h2>
                 </div>
-                <h3 className="mt-4 text-base font-bold text-cream">{member.name}</h3>
-                <p className="text-sm text-coffee-light">{member.role}</p>
+                <p className="mt-4 leading-relaxed text-text-body">
+                  To be Dhaka&apos;s most loved coffee and dining destination by delivering consistently
+                  exceptional products, memorable experiences, and genuine hospitality. We aim to build
+                  a community around our shared love for great coffee and food.
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-8 w-8 text-primary-500" />
+                  <h2 className="font-heading text-2xl font-bold text-text-primary">Our Vision</h2>
+                </div>
+                <p className="mt-4 leading-relaxed text-text-body">
+                  To set the standard for premium cafe culture in Bangladesh, inspiring a new generation
+                  of coffee lovers and food enthusiasts. We envision a future where every neighborhood
+                  has a CoffeeClub that serves as a pillar of the community.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section className="section-light">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="text-center">
+            <h2 className="font-heading text-3xl font-bold text-text-primary">Our Values</h2>
+            <div className="gold-underline mx-auto mt-3" />
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {values.map((value) => (
+              <div
+                key={value.title}
+                className="rounded-2xl border border-border bg-white p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary-300"
+              >
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100">
+                  <value.icon className="h-7 w-7 text-primary-500" />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-text-primary">{value.title}</h3>
+                <p className="mt-2 text-sm text-text-body">{value.description}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  </>
+      </section>
+
+      {/* Team */}
+      <section className="section-light-alt">
+        <div className="py-16 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="font-heading text-3xl font-bold text-text-primary">Meet Our Team</h2>
+              <div className="gold-underline mx-auto mt-3" />
+              <p className="mx-auto mt-4 max-w-xl text-text-body">
+                The passionate people behind your favorite coffee and meals.
+              </p>
+            </div>
+
+            <div className="mt-12 grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
+              {team.map((member) => (
+                <div key={member.name} className="text-center">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-400 shadow-lg">
+                    <span className="text-2xl font-bold text-white">{member.initials}</span>
+                  </div>
+                  <h3 className="mt-4 text-base font-bold text-text-primary">{member.name}</h3>
+                  <p className="text-sm text-text-body">{member.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   )
 }

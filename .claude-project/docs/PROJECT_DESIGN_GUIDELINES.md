@@ -113,50 +113,60 @@ Defined via `--radius: 0.625rem` (10px) in `:root`:
 
 ## 3. Frontend (Customer) Color System
 
-### 3.1 Primary Palette: Dark Gold Premium
+### 3.1 Primary Palette: Warm Light Coffee (Basilico-inspired)
 
-The customer-facing website uses a dark gold premium palette -- dark backgrounds with warm gold accents for an upscale restaurant aesthetic.
+The customer-facing website uses a warm light coffee palette -- cream/beige backgrounds with coffee brown accents for an elegant, inviting cafe aesthetic.
 
 | Token | Hex Value | CSS Variable / Tailwind | Usage |
 |-------|-----------|------------------------|-------|
-| Primary | `#C5961A` | `--color-primary-500` | Main brand gold, CTA buttons |
-| Primary Dark | `#B8860B` (DarkGoldenrod) | `--color-primary-600` | Hover states |
-| Primary Light | `#DAA520` (Goldenrod) | `--color-primary-400` | Accents, highlights |
-| Primary Subtle | `#604605` | `--color-primary-900` | Dark accent backgrounds |
-| Background | `#0D0D0D` | `bg-[#0D0D0D]` | Main dark page background |
-| Surface | `#1A1A1A` | `bg-[#1A1A1A]` | Alternate sections |
-| Card | `#1E1E1E` | `bg-[#1E1E1E]` | Card backgrounds |
-| Text Primary | `#F5F0E1` (cream) | `text-[#F5F0E1]` | Headings, body text |
-| Text Secondary | `#B8B0A0` (coffee-light) | `text-[#B8B0A0]` | Descriptions, muted text |
-| Text on Primary | `#0D0D0D` (dark) | `text-[#0D0D0D]` | Text on gold buttons |
-| Border | `rgba(125,92,7,0.3)` | `border-primary-800/30` | Card borders, dividers |
+| Primary 50 | `#FBF6EF` | `--color-primary-50` | Very light accent bg |
+| Primary 100 | `#F5E8D0` | `--color-primary-100` | Badge backgrounds |
+| Primary 200 | `#EBCEA0` | `--color-primary-200` | Light accents |
+| Primary 300 | `#D9AD6B` | `--color-primary-300` | Medium accents |
+| Primary 400 | `#C4903E` | `--color-primary-400` | Light brown accent |
+| Primary 500 | `#A0782C` | `--color-primary-500` | Main coffee brown, CTA buttons |
+| Primary 600 | `#8B6914` | `--color-primary-600` | Hover states, dark accent |
+| Primary 700 | `#6F5410` | `--color-primary-700` | Badge text on light |
+| Primary 800 | `#56420D` | `--color-primary-800` | Dark borders |
+| Primary 900 | `#3D2E09` | `--color-primary-900` | Very dark accent |
+| Warm Bg | `#FDF8F3` | `bg-warm-bg` | Main page background (warm cream) |
+| Warm Light | `#F9F3EB` | `bg-warm-light` | Alternate section bg |
+| Warm Surface | `#F5EFE6` | `bg-warm-surface` | Surface/panel bg |
+| Card | `#FFFFFF` | `bg-warm-card` / `bg-white` | Card backgrounds |
+| Dark | `#1A110A` | `bg-dark` | Hero, footer, CTA dark sections |
+| Dark Light | `#2C2118` | `bg-dark-light` | Dark section variants |
+| Dark Card | `#3D2D1E` | `bg-dark-card` | Cards on dark sections |
+| Text Primary | `#2C2118` | `text-text-primary` | Headings (dark brown) |
+| Text Body | `#5C4A3A` | `text-text-body` | Body text (medium brown) |
+| Text Muted | `#8B7B6B` | `text-text-muted` | Descriptions, secondary |
+| Text Light | `#F5F0E1` | `text-text-light` | Text on dark backgrounds |
+| Border | `#E8DCC8` | `border-border` | Warm borders, dividers |
 | Success | `#22c55e` | `text-green-500` | Success states |
 | Error | `#ef4444` | `text-red-500` | Error states |
 
-### 3.2 Dark Mode (Default for Frontend)
+### 3.2 Light Theme (Default for Frontend)
 
-The frontend IS dark by default -- there is no separate "light mode." The entire customer-facing site uses dark backgrounds with gold accents. This is not an optional toggle; it is the primary and only design mode.
+The frontend is LIGHT by default with warm, earthy tones. Some sections (hero, footer, CTA, page banners) use dark backgrounds for contrast.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| Background | `#0D0D0D` | Main page background |
-| Surface | `#1A1A1A` | Alternate sections, panels |
-| Card | `#1E1E1E` | Card backgrounds, inputs |
-| Primary | `#C5961A` | Gold accents, buttons |
-| Text Primary | `#F5F0E1` (cream) | Headings, body text |
-| Text Secondary | `#B8B0A0` (coffee-light) | Muted text |
-| Border | `primary-800/30` | Subtle gold-tinted borders |
+| Context | Background | Text | Accent |
+|---------|-----------|------|--------|
+| Main page | `#FDF8F3` warm cream | `#5C4A3A` medium brown | `#A0782C` coffee brown |
+| Alternate sections | `#F5EFE6` warm surface | `#5C4A3A` medium brown | `#A0782C` coffee brown |
+| Cards | `#FFFFFF` white | `#2C2118` dark brown | `#A0782C` coffee brown |
+| Dark sections | `#1A110A` very dark | `#F5F0E1` cream | `#C4903E` light brown |
+| Footer | `#1A110A` very dark | `#F5F0E1` cream | `#C4903E` light brown |
 
 ### 3.3 Frontend Color Usage Guidelines
 
-- **Gold CTAs on dark backgrounds**: "Add to Cart", "Order Now", "Sign Up" buttons use gold (`#C5961A`) with dark text
-- **Cream text on dark surfaces**: Use `#F5F0E1` for headings and body text, `#B8B0A0` for secondary/muted text
-- **Dark card pattern**: Cards use `#1E1E1E` background with `border-primary-800/30` (subtle gold-tinted border)
-- **Never use white backgrounds**: All backgrounds are dark (`#0D0D0D`, `#1A1A1A`, `#1E1E1E`)
-- **Gold gradients for emphasis**: Use `from-primary-500 to-primary-600` for prominent CTAs
-- **Status colors**: Green (`#22c55e`) for success, red (`#ef4444`) for errors
-- **Serif headings**: Playfair Display for hero text and section titles adds premium feel
-- **Gold hover glow**: Use `hover:shadow-[0_0_20px_rgba(197,150,26,0.3)]` for interactive cards
+- **Brown CTAs on white/cream backgrounds**: "Add to Cart", "Order Now" use `bg-primary-600 text-white`
+- **Dark brown text on light surfaces**: Use `text-text-primary` (#2C2118) for headings, `text-text-body` (#5C4A3A) for body
+- **White card pattern**: Cards use white bg with `border-border` (#E8DCC8) warm border and `shadow-sm`
+- **Light backgrounds only**: Main bg is warm cream (#FDF8F3), alternate sections use warm surface (#F5EFE6)
+- **Dark sections for contrast**: Hero, footer, CTA sections use `bg-dark` with cream text
+- **Status colors**: Green for success, red for errors (same as before)
+- **Serif headings**: Playfair Display for hero text and section titles
+- **Script decorative text**: Dancing Script for taglines like "Welcome to", "Since 2003"
+- **Card hover lift**: `hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50`
 
 ---
 
@@ -169,12 +179,14 @@ The frontend IS dark by default -- there is no separate "light mode." The entire
 | Dashboard | System/sans-serif | 400-800 | `font-sans` |
 | Frontend (Headings) | Playfair Display (serif) | 400-700 | `font-heading` |
 | Frontend (Body) | Inter (sans-serif) | 400-700 | `font-sans` |
+| Frontend (Taglines) | Dancing Script (cursive) | 400-700 | `font-script` |
 | Monospace | System mono | 400-600 | `font-mono` |
 
 **Frontend Typography Notes:**
 - `font-heading` (Playfair Display) is used for hero titles, section headings, and the logo to convey a premium restaurant feel
 - `font-sans` (Inter) is used for body text, descriptions, buttons, and UI elements
-- The combination of serif headings with sans-serif body creates visual hierarchy and elegance
+- `font-script` (Dancing Script) is used for decorative taglines like "Welcome to", "Since 2003", section subtitles
+- The combination of serif headings + script taglines + sans-serif body creates visual hierarchy and elegance
 
 ### 4.2 Font Size Scale
 
@@ -230,10 +242,11 @@ Container (max-w-7xl mx-auto px-6)
 
 **Frontend Page Layout:**
 ```
-Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#0D0D0D])
-  + Hero Section (py-16 bg-[#0D0D0D] text-[#F5F0E1])
+Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
+  + Hero Slider (min-h-screen bg-dark text-text-light)  /* or full-width */
+  + Section (py-16 bg-warm-bg or bg-warm-light)
   + Menu Grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6)
-    + Item Card (p-4 rounded-xl bg-[#1E1E1E] border border-primary-800/30)
+    + Item Card (p-4 rounded-xl bg-white border border-border shadow-sm)
 ```
 
 ---
@@ -292,30 +305,37 @@ Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#0D0D0D])
 
 ### 8.2 Frontend (Customer) Button States
 
-**Primary (Gold on Dark):**
+**Primary (Coffee Brown):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-primary-500 text-[#0D0D0D] font-semibold rounded-lg px-6 py-3` |
-| Hover | `hover:bg-primary-400 hover:shadow-lg hover:shadow-primary-500/20` |
-| Focus | `focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-[#0D0D0D]` |
+| Default | `bg-primary-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm` |
+| Hover | `hover:bg-primary-700 hover:shadow-md` |
+| Focus | `focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2` |
 | Active | `active:scale-[0.98]` |
 | Disabled | `disabled:opacity-50 disabled:cursor-not-allowed` |
 
-**Secondary (Outline on Dark):**
+**Outline (Coffee Brown Border):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-transparent text-primary-500 border-2 border-primary-500 rounded-lg px-6 py-3` |
-| Hover | `hover:bg-primary-500/10` |
-| Focus | `focus:ring-2 focus:ring-primary-500` |
+| Default | `bg-transparent text-primary-600 border-2 border-primary-600 rounded-lg px-6 py-3` |
+| Hover | `hover:bg-primary-50` |
+| Focus | `focus-visible:ring-2 focus-visible:ring-primary-500` |
 
-**Ghost (on Dark):**
+**Ghost (Subtle):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `text-primary-500 bg-transparent` |
-| Hover | `hover:bg-primary-500/10` |
+| Default | `text-text-body bg-transparent` |
+| Hover | `hover:bg-warm-surface hover:text-primary-600` |
+
+**Gold (Premium CTA):**
+
+| State | Tailwind Classes |
+|-------|------------------|
+| Default | `bg-primary-500 text-white font-bold rounded-lg px-6 py-3 shadow-md` |
+| Hover | `hover:bg-primary-600 hover:shadow-lg` |
 
 ### 8.3 Input Field States
 
@@ -329,15 +349,15 @@ Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#0D0D0D])
 | Error | `border-red-500 focus:ring-red-500` |
 | Disabled | `disabled:bg-gray-100 disabled:cursor-not-allowed` |
 
-**Frontend (Dark Inputs with Gold Focus):**
+**Frontend (Light Inputs with Coffee Focus):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `border-primary-800/30 bg-[#1E1E1E] text-[#F5F0E1] placeholder-[#B8B0A0]/50` |
-| Hover | `hover:border-primary-700/50` |
-| Focus | `focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30` |
-| Error | `border-red-500 focus:ring-red-500` |
-| Disabled | `disabled:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed` |
+| Default | `border-border bg-white text-text-primary placeholder:text-text-muted/50 rounded-lg` |
+| Hover | `hover:border-primary-400` |
+| Focus | `focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20` |
+| Error | `border-error focus:ring-red-500` |
+| Disabled | `disabled:bg-warm-light disabled:opacity-50 disabled:cursor-not-allowed` |
 
 ### 8.4 Card States
 
@@ -349,13 +369,13 @@ Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#0D0D0D])
 | Hover | `hover:shadow-lg hover:scale-[1.02] transition-all duration-300` |
 | Selected | `border-primary bg-primaryLight` |
 
-**Frontend (Dark Cards):**
+**Frontend (Light Cards):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `border border-primary-800/30 bg-[#1E1E1E] rounded-xl` |
-| Hover | `hover:border-primary-500/50 hover:shadow-[0_0_20px_rgba(197,150,26,0.15)] transition-all duration-300` |
-| Selected | `border-primary-500 ring-2 ring-primary-500/30` |
+| Default | `border border-border bg-white rounded-xl shadow-sm` |
+| Hover | `hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50 transition-all duration-300` |
+| Selected | `border-primary-500 ring-2 ring-primary-500/20` |
 
 ---
 
@@ -413,17 +433,22 @@ animation: {
 
 ### 10.2 Frontend Navigation
 
-**Dark Transparent Header (Customer):**
+**Two-Tier Light Header (Customer):**
 ```html
-<header class="fixed top-0 w-full z-50 bg-[#0D0D0D]/80 backdrop-blur-md border-b border-primary-800/20">
+<!-- Top Bar (hidden on mobile) -->
+<div class="hidden md:block bg-dark text-text-light text-sm py-2">
+  <div class="max-w-7xl mx-auto px-4 flex justify-between">
+    <span>4517 Washington Ave., Manchester</span>
+    <span>(540) 218-2423 | coffeeclub@email.com</span>
+  </div>
+</div>
+<!-- Main Nav -->
+<header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-    <!-- Logo (serif gold) -->
-    <a class="text-2xl font-heading font-bold text-primary-500">CoffeeClub</a>
-    <!-- Nav links -->
-    <a class="text-[#B8B0A0] hover:text-primary-500 transition-colors">Menu</a>
-    <!-- Cart icon with badge -->
-    <button class="relative text-[#B8B0A0] hover:text-primary-500">
-      <span class="absolute -top-1 -right-1 bg-primary-500 text-[#0D0D0D] text-xs font-bold rounded-full w-5 h-5">3</span>
+    <a class="text-2xl font-heading font-bold text-primary-600">CoffeeClub</a>
+    <a class="text-text-body hover:text-primary-600 transition-colors">Menu</a>
+    <button class="relative text-text-muted hover:text-primary-600">
+      <span class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs font-bold rounded-full w-5 h-5">3</span>
     </button>
   </div>
 </header>
@@ -432,24 +457,23 @@ animation: {
 ### 10.3 Frontend Menu Item Card
 
 ```html
-<div class="bg-[#1E1E1E] rounded-xl border border-primary-800/30 overflow-hidden
-            hover:border-primary-500/50 hover:shadow-[0_0_20px_rgba(197,150,26,0.15)]
+<div class="bg-white rounded-xl border border-border overflow-hidden shadow-sm
+            hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50
             transition-all duration-300 group">
   <div class="relative aspect-square overflow-hidden">
     <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-    <!-- Sale badge -->
-    <span class="absolute top-2 right-2 bg-primary-500 text-[#0D0D0D] text-xs font-bold px-2 py-1 rounded-full">SALE</span>
+    <span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">SALE</span>
   </div>
   <div class="p-4">
-    <h3 class="font-semibold text-[#F5F0E1]">Item Name</h3>
-    <p class="text-sm text-[#B8B0A0] mt-1">Description</p>
+    <h3 class="font-semibold text-text-primary">Item Name</h3>
+    <p class="text-sm text-text-muted mt-1">Description</p>
     <div class="flex items-center justify-between mt-3">
       <div>
-        <span class="text-lg font-bold text-primary-500">$4.50</span>
-        <span class="text-sm text-[#B8B0A0] line-through ml-2">$5.50</span>
+        <span class="text-lg font-bold text-primary-600">$4.50</span>
+        <span class="text-sm text-text-muted line-through ml-2">$5.50</span>
       </div>
-      <button class="bg-primary-500 text-[#0D0D0D] px-4 py-2 rounded-lg text-sm font-bold
-                     hover:bg-primary-400 hover:shadow-lg hover:shadow-primary-500/20 transition-all">
+      <button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold
+                     hover:bg-primary-700 hover:shadow-md transition-all">
         Add to Cart
       </button>
     </div>
@@ -460,16 +484,16 @@ animation: {
 ### 10.4 Frontend Cart Item
 
 ```html
-<div class="flex items-center gap-4 py-4 border-b border-primary-800/20">
+<div class="flex items-center gap-4 py-4 border-b border-border">
   <img class="w-16 h-16 rounded-lg object-cover" />
   <div class="flex-1">
-    <h4 class="font-medium text-[#F5F0E1]">Item Name</h4>
-    <p class="text-sm text-primary-500 font-semibold">$4.50</p>
+    <h4 class="font-medium text-text-primary">Item Name</h4>
+    <p class="text-sm text-primary-600 font-semibold">$4.50</p>
   </div>
   <div class="flex items-center gap-2">
-    <button class="w-8 h-8 rounded-full border border-primary-800/30 text-[#B8B0A0] flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-500">-</button>
-    <span class="w-8 text-center font-medium text-[#F5F0E1]">2</span>
-    <button class="w-8 h-8 rounded-full bg-primary-500 text-[#0D0D0D] flex items-center justify-center hover:bg-primary-400">+</button>
+    <button class="w-8 h-8 rounded-full border border-border text-text-muted flex items-center justify-center hover:bg-primary-50 hover:text-primary-600">-</button>
+    <span class="w-8 text-center font-medium text-text-primary">2</span>
+    <button class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center hover:bg-primary-700">+</button>
   </div>
 </div>
 ```
@@ -570,12 +594,12 @@ animation: {
 - Error messages: `text-xs text-red-600 mt-1`
 
 ### 13.2 Frontend Forms
-- Dark, elegant design with gold accents on dark backgrounds
-- Focus ring: `focus:ring-2 focus:ring-primary-500/30`
-- Labels: `text-sm font-medium text-[#F5F0E1] mb-1`
-- Inputs: `border border-primary-800/30 bg-[#1E1E1E] text-[#F5F0E1] rounded-lg px-4 py-3 focus:border-primary-500`
-- Error: `border-red-500 text-red-400`
-- Placeholder: `placeholder-[#B8B0A0]/50`
+- Clean, warm design with coffee brown accents on light backgrounds
+- Focus ring: `focus:ring-2 focus:ring-primary-500/20`
+- Labels: `text-sm font-medium text-text-primary mb-1`
+- Inputs: `border border-border bg-white text-text-primary rounded-lg px-4 py-3 focus:border-primary-500`
+- Error: `border-red-500 text-red-600`
+- Placeholder: `placeholder:text-text-muted/50`
 
 ---
 
@@ -586,15 +610,16 @@ animation: {
 | Element | Tailwind Classes |
 |---------|------------------|
 | Dashboard Button | `focus:ring-2 focus:ring-primary focus:ring-offset-2` |
-| Frontend Button | `focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-[#0D0D0D]` |
-| Input | `focus:ring-2 focus:ring-primary` (Dashboard) or `focus:ring-primary-500/30` (Frontend) |
+| Frontend Button | `focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2` |
+| Input | `focus:ring-2 focus:ring-primary` (Dashboard) or `focus:ring-primary-500/20` (Frontend) |
 | Link | `focus:ring-2 focus:ring-offset-1 rounded` |
 
 ### Color Contrast (WCAG AA)
 - Normal text: 4.5:1 minimum contrast ratio
 - Large text: 3:1 minimum contrast ratio
 - Dashboard: Amber-600 on white passes AA for large text; stone-900 on white passes AA and AAA
-- Frontend: Cream (`#F5F0E1`) on dark (`#0D0D0D`) has excellent contrast (~16:1); gold (`#C5961A`) on dark passes AA for large text
+- Frontend: Dark brown (`#2C2118`) on warm cream (`#FDF8F3`) has excellent contrast (~14:1); coffee (`#A0782C`) on white passes AA for large text
+- Frontend dark sections: Cream (`#F5F0E1`) on dark (`#1A110A`) has excellent contrast (~16:1)
 
 ### Touch Targets
 - Minimum 44x44px for interactive elements
@@ -615,5 +640,6 @@ animation: {
 
 ---
 
-**Version:** 3.0
+**Version:** 4.0
 **Last Updated:** 2026-02-13
+**Theme Change:** Dark Gold Premium -> Warm Light Coffee (Basilico-inspired)

@@ -38,16 +38,16 @@ export function DeliveryForm({ register, errors }: DeliveryFormProps) {
       />
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-cream">
+        <label className="mb-1.5 block text-sm font-medium text-text-primary">
           <span className="flex items-center gap-1.5">
-            <FileText className="h-4 w-4 text-coffee-light" />
+            <FileText className="h-4 w-4 text-text-muted" />
             Delivery Notes
           </span>
         </label>
         <textarea
           placeholder="Any special delivery instructions..."
           rows={3}
-          className="w-full rounded-lg border border-primary-800/40 bg-dark-card px-4 py-2.5 text-sm text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm text-text-primary shadow-sm transition-colors placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           {...register('notes')}
         />
       </div>

@@ -20,8 +20,8 @@ export function OrderSummary({ orderType, deliveryAddress, discount = 0 }: Order
   const grandTotal = total - discount
 
   return (
-    <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6 shadow-sm">
-      <h3 className="font-heading text-lg font-bold text-cream">Order Summary</h3>
+    <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+      <h3 className="font-heading text-lg font-bold text-text-primary">Order Summary</h3>
 
       {/* Items */}
       <div className="mt-4 max-h-64 space-y-3 overflow-y-auto">
@@ -30,14 +30,14 @@ export function OrderSummary({ orderType, deliveryAddress, discount = 0 }: Order
           return (
             <div key={cartItem.id} className="flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-cream">
+                <p className="truncate text-sm font-medium text-text-primary">
                   {cartItem.item.name}
                 </p>
-                <p className="text-xs text-coffee-light">
+                <p className="text-xs text-text-muted">
                   {formatPrice(price)} x {cartItem.quantity}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-cream">
+              <span className="text-sm font-semibold text-text-primary">
                 {formatPrice(price * cartItem.quantity)}
               </span>
             </div>
@@ -45,13 +45,13 @@ export function OrderSummary({ orderType, deliveryAddress, discount = 0 }: Order
         })}
       </div>
 
-      <hr className="my-4 border-primary-800/30" />
+      <hr className="my-4 border-border" />
 
       {/* Totals */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-coffee-light">Subtotal</span>
-          <span className="font-medium text-cream">{formatPrice(total)}</span>
+          <span className="text-text-muted">Subtotal</span>
+          <span className="font-medium text-text-primary">{formatPrice(total)}</span>
         </div>
 
         {discount > 0 && (
@@ -61,24 +61,24 @@ export function OrderSummary({ orderType, deliveryAddress, discount = 0 }: Order
           </div>
         )}
 
-        <hr className="border-primary-800/30" />
+        <hr className="border-border" />
 
         <div className="flex items-center justify-between">
-          <span className="text-base font-bold text-cream">Total</span>
-          <span className="font-heading text-xl font-bold text-primary-400">{formatPrice(grandTotal)}</span>
+          <span className="text-base font-bold text-text-primary">Total</span>
+          <span className="font-heading text-xl font-bold text-primary-600">{formatPrice(grandTotal)}</span>
         </div>
       </div>
 
       {/* Order Info */}
-      <div className="mt-4 space-y-2 rounded-lg bg-dark p-3">
+      <div className="mt-4 space-y-2 rounded-lg bg-warm-surface p-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-coffee-light">Order Type</span>
-          <span className="font-medium text-cream">{orderTypeLabels[orderType]}</span>
+          <span className="text-text-muted">Order Type</span>
+          <span className="font-medium text-text-primary">{orderTypeLabels[orderType]}</span>
         </div>
         {orderType === 'DELIVERY' && deliveryAddress && (
           <div className="flex items-start justify-between gap-3 text-sm">
-            <span className="text-coffee-light">Delivery to</span>
-            <span className="text-right font-medium text-cream">{deliveryAddress}</span>
+            <span className="text-text-muted">Delivery to</span>
+            <span className="text-right font-medium text-text-primary">{deliveryAddress}</span>
           </div>
         )}
       </div>

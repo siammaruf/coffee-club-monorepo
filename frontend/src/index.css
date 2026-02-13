@@ -1,41 +1,66 @@
 @import "tailwindcss";
 
-/* Dark Gold Premium Restaurant Theme */
+/* Warm Light Coffee Premium Restaurant Theme */
 @theme {
-  --color-primary-50: #fdf8e8;
-  --color-primary-100: #f9edc5;
-  --color-primary-200: #f3d98a;
-  --color-primary-300: #e8c04e;
-  --color-primary-400: #DAA520;
-  --color-primary-500: #C5961A;
-  --color-primary-600: #B8860B;
-  --color-primary-700: #9A7209;
-  --color-primary-800: #7D5C07;
-  --color-primary-900: #604605;
-  --color-primary-950: #3D2D03;
+  /* Primary: Warm Coffee Brown */
+  --color-primary-50: #FBF6EF;
+  --color-primary-100: #F5E8D0;
+  --color-primary-200: #EBCEA0;
+  --color-primary-300: #D9AD6B;
+  --color-primary-400: #C4903E;
+  --color-primary-500: #A0782C;
+  --color-primary-600: #8B6914;
+  --color-primary-700: #6F5410;
+  --color-primary-800: #56420D;
+  --color-primary-900: #3D2E09;
+  --color-primary-950: #261D05;
 
-  --color-dark: #0D0D0D;
-  --color-dark-light: #1A1A1A;
-  --color-dark-card: #1E1E1E;
-  --color-dark-surface: #141414;
+  /* Warm Backgrounds */
+  --color-warm-bg: #FDF8F3;
+  --color-warm-light: #F9F3EB;
+  --color-warm-card: #FFFFFF;
+  --color-warm-surface: #F5EFE6;
 
-  --color-cream: #F5F0E1;
-  --color-cream-dark: #E8DCC8;
-  --color-coffee: #F5F0E1;
-  --color-coffee-light: #B8B0A0;
+  /* Dark sections (hero, footer, CTA) */
+  --color-dark: #1A110A;
+  --color-dark-light: #2C2118;
+  --color-dark-card: #3D2D1E;
 
+  /* Text Colors */
+  --color-text-primary: #2C2118;
+  --color-text-body: #5C4A3A;
+  --color-text-muted: #8B7B6B;
+  --color-text-light: #F5F0E1;
+
+  /* Borders */
+  --color-border: #E8DCC8;
+  --color-border-dark: rgba(139, 105, 20, 0.2);
+
+  /* Status */
   --color-success: #22c55e;
   --color-error: #ef4444;
   --color-warning: #DAA520;
   --color-info: #3b82f6;
 
+  /* Fonts */
   --font-heading: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-script: 'Dancing Script', cursive;
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.6s ease-out;
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
+  --animate-slide-out-right: slide-out-right 0.3s ease-out;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-steam: steam 2s ease-out infinite;
+  --animate-count-up: count-up 0.5s ease-out;
+  --animate-fade-up: fade-up 0.6s ease-out;
 }
 
 /* Base styles */
 body {
-  @apply bg-dark text-cream antialiased;
+  @apply bg-warm-bg text-text-body antialiased;
   font-family: var(--font-body);
 }
 
@@ -44,10 +69,10 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-dark-light;
+  @apply bg-warm-light;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-600 rounded-full;
+  @apply bg-primary-400 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary-500;
@@ -60,7 +85,7 @@ html {
 
 /* Selection color */
 ::selection {
-  @apply bg-primary-500 text-dark;
+  @apply bg-primary-200 text-text-primary;
 }
 
 /* Focus ring */
@@ -73,21 +98,34 @@ html {
   font-family: var(--font-heading);
 }
 
-.gold-underline {
-  @apply h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400;
+.font-script {
+  font-family: var(--font-script);
+}
+
+.section-light {
+  @apply bg-warm-bg;
+}
+
+.section-light-alt {
+  @apply bg-warm-light;
 }
 
 .section-dark {
-  @apply bg-dark;
+  @apply bg-dark text-text-light;
 }
 
-.section-dark-alt {
-  @apply bg-dark-light;
+.gold-underline {
+  @apply h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400;
 }
 
 /* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -107,8 +145,8 @@ html {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(197, 150, 26, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(197, 150, 26, 0.6); }
+  0%, 100% { box-shadow: 0 0 5px rgba(160, 120, 44, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(160, 120, 44, 0.6); }
 }
 
 @keyframes count-up {
@@ -125,6 +163,10 @@ html {
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
 }
 
 .animate-slide-in-right {

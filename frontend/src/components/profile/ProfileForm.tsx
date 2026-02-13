@@ -83,21 +83,21 @@ export function ProfileForm() {
       {/* Points & Balance Section */}
       {customer && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 rounded-xl border border-primary-800/30 bg-dark-light p-4 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500/10">
-              <Award className="h-6 w-6 text-primary-400" />
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-warm-surface p-4 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100">
+              <Award className="h-6 w-6 text-primary-600" />
             </div>
             <div>
-              <p className="text-xs text-coffee-light">Loyalty Points</p>
-              <p className="font-heading text-xl font-bold text-primary-400">{customer.points}</p>
+              <p className="text-xs text-text-muted">Loyalty Points</p>
+              <p className="font-heading text-xl font-bold text-primary-600">{customer.points}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-primary-800/30 bg-dark-light p-4 shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-warm-surface p-4 shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
               <Wallet className="h-6 w-6 text-success" />
             </div>
             <div>
-              <p className="text-xs text-coffee-light">Balance</p>
+              <p className="text-xs text-text-muted">Balance</p>
               <p className="text-xl font-bold text-success">{formatPrice(customer.balance)}</p>
             </div>
           </div>
@@ -107,7 +107,7 @@ export function ProfileForm() {
       {/* Profile Picture */}
       <div className="flex items-center gap-6">
         <div className="relative">
-          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-600 to-primary-400 shadow-lg">
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 to-primary-400 shadow-lg">
             {customer?.picture ? (
               <img
                 src={customer.picture}
@@ -115,13 +115,13 @@ export function ProfileForm() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-3xl font-bold text-dark">
+              <span className="text-3xl font-bold text-white">
                 {customer?.name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             )}
           </div>
-          <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-dark-card border border-primary-800/30 shadow-md transition-colors hover:bg-dark-light">
-            <Camera className="h-4 w-4 text-primary-400" />
+          <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border bg-white shadow-md transition-colors hover:bg-warm-surface">
+            <Camera className="h-4 w-4 text-primary-600" />
             <input
               type="file"
               accept="image/*"
@@ -131,8 +131,8 @@ export function ProfileForm() {
           </label>
         </div>
         <div>
-          <h3 className="text-lg font-bold text-cream">{customer?.name || 'User'}</h3>
-          <p className="text-sm text-coffee-light">{customer?.phone || ''}</p>
+          <h3 className="text-lg font-bold text-text-primary">{customer?.name || 'User'}</h3>
+          <p className="text-sm text-text-muted">{customer?.phone || ''}</p>
         </div>
       </div>
 

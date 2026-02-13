@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { CategoryFilter } from '@/components/menu/CategoryFilter'
 import { SearchBar } from '@/components/menu/SearchBar'
@@ -53,13 +54,11 @@ export default function MenuPage() {
 
   return (
     <>
-      <title>Our Menu | CoffeeClub</title>
-      <meta name="description" content="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub." />
-      <meta property="og:title" content="Our Menu | CoffeeClub" />
-      <meta property="og:description" content="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes." />
-      <meta property="og:type" content="website" />
-      <meta name="robots" content="index, follow" />
-    <div className="bg-dark min-h-screen">
+      <SEO
+        title="Our Menu"
+        description="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub."
+      />
+
       {/* Page Banner */}
       <PageBanner
         title="Our Menu"
@@ -67,76 +66,78 @@ export default function MenuPage() {
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Menu' }]}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Filters Row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CategoryFilter
-            categories={categories}
-            selected={filters.categorySlug}
-            onSelect={handleCategorySelect}
-          />
-          <SearchBar onSearch={setSearch} />
-        </div>
-
-        {/* Results Count */}
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-coffee-light">
-            {isLoading ? 'Loading...' : `Showing ${items.length} of ${total} items`}
-          </p>
-        </div>
-
-        {/* Error State */}
-        {error && (
-          <div className="mt-6 rounded-xl border border-error/20 bg-error/5 p-4 text-center text-sm text-error">
-            {error}
+      <div className="bg-warm-bg">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Filters Row */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CategoryFilter
+              categories={categories}
+              selected={filters.categorySlug}
+              onSelect={handleCategorySelect}
+            />
+            <SearchBar onSearch={setSearch} />
           </div>
-        )}
 
-        {/* Grid */}
-        <div className="mt-6">
-          <MenuGrid
-            items={items}
-            isLoading={isLoading}
-            onViewDetail={handleViewDetail}
-          />
-        </div>
+          {/* Results Count */}
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-text-muted">
+              {isLoading ? 'Loading...' : `Showing ${items.length} of ${total} items`}
+            </p>
+          </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              onClick={() => setPage(currentPage - 1)}
-              disabled={currentPage <= 1}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-800/40 bg-dark-card text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
+          {/* Error State */}
+          {error && (
+            <div className="mt-6 rounded-xl border border-error/20 bg-error/5 p-4 text-center text-sm text-error">
+              {error}
+            </div>
+          )}
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {/* Grid */}
+          <div className="mt-6">
+            <MenuGrid
+              items={items}
+              isLoading={isLoading}
+              onViewDetail={handleViewDetail}
+            />
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
               <button
-                key={page}
-                onClick={() => setPage(page)}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                  page === currentPage
-                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-dark shadow-md'
-                    : 'border border-primary-800/40 bg-dark-card text-coffee-light hover:bg-primary-500/10 hover:text-primary-400'
-                }`}
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Previous page"
               >
-                {page}
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            ))}
 
-            <button
-              onClick={() => setPage(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-800/40 bg-dark-card text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Next page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setPage(page)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
+                    page === currentPage
+                      ? 'bg-primary-500 text-white shadow-md'
+                      : 'border border-border bg-white text-text-body hover:bg-warm-surface hover:text-primary-600'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Item Detail Modal */}
@@ -148,7 +149,6 @@ export default function MenuPage() {
           setSelectedItem(null)
         }}
       />
-    </div>
-  </>
+    </>
   )
 }
