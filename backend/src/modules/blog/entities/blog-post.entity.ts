@@ -23,7 +23,7 @@ export class BlogPost {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   image: string | null;
 
   @Column()
