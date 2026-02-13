@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-echo "🔄 Running database migrations..."
-if bun run migration:run 2>&1; then
-  echo "✅ Migrations completed successfully"
+echo "Checking database connectivity..."
+if pg_isready -h "$DB_HOST" -p "${DB_PORT:-5432}" -U "$DB_USERNAME" -t 5 2>/dev/null; then
+  echo "Database is ready"
 else
-  echo "⚠️  Migration failed or no migrations to run"
+  echo "Database not ready, waiting 5s..."
+  sleep 5
 fi
 
-echo ""
-echo "🚀 Starting application..."
-exec bun run dist/main.js
+echo "Starting application..."
+exec node dist/main
