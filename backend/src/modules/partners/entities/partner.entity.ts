@@ -17,7 +17,7 @@ export class Partner {
   @Column()
   logo: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   website: string | null;
 
   @Column({ type: 'int', default: 0 })

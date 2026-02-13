@@ -16,7 +16,7 @@ export class Reservation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   customer_id: string | null;
 
   @ManyToOne(() => Customer, { nullable: true })
