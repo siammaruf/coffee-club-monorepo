@@ -7,13 +7,14 @@ import type {
 } from 'axios';
 import type { ApiErrorResponse } from '~/types/httpService';
 import { createErrorResponse, handleAxiosError } from '~/utils/errorHandler';
+import { API_URL } from '~/lib/config';
 
 class HttpService {
   private api: AxiosInstance;
 
   constructor() {
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+      baseURL: API_URL,
       withCredentials: true,
       timeout: 25000,
     });
