@@ -1,15 +1,15 @@
 # Dependencies
 FROM oven/bun:latest AS deps
 WORKDIR /app
-COPY package.json package-lock.json* bun.lockb* ./
-RUN bun install --frozen-lockfile
+COPY package.json bun.lock* ./
+RUN bun install --no-frozen-lockfile
 
-# Build
-FROM oven/bun:latest AS builder
+# Build (Node.js needed — react-router executes server bundle to generate SPA index.html)
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN bun run build
+RUN npx react-router build
 
 # Runtime
 FROM oven/bun:latest
