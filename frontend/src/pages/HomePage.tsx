@@ -1,40 +1,42 @@
-import { HeroSection } from '@/components/home/HeroSection'
+import { SEO } from '@/components/SEO'
+import { HeroSlider } from '@/components/home/HeroSlider'
 import { AboutSection } from '@/components/home/AboutSection'
-import { CategoryShowcase } from '@/components/home/CategoryShowcase'
-import { FeaturedMenu } from '@/components/home/FeaturedMenu'
-import { StatsSection } from '@/components/home/StatsSection'
+import { OpeningHoursSection } from '@/components/home/OpeningHoursSection'
+import { SpecialMenuSection } from '@/components/home/SpecialMenuSection'
+import { WhyChooseUs } from '@/components/home/WhyChooseUs'
+import { PrivateEventsSection } from '@/components/home/PrivateEventsSection'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
-import { ReservationSection } from '@/components/home/ReservationSection'
+import { PartnersSection } from '@/components/home/PartnersSection'
+import { LatestNewsSection } from '@/components/home/LatestNewsSection'
 import { CTASection } from '@/components/home/CTASection'
 
 export default function HomePage() {
   return (
     <>
-      <title>CoffeeClub - Premium Coffee & Dining</title>
-      <meta name="description" content="Welcome to CoffeeClub. Discover our premium coffee, refreshing beverages, and delicious dishes. Order online for dine-in, takeaway, or delivery." />
-      <meta property="og:title" content="CoffeeClub - Premium Coffee & Dining" />
-      <meta property="og:description" content="Discover our premium coffee, refreshing beverages, and delicious dishes." />
-      <meta property="og:type" content="website" />
-      <meta name="robots" content="index, follow" />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Restaurant",
-          "name": "CoffeeClub",
-          "description": "Premium coffee, refreshing beverages, and delicious dishes",
-          "servesCuisine": ["Coffee", "Beverages", "Snacks"],
-          "acceptsReservations": true,
-          "priceRange": "$$"
-        })}
-      </script>
+      <SEO
+        title="Premium Coffee & Dining"
+        description="Welcome to CoffeeClub. Discover our premium coffee, refreshing beverages, and delicious dishes. Order online for dine-in, takeaway, or delivery."
+        type="restaurant"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Restaurant',
+          name: 'CoffeeClub',
+          description: 'Premium coffee, refreshing beverages, and delicious dishes',
+          servesCuisine: ['Coffee', 'Beverages', 'Snacks', 'Fine Dining'],
+          acceptsReservations: true,
+          priceRange: '$$',
+        }}
+      />
       <div>
-        <HeroSection />
+        <HeroSlider />
         <AboutSection />
-        <CategoryShowcase />
-        <FeaturedMenu />
-        <StatsSection />
+        <OpeningHoursSection />
+        <SpecialMenuSection />
+        <WhyChooseUs />
+        <PrivateEventsSection />
         <TestimonialsSection />
-        <ReservationSection />
+        <PartnersSection />
+        <LatestNewsSection />
         <CTASection />
       </div>
     </>

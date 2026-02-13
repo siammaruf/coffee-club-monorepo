@@ -9,7 +9,7 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
   const allCategories = [
-    { slug: '', name: 'All', name_bn: 'সব', id: 'all', description: '' },
+    { slug: '', name: 'All', name_bn: '', id: 'all', description: '' },
     ...categories,
   ]
 
@@ -24,8 +24,8 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
             className={cn(
               'flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200',
               isActive
-                ? 'bg-primary-500 text-dark font-semibold shadow-md'
-                : 'border border-primary-800/40 bg-dark-card text-coffee-light hover:border-primary-500/50 hover:text-primary-400'
+                ? 'bg-primary-500 text-white shadow-md'
+                : 'border border-border bg-white text-text-body hover:border-primary-400 hover:text-primary-600'
             )}
           >
             {category.name}

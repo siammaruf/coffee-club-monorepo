@@ -28,20 +28,20 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
 
   if (isCancelled) {
     return (
-      <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6">
-        <h3 className="font-heading text-lg font-bold text-cream">Order Timeline</h3>
+      <div className="rounded-2xl border border-border bg-white p-6">
+        <h3 className="font-heading text-lg font-bold text-text-primary">Order Timeline</h3>
         <div className="mt-6 space-y-6">
           {/* Placed */}
           <div className="flex gap-4">
             <div className="flex flex-col items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600/50">
-                <Check className="h-5 w-5 text-primary-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100">
+                <Check className="h-5 w-5 text-primary-600" />
               </div>
               <div className="mt-1 h-full w-0.5 bg-error/30" />
             </div>
             <div className="pb-6">
-              <p className="text-sm font-bold text-cream">Order Placed</p>
-              <p className="text-xs text-coffee-light">{formatDateTime(createdAt)}</p>
+              <p className="text-sm font-bold text-text-primary">Order Placed</p>
+              <p className="text-xs text-text-muted">{formatDateTime(createdAt)}</p>
             </div>
           </div>
 
@@ -54,7 +54,7 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
             </div>
             <div>
               <p className="text-sm font-bold text-error">Cancelled</p>
-              <p className="text-xs text-coffee-light">{formatDateTime(updatedAt)}</p>
+              <p className="text-xs text-text-muted">{formatDateTime(updatedAt)}</p>
             </div>
           </div>
         </div>
@@ -63,8 +63,8 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
   }
 
   return (
-    <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6">
-      <h3 className="font-heading text-lg font-bold text-cream">Order Timeline</h3>
+    <div className="rounded-2xl border border-border bg-white p-6">
+      <h3 className="font-heading text-lg font-bold text-text-primary">Order Timeline</h3>
       <div className="mt-6 space-y-0">
         {timelineSteps.map((step, index) => {
           const stepIndex = statusOrder[step.status] ?? 0
@@ -81,18 +81,18 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                     isCurrent
                       ? 'bg-primary-500 shadow-md'
                       : isActive
-                        ? 'bg-primary-600/50'
-                        : 'bg-dark'
+                        ? 'bg-primary-100'
+                        : 'bg-warm-surface'
                   )}
                 >
                   <step.icon
                     className={cn(
                       'h-5 w-5',
                       isCurrent
-                        ? 'text-dark'
+                        ? 'text-white'
                         : isActive
-                          ? 'text-primary-400'
-                          : 'text-coffee-light/50'
+                          ? 'text-primary-600'
+                          : 'text-text-muted/50'
                     )}
                   />
                 </div>
@@ -102,7 +102,7 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                       'mt-1 h-10 w-0.5',
                       isActive && stepIndex < currentIndex
                         ? 'bg-primary-500'
-                        : 'bg-primary-800/30'
+                        : 'bg-border'
                     )}
                   />
                 )}
@@ -111,13 +111,13 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                 <p
                   className={cn(
                     'text-sm font-bold',
-                    isActive ? 'text-cream' : 'text-coffee-light/50'
+                    isActive ? 'text-text-primary' : 'text-text-muted/50'
                   )}
                 >
                   {step.label}
                 </p>
                 {isActive && (
-                  <p className="text-xs text-coffee-light">
+                  <p className="text-xs text-text-muted">
                     {isCurrent ? formatDateTime(updatedAt) : formatDateTime(createdAt)}
                   </p>
                 )}

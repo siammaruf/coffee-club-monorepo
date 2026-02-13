@@ -4,45 +4,50 @@ import { ChevronRight } from 'lucide-react'
 interface PageBannerProps {
   title: string
   subtitle?: string
-  breadcrumbs: { label: string; href?: string }[]
+  breadcrumbs?: { label: string; href?: string }[]
 }
 
 export function PageBanner({ title, subtitle, breadcrumbs }: PageBannerProps) {
   return (
-    <section className="relative bg-dark-light py-20 sm:py-28 overflow-hidden">
-      {/* Decorative gold gradient accent */}
+    <section className="relative overflow-hidden bg-dark py-20 sm:py-28">
+      {/* Decorative warm gradient accent */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary-500 to-transparent rounded-full" />
+        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-radial from-primary-500 to-transparent" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center justify-center gap-2 text-sm mb-6">
-          {breadcrumbs.map((crumb, i) => (
-            <span key={i} className="flex items-center gap-2">
-              {i > 0 && <ChevronRight className="h-4 w-4 text-coffee-light" />}
-              {crumb.href ? (
-                <Link to={crumb.href} className="text-coffee-light hover:text-primary-400 transition-colors">
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className="text-primary-400">{crumb.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <nav className="mb-6 flex items-center justify-center gap-2 text-sm" aria-label="Breadcrumb">
+            {breadcrumbs.map((crumb, i) => (
+              <span key={i} className="flex items-center gap-2">
+                {i > 0 && <ChevronRight className="h-4 w-4 text-text-light/70" />}
+                {crumb.href ? (
+                  <Link
+                    to={crumb.href}
+                    className="text-text-light/70 transition-colors hover:text-primary-400"
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className="text-primary-400">{crumb.label}</span>
+                )}
+              </span>
+            ))}
+          </nav>
+        )}
 
         {/* Title */}
-        <h1 className="font-heading text-4xl sm:text-5xl font-bold text-cream">
+        <h1 className="font-heading text-4xl font-bold text-text-light sm:text-5xl">
           {title}
         </h1>
 
         {subtitle && (
-          <p className="mt-4 text-lg text-coffee-light max-w-2xl mx-auto">{subtitle}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-text-light/70">{subtitle}</p>
         )}
 
-        {/* Gold decorative line */}
-        <div className="mx-auto mt-6 h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400" />
+        {/* Decorative line */}
+        <div className="gold-underline mx-auto mt-6" />
       </div>
     </section>
   )

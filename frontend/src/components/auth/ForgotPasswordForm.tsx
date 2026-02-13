@@ -101,10 +101,10 @@ export function ForgotPasswordForm() {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${
                 index < currentStepIndex
-                  ? 'bg-primary-600 text-dark'
+                  ? 'bg-primary-600 text-white'
                   : index === currentStepIndex
-                    ? 'bg-primary-500 text-dark'
-                    : 'bg-dark text-coffee-light'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-warm-surface text-text-muted'
               }`}
             >
               {index < currentStepIndex ? (
@@ -116,7 +116,7 @@ export function ForgotPasswordForm() {
             {index < steps.length - 1 && (
               <div
                 className={`h-0.5 w-8 sm:w-12 ${
-                  index < currentStepIndex ? 'bg-primary-500' : 'bg-primary-800/30'
+                  index < currentStepIndex ? 'bg-primary-500' : 'bg-border'
                 }`}
               />
             )}
@@ -124,7 +124,7 @@ export function ForgotPasswordForm() {
         ))}
       </div>
 
-      <p className="mb-6 text-center text-sm text-coffee-light">
+      <p className="mb-6 text-center text-sm text-text-body">
         {step === 'email' && 'Enter your email or phone number to receive an OTP.'}
         {step === 'otp' && 'Enter the OTP sent to your email/phone.'}
         {step === 'password' && 'Create a new password for your account.'}
@@ -146,8 +146,8 @@ export function ForgotPasswordForm() {
             Send OTP
           </Button>
 
-          <p className="text-center text-sm text-coffee-light">
-            <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-primary-400 hover:text-primary-300">
+          <p className="text-center text-sm text-text-body">
+            <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-700">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>
@@ -172,12 +172,12 @@ export function ForgotPasswordForm() {
             Verify OTP
           </Button>
 
-          <p className="text-center text-sm text-coffee-light">
+          <p className="text-center text-sm text-text-body">
             Did not receive the code?{' '}
             <button
               type="button"
               onClick={() => setStep('email')}
-              className="font-semibold text-primary-400 hover:text-primary-300"
+              className="font-semibold text-primary-600 hover:text-primary-700"
             >
               Resend
             </button>
@@ -200,7 +200,7 @@ export function ForgotPasswordForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-[38px] text-coffee-light hover:text-primary-400"
+              className="absolute right-3 top-[38px] text-text-muted hover:text-primary-600"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>

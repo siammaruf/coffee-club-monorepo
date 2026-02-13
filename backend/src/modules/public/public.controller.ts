@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Query, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { PublicService } from './providers/public.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { ItemResponseDto } from '../items/dto/item-response.dto';
+import { CreateReservationDto } from '../reservations/dto/create-reservation.dto';
 
 @ApiTags('Public')
 @Controller('public')
@@ -114,6 +115,110 @@ export class PublicController {
       data: tables,
       status: 'success',
       message: 'Available tables retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  // Blog public endpoints
+
+  @Public()
+  @Get('blog')
+  @ApiOperation({ summary: 'List published blog posts', description: 'Retrieves a paginated list of published blog posts' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'search', required: false, description: 'Search term' })
+  @ApiResponse({ status: 200, description: 'Blog posts retrieved successfully' })
+  async getPublishedBlogPosts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+
+    const result = await this.publicService.getPublishedBlogPosts({
+      page: pageNumber,
+      limit: limitNumber,
+      search,
+    });
+
+    const totalPages = Math.ceil(result.total / limitNumber);
+
+    return {
+      data: result.data,
+      total: result.total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages,
+      status: 'success',
+      message: 'Blog posts retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Public()
+  @Get('blog/:slug')
+  @ApiOperation({ summary: 'Get published blog post by slug', description: 'Retrieves a single published blog post by slug' })
+  @ApiParam({ name: 'slug', description: 'Blog post slug' })
+  @ApiResponse({ status: 200, description: 'Blog post retrieved successfully' })
+  async getPublishedBlogPost(@Param('slug') slug: string) {
+    const post = await this.publicService.getPublishedBlogPostBySlug(slug);
+    return {
+      data: post,
+      status: 'success',
+      message: 'Blog post retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  // Settings public endpoints
+
+  @Public()
+  @Get('settings/reservations')
+  @ApiOperation({
+    summary: 'Check reservation status',
+    description: 'Returns whether the reservation system is currently enabled or disabled',
+  })
+  @ApiResponse({ status: 200, description: 'Reservation status retrieved successfully' })
+  async getReservationStatus() {
+    const enabled = await this.publicService.isReservationEnabled();
+    return {
+      data: { enabled },
+      status: 'success',
+      message: 'Reservation status retrieved.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  // Reservations public endpoint
+
+  @Public()
+  @Post('reservations')
+  @ApiOperation({ summary: 'Create a reservation', description: 'Creates a new reservation (no auth required)' })
+  @ApiResponse({ status: 201, description: 'Reservation created successfully' })
+  @ApiResponse({ status: 400, description: 'Reservations are currently disabled' })
+  async createReservation(@Body() dto: CreateReservationDto) {
+    const reservation = await this.publicService.createReservation(dto);
+    return {
+      data: reservation,
+      status: 'success',
+      message: 'Reservation created successfully.',
+      statusCode: HttpStatus.CREATED,
+    };
+  }
+
+  // Partners public endpoint
+
+  @Public()
+  @Get('partners')
+  @ApiOperation({ summary: 'List active partners', description: 'Retrieves all active partners sorted by display order' })
+  @ApiResponse({ status: 200, description: 'Partners retrieved successfully' })
+  async getActivePartners() {
+    const partners = await this.publicService.getActivePartners();
+    return {
+      data: partners,
+      status: 'success',
+      message: 'Partners retrieved successfully.',
       statusCode: HttpStatus.OK,
     };
   }

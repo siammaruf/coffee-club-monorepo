@@ -40,17 +40,11 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
     onClose()
   }
 
-  const gradientMap: Record<string, string> = {
-    BAR: 'from-primary-900/30 to-dark-card',
-    KITCHEN: 'from-emerald-900/30 to-dark-card',
-  }
-  const gradient = gradientMap[item.type] ?? 'from-primary-900/30 to-dark-card'
-
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="lg">
       <div className="-mx-6 -mt-4">
         {/* Item Image / Placeholder */}
-        <div className={`relative h-56 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+        <div className="relative flex h-56 items-center justify-center overflow-hidden bg-warm-surface">
           {item.image ? (
             <img
               src={item.image}
@@ -58,8 +52,10 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="text-7xl font-black text-primary-500/30">
-              {item.name.charAt(0)}
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-100 to-warm-surface">
+              <span className="text-7xl font-black text-primary-300">
+                {item.name.charAt(0)}
+              </span>
             </div>
           )}
           {item.sale_price && (
@@ -79,22 +75,22 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
         {/* Content */}
         <div className="px-6 pb-2 pt-5">
-          <h2 className="text-2xl font-bold text-cream">{item.name}</h2>
+          <h2 className="text-2xl font-bold text-text-primary">{item.name}</h2>
           {item.name_bn && (
-            <p className="mt-0.5 text-sm text-coffee-light">{item.name_bn}</p>
+            <p className="mt-0.5 text-sm text-text-muted">{item.name_bn}</p>
           )}
 
-          <p className="mt-3 text-sm leading-relaxed text-coffee-light">
+          <p className="mt-3 text-sm leading-relaxed text-text-body">
             {item.description}
           </p>
 
           {/* Price */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="font-heading text-2xl font-bold text-primary-400">
+            <span className="font-heading text-2xl font-bold text-primary-600">
               {formatPrice(price)}
             </span>
             {item.sale_price && (
-              <span className="text-base text-coffee-light line-through">
+              <span className="text-base text-text-muted line-through">
                 {formatPrice(item.regular_price)}
               </span>
             )}
@@ -102,23 +98,23 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Quantity Selector */}
           <div className="mt-6">
-            <label className="mb-2 block text-sm font-medium text-cream">
+            <label className="mb-2 block text-sm font-medium text-text-primary">
               Quantity
             </label>
-            <div className="inline-flex items-center rounded-lg border border-primary-800/40">
+            <div className="inline-flex items-center rounded-lg border border-border">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="flex h-10 w-10 items-center justify-center rounded-l-lg text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
+                className="flex h-10 w-10 items-center justify-center rounded-l-lg text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="flex h-10 w-12 items-center justify-center border-x border-primary-800/40 text-base font-semibold text-cream">
+              <span className="flex h-10 w-12 items-center justify-center border-x border-border text-base font-semibold text-text-primary">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="flex h-10 w-10 items-center justify-center rounded-r-lg text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
+                className="flex h-10 w-10 items-center justify-center rounded-r-lg text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
@@ -128,7 +124,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Special Notes */}
           <div className="mt-5">
-            <label className="mb-2 block text-sm font-medium text-cream">
+            <label className="mb-2 block text-sm font-medium text-text-primary">
               Special Notes
             </label>
             <textarea
@@ -136,7 +132,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special requests? (e.g., less sugar, extra spicy...)"
               rows={3}
-              className="w-full rounded-lg border border-primary-800/40 bg-dark-card px-4 py-2.5 text-sm text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm text-text-primary shadow-sm transition-colors placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             />
           </div>
 

@@ -70,7 +70,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-[38px] text-coffee-light hover:text-primary-400"
+          className="absolute right-3 top-[38px] text-text-muted hover:text-primary-600"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -83,13 +83,13 @@ export function LoginForm() {
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-primary-800/40 bg-dark-card text-primary-500 focus:ring-primary-500"
+            className="h-4 w-4 rounded border-border bg-white text-primary-500 focus:ring-primary-500"
           />
-          <span className="text-sm text-coffee-light">Remember me</span>
+          <span className="text-sm text-text-body">Remember me</span>
         </label>
         <Link
           to="/forgot-password"
-          className="text-sm font-medium text-primary-400 hover:text-primary-300"
+          className="text-sm font-medium text-primary-600 hover:text-primary-700"
         >
           Forgot password?
         </Link>
@@ -101,16 +101,16 @@ export function LoginForm() {
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-primary-800/30" />
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-dark-card px-2 text-coffee-light">or</span>
+          <span className="bg-white px-2 text-text-muted">or</span>
         </div>
       </div>
 
-      <p className="text-center text-sm text-coffee-light">
+      <p className="text-center text-sm text-text-body">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="font-semibold text-primary-400 hover:text-primary-300">
+        <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700">
           Register
         </Link>
       </p>

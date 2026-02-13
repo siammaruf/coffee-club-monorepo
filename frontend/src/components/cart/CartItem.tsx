@@ -14,16 +14,10 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
   const price = item.sale_price ?? item.regular_price
   const itemTotal = price * quantity
 
-  const gradientMap: Record<string, string> = {
-    BAR: 'from-primary-900/30 to-dark-card',
-    KITCHEN: 'from-emerald-900/30 to-dark-card',
-  }
-  const gradient = gradientMap[item.type] ?? 'from-primary-900/30 to-dark-card'
-
   return (
-    <div className="flex gap-3 rounded-xl border border-primary-800/30 bg-dark-light p-3">
+    <div className="flex gap-3 rounded-xl border border-border bg-white p-3">
       {/* Image / Placeholder */}
-      <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${gradient} ${compact ? 'h-12 w-12' : ''}`}>
+      <div className={`flex flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-warm-surface ${compact ? 'h-12 w-12' : 'h-16 w-16'}`}>
         {item.image ? (
           <img
             src={item.image}
@@ -31,7 +25,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
             className="h-full w-full rounded-lg object-cover"
           />
         ) : (
-          <span className="text-lg font-bold text-primary-500/50">
+          <span className="text-lg font-bold text-primary-400">
             {item.name.charAt(0)}
           </span>
         )}
@@ -41,12 +35,12 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
       <div className="flex min-w-0 flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h4 className="truncate text-sm font-bold text-cream">{item.name}</h4>
-            <p className="text-xs text-coffee-light">{formatPrice(price)} each</p>
+            <h4 className="truncate text-sm font-bold text-text-primary">{item.name}</h4>
+            <p className="text-xs text-text-muted">{formatPrice(price)} each</p>
           </div>
           <button
             onClick={() => removeItem(item.id)}
-            className="flex-shrink-0 rounded-md p-1 text-coffee-light transition-colors hover:bg-error/10 hover:text-error"
+            className="flex-shrink-0 rounded-md p-1 text-text-muted transition-colors hover:bg-error/10 hover:text-error"
             aria-label={`Remove ${item.name}`}
           >
             <Trash2 className="h-4 w-4" />
@@ -55,20 +49,20 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
 
         <div className="mt-2 flex items-center justify-between">
           {/* Quantity Controls */}
-          <div className="inline-flex items-center rounded-md border border-primary-800/40 bg-dark-card">
+          <div className="inline-flex items-center rounded-md border border-border bg-warm-bg">
             <button
               onClick={() => updateQuantity(item.id, quantity - 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-l-md text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
+              className="flex h-7 w-7 items-center justify-center rounded-l-md text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
               aria-label="Decrease quantity"
             >
               <Minus className="h-3 w-3" />
             </button>
-            <span className="flex h-7 w-8 items-center justify-center border-x border-primary-800/40 text-xs font-semibold text-cream">
+            <span className="flex h-7 w-8 items-center justify-center border-x border-border text-xs font-semibold text-text-primary">
               {quantity}
             </span>
             <button
               onClick={() => updateQuantity(item.id, quantity + 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-r-md text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
+              className="flex h-7 w-7 items-center justify-center rounded-r-md text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
               aria-label="Increase quantity"
             >
               <Plus className="h-3 w-3" />
@@ -76,7 +70,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
           </div>
 
           {/* Item Total */}
-          <span className="text-sm font-bold text-primary-400">
+          <span className="text-sm font-bold text-primary-600">
             {formatPrice(itemTotal)}
           </span>
         </div>

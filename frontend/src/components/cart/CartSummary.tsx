@@ -30,15 +30,15 @@ export function CartSummary() {
   }
 
   return (
-    <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6 shadow-sm">
-      <h3 className="font-heading text-lg font-bold text-cream">Order Summary</h3>
+    <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+      <h3 className="font-heading text-lg font-bold text-text-primary">Order Summary</h3>
 
       <div className="mt-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-coffee-light">
+          <span className="text-text-muted">
             Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'items'})
           </span>
-          <span className="font-medium text-cream">{formatPrice(total)}</span>
+          <span className="font-medium text-text-primary">{formatPrice(total)}</span>
         </div>
 
         {discount > 0 && (
@@ -50,34 +50,34 @@ export function CartSummary() {
 
         {tax > 0 && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-coffee-light">Tax</span>
-            <span className="font-medium text-cream">{formatPrice(tax)}</span>
+            <span className="text-text-muted">Tax</span>
+            <span className="font-medium text-text-primary">{formatPrice(tax)}</span>
           </div>
         )}
 
-        <hr className="border-primary-800/30" />
+        <hr className="border-border" />
 
         <div className="flex items-center justify-between">
-          <span className="text-base font-bold text-cream">Total</span>
-          <span className="font-heading text-xl font-bold text-primary-400">{formatPrice(grandTotal)}</span>
+          <span className="text-base font-bold text-text-primary">Total</span>
+          <span className="font-heading text-xl font-bold text-primary-600">{formatPrice(grandTotal)}</span>
         </div>
       </div>
 
       {/* Promo Code */}
       {!promoApplied && (
         <div className="mt-5">
-          <label className="mb-1.5 block text-sm font-medium text-cream">
+          <label className="mb-1.5 block text-sm font-medium text-text-primary">
             Promo Code
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-coffee-light" />
+              <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
               <input
                 type="text"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Enter code"
-                className="h-10 w-full rounded-lg border border-primary-800/40 bg-dark pl-9 pr-3 text-sm text-cream placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="h-10 w-full rounded-lg border border-border bg-warm-bg pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               />
             </div>
             <Button variant="outline" size="sm" onClick={handleApplyPromo}>

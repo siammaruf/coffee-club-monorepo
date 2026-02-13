@@ -16,6 +16,7 @@ interface CartState {
 }
 
 const loadCartFromStorage = (): LocalCartItem[] => {
+  if (typeof window === 'undefined') return []
   try {
     const stored = localStorage.getItem('coffeeclub-cart')
     if (stored) {

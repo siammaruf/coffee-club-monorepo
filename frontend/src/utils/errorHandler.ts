@@ -13,7 +13,7 @@ export const createErrorResponse = (error: AxiosError<ApiErrorResponse>): ErrorR
 
     switch (error.response.status) {
       case 401:
-        handleUnauthorized()
+        errorResponse.message = error.response.data?.message || 'Unauthorized'
         break
       case 403:
         errorResponse.message = 'Access denied'
@@ -34,11 +34,4 @@ export const createErrorResponse = (error: AxiosError<ApiErrorResponse>): ErrorR
   }
 
   return errorResponse
-}
-
-export const handleUnauthorized = (): void => {
-  const currentPath = window.location.pathname
-  if (currentPath !== '/login' && currentPath !== '/register') {
-    window.location.href = '/login'
-  }
 }

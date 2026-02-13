@@ -24,6 +24,10 @@ import { PublicModule } from 'src/modules/public/public.module';
 import { CartModule } from 'src/modules/cart/cart.module';
 import { CustomerOrdersModule } from 'src/modules/customer-orders/customer-orders.module';
 import { DataManagementModule } from 'src/modules/data-management/data-management.module';
+import { BlogModule } from 'src/modules/blog/blog.module';
+import { ReservationsModule } from 'src/modules/reservations/reservations.module';
+import { PartnersModule } from 'src/modules/partners/partners.module';
+import { SettingsModule } from 'src/modules/settings/settings.module';
 
 export const featureModules = [
     UserModule,
@@ -52,4 +56,8 @@ export const featureModules = [
     CartModule,
     CustomerOrdersModule,
     DataManagementModule,
+    BlogModule,
+    ReservationsModule,
+    PartnersModule,
+    SettingsModule,
 ];

@@ -14,6 +14,9 @@ const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
 const AboutPage = lazy(() => import('@/pages/AboutPage'))
 const ContactPage = lazy(() => import('@/pages/ContactPage'))
+const BlogPage = lazy(() => import('@/pages/BlogPage'))
+const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
+const ReservationPage = lazy(() => import('@/pages/ReservationPage'))
 const OrderHistoryPage = lazy(() => import('@/pages/OrderHistoryPage'))
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
@@ -44,6 +47,9 @@ export const router = createBrowserRouter([
       { path: 'forgot-password', element: <GuestRoute><LazyPage><ForgotPasswordPage /></LazyPage></GuestRoute> },
       { path: 'about', element: <LazyPage><AboutPage /></LazyPage> },
       { path: 'contact', element: <LazyPage><ContactPage /></LazyPage> },
+      { path: 'blog', element: <LazyPage><BlogPage /></LazyPage> },
+      { path: 'blog/:slug', element: <LazyPage><BlogPostPage /></LazyPage> },
+      { path: 'reservation', element: <LazyPage><ReservationPage /></LazyPage> },
       {
         path: 'orders',
         element: (
