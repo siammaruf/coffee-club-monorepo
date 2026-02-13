@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
+
+export const meta: MetaFunction = () => [
+  { title: 'Our Menu | CoffeeClub' },
+  { name: 'description', content: 'Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub.' },
+  { property: 'og:title', content: 'Our Menu | CoffeeClub' },
+  { property: 'og:description', content: 'Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub.' },
+  { property: 'og:type', content: 'website' },
+]
 import { CategoryFilter } from '@/components/menu/CategoryFilter'
 import { SearchBar } from '@/components/menu/SearchBar'
 import { MenuGrid } from '@/components/menu/MenuGrid'
@@ -54,11 +62,6 @@ export default function MenuPage() {
 
   return (
     <>
-      <SEO
-        title="Our Menu"
-        description="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub."
-      />
-
       {/* Page Banner */}
       <PageBanner
         title="Our Menu"

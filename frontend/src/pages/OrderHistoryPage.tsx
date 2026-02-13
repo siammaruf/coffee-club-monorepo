@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react'
+import type { MetaFunction } from 'react-router'
 import { ClipboardList } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { OrderCard } from '@/components/orders/OrderCard'
 import { Loading } from '@/components/ui/loading'
 import { orderService } from '@/services/httpServices/orderService'
 import type { Order } from '@/types/order'
+
+export const meta: MetaFunction = () => [
+  { title: 'My Orders | CoffeeClub' },
+  { name: 'description', content: 'Track and view your order history at CoffeeClub.' },
+  { property: 'og:title', content: 'My Orders | CoffeeClub' },
+  { property: 'og:description', content: 'Track and view your order history at CoffeeClub.' },
+  { property: 'og:type', content: 'website' },
+]
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -30,8 +38,6 @@ export default function OrderHistoryPage() {
 
   return (
     <>
-      <SEO title="My Orders" description="Track and view your order history at CoffeeClub." />
-
       <PageBanner
         title="My Orders"
         subtitle="Track and view your order history."

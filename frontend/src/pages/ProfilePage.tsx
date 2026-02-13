@@ -1,12 +1,18 @@
-import { SEO } from '@/components/SEO'
+import type { MetaFunction } from 'react-router'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { ProfileForm } from '@/components/profile/ProfileForm'
+
+export const meta: MetaFunction = () => [
+  { title: 'My Profile | CoffeeClub' },
+  { name: 'description', content: 'Manage your CoffeeClub account information and preferences.' },
+  { property: 'og:title', content: 'My Profile | CoffeeClub' },
+  { property: 'og:description', content: 'Manage your CoffeeClub account information and preferences.' },
+  { property: 'og:type', content: 'website' },
+]
 
 export default function ProfilePage() {
   return (
     <>
-      <SEO title="My Profile" description="Manage your CoffeeClub account information and preferences." />
-
       <PageBanner
         title="My Profile"
         subtitle="Manage your account information and preferences."

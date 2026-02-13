@@ -1,13 +1,21 @@
 import { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { Link } from 'react-router'
 import { ShoppingBag, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { CheckoutForm } from '@/components/checkout/CheckoutForm'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/hooks/useCart'
 import type { OrderType } from '@/types/order'
+
+export const meta: MetaFunction = () => [
+  { title: 'Checkout | CoffeeClub' },
+  { name: 'description', content: 'Complete your order at CoffeeClub.' },
+  { property: 'og:title', content: 'Checkout | CoffeeClub' },
+  { property: 'og:description', content: 'Complete your order at CoffeeClub.' },
+  { property: 'og:type', content: 'website' },
+]
 
 export default function CheckoutPage() {
   const { items } = useCart()
@@ -30,65 +38,57 @@ export default function CheckoutPage() {
   // Success State
   if (isOrderPlaced) {
     return (
-      <>
-        <SEO title="Checkout" description="Complete your order at CoffeeClub." />
-        <div className="min-h-[60vh] bg-warm-bg">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle className="h-12 w-12 text-success" />
-            </div>
-            <h1 className="font-heading mt-6 text-2xl font-bold text-text-primary">Order Placed Successfully!</h1>
-            <p className="mx-auto mt-2 max-w-md text-text-body">
-              Your order has been confirmed. You can track your order status from the orders page.
-            </p>
-            <div className="mt-8 flex gap-4">
-              <Link to="/orders">
-                <Button>
-                  View My Orders
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/menu">
-                <Button variant="outline">
-                  Order More
-                </Button>
-              </Link>
-            </div>
+      <div className="min-h-[60vh] bg-warm-bg">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle className="h-12 w-12 text-success" />
+          </div>
+          <h1 className="font-heading mt-6 text-2xl font-bold text-text-primary">Order Placed Successfully!</h1>
+          <p className="mx-auto mt-2 max-w-md text-text-body">
+            Your order has been confirmed. You can track your order status from the orders page.
+          </p>
+          <div className="mt-8 flex gap-4">
+            <Link to="/orders">
+              <Button>
+                View My Orders
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/menu">
+              <Button variant="outline">
+                Order More
+              </Button>
+            </Link>
           </div>
         </div>
-      </>
+      </div>
     )
   }
 
   // Empty Cart State
   if (items.length === 0) {
     return (
-      <>
-        <SEO title="Checkout" description="Complete your order at CoffeeClub." />
-        <div className="min-h-[60vh] bg-warm-bg">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
-              <ShoppingBag className="h-12 w-12 text-primary-500" />
-            </div>
-            <h1 className="font-heading mt-6 text-2xl font-bold text-text-primary">Your cart is empty</h1>
-            <p className="mt-2 text-text-body">
-              Add some items to your cart before checking out.
-            </p>
-            <Link to="/menu" className="mt-8">
-              <Button size="lg">
-                Browse Menu
-              </Button>
-            </Link>
+      <div className="min-h-[60vh] bg-warm-bg">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
+            <ShoppingBag className="h-12 w-12 text-primary-500" />
           </div>
+          <h1 className="font-heading mt-6 text-2xl font-bold text-text-primary">Your cart is empty</h1>
+          <p className="mt-2 text-text-body">
+            Add some items to your cart before checking out.
+          </p>
+          <Link to="/menu" className="mt-8">
+            <Button size="lg">
+              Browse Menu
+            </Button>
+          </Link>
         </div>
-      </>
+      </div>
     )
   }
 
   return (
     <>
-      <SEO title="Checkout" description="Complete your order at CoffeeClub." />
-
       <PageBanner
         title="Checkout"
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Cart', href: '/cart' }, { label: 'Checkout' }]}

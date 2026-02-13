@@ -1,7 +1,15 @@
 import { useState } from 'react'
+import type { MetaFunction } from 'react-router'
 import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
+
+export const meta: MetaFunction = () => [
+  { title: 'Contact Us | CoffeeClub' },
+  { name: 'description', content: 'Get in touch with CoffeeClub. Find our location, contact details, and send us a message.' },
+  { property: 'og:title', content: 'Contact Us | CoffeeClub' },
+  { property: 'og:description', content: 'Get in touch with CoffeeClub. Find our location, contact details, and send us a message.' },
+  { property: 'og:type', content: 'website' },
+]
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
@@ -59,11 +67,6 @@ export default function ContactPage() {
 
   return (
     <>
-      <SEO
-        title="Contact Us"
-        description="Get in touch with CoffeeClub. Find our location, contact details, and send us a message."
-      />
-
       {/* Page Banner */}
       <PageBanner
         title="Contact Us"

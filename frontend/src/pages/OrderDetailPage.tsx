@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { useParams, Link } from 'react-router'
 import { ArrowLeft, XCircle } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { OrderTimeline } from '@/components/orders/OrderTimeline'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,14 @@ import { formatPrice, formatDateTime } from '@/lib/utils'
 import { orderService } from '@/services/httpServices/orderService'
 import type { Order } from '@/types/order'
 import toast from 'react-hot-toast'
+
+export const meta: MetaFunction = () => [
+  { title: 'Order Details | CoffeeClub' },
+  { name: 'description', content: 'View your order details.' },
+  { property: 'og:title', content: 'Order Details | CoffeeClub' },
+  { property: 'og:description', content: 'View your order details.' },
+  { property: 'og:type', content: 'website' },
+]
 
 const statusVariantMap: Record<string, 'default' | 'success' | 'error' | 'warning' | 'info'> = {
   PENDING: 'warning',
@@ -81,18 +89,13 @@ export default function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <>
-        <SEO title="Order Details" description="View your order details." />
-        <Loading fullPage text="Loading order details..." />
-      </>
+      <Loading fullPage text="Loading order details..." />
     )
   }
 
   if (error || !order) {
     return (
-      <>
-        <SEO title="Order Details" description="View your order details." />
-        <div className="min-h-[60vh] bg-warm-bg">
+      <div className="min-h-[60vh] bg-warm-bg">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error/10">
               <XCircle className="h-10 w-10 text-error" />
@@ -106,14 +109,11 @@ export default function OrderDetailPage() {
             </Link>
           </div>
         </div>
-      </>
     )
   }
 
   return (
     <>
-      <SEO title={`Order #${order.order_id}`} description={`Details for order #${order.order_id}.`} />
-
       <PageBanner
         title={`Order #${order.order_id}`}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Orders', href: '/orders' }, { label: `#${order.order_id}` }]}

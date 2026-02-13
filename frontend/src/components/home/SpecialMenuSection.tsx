@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ShoppingCart, ArrowRight, Coffee } from 'lucide-react'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { ScrollFadeIn } from '@/components/ui/ScrollFadeIn'

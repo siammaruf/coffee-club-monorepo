@@ -1,12 +1,8 @@
-import { Navigate, useLocation } from 'react-router'
+import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { Loading } from '@/components/ui/loading'
 
-interface ProtectedRouteProps {
-  children: React.ReactNode
-}
-
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export default function ProtectedLayout() {
   const { isAuthenticated, isLoading, initialized } = useAuth()
   const location = useLocation()
 
@@ -18,5 +14,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  return <>{children}</>
+  return <Outlet />
 }

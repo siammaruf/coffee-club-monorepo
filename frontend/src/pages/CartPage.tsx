@@ -1,20 +1,26 @@
-import { Link } from 'react-router-dom'
+import type { MetaFunction } from 'react-router'
+import { Link } from 'react-router'
 import { ShoppingBag, ArrowLeft, Trash2 } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
 import { CartItem } from '@/components/cart/CartItem'
 import { CartSummary } from '@/components/cart/CartSummary'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/hooks/useCart'
 
+export const meta: MetaFunction = () => [
+  { title: 'Your Cart | CoffeeClub' },
+  { name: 'description', content: 'View and manage items in your shopping cart.' },
+  { property: 'og:title', content: 'Your Cart | CoffeeClub' },
+  { property: 'og:description', content: 'View and manage items in your shopping cart.' },
+  { property: 'og:type', content: 'website' },
+]
+
 export default function CartPage() {
   const { items, itemCount, clearCart } = useCart()
 
   if (items.length === 0) {
     return (
-      <>
-        <SEO title="Your Cart" description="View and manage items in your shopping cart." />
-        <div className="min-h-[60vh] bg-warm-bg">
+      <div className="min-h-[60vh] bg-warm-bg">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
               <ShoppingBag className="h-12 w-12 text-primary-500" />
@@ -30,14 +36,11 @@ export default function CartPage() {
             </Link>
           </div>
         </div>
-      </>
     )
   }
 
   return (
     <>
-      <SEO title="Your Cart" description="View and manage items in your shopping cart." />
-
       {/* Page Banner */}
       <PageBanner
         title="Your Cart"

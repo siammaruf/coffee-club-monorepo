@@ -1,6 +1,14 @@
+import type { MetaFunction } from 'react-router'
 import { Coffee, Heart, Award, Users, Target, Sparkles } from 'lucide-react'
-import { SEO } from '@/components/SEO'
 import { PageBanner } from '@/components/ui/PageBanner'
+
+export const meta: MetaFunction = () => [
+  { title: 'About Us | CoffeeClub' },
+  { name: 'description', content: "Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences." },
+  { property: 'og:title', content: 'About Us | CoffeeClub' },
+  { property: 'og:description', content: "Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences." },
+  { property: 'og:type', content: 'website' },
+]
 
 const values = [
   {
@@ -35,11 +43,6 @@ const team = [
 export default function AboutPage() {
   return (
     <>
-      <SEO
-        title="About Us"
-        description="Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences."
-      />
-
       {/* Page Banner */}
       <PageBanner
         title="About Us"
