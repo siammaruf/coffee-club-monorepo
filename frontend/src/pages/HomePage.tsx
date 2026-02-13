@@ -1,9 +1,10 @@
 import { HeroSection } from '@/components/home/HeroSection'
+import { AboutSection } from '@/components/home/AboutSection'
 import { CategoryShowcase } from '@/components/home/CategoryShowcase'
 import { FeaturedMenu } from '@/components/home/FeaturedMenu'
-import { AboutSection } from '@/components/home/AboutSection'
 import { StatsSection } from '@/components/home/StatsSection'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
+import { ReservationSection } from '@/components/home/ReservationSection'
 import { CTASection } from '@/components/home/CTASection'
 
 export default function HomePage() {
@@ -28,13 +29,14 @@ export default function HomePage() {
       </script>
       <div>
         <HeroSection />
-      <CategoryShowcase />
-      <FeaturedMenu />
-      <AboutSection />
-      <StatsSection />
-      <TestimonialsSection />
-      <CTASection />
-    </div>
-  </>
+        <AboutSection />
+        <CategoryShowcase />
+        <FeaturedMenu />
+        <StatsSection />
+        <TestimonialsSection />
+        <ReservationSection />
+        <CTASection />
+      </div>
+    </>
   )
 }

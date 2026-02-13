@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { PageBanner } from '@/components/ui/PageBanner'
 import { CategoryFilter } from '@/components/menu/CategoryFilter'
 import { SearchBar } from '@/components/menu/SearchBar'
 import { MenuGrid } from '@/components/menu/MenuGrid'
@@ -29,10 +30,10 @@ export default function MenuPage() {
   // Sync URL category param with filter
   useEffect(() => {
     const urlCategory = searchParams.get('category')
-    if (urlCategory && urlCategory !== filters.category) {
+    if (urlCategory && urlCategory !== filters.categorySlug) {
       setCategory(urlCategory)
     }
-  }, [searchParams, filters.category, setCategory])
+  }, [searchParams, filters.categorySlug, setCategory])
 
   const handleCategorySelect = (slug: string) => {
     setCategory(slug)
@@ -58,29 +59,20 @@ export default function MenuPage() {
       <meta property="og:description" content="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes." />
       <meta property="og:type" content="website" />
       <meta name="robots" content="index, follow" />
-    <div className="bg-cream min-h-screen">
-      {/* Page Header */}
-      <div className="bg-gradient-to-br from-primary-950 via-primary-900 to-dark py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-400/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-300">
-            <UtensilsCrossed className="h-4 w-4" />
-            <span>Fresh & Delicious</span>
-          </div>
-          <h1 className="text-4xl font-black text-white sm:text-5xl">
-            Our Menu
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-white/60">
-            Discover our carefully curated selection of premium coffees, refreshing beverages, and delicious dishes.
-          </p>
-        </div>
-      </div>
+    <div className="bg-dark min-h-screen">
+      {/* Page Banner */}
+      <PageBanner
+        title="Our Menu"
+        subtitle="Discover our carefully curated selection of premium coffees, refreshing beverages, and delicious dishes."
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Menu' }]}
+      />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Filters Row */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CategoryFilter
             categories={categories}
-            selected={filters.category}
+            selected={filters.categorySlug}
             onSelect={handleCategorySelect}
           />
           <SearchBar onSearch={setSearch} />
@@ -115,7 +107,7 @@ export default function MenuPage() {
             <button
               onClick={() => setPage(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-200 bg-white text-coffee transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-800/40 bg-dark-card text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -127,8 +119,8 @@ export default function MenuPage() {
                 onClick={() => setPage(page)}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
                   page === currentPage
-                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md'
-                    : 'border border-primary-200 bg-white text-coffee hover:bg-primary-50'
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-dark shadow-md'
+                    : 'border border-primary-800/40 bg-dark-card text-coffee-light hover:bg-primary-500/10 hover:text-primary-400'
                 }`}
               >
                 {page}
@@ -138,7 +130,7 @@ export default function MenuPage() {
             <button
               onClick={() => setPage(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-200 bg-white text-coffee transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-800/40 bg-dark-card text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" />

@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean
   loading: boolean
   error: string | null
+  initialized: boolean
 }
 
 const initialState: AuthState = {
@@ -15,6 +16,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   loading: true,
   error: null,
+  initialized: false,
 }
 
 export const loginThunk = createAsyncThunk<Customer, LoginPayload, { rejectValue: string }>(
@@ -134,11 +136,13 @@ const authSlice = createSlice({
         state.loading = false
         state.customer = action.payload
         state.isAuthenticated = true
+        state.initialized = true
       })
       .addCase(checkAuthThunk.rejected, (state) => {
         state.loading = false
         state.customer = null
         state.isAuthenticated = false
+        state.initialized = true
       })
   },
 })

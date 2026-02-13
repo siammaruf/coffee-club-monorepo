@@ -26,14 +26,17 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section className="bg-white py-16 sm:py-20">
+    <section className="bg-dark-light py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-coffee sm:text-4xl">
+          <span className="text-sm font-semibold uppercase tracking-wider text-primary-400">
+            Testimonials
+          </span>
+          <h2 className="mt-2 font-heading text-3xl font-bold text-cream sm:text-4xl">
             What Our Customers Say
           </h2>
-          <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-primary-400 to-primary-600" />
+          <div className="gold-underline mx-auto mt-3" />
           <p className="mx-auto mt-4 max-w-2xl text-coffee-light">
             Do not just take our word for it. Here is what our valued customers have to say about their experience.
           </p>
@@ -44,17 +47,17 @@ export function TestimonialsSection() {
           {testimonials.map((testimonial) => (
             <div
               key={testimonial.name}
-              className="relative rounded-2xl border border-primary-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="relative rounded-xl border border-primary-800/30 bg-dark-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5"
             >
-              {/* Quote icon */}
-              <Quote className="absolute right-6 top-6 h-8 w-8 text-primary-200" />
+              {/* Large gold quote icon */}
+              <Quote className="absolute right-6 top-6 h-10 w-10 text-primary-500/20" />
 
               {/* Stars */}
               <div className="flex gap-1">
                 {Array.from({ length: testimonial.rating }).map((_, i) => (
                   <Star
                     key={i}
-                    className="h-4 w-4 fill-primary-400 text-primary-400"
+                    className="h-4 w-4 fill-primary-500 text-primary-500"
                   />
                 ))}
               </div>
@@ -65,12 +68,12 @@ export function TestimonialsSection() {
               </p>
 
               {/* Author */}
-              <div className="mt-6 flex items-center gap-3 border-t border-primary-50 pt-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-sm font-bold text-white">
+              <div className="mt-6 flex items-center gap-3 border-t border-primary-800/20 pt-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-400 text-sm font-bold text-dark">
                   {testimonial.initials}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-coffee">{testimonial.name}</p>
+                  <p className="text-sm font-medium text-cream">{testimonial.name}</p>
                   <p className="text-xs text-coffee-light">{testimonial.role}</p>
                 </div>
               </div>

@@ -5,9 +5,12 @@ import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { TableResponseDto } from './dto/table-response.dto';
 import { TableStatus } from './enum/table-status.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Tables')
 @Controller('tables')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 

@@ -24,8 +24,8 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
             className={cn(
               'flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200',
               isActive
-                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md'
-                : 'border border-primary-200 bg-white text-coffee hover:border-primary-400 hover:text-primary-700'
+                ? 'bg-primary-500 text-dark font-semibold shadow-md'
+                : 'border border-primary-800/40 bg-dark-card text-coffee-light hover:border-primary-500/50 hover:text-primary-400'
             )}
           >
             {category.name}

@@ -11,15 +11,17 @@ const buttonVariants = cva(
         primary:
           'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md hover:from-primary-600 hover:to-primary-700 hover:shadow-lg active:scale-[0.98]',
         secondary:
-          'bg-dark text-white shadow-md hover:bg-dark-light hover:shadow-lg active:scale-[0.98]',
+          'bg-dark-card text-cream border border-primary-800/30 shadow-md hover:bg-dark-light hover:shadow-lg active:scale-[0.98]',
         outline:
-          'border-2 border-primary-500 text-primary-700 bg-transparent hover:bg-primary-50 active:scale-[0.98]',
+          'border-2 border-primary-500 text-primary-400 bg-transparent hover:bg-primary-500/10 active:scale-[0.98]',
         ghost:
-          'text-coffee hover:bg-primary-100 hover:text-primary-800',
+          'text-cream hover:bg-primary-500/10 hover:text-primary-400',
         danger:
           'bg-error text-white shadow-md hover:bg-red-600 hover:shadow-lg active:scale-[0.98]',
         'outline-white':
           'border-2 border-white text-white bg-transparent hover:bg-white/10 active:scale-[0.98]',
+        gold:
+          'bg-primary-500 text-dark font-bold hover:bg-primary-400 shadow-md hover:shadow-lg active:scale-[0.98]',
       },
       size: {
         sm: 'h-9 px-3 text-sm',

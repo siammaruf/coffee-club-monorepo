@@ -2,14 +2,18 @@ import { get } from '../httpMethods'
 import type { Category, Item, ItemsResponse, ItemFilters } from '@/types/item'
 
 export const publicService = {
-  getCategories: () =>
-    get<{ data: Category[] }>('/public/categories').then((res) => res.data),
+  getCategories: (params?: { page?: number; limit?: number; search?: string }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.page) searchParams.append('page', String(params.page))
+    if (params?.limit) searchParams.append('limit', String(params.limit))
+    if (params?.search) searchParams.append('search', params.search)
+    return get<Category[]>('/public/categories', { params: searchParams })
+  },
 
   getItems: (filters?: ItemFilters) => {
     const params = new URLSearchParams()
-    if (filters?.category) params.append('category', filters.category)
+    if (filters?.categorySlug) params.append('categorySlug', filters.categorySlug)
     if (filters?.search) params.append('search', filters.search)
-    if (filters?.type) params.append('type', filters.type)
     if (filters?.page) params.append('page', String(filters.page))
     if (filters?.limit) params.append('limit', String(filters.limit))
     return get<ItemsResponse>('/public/items', { params })

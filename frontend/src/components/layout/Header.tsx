@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Coffee,
   ShoppingCart,
   Menu,
   X,
@@ -53,7 +52,7 @@ export function Header() {
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         isScrolled
-          ? 'bg-dark/95 backdrop-blur-md shadow-lg'
+          ? 'bg-dark/95 backdrop-blur-md shadow-lg shadow-black/20'
           : 'bg-dark/80 backdrop-blur-sm'
       )}
     >
@@ -61,10 +60,9 @@ export function Header() {
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2 text-white transition-opacity hover:opacity-90"
+          className="flex items-center gap-2 text-cream transition-opacity hover:opacity-90"
         >
-          <Coffee className="h-8 w-8 text-primary-400" />
-          <span className="text-xl font-bold">
+          <span className="font-heading text-2xl font-bold tracking-wide">
             Coffee<span className="text-primary-400">Club</span>
           </span>
         </Link>
@@ -76,28 +74,39 @@ export function Header() {
               key={link.href}
               to={link.href}
               className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                'relative rounded-lg px-4 py-2 text-sm font-medium transition-colors',
                 location.pathname === link.href
-                  ? 'bg-primary-500/20 text-primary-400'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  ? 'text-primary-400'
+                  : 'text-cream/80 hover:bg-white/5 hover:text-cream'
               )}
             >
               {link.label}
+              {location.pathname === link.href && (
+                <span className="absolute bottom-0 left-1/2 h-[2px] w-6 -translate-x-1/2 bg-gradient-to-r from-primary-500 to-primary-400" />
+              )}
             </Link>
           ))}
         </div>
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
+          {/* Book a Table CTA */}
+          <Link
+            to="/contact"
+            className="hidden rounded-lg bg-primary-500 px-4 py-2 text-sm font-bold text-dark transition-all hover:bg-primary-400 hover:shadow-lg md:inline-flex"
+          >
+            Book a Table
+          </Link>
+
           {/* Cart Button */}
           <button
             onClick={openDrawer}
-            className="relative rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            className="relative rounded-lg p-2 text-cream/80 transition-colors hover:bg-white/5 hover:text-cream"
             aria-label={`Cart with ${itemCount} items`}
           >
             <ShoppingCart className="h-5 w-5" />
             {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-dark">
                 {itemCount > 99 ? '99+' : itemCount}
               </span>
             )}
@@ -108,9 +117,9 @@ export function Header() {
             <div className="relative hidden md:block">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-cream/80 transition-colors hover:bg-white/5 hover:text-cream"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-dark">
                   {customer.name.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm font-medium">{customer.name.split(' ')[0]}</span>
@@ -123,25 +132,25 @@ export function Header() {
                     className="fixed inset-0"
                     onClick={() => setIsDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-primary-100 bg-white py-2 shadow-xl animate-fade-in">
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-primary-800/30 bg-dark-card py-2 shadow-xl animate-fade-in">
                     <Link
                       to="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-coffee hover:bg-primary-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-cream hover:bg-primary-500/10"
                     >
                       <User className="h-4 w-4" />
                       My Profile
                     </Link>
                     <Link
                       to="/orders"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-coffee hover:bg-primary-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-cream hover:bg-primary-500/10"
                     >
                       <ClipboardList className="h-4 w-4" />
                       My Orders
                     </Link>
-                    <hr className="my-1 border-primary-100" />
+                    <hr className="my-1 border-primary-800/30" />
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-error hover:bg-red-50"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-error hover:bg-red-500/10"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -154,7 +163,7 @@ export function Header() {
             <div className="hidden items-center gap-2 md:flex">
               <Link
                 to="/login"
-                className="rounded-lg px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-cream/80 transition-colors hover:bg-white/5 hover:text-cream"
               >
                 Login
               </Link>
@@ -170,7 +179,7 @@ export function Header() {
           {/* Mobile Hamburger */}
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white md:hidden"
+            className="rounded-lg p-2 text-cream/80 transition-colors hover:bg-white/5 hover:text-cream md:hidden"
             aria-label="Toggle mobile menu"
           >
             {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -180,7 +189,7 @@ export function Header() {
 
       {/* Mobile Drawer */}
       {isMobileOpen && (
-        <div className="border-t border-white/10 bg-dark/95 backdrop-blur-md md:hidden">
+        <div className="border-t border-primary-800/30 bg-dark/95 backdrop-blur-md md:hidden">
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => (
               <Link
@@ -190,27 +199,35 @@ export function Header() {
                   'block rounded-lg px-4 py-3 text-base font-medium transition-colors',
                   location.pathname === link.href
                     ? 'bg-primary-500/20 text-primary-400'
-                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    : 'text-cream/80 hover:bg-white/5 hover:text-cream'
                 )}
               >
                 {link.label}
               </Link>
             ))}
 
-            <hr className="my-3 border-white/10" />
+            {/* Mobile Book a Table */}
+            <Link
+              to="/contact"
+              className="block rounded-lg bg-primary-500 px-4 py-3 text-center text-base font-bold text-dark transition-all hover:bg-primary-400"
+            >
+              Book a Table
+            </Link>
+
+            <hr className="my-3 border-primary-800/30" />
 
             {isAuthenticated && customer ? (
               <>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-cream/80 hover:bg-white/5 hover:text-cream"
                 >
                   <User className="h-5 w-5" />
                   My Profile
                 </Link>
                 <Link
                   to="/orders"
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-cream/80 hover:bg-white/5 hover:text-cream"
                 >
                   <ClipboardList className="h-5 w-5" />
                   My Orders
@@ -227,7 +244,7 @@ export function Header() {
               <div className="flex gap-3 pt-2">
                 <Link
                   to="/login"
-                  className="flex-1 rounded-lg border border-white/20 py-3 text-center text-base font-medium text-white transition-colors hover:bg-white/10"
+                  className="flex-1 rounded-lg border border-primary-800/30 py-3 text-center text-base font-medium text-cream transition-colors hover:bg-white/5"
                 >
                   Login
                 </Link>

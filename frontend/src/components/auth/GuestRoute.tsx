@@ -2,20 +2,21 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Loading } from '@/components/ui/loading'
 
-interface ProtectedRouteProps {
+interface GuestRouteProps {
   children: React.ReactNode
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function GuestRoute({ children }: GuestRouteProps) {
   const { isAuthenticated, isLoading, initialized } = useAuth()
   const location = useLocation()
 
   if (!initialized || isLoading) {
-    return <Loading fullPage text="Checking authentication..." />
+    return <Loading fullPage text="Loading..." />
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+  if (isAuthenticated) {
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+    return <Navigate to={from} replace />
   }
 
   return <>{children}</>

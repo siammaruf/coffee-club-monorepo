@@ -1,37 +1,42 @@
 @import "tailwindcss";
 
-/* Dark Yellow/Amber Coffee Theme */
+/* Dark Gold Premium Restaurant Theme */
 @theme {
-  --color-primary-50: #fffbeb;
-  --color-primary-100: #fef3c7;
-  --color-primary-200: #fde68a;
-  --color-primary-300: #fcd34d;
-  --color-primary-400: #fbbf24;
-  --color-primary-500: #f59e0b;
-  --color-primary-600: #d97706;
-  --color-primary-700: #b45309;
-  --color-primary-800: #92400e;
-  --color-primary-900: #78350f;
-  --color-primary-950: #451a03;
+  --color-primary-50: #fdf8e8;
+  --color-primary-100: #f9edc5;
+  --color-primary-200: #f3d98a;
+  --color-primary-300: #e8c04e;
+  --color-primary-400: #DAA520;
+  --color-primary-500: #C5961A;
+  --color-primary-600: #B8860B;
+  --color-primary-700: #9A7209;
+  --color-primary-800: #7D5C07;
+  --color-primary-900: #604605;
+  --color-primary-950: #3D2D03;
 
-  --color-dark: #1a1a2e;
-  --color-dark-light: #16213e;
-  --color-dark-card: #1e293b;
-  --color-cream: #fefce8;
-  --color-cream-dark: #fef9c3;
-  --color-coffee: #3e2723;
-  --color-coffee-light: #5d4037;
+  --color-dark: #0D0D0D;
+  --color-dark-light: #1A1A1A;
+  --color-dark-card: #1E1E1E;
+  --color-dark-surface: #141414;
+
+  --color-cream: #F5F0E1;
+  --color-cream-dark: #E8DCC8;
+  --color-coffee: #F5F0E1;
+  --color-coffee-light: #B8B0A0;
 
   --color-success: #22c55e;
   --color-error: #ef4444;
-  --color-warning: #f59e0b;
+  --color-warning: #DAA520;
   --color-info: #3b82f6;
+
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Base styles */
 body {
-  @apply bg-cream text-coffee antialiased;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  @apply bg-dark text-cream antialiased;
+  font-family: var(--font-body);
 }
 
 /* Scrollbar styling */
@@ -39,10 +44,10 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-cream-dark;
+  @apply bg-dark-light;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-400 rounded-full;
+  @apply bg-primary-600 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary-500;
@@ -55,12 +60,29 @@ html {
 
 /* Selection color */
 ::selection {
-  @apply bg-primary-300 text-primary-950;
+  @apply bg-primary-500 text-dark;
 }
 
 /* Focus ring */
 *:focus-visible {
   @apply outline-2 outline-offset-2 outline-primary-500;
+}
+
+/* Utility classes */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.gold-underline {
+  @apply h-[2px] w-16 bg-gradient-to-r from-primary-500 to-primary-400;
+}
+
+.section-dark {
+  @apply bg-dark;
+}
+
+.section-dark-alt {
+  @apply bg-dark-light;
 }
 
 /* Animations */
@@ -85,8 +107,8 @@ html {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
+  0%, 100% { box-shadow: 0 0 5px rgba(197, 150, 26, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(197, 150, 26, 0.6); }
 }
 
 @keyframes count-up {

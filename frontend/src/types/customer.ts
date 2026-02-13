@@ -5,14 +5,18 @@ export interface Customer {
   email?: string
   address?: string
   picture?: string
+  note?: string
   points: number
   balance: number
+  is_verified: boolean
   is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
+/** Backend expects a single `identifier` field (email or phone) + password */
 export interface LoginPayload {
-  email?: string
-  phone?: string
+  identifier: string
   password: string
 }
 
@@ -23,21 +27,20 @@ export interface RegisterPayload {
   password: string
 }
 
+/** Backend expects a single `identifier` field (email or phone) */
 export interface ForgotPasswordPayload {
-  email?: string
-  phone?: string
+  identifier: string
 }
 
+/** Backend expects `identifier` (email or phone) + `otp` */
 export interface VerifyOtpPayload {
-  email?: string
-  phone?: string
+  identifier: string
   otp: string
 }
 
+/** Backend expects the `token` returned from verify-otp + new `password` */
 export interface ResetPasswordPayload {
-  email?: string
-  phone?: string
-  otp: string
+  token: string
   password: string
 }
 
@@ -46,6 +49,7 @@ export interface UpdateProfilePayload {
   email?: string
   phone?: string
   address?: string
+  picture?: string
 }
 
 export interface ChangePasswordPayload {

@@ -38,9 +38,10 @@ CoffeeClub is a **restaurant/cafe management system** with three applications:
 ### Frontend (`frontend/`)
 - **Framework**: React 19 + Vite
 - **Routing**: React Router
-- **State**: Zustand
+- **State**: Redux Toolkit + React Query
 - **CSS**: TailwindCSS
-- **Theme**: Dark yellow/amber customer-facing theme
+- **Theme**: Dark gold premium restaurant theme (Playfair Display serif headings + Inter body text)
+- **Design**: Dark backgrounds (`#0D0D0D`), gold accents (`#C5961A`), cream text (`#F5F0E1`), serif headings for premium feel
 
 ## Architecture
 
@@ -107,12 +108,18 @@ coffeeclub/
 │       ├── styles/                 # CSS (Tailwind + typography)
 │       ├── types/                  # TypeScript type definitions
 │       └── utils/                  # Error handling, validation
-├── frontend/                       # Customer-facing website [NEW]
+├── frontend/                       # Customer-facing website
 │   └── src/
-│       ├── components/             # UI components
-│       ├── pages/                  # Menu, cart, orders, account
-│       ├── store/                  # Zustand stores
-│       ├── services/               # API services
+│       ├── components/             # UI components (layout, home, menu, cart, etc.)
+│       ├── pages/                  # Menu, cart, orders, account, auth pages
+│       ├── redux/
+│       │   ├── features/           # authSlice, cartSlice, orderSlice
+│       │   └── store/              # Redux store config + hooks
+│       ├── services/
+│       │   ├── httpService.ts      # Axios base client
+│       │   ├── httpServices/       # Per-resource API services
+│       │   └── httpMethods/        # HTTP method wrappers + interceptors
+│       ├── lib/                    # Config, utilities
 │       └── styles/                 # TailwindCSS styles
 └── .claude-project/                # Project documentation
 ```
@@ -154,8 +161,7 @@ coffeeclub/
 | UUID primary keys | Distributed-safe, non-sequential IDs |
 | Cloudinary for uploads | Cloud-hosted images, automatic optimization |
 | Separate dashboard/frontend | Different UX needs: admin POS vs customer ordering |
-| Zustand for frontend | Lightweight state for customer-facing app |
-| Redux for dashboard | Complex state management for admin features |
+| Redux Toolkit for both apps | Consistent state management pattern across dashboard and frontend |
 
 ## Development Setup
 

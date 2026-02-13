@@ -24,7 +24,7 @@ function Loading({ size = 'md', className, text, fullPage = false }: LoadingProp
 
   if (fullPage) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center bg-dark">
         {spinner}
       </div>
     )
@@ -37,7 +37,7 @@ function LoadingSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-lg bg-primary-100',
+        'animate-pulse rounded-lg bg-primary-800/20',
         className
       )}
     />

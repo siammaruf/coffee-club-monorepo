@@ -7,11 +7,22 @@ export interface OrderItem {
   quantity: number
   unit_price: number
   total_price: number
-  item: {
+  item?: {
     id: string
     name: string
     image: string
+    regular_price: number
+    sale_price: number
   }
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderTable {
+  id: string
+  number: string
+  seat: number
+  status?: string
 }
 
 export interface Order {
@@ -22,23 +33,30 @@ export interface Order {
   sub_total: number
   total_amount: number
   discount_amount: number
-  payment_method: PaymentMethod
+  payment_method?: PaymentMethod
   delivery_address?: string
   special_instructions?: string
-  order_source: string
-  orderItems: OrderItem[]
+  order_source?: string
+  /** Backend returns this as `order_items` (snake_case) */
+  order_items: OrderItem[]
+  tables?: OrderTable[]
   created_at: string
   updated_at: string
 }
 
+/**
+ * Backend returns pagination fields at the root level, not inside a `meta` object.
+ * Shape: { data, total, page, limit, totalPages, status, message, statusCode }
+ */
 export interface OrdersResponse {
   data: Order[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  status: string
+  message: string
+  statusCode: number
 }
 
 export interface CreateOrderPayload {

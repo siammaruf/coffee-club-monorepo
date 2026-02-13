@@ -5,10 +5,13 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBasicAuth } from '@nestjs/swagger';
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Categories')
 @Controller('categories')
 @ApiBasicAuth()
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 

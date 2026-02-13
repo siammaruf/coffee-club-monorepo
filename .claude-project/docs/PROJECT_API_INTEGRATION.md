@@ -5,7 +5,7 @@
 This document maps frontend routes to their corresponding API endpoints for both applications.
 
 - **Dashboard** (`dashboard/`): Admin panel for staff, uses React Router v7 + Redux Toolkit + Axios
-- **Frontend** (`frontend/`): Customer-facing website, uses React Router + Zustand + fetch/Axios
+- **Frontend** (`frontend/`): Customer-facing website, uses React Router + Redux Toolkit + Axios
 - **API Base**: `http://localhost:5000/api/v1`
 
 ---
@@ -102,31 +102,31 @@ This document maps frontend routes to their corresponding API endpoints for both
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/` | pages/Home | `GET /public/categories`, `GET /public/items` | Planned |
-| `/menu` | pages/Menu | `GET /public/categories`, `GET /public/items` | Planned |
-| `/menu/:id` | pages/ItemDetail | `GET /public/items/:id` | Planned |
-| `/about` | pages/About | - | Planned |
-| `/contact` | pages/Contact | - | Planned |
+| `/` | pages/Home | `GET /public/categories`, `GET /public/items` | Complete |
+| `/menu` | pages/Menu | `GET /public/categories`, `GET /public/items` | Complete |
+| `/menu/:id` | pages/ItemDetail | `GET /public/items/:id` | Complete |
+| `/about` | pages/About | - | Complete |
+| `/contact` | pages/Contact | - | Complete |
 
 ### Customer Auth Pages (no auth)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/login` | pages/Login | `POST /customer-auth/login` | Planned |
-| `/register` | pages/Register | `POST /customer-auth/register` | Planned |
-| `/forgot-password` | pages/ForgotPassword | `POST /customer-auth/forgot-password` | Planned |
-| `/verify-otp` | pages/VerifyOtp | `POST /customer-auth/verify-otp` | Planned |
-| `/reset-password` | pages/ResetPassword | `POST /customer-auth/reset-password` | Planned |
+| `/login` | pages/Login | `POST /customer-auth/login` | Complete |
+| `/register` | pages/Register | `POST /customer-auth/register` | Complete |
+| `/forgot-password` | pages/ForgotPassword | `POST /customer-auth/forgot-password` | Complete |
+| `/verify-otp` | pages/VerifyOtp | `POST /customer-auth/verify-otp` | Complete |
+| `/reset-password` | pages/ResetPassword | `POST /customer-auth/reset-password` | Complete |
 
 ### Customer Protected Pages (customer auth required)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/cart` | pages/Cart | `GET /cart`, `PUT /cart/items/:id`, `DELETE /cart/items/:id` | Planned |
-| `/checkout` | pages/Checkout | `POST /customer-orders` | Planned |
-| `/orders` | pages/Orders | `GET /customer-orders` | Planned |
-| `/orders/:id` | pages/OrderDetail | `GET /customer-orders/:id` | Planned |
-| `/account` | pages/Account | `GET /customer-auth/me` | Planned |
+| `/cart` | pages/Cart | `GET /cart`, `PUT /cart/items/:id`, `DELETE /cart/items/:id` | Complete |
+| `/checkout` | pages/Checkout | `POST /customer-orders` | Complete |
+| `/orders` | pages/Orders | `GET /customer-orders` | Complete |
+| `/orders/:id` | pages/OrderDetail | `GET /customer-orders/:id` | Complete |
+| `/account` | pages/Account | `GET /customer-auth/me` | Complete |
 
 ---
 
@@ -153,23 +153,31 @@ This document maps frontend routes to their corresponding API endpoints for both
 | kitchenStockService | `app/services/httpServices/kitchenStockService.ts` | Kitchen Stock CRUD |
 | tableService | `app/services/httpServices/tableService.ts` | Table management |
 
-## Frontend (Customer) API Service Files [NEW]
+## Frontend (Customer) API Service Files
 
 | Service | Location | Methods |
 |---------|----------|---------|
-| apiClient | `src/services/apiClient.ts` | Base HTTP client (Axios or fetch) |
-| publicService | `src/services/publicService.ts` | getCategories, getItems, getItemById, getTables |
-| customerAuthService | `src/services/customerAuthService.ts` | register, login, logout, me, forgotPassword, verifyOtp, resetPassword |
-| cartService | `src/services/cartService.ts` | getCart, addItem, updateItem, removeItem, clearCart |
-| customerOrderService | `src/services/customerOrderService.ts` | placeOrder, getOrders, getOrderById, cancelOrder |
+| httpService | `src/services/httpService.ts` | Base Axios client (get, post, put, delete, patch) with interceptors |
+| authService | `src/services/httpServices/authService.ts` | register, login, logout, me, forgotPassword, verifyOtp, resetPassword |
+| publicService | `src/services/httpServices/publicService.ts` | getCategories, getItems, getItemById, getTables |
+| cartService | `src/services/httpServices/cartService.ts` | getCart, addItem, updateItem, removeItem, clearCart |
+| orderService | `src/services/httpServices/orderService.ts` | placeOrder, getOrders, getOrderById, cancelOrder |
+| profileService | `src/services/httpServices/profileService.ts` | getProfile, updateProfile |
 
-## Frontend (Customer) Zustand Stores [NEW]
+**React Query Hooks:**
 
-| Store | Location | State |
+| Hook | Location | Purpose |
+|------|----------|---------|
+| useMenu | `src/services/httpServices/queries/useMenu.ts` | Fetches menu categories and items |
+| useTables | `src/services/httpServices/queries/useTables.ts` | Fetches available tables |
+
+## Frontend (Customer) Redux Slices
+
+| Slice | Location | State |
 |-------|----------|-------|
-| authStore | `src/store/authStore.ts` | customer, isAuthenticated, login, logout, checkAuth |
-| cartStore | `src/store/cartStore.ts` | items, total, addItem, removeItem, updateQuantity, clearCart |
-| menuStore | `src/store/menuStore.ts` | categories, items, selectedCategory, filters |
+| authSlice | `src/redux/features/authSlice.ts` | customer, isAuthenticated, login, logout, checkAuth |
+| cartSlice | `src/redux/features/cartSlice.ts` | items, total, addItem, removeItem, updateQuantity, clearCart |
+| orderSlice | `src/redux/features/orderSlice.ts` | orders, currentOrder, placeOrder, cancelOrder |
 
 ---
 
@@ -187,9 +195,11 @@ const httpService = axios.create({
 
 ### Frontend (Customer)
 ```typescript
-// frontend/src/services/apiClient.ts
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+// frontend/src/services/httpService.ts
+// API_URL resolved from frontend/src/lib/config.ts
+// Default: http://localhost:3000/api/v1 (supports runtime config override)
+const httpService = axios.create({
+  baseURL: API_URL,
   withCredentials: true,  // CRITICAL: sends httpOnly cookies
   headers: { 'Content-Type': 'application/json' }
 });
@@ -198,7 +208,8 @@ const apiClient = axios.create({
 ### Key Integration Notes
 - Both apps use `withCredentials: true` for httpOnly cookie auth
 - Dashboard uses Redux async thunks for auth state
-- Frontend uses Zustand stores for auth and cart state
+- Frontend uses Redux Toolkit slices for auth, cart, and order state + React Query for data fetching
+- Frontend API base URL defaults to `http://localhost:3000/api/v1` (supports runtime config override via `window.__RUNTIME_CONFIG__`)
 - File uploads use `Content-Type: multipart/form-data` (Axios auto-sets boundary)
 - All responses follow the standard wrapper format: `{ data, status, message, statusCode, timestamp }`
 
@@ -214,11 +225,14 @@ const apiClient = axios.create({
 - [ ] Token refresh interceptor (auto-retry on 401)
 
 ### Frontend (Customer)
-- [ ] API client configured with `withCredentials: true`
-- [ ] Zustand auth store with persist
-- [ ] Zustand cart store (synced with backend)
-- [ ] Public API services (categories, items)
-- [ ] Customer auth services (register, login, OTP)
-- [ ] Cart services (add, update, remove)
-- [ ] Order services (place, history, cancel)
-- [ ] Error handling interceptor
+- [x] Axios httpService configured with `withCredentials: true`
+- [x] Redux auth slice with async thunks
+- [x] Redux cart slice (synced with backend)
+- [x] Redux order slice
+- [x] React Query hooks for menu and tables
+- [x] Public API services (categories, items, tables)
+- [x] Customer auth services (register, login, OTP)
+- [x] Cart services (add, update, remove)
+- [x] Order services (place, history, cancel)
+- [x] Profile services (get, update)
+- [x] Request/response interceptors (error handling)

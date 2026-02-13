@@ -8,8 +8,8 @@ function Card({ className, hover = true, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-primary-100 bg-white shadow-sm transition-all duration-300',
-        hover && 'hover:shadow-lg hover:-translate-y-1 hover:border-primary-200',
+        'rounded-xl border border-primary-800/30 bg-dark-card shadow-sm transition-all duration-300',
+        hover && 'hover:shadow-lg hover:-translate-y-1 hover:border-primary-700/50',
         className
       )}
       {...props}

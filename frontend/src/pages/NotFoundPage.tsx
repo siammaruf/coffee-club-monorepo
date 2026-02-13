@@ -7,16 +7,16 @@ export default function NotFoundPage() {
     <>
       <title>Page Not Found | CoffeeClub</title>
       <meta name="robots" content="noindex, nofollow" />
-    <div className="flex min-h-[70vh] items-center justify-center bg-cream px-4">
+    <div className="flex min-h-[70vh] items-center justify-center bg-dark px-4">
       <div className="text-center">
         {/* Illustration */}
-        <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-primary-100">
+        <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-primary-900/50">
           <Coffee className="h-16 w-16 text-primary-400" />
         </div>
 
         {/* 404 Text */}
-        <h1 className="mt-6 text-6xl font-black text-primary-500 sm:text-8xl">404</h1>
-        <h2 className="mt-2 text-2xl font-bold text-coffee">Page Not Found</h2>
+        <h1 className="font-heading mt-6 text-7xl font-bold text-primary-500 sm:text-8xl">404</h1>
+        <h2 className="mt-2 text-2xl font-bold text-cream">Page Not Found</h2>
         <p className="mx-auto mt-3 max-w-md text-coffee-light">
           Oops! The page you are looking for does not exist or may have been moved.
           Let us get you back to something delicious.

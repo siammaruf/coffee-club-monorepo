@@ -9,8 +9,9 @@ export function useMenu() {
   const { data: itemsData, isLoading: itemsLoading, error } = useMenuItems(filters)
 
   const items = itemsData?.data || []
-  const totalPages = itemsData?.meta?.totalPages || 1
-  const total = itemsData?.meta?.total || 0
+  // Backend returns pagination fields at root level, not inside a `meta` object
+  const totalPages = itemsData?.totalPages || 1
+  const total = itemsData?.total || 0
 
   return {
     items,
@@ -21,7 +22,7 @@ export function useMenu() {
     totalPages,
     total,
     setSearch: useCallback((search: string) => setFilters((prev) => ({ ...prev, search, page: 1 })), []),
-    setCategory: useCallback((category: string) => setFilters((prev) => ({ ...prev, category, page: 1 })), []),
+    setCategory: useCallback((categorySlug: string) => setFilters((prev) => ({ ...prev, categorySlug, page: 1 })), []),
     setPage: useCallback((page: number) => setFilters((prev) => ({ ...prev, page })), []),
   }
 }

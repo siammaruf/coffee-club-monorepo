@@ -41,12 +41,12 @@ export function SearchBar({ onSearch, placeholder = 'Search menu items...' }: Se
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="h-11 w-full rounded-lg border border-primary-200 bg-white pl-11 pr-10 text-base text-coffee shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+        className="h-11 w-full rounded-lg border border-primary-800/40 bg-dark-card pl-11 pr-10 text-base text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
       />
       {value && (
         <button
           onClick={handleClear}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 text-coffee-light hover:text-coffee"
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-coffee-light hover:text-primary-400"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />

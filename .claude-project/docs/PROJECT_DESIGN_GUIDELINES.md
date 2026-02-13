@@ -1,8 +1,8 @@
 # Design Guidelines - CoffeeClub
 
-**Last Updated:** 2026-02-11
+**Last Updated:** 2026-02-13
 
-This document provides the design system guidelines for both the **Dashboard** (admin panel) and **Frontend** (customer website). The Dashboard uses **shadcn/ui** with **Tailwind CSS v4** and **OKLCH color space**. The Frontend uses a **dark yellow/amber theme** with **TailwindCSS**.
+This document provides the design system guidelines for both the **Dashboard** (admin panel) and **Frontend** (customer website). The Dashboard uses **shadcn/ui** with **Tailwind CSS v4** and **OKLCH color space**. The Frontend uses a **dark gold premium restaurant theme** with **TailwindCSS**, featuring dark backgrounds, gold accents, and serif headings.
 
 ---
 
@@ -36,8 +36,8 @@ This document provides the design system guidelines for both the **Dashboard** (
 ### Frontend (`frontend/`)
 - **Purpose**: Customer-facing website for browsing menu & placing orders
 - **Framework**: React 19 + Vite + TailwindCSS
-- **Theme**: Dark yellow/amber - warm, inviting, coffee-shop aesthetic
-- **Style**: Modern, clean, visually appealing, conversion-focused
+- **Theme**: Dark gold premium - dark backgrounds, gold accents, serif headings (Playfair Display)
+- **Style**: Upscale, elegant, dark-mode-first, conversion-focused
 
 ---
 
@@ -113,49 +113,50 @@ Defined via `--radius: 0.625rem` (10px) in `:root`:
 
 ## 3. Frontend (Customer) Color System
 
-### 3.1 Primary Palette: Dark Yellow / Amber
+### 3.1 Primary Palette: Dark Gold Premium
 
-The customer-facing website uses a warm amber/dark-yellow palette to evoke a cozy coffee shop atmosphere.
+The customer-facing website uses a dark gold premium palette -- dark backgrounds with warm gold accents for an upscale restaurant aesthetic.
 
-| Token | Hex Value | Tailwind Class | Usage |
-|-------|-----------|----------------|-------|
-| Primary | `#D97706` | `text-amber-600`, `bg-amber-600` | Primary CTA buttons, links, key accents |
-| Primary Dark | `#B45309` | `text-amber-700`, `bg-amber-700` | Hover states on primary |
-| Primary Light | `#F59E0B` | `text-amber-500`, `bg-amber-500` | Highlights, badges, secondary accents |
-| Primary Subtle | `#FEF3C7` | `bg-amber-100` | Light backgrounds, card accents |
-| Primary Ghost | `#FFFBEB` | `bg-amber-50` | Subtle background tints |
-| Background | `#FFFFFF` | `bg-white` | Main page background |
-| Surface | `#FFFBEB` | `bg-amber-50` | Section backgrounds, cards |
-| Text Primary | `#1C1917` | `text-stone-900` | Headings, body text |
-| Text Secondary | `#78716C` | `text-stone-500` | Descriptions, muted text |
-| Text on Primary | `#FFFFFF` | `text-white` | Text on amber buttons |
-| Border | `#E7E5E4` | `border-stone-200` | Card borders, dividers |
-| Border Accent | `#FDE68A` | `border-amber-200` | Accent borders |
-| Success | `#059669` | `text-emerald-600` | Success states, available |
-| Error | `#DC2626` | `text-red-600` | Error states, unavailable |
-| Warning | `#D97706` | `text-amber-600` | Warning (same as primary) |
+| Token | Hex Value | CSS Variable / Tailwind | Usage |
+|-------|-----------|------------------------|-------|
+| Primary | `#C5961A` | `--color-primary-500` | Main brand gold, CTA buttons |
+| Primary Dark | `#B8860B` (DarkGoldenrod) | `--color-primary-600` | Hover states |
+| Primary Light | `#DAA520` (Goldenrod) | `--color-primary-400` | Accents, highlights |
+| Primary Subtle | `#604605` | `--color-primary-900` | Dark accent backgrounds |
+| Background | `#0D0D0D` | `bg-[#0D0D0D]` | Main dark page background |
+| Surface | `#1A1A1A` | `bg-[#1A1A1A]` | Alternate sections |
+| Card | `#1E1E1E` | `bg-[#1E1E1E]` | Card backgrounds |
+| Text Primary | `#F5F0E1` (cream) | `text-[#F5F0E1]` | Headings, body text |
+| Text Secondary | `#B8B0A0` (coffee-light) | `text-[#B8B0A0]` | Descriptions, muted text |
+| Text on Primary | `#0D0D0D` (dark) | `text-[#0D0D0D]` | Text on gold buttons |
+| Border | `rgba(125,92,7,0.3)` | `border-primary-800/30` | Card borders, dividers |
+| Success | `#22c55e` | `text-green-500` | Success states |
+| Error | `#ef4444` | `text-red-500` | Error states |
 
-### 3.2 Dark Mode (Optional for Frontend)
+### 3.2 Dark Mode (Default for Frontend)
 
-If dark mode is implemented for the customer site:
+The frontend IS dark by default -- there is no separate "light mode." The entire customer-facing site uses dark backgrounds with gold accents. This is not an optional toggle; it is the primary and only design mode.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| Background | `#1C1917` (stone-900) | Dark page background |
-| Surface | `#292524` (stone-800) | Dark cards, sections |
-| Primary | `#F59E0B` (amber-500) | Brighter amber on dark |
-| Text Primary | `#FAFAF9` (stone-50) | Light text |
-| Text Secondary | `#A8A29E` (stone-400) | Muted text on dark |
-| Border | `#44403C` (stone-700) | Dark borders |
+| Background | `#0D0D0D` | Main page background |
+| Surface | `#1A1A1A` | Alternate sections, panels |
+| Card | `#1E1E1E` | Card backgrounds, inputs |
+| Primary | `#C5961A` | Gold accents, buttons |
+| Text Primary | `#F5F0E1` (cream) | Headings, body text |
+| Text Secondary | `#B8B0A0` (coffee-light) | Muted text |
+| Border | `primary-800/30` | Subtle gold-tinted borders |
 
 ### 3.3 Frontend Color Usage Guidelines
 
-- **Primary amber for CTAs**: "Add to Cart", "Order Now", "Sign Up" buttons
-- **Stone neutrals for text**: Warm gray tones that complement amber
-- **Amber-50/100 for backgrounds**: Warm subtle backgrounds for sections
-- **Avoid pure black/white**: Use stone-900 and stone-50 for warmth
-- **Status colors**: Emerald for available/success, red for errors, amber for warnings
-- **Coffee imagery**: Pair with warm photography, wood textures, and coffee-themed visuals
+- **Gold CTAs on dark backgrounds**: "Add to Cart", "Order Now", "Sign Up" buttons use gold (`#C5961A`) with dark text
+- **Cream text on dark surfaces**: Use `#F5F0E1` for headings and body text, `#B8B0A0` for secondary/muted text
+- **Dark card pattern**: Cards use `#1E1E1E` background with `border-primary-800/30` (subtle gold-tinted border)
+- **Never use white backgrounds**: All backgrounds are dark (`#0D0D0D`, `#1A1A1A`, `#1E1E1E`)
+- **Gold gradients for emphasis**: Use `from-primary-500 to-primary-600` for prominent CTAs
+- **Status colors**: Green (`#22c55e`) for success, red (`#ef4444`) for errors
+- **Serif headings**: Playfair Display for hero text and section titles adds premium feel
+- **Gold hover glow**: Use `hover:shadow-[0_0_20px_rgba(197,150,26,0.3)]` for interactive cards
 
 ---
 
@@ -166,8 +167,14 @@ If dark mode is implemented for the customer site:
 | Application | Font Family | Weights | Tailwind Class |
 |-------------|-------------|---------|----------------|
 | Dashboard | System/sans-serif | 400-800 | `font-sans` |
-| Frontend | System/sans-serif (or a warm display font) | 400-800 | `font-sans` |
+| Frontend (Headings) | Playfair Display (serif) | 400-700 | `font-heading` |
+| Frontend (Body) | Inter (sans-serif) | 400-700 | `font-sans` |
 | Monospace | System mono | 400-600 | `font-mono` |
+
+**Frontend Typography Notes:**
+- `font-heading` (Playfair Display) is used for hero titles, section headings, and the logo to convey a premium restaurant feel
+- `font-sans` (Inter) is used for body text, descriptions, buttons, and UI elements
+- The combination of serif headings with sans-serif body creates visual hierarchy and elegance
 
 ### 4.2 Font Size Scale
 
@@ -223,10 +230,10 @@ Container (max-w-7xl mx-auto px-6)
 
 **Frontend Page Layout:**
 ```
-Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8)
-  + Hero Section (py-16 bg-amber-50)
+Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#0D0D0D])
+  + Hero Section (py-16 bg-[#0D0D0D] text-[#F5F0E1])
   + Menu Grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6)
-    + Item Card (p-4 rounded-xl bg-white border border-stone-200)
+    + Item Card (p-4 rounded-xl bg-[#1E1E1E] border border-primary-800/30)
 ```
 
 ---
@@ -285,50 +292,70 @@ Container (max-w-6xl mx-auto px-4 sm:px-6 lg:px-8)
 
 ### 8.2 Frontend (Customer) Button States
 
-**Primary (Amber):**
+**Primary (Gold on Dark):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-amber-600 text-white font-semibold rounded-lg px-6 py-3` |
-| Hover | `hover:bg-amber-700 hover:shadow-lg` |
-| Focus | `focus:ring-2 focus:ring-amber-500 focus:ring-offset-2` |
+| Default | `bg-primary-500 text-[#0D0D0D] font-semibold rounded-lg px-6 py-3` |
+| Hover | `hover:bg-primary-400 hover:shadow-lg hover:shadow-primary-500/20` |
+| Focus | `focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-[#0D0D0D]` |
 | Active | `active:scale-[0.98]` |
 | Disabled | `disabled:opacity-50 disabled:cursor-not-allowed` |
 
-**Secondary (Outline):**
+**Secondary (Outline on Dark):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-white text-amber-700 border-2 border-amber-600 rounded-lg px-6 py-3` |
-| Hover | `hover:bg-amber-50` |
-| Focus | `focus:ring-2 focus:ring-amber-500` |
+| Default | `bg-transparent text-primary-500 border-2 border-primary-500 rounded-lg px-6 py-3` |
+| Hover | `hover:bg-primary-500/10` |
+| Focus | `focus:ring-2 focus:ring-primary-500` |
 
-**Ghost:**
+**Ghost (on Dark):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `text-amber-600 bg-transparent` |
-| Hover | `hover:bg-amber-50` |
+| Default | `text-primary-500 bg-transparent` |
+| Hover | `hover:bg-primary-500/10` |
 
 ### 8.3 Input Field States
+
+**Dashboard:**
 
 | State | Tailwind Classes |
 |-------|------------------|
 | Default | `border-gray-200 bg-white placeholder-gray-400` |
 | Hover | `hover:border-gray-300` |
-| Focus (Dashboard) | `focus:border-primary focus:ring-2 focus:ring-primary` |
-| Focus (Frontend) | `focus:border-amber-500 focus:ring-2 focus:ring-amber-500` |
+| Focus | `focus:border-primary focus:ring-2 focus:ring-primary` |
 | Error | `border-red-500 focus:ring-red-500` |
 | Disabled | `disabled:bg-gray-100 disabled:cursor-not-allowed` |
 
+**Frontend (Dark Inputs with Gold Focus):**
+
+| State | Tailwind Classes |
+|-------|------------------|
+| Default | `border-primary-800/30 bg-[#1E1E1E] text-[#F5F0E1] placeholder-[#B8B0A0]/50` |
+| Hover | `hover:border-primary-700/50` |
+| Focus | `focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30` |
+| Error | `border-red-500 focus:ring-red-500` |
+| Disabled | `disabled:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed` |
+
 ### 8.4 Card States
+
+**Dashboard:**
 
 | State | Tailwind Classes |
 |-------|------------------|
 | Default | `border border-gray-200 shadow-card bg-white rounded-xl` |
 | Hover | `hover:shadow-lg hover:scale-[1.02] transition-all duration-300` |
-| Selected (Dashboard) | `border-primary bg-primaryLight` |
-| Selected (Frontend) | `border-amber-500 bg-amber-50 ring-2 ring-amber-200` |
+| Selected | `border-primary bg-primaryLight` |
+
+**Frontend (Dark Cards):**
+
+| State | Tailwind Classes |
+|-------|------------------|
+| Default | `border border-primary-800/30 bg-[#1E1E1E] rounded-xl` |
+| Hover | `hover:border-primary-500/50 hover:shadow-[0_0_20px_rgba(197,150,26,0.15)] transition-all duration-300` |
+| Selected | `border-primary-500 ring-2 ring-primary-500/30` |
 
 ---
 
@@ -386,40 +413,43 @@ animation: {
 
 ### 10.2 Frontend Navigation
 
-**Sticky Navbar (Customer):**
+**Dark Transparent Header (Customer):**
 ```html
-<nav class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm border-b border-stone-200">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-    <!-- Logo (amber accent) -->
-    <a class="text-2xl font-bold text-amber-600">CoffeeClub</a>
+<header class="fixed top-0 w-full z-50 bg-[#0D0D0D]/80 backdrop-blur-md border-b border-primary-800/20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+    <!-- Logo (serif gold) -->
+    <a class="text-2xl font-heading font-bold text-primary-500">CoffeeClub</a>
     <!-- Nav links -->
-    <a class="text-stone-600 hover:text-amber-600 transition-colors">Menu</a>
+    <a class="text-[#B8B0A0] hover:text-primary-500 transition-colors">Menu</a>
     <!-- Cart icon with badge -->
-    <button class="relative text-stone-600 hover:text-amber-600">
-      <span class="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full w-5 h-5">3</span>
+    <button class="relative text-[#B8B0A0] hover:text-primary-500">
+      <span class="absolute -top-1 -right-1 bg-primary-500 text-[#0D0D0D] text-xs font-bold rounded-full w-5 h-5">3</span>
     </button>
   </div>
-</nav>
+</header>
 ```
 
 ### 10.3 Frontend Menu Item Card
 
 ```html
-<div class="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+<div class="bg-[#1E1E1E] rounded-xl border border-primary-800/30 overflow-hidden
+            hover:border-primary-500/50 hover:shadow-[0_0_20px_rgba(197,150,26,0.15)]
+            transition-all duration-300 group">
   <div class="relative aspect-square overflow-hidden">
     <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
     <!-- Sale badge -->
-    <span class="absolute top-2 right-2 bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded-full">SALE</span>
+    <span class="absolute top-2 right-2 bg-primary-500 text-[#0D0D0D] text-xs font-bold px-2 py-1 rounded-full">SALE</span>
   </div>
   <div class="p-4">
-    <h3 class="font-semibold text-stone-900">Item Name</h3>
-    <p class="text-sm text-stone-500 mt-1">Description</p>
+    <h3 class="font-semibold text-[#F5F0E1]">Item Name</h3>
+    <p class="text-sm text-[#B8B0A0] mt-1">Description</p>
     <div class="flex items-center justify-between mt-3">
       <div>
-        <span class="text-lg font-bold text-amber-600">$4.50</span>
-        <span class="text-sm text-stone-400 line-through ml-2">$5.50</span>
+        <span class="text-lg font-bold text-primary-500">$4.50</span>
+        <span class="text-sm text-[#B8B0A0] line-through ml-2">$5.50</span>
       </div>
-      <button class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+      <button class="bg-primary-500 text-[#0D0D0D] px-4 py-2 rounded-lg text-sm font-bold
+                     hover:bg-primary-400 hover:shadow-lg hover:shadow-primary-500/20 transition-all">
         Add to Cart
       </button>
     </div>
@@ -430,16 +460,16 @@ animation: {
 ### 10.4 Frontend Cart Item
 
 ```html
-<div class="flex items-center gap-4 py-4 border-b border-stone-200">
+<div class="flex items-center gap-4 py-4 border-b border-primary-800/20">
   <img class="w-16 h-16 rounded-lg object-cover" />
   <div class="flex-1">
-    <h4 class="font-medium text-stone-900">Item Name</h4>
-    <p class="text-sm text-amber-600 font-semibold">$4.50</p>
+    <h4 class="font-medium text-[#F5F0E1]">Item Name</h4>
+    <p class="text-sm text-primary-500 font-semibold">$4.50</p>
   </div>
   <div class="flex items-center gap-2">
-    <button class="w-8 h-8 rounded-full border border-stone-300 flex items-center justify-center hover:bg-stone-100">-</button>
-    <span class="w-8 text-center font-medium">2</span>
-    <button class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center hover:bg-amber-700">+</button>
+    <button class="w-8 h-8 rounded-full border border-primary-800/30 text-[#B8B0A0] flex items-center justify-center hover:bg-primary-500/10 hover:text-primary-500">-</button>
+    <span class="w-8 text-center font-medium text-[#F5F0E1]">2</span>
+    <button class="w-8 h-8 rounded-full bg-primary-500 text-[#0D0D0D] flex items-center justify-center hover:bg-primary-400">+</button>
   </div>
 </div>
 ```
@@ -540,11 +570,12 @@ animation: {
 - Error messages: `text-xs text-red-600 mt-1`
 
 ### 13.2 Frontend Forms
-- Clean, minimal design with amber accents
-- Focus ring: `focus:ring-2 focus:ring-amber-500`
-- Labels: `text-sm font-medium text-stone-700 mb-1`
-- Inputs: `border border-stone-300 rounded-lg px-4 py-3 focus:border-amber-500`
-- Error: `border-red-500 text-red-600`
+- Dark, elegant design with gold accents on dark backgrounds
+- Focus ring: `focus:ring-2 focus:ring-primary-500/30`
+- Labels: `text-sm font-medium text-[#F5F0E1] mb-1`
+- Inputs: `border border-primary-800/30 bg-[#1E1E1E] text-[#F5F0E1] rounded-lg px-4 py-3 focus:border-primary-500`
+- Error: `border-red-500 text-red-400`
+- Placeholder: `placeholder-[#B8B0A0]/50`
 
 ---
 
@@ -555,15 +586,15 @@ animation: {
 | Element | Tailwind Classes |
 |---------|------------------|
 | Dashboard Button | `focus:ring-2 focus:ring-primary focus:ring-offset-2` |
-| Frontend Button | `focus:ring-2 focus:ring-amber-500 focus:ring-offset-2` |
-| Input | `focus:ring-2 focus:ring-primary` or `focus:ring-amber-500` |
+| Frontend Button | `focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-[#0D0D0D]` |
+| Input | `focus:ring-2 focus:ring-primary` (Dashboard) or `focus:ring-primary-500/30` (Frontend) |
 | Link | `focus:ring-2 focus:ring-offset-1 rounded` |
 
 ### Color Contrast (WCAG AA)
 - Normal text: 4.5:1 minimum contrast ratio
 - Large text: 3:1 minimum contrast ratio
-- Amber-600 on white: passes AA for large text; use amber-700 or amber-800 for small text
-- Stone-900 on white: passes AA and AAA
+- Dashboard: Amber-600 on white passes AA for large text; stone-900 on white passes AA and AAA
+- Frontend: Cream (`#F5F0E1`) on dark (`#0D0D0D`) has excellent contrast (~16:1); gold (`#C5961A`) on dark passes AA for large text
 
 ### Touch Targets
 - Minimum 44x44px for interactive elements
@@ -584,5 +615,5 @@ animation: {
 
 ---
 
-**Version:** 2.0
-**Last Updated:** 2026-02-11
+**Version:** 3.0
+**Last Updated:** 2026-02-13

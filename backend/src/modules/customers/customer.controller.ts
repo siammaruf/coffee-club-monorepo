@@ -18,9 +18,12 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Customers')
 @Controller('customers')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class CustomerController {
     constructor(private readonly customerService: CustomerService) {}
 

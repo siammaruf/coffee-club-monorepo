@@ -17,7 +17,7 @@ const paymentMethods: { value: PaymentMethod; label: string; icon: typeof Bankno
 export function PaymentSelector({ selected, onChange }: PaymentSelectorProps) {
   return (
     <div>
-      <label className="mb-3 block text-sm font-medium text-coffee">
+      <label className="mb-3 block text-sm font-medium text-cream">
         Payment Method
       </label>
       <div className="grid grid-cols-2 gap-3">
@@ -31,17 +31,17 @@ export function PaymentSelector({ selected, onChange }: PaymentSelectorProps) {
               className={cn(
                 'flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all duration-200',
                 isActive
-                  ? 'border-primary-500 bg-primary-50 shadow-sm'
-                  : 'border-primary-100 bg-white hover:border-primary-300'
+                  ? 'border-primary-500 bg-primary-500/10 shadow-sm'
+                  : 'border-primary-800/30 bg-dark hover:border-primary-500/50'
               )}
             >
               <method.icon className={cn(
                 'h-6 w-6',
-                isActive ? 'text-primary-600' : 'text-coffee-light'
+                isActive ? 'text-primary-400' : 'text-coffee-light'
               )} />
               <span className={cn(
                 'text-sm font-semibold',
-                isActive ? 'text-primary-700' : 'text-coffee'
+                isActive ? 'text-primary-400' : 'text-cream'
               )}>
                 {method.label}
               </span>

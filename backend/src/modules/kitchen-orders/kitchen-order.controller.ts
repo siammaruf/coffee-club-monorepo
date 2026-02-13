@@ -24,9 +24,12 @@ import { KitchenOrderService } from './providers/kitchen-order.service';
 import { CreateKitchenOrderDto } from './dto/kitchen-order-create.dto';
 import { UpdateKitchenOrderDto } from './dto/kitchen-order-update.dto';
 import { KitchenOrderResponseDto } from './dto/kitchen-order-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Kitchen Orders')
 @Controller('kitchen-orders')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
 export class KitchenOrderController {
   constructor(private readonly kitchenOrderService: KitchenOrderService) {}
 

@@ -6,9 +6,12 @@ import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
 import { UpdateExpenseCategoryDto } from './dto/update-expense-category.dto';
 import { ExpenseCategoryResponseDto } from './dto/expense-category-response.dto';
 import { iconStorage } from 'src/common/utils/storage.util';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Expense Categories')
 @Controller('expense-categories')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ExpenseCategoriesController {
   constructor(private readonly expenseCategoriesService: ExpenseCategoriesService) {}
 
