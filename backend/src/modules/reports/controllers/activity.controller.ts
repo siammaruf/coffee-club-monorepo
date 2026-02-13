@@ -4,9 +4,12 @@ import { ActivityService } from '../providers/activity.service';
 import { CreateActivityDto } from '../dto/create-activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
 import { ActivityType } from '../entities/activity.entity';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/enum/user-role.enum';
 
 @ApiTags('Activities')
 @Controller('activities')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 

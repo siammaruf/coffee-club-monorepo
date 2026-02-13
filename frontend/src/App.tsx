@@ -15,12 +15,12 @@ export default function App() {
           position="top-right"
           toastOptions={{
             style: {
-              background: '#1a1a2e',
-              color: '#fef3c7',
-              border: '1px solid #f59e0b',
+              background: '#1A1A1A',
+              color: '#F5F0E1',
+              border: '1px solid #C5961A',
             },
             success: {
-              iconTheme: { primary: '#f59e0b', secondary: '#1a1a2e' },
+              iconTheme: { primary: '#C5961A', secondary: '#1A1A1A' },
             },
           }}
         />

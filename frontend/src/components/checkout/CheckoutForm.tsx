@@ -118,10 +118,10 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
     <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Order Type Tabs */}
       <div>
-        <label className="mb-3 block text-sm font-medium text-coffee">
+        <label className="mb-3 block text-sm font-medium text-cream">
           Order Type
         </label>
-        <div className="flex gap-2 rounded-xl bg-cream p-1.5">
+        <div className="flex gap-2 rounded-xl bg-dark p-1.5">
           {orderTypes.map((type) => {
             const isActive = orderType === type.value
             return (
@@ -132,8 +132,8 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
                 className={cn(
                   'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all',
                   isActive
-                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md'
-                    : 'text-coffee-light hover:text-coffee'
+                    ? 'bg-primary-500 text-dark shadow-md'
+                    : 'text-coffee-light hover:text-cream'
                 )}
               >
                 <type.icon className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
       {/* Dine-in: Table Selection */}
       {orderType === 'DINEIN' && (
         <div>
-          <label className="mb-3 block text-sm font-medium text-coffee">
+          <label className="mb-3 block text-sm font-medium text-cream">
             Select Table
           </label>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -163,15 +163,15 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
                   className={cn(
                     'rounded-lg border-2 p-3 text-center transition-all',
                     isSelected
-                      ? 'border-primary-500 bg-primary-50 shadow-sm'
+                      ? 'border-primary-500 bg-primary-500/10 shadow-sm'
                       : isAvailable
-                        ? 'border-primary-100 bg-white hover:border-primary-300'
-                        : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50'
+                        ? 'border-primary-800/30 bg-dark hover:border-primary-500/50'
+                        : 'cursor-not-allowed border-primary-800/20 bg-dark-light opacity-50'
                   )}
                 >
                   <p className={cn(
                     'text-sm font-bold',
-                    isSelected ? 'text-primary-700' : isAvailable ? 'text-coffee' : 'text-gray-400'
+                    isSelected ? 'text-primary-400' : isAvailable ? 'text-cream' : 'text-coffee-light/50'
                   )}>
                     {table.name}
                   </p>
@@ -195,7 +195,7 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
 
       {/* Special Instructions */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-coffee">
+        <label className="mb-1.5 block text-sm font-medium text-cream">
           Special Instructions
         </label>
         <textarea
@@ -203,7 +203,7 @@ export function CheckoutForm({ onOrderTypeChange, onDeliveryAddressChange, onOrd
           onChange={(e) => setSpecialInstructions(e.target.value)}
           placeholder="Any special requests for your order..."
           rows={3}
-          className="w-full rounded-lg border border-primary-200 bg-white px-4 py-2.5 text-sm text-coffee shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-full rounded-lg border border-primary-800/40 bg-dark px-4 py-2.5 text-sm text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         />
       </div>
 

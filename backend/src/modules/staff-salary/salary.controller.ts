@@ -7,9 +7,12 @@ import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { Salary } from './entities/salary.entity';
 import { receiptStorage } from 'src/common/utils/storage.util';
 import { SalaryResponseDto } from './dto/salary-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Staff Salary')
 @Controller('staff-salary')
+@Roles(UserRole.ADMIN)
 export class SalaryController {
   constructor(private readonly salaryService: SalaryService) {}
 

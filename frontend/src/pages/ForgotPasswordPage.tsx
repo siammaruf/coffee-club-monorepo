@@ -7,24 +7,24 @@ export default function ForgotPasswordPage() {
     <>
       <title>Reset Password | CoffeeClub</title>
       <meta name="robots" content="noindex, nofollow" />
-    <div className="flex min-h-[80vh] items-center justify-center bg-cream px-4 py-12">
+    <div className="flex min-h-[80vh] items-center justify-center bg-dark px-4 py-12">
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <Coffee className="h-10 w-10 text-primary-500" />
-            <span className="text-2xl font-bold text-coffee">
-              Coffee<span className="text-primary-500">Club</span>
+            <Coffee className="h-10 w-10 text-primary-400" />
+            <span className="font-heading text-2xl font-bold text-cream">
+              Coffee<span className="text-primary-400">Club</span>
             </span>
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-coffee">Reset Password</h1>
+          <h1 className="font-heading mt-4 text-2xl font-bold text-cream">Reset Password</h1>
           <p className="mt-1 text-sm text-coffee-light">
             We will help you get back into your account.
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="rounded-2xl border border-primary-100 bg-white p-6 shadow-lg sm:p-8">
+        <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6 shadow-lg sm:p-8">
           <ForgotPasswordForm />
         </div>
       </div>

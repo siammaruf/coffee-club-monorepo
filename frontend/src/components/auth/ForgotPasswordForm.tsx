@@ -23,7 +23,7 @@ type Step = 'email' | 'otp' | 'password'
 export function ForgotPasswordForm() {
   const [step, setStep] = useState<Step>('email')
   const [emailOrPhone, setEmailOrPhone] = useState('')
-  const [otp, setOtp] = useState('')
+  const [resetToken, setResetToken] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
@@ -56,10 +56,7 @@ export function ForgotPasswordForm() {
   const handleSendOtp = async (data: ForgotPasswordEmailData) => {
     setEmailOrPhone(data.emailOrPhone)
     try {
-      const isEmail = data.emailOrPhone.includes('@')
-      await authService.forgotPassword(
-        isEmail ? { email: data.emailOrPhone } : { phone: data.emailOrPhone }
-      )
+      await authService.forgotPassword({ identifier: data.emailOrPhone })
       toast.success('OTP sent to your email/phone!')
       setStep('otp')
     } catch {
@@ -68,13 +65,13 @@ export function ForgotPasswordForm() {
   }
 
   const handleVerifyOtp = async (data: ForgotPasswordOtpData) => {
-    setOtp(data.otp)
     try {
-      const isEmail = emailOrPhone.includes('@')
-      await authService.verifyOtp({
-        ...(isEmail ? { email: emailOrPhone } : { phone: emailOrPhone }),
+      const response = await authService.verifyOtp({
+        identifier: emailOrPhone,
         otp: data.otp,
       })
+      // Backend returns a reset token that must be used in the reset-password step
+      setResetToken(response.token)
       toast.success('OTP verified successfully!')
       setStep('password')
     } catch {
@@ -84,10 +81,8 @@ export function ForgotPasswordForm() {
 
   const handleResetPassword = async (data: ForgotPasswordResetData) => {
     try {
-      const isEmail = emailOrPhone.includes('@')
       await authService.resetPassword({
-        ...(isEmail ? { email: emailOrPhone } : { phone: emailOrPhone }),
-        otp,
+        token: resetToken,
         password: data.password,
       })
       toast.success('Password reset successfully! Please login.')
@@ -105,9 +100,11 @@ export function ForgotPasswordForm() {
           <div key={s.key} className="flex items-center gap-2">
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                index <= currentStepIndex
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white'
-                  : 'bg-primary-100 text-coffee-light'
+                index < currentStepIndex
+                  ? 'bg-primary-600 text-dark'
+                  : index === currentStepIndex
+                    ? 'bg-primary-500 text-dark'
+                    : 'bg-dark text-coffee-light'
               }`}
             >
               {index < currentStepIndex ? (
@@ -119,7 +116,7 @@ export function ForgotPasswordForm() {
             {index < steps.length - 1 && (
               <div
                 className={`h-0.5 w-8 sm:w-12 ${
-                  index < currentStepIndex ? 'bg-primary-500' : 'bg-primary-100'
+                  index < currentStepIndex ? 'bg-primary-500' : 'bg-primary-800/30'
                 }`}
               />
             )}
@@ -150,7 +147,7 @@ export function ForgotPasswordForm() {
           </Button>
 
           <p className="text-center text-sm text-coffee-light">
-            <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-primary-600 hover:text-primary-700">
+            <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-primary-400 hover:text-primary-300">
               <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>
@@ -180,7 +177,7 @@ export function ForgotPasswordForm() {
             <button
               type="button"
               onClick={() => setStep('email')}
-              className="font-semibold text-primary-600 hover:text-primary-700"
+              className="font-semibold text-primary-400 hover:text-primary-300"
             >
               Resend
             </button>
@@ -203,7 +200,7 @@ export function ForgotPasswordForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-[38px] text-coffee-light hover:text-coffee"
+              className="absolute right-3 top-[38px] text-coffee-light hover:text-primary-400"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>

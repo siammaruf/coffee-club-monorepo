@@ -4,9 +4,12 @@ import { OrderItemService } from './providers/order-item.service';
 import { CreateOrderItemDto } from './dto/order-item-create.dto';
 import { UpdateOrderItemDto } from './dto/order-item-update.dto';
 import { OrderItemResponseDto } from './dto/order-item-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('OrderItems')
 @Controller('order-items')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class OrderItemController {
   constructor(private readonly orderItemService: OrderItemService) {}
 

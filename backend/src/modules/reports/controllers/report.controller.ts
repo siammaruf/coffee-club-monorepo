@@ -6,9 +6,12 @@ import { GenerateReportDto } from '../dto/generate-report.dto';
 import { FinancialSummaryResponseDto } from '../dto/financial-summary-response.dto';
 import { KitchenReportResponseDto } from '../dto/kitchen-report-response.dto';
 import { DashboardResponseDto } from '../dto/dashboard-response.dto';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/enum/user-role.enum';
 
 @ApiTags('Sales Reports')
 @Controller('sales-reports')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class SalesReportController {
     constructor(private readonly reportService: ReportService) {}
 

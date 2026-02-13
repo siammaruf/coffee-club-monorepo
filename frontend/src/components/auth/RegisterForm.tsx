@@ -84,7 +84,7 @@ export function RegisterForm() {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-[38px] text-coffee-light hover:text-coffee"
+          className="absolute right-3 top-[38px] text-coffee-light hover:text-primary-400"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
           {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -104,7 +104,7 @@ export function RegisterForm() {
         <button
           type="button"
           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-          className="absolute right-3 top-[38px] text-coffee-light hover:text-coffee"
+          className="absolute right-3 top-[38px] text-coffee-light hover:text-primary-400"
           aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
         >
           {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -115,16 +115,16 @@ export function RegisterForm() {
         <label className="flex cursor-pointer items-start gap-2">
           <input
             type="checkbox"
-            className="mt-1 h-4 w-4 rounded border-primary-300 text-primary-500 focus:ring-primary-500"
+            className="mt-1 h-4 w-4 rounded border-primary-800/40 bg-dark-card text-primary-500 focus:ring-primary-500"
             {...register('agreeTerms')}
           />
           <span className="text-sm text-coffee-light">
             I agree to the{' '}
-            <a href="#" className="font-medium text-primary-600 hover:text-primary-700">
+            <a href="#" className="font-medium text-primary-400 hover:text-primary-300">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="#" className="font-medium text-primary-600 hover:text-primary-700">
+            <a href="#" className="font-medium text-primary-400 hover:text-primary-300">
               Privacy Policy
             </a>
           </span>
@@ -140,7 +140,7 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-coffee-light">
         Already have an account?{' '}
-        <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
+        <Link to="/login" className="font-semibold text-primary-400 hover:text-primary-300">
           Login
         </Link>
       </p>

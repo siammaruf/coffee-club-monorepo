@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import cookieParser from 'cookie-parser';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -41,7 +42,7 @@ async function bootstrap() {
 
   // Apply global guards
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  app.useGlobalGuards(new JwtAuthGuard(reflector), new RolesGuard(reflector));
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new DatabaseExceptionFilter());
 

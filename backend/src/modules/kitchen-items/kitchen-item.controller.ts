@@ -6,9 +6,12 @@ import { UpdateKitchenItemDto } from './dto/update-kitchen-item.dto';
 import { KitchenResponseDto } from './dto/kitchen-response-item.dto';
 import { KitchenItemType } from './enum/kitchen-item-type.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Kitchen Items')
 @Controller('kitchen-items')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
 export class KitchenItemController {
   constructor(private readonly kitchenItemService: KitchenItemService) {}
 

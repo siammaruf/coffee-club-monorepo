@@ -3,9 +3,12 @@ import { DiscountService } from './providers/discount.service';
 import { BaseDiscountDto } from './dto/base-discount.dto'; 
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DiscountResponseDto } from './dto/discount-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Discounts')
 @Controller('discounts')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class DiscountController {
     constructor(private readonly discountService: DiscountService) {}
 

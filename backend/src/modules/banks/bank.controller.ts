@@ -4,10 +4,13 @@ import { BankService } from './providers/bank.service';
 import { UpdateBankDto } from './dto/update-bank.dto';
 import { BankResponseDto } from './dto/bank-response.dto';
 import { CreateBankDto } from './dto/create-bank.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Banks')
 @Controller('banks')
 @ApiBasicAuth()
+@Roles(UserRole.ADMIN)
 export class BankController {
   constructor(private readonly bankService: BankService) {}
 

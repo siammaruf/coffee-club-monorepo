@@ -5,9 +5,12 @@ import { CreateStuffAttendanceDto } from './dto/create-stuff-attendance.dto';
 import { UpdateStuffAttendanceDto } from './dto/update-stuff-attendance.dto';
 import { StuffAttendanceResponseDto } from './dto/stuff-attendance-response.dto';
 import { AttendanceStatus } from './enum/attendance-status.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Staff Attendance')
 @Controller('stuff-attendance')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA, UserRole.CHEF)
 export class StuffAttendanceController {
   constructor(private readonly stuffAttendanceService: StuffAttendanceService) {}
 

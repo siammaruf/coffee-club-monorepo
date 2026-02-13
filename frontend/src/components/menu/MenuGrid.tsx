@@ -14,7 +14,7 @@ export function MenuGrid({ items, isLoading, onViewDetail }: MenuGridProps) {
     return (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-2xl border border-primary-100 bg-white">
+          <div key={i} className="overflow-hidden rounded-2xl border border-primary-800/30 bg-dark-card">
             <LoadingSkeleton className="h-44 w-full rounded-none" />
             <div className="space-y-3 p-4">
               <LoadingSkeleton className="h-5 w-3/4" />
@@ -34,10 +34,10 @@ export function MenuGrid({ items, isLoading, onViewDetail }: MenuGridProps) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-900/50">
           <UtensilsCrossed className="h-10 w-10 text-primary-400" />
         </div>
-        <h3 className="mt-4 text-lg font-bold text-coffee">No items found</h3>
+        <h3 className="mt-4 text-lg font-bold text-cream">No items found</h3>
         <p className="mt-1 text-sm text-coffee-light">
           Try adjusting your search or filter criteria.
         </p>

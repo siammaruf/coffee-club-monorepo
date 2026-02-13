@@ -223,6 +223,27 @@ export default function Sidebar() {
             )}
           </div>
 
+          {/* Data Management */}
+          <div>
+            <div
+              className="flex items-center justify-between cursor-pointer mb-1"
+              onClick={() => toggleSection("dataManagement")}
+            >
+              <h3 className="text-base font-bold text-black">Data Management</h3>
+              <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
+                {openSections.dataManagement ? "-" : "+"}
+              </span>
+            </div>
+            {openSections.dataManagement && (
+              <div className="space-y-1">
+                <Link to="/dashboard/data-management" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <HardDrive className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Data Management</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
           {/* User Settings */}
           <div>
             <div

@@ -41,10 +41,10 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
   }
 
   const gradientMap: Record<string, string> = {
-    BAR: 'from-primary-400 to-amber-500',
-    KITCHEN: 'from-emerald-400 to-teal-500',
+    BAR: 'from-primary-900/30 to-dark-card',
+    KITCHEN: 'from-emerald-900/30 to-dark-card',
   }
-  const gradient = gradientMap[item.type] ?? 'from-primary-400 to-primary-600'
+  const gradient = gradientMap[item.type] ?? 'from-primary-900/30 to-dark-card'
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="lg">
@@ -58,7 +58,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="text-7xl font-black text-white/30">
+            <div className="text-7xl font-black text-primary-500/30">
               {item.name.charAt(0)}
             </div>
           )}
@@ -79,7 +79,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
         {/* Content */}
         <div className="px-6 pb-2 pt-5">
-          <h2 className="text-2xl font-bold text-coffee">{item.name}</h2>
+          <h2 className="text-2xl font-bold text-cream">{item.name}</h2>
           {item.name_bn && (
             <p className="mt-0.5 text-sm text-coffee-light">{item.name_bn}</p>
           )}
@@ -90,7 +90,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Price */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-2xl font-bold text-primary-600">
+            <span className="font-heading text-2xl font-bold text-primary-400">
               {formatPrice(price)}
             </span>
             {item.sale_price && (
@@ -102,23 +102,23 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Quantity Selector */}
           <div className="mt-6">
-            <label className="mb-2 block text-sm font-medium text-coffee">
+            <label className="mb-2 block text-sm font-medium text-cream">
               Quantity
             </label>
-            <div className="inline-flex items-center rounded-lg border border-primary-200">
+            <div className="inline-flex items-center rounded-lg border border-primary-800/40">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="flex h-10 w-10 items-center justify-center rounded-l-lg text-coffee transition-colors hover:bg-primary-50"
+                className="flex h-10 w-10 items-center justify-center rounded-l-lg text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="flex h-10 w-12 items-center justify-center border-x border-primary-200 text-base font-semibold text-coffee">
+              <span className="flex h-10 w-12 items-center justify-center border-x border-primary-800/40 text-base font-semibold text-cream">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="flex h-10 w-10 items-center justify-center rounded-r-lg text-coffee transition-colors hover:bg-primary-50"
+                className="flex h-10 w-10 items-center justify-center rounded-r-lg text-coffee-light transition-colors hover:bg-primary-500/10 hover:text-primary-400"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
@@ -128,7 +128,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Special Notes */}
           <div className="mt-5">
-            <label className="mb-2 block text-sm font-medium text-coffee">
+            <label className="mb-2 block text-sm font-medium text-cream">
               Special Notes
             </label>
             <textarea
@@ -136,7 +136,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special requests? (e.g., less sugar, extra spicy...)"
               rows={3}
-              className="w-full rounded-lg border border-primary-200 bg-white px-4 py-2.5 text-sm text-coffee shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              className="w-full rounded-lg border border-primary-800/40 bg-dark-card px-4 py-2.5 text-sm text-cream shadow-sm transition-colors placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             />
           </div>
 

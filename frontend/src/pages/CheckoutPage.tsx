@@ -31,12 +31,12 @@ export default function CheckoutPage() {
       <>
         <title>Checkout | CoffeeClub</title>
         <meta name="robots" content="noindex, nofollow" />
-      <div className="min-h-[60vh] bg-cream">
+      <div className="min-h-[60vh] bg-dark">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-success/10">
             <CheckCircle className="h-12 w-12 text-success" />
           </div>
-          <h1 className="mt-6 text-2xl font-bold text-coffee">Order Placed Successfully!</h1>
+          <h1 className="font-heading mt-6 text-2xl font-bold text-cream">Order Placed Successfully!</h1>
           <p className="mx-auto mt-2 max-w-md text-coffee-light">
             Your order has been confirmed. You can track your order status from the orders page.
           </p>
@@ -65,12 +65,12 @@ export default function CheckoutPage() {
       <>
         <title>Checkout | CoffeeClub</title>
         <meta name="robots" content="noindex, nofollow" />
-      <div className="min-h-[60vh] bg-cream">
+      <div className="min-h-[60vh] bg-dark">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-900/50">
             <ShoppingBag className="h-12 w-12 text-primary-400" />
           </div>
-          <h1 className="mt-6 text-2xl font-bold text-coffee">Your cart is empty</h1>
+          <h1 className="font-heading mt-6 text-2xl font-bold text-cream">Your cart is empty</h1>
           <p className="mt-2 text-coffee-light">
             Add some items to your cart before checking out.
           </p>
@@ -89,24 +89,24 @@ export default function CheckoutPage() {
     <>
       <title>Checkout | CoffeeClub</title>
       <meta name="robots" content="noindex, nofollow" />
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-dark">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div>
           <Link
             to="/cart"
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary-400 hover:text-primary-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Cart
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-coffee sm:text-3xl">Checkout</h1>
+          <h1 className="font-heading mt-2 text-2xl font-bold text-cream sm:text-3xl">Checkout</h1>
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl border border-primary-100 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6 shadow-sm">
               <CheckoutForm
                 onOrderTypeChange={handleOrderTypeChange}
                 onDeliveryAddressChange={handleDeliveryAddressChange}

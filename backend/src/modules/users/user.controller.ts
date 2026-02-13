@@ -9,9 +9,11 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserStatus } from './enum/user-status.enum';
 import { UserRole } from './enum/user-role.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Users')
 @Controller('users')
+@Roles(UserRole.ADMIN)
 export class UserController {
     constructor(
         private readonly userService: UserService,

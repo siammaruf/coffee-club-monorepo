@@ -17,8 +17,10 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.guard';
 import { CurrentCustomer } from '../../common/decorators/customer.decorator';
 import { Customer } from '../customers/entities/customer.entity';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Customer Cart')
+@Public()
 @Controller('customer/cart')
 @UseGuards(CustomerJwtAuthGuard)
 export class CartController {

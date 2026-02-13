@@ -14,9 +14,12 @@ import { CreateDiscountApplicationDto } from './dto/create-discount-application.
 import { UpdateDiscountApplicationDto } from './dto/update-discount-application.dto';
 import { DiscountApplicationResponseDto } from './dto/discount-application-response.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Discount Applications')
 @Controller('discount-applications')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class DiscountApplicationController {
   constructor(private readonly discountApplicationService: DiscountApplicationService) {}
 

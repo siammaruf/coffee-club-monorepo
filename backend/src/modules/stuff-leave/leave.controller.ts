@@ -5,9 +5,12 @@ import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveDto } from './dto/update-leave.dto';
 import { LeaveStatus } from './enum/leave-status.enum';
 import { Leave } from './entities/leave.entity';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('leaves')
 @Controller('leaves')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA, UserRole.CHEF)
 export class LeaveController {
     constructor(private readonly leaveService: LeaveService) {}
 

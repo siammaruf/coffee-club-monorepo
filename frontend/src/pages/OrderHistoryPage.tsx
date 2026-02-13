@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ClipboardList } from 'lucide-react'
+import { PageBanner } from '@/components/ui/PageBanner'
 import { OrderCard } from '@/components/orders/OrderCard'
 import { Loading } from '@/components/ui/loading'
 import { orderService } from '@/services/httpServices/orderService'
@@ -30,14 +31,14 @@ export default function OrderHistoryPage() {
     <>
       <title>My Orders | CoffeeClub</title>
       <meta name="robots" content="noindex, nofollow" />
-    <div className="min-h-screen bg-cream">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <h1 className="text-2xl font-bold text-coffee sm:text-3xl">My Orders</h1>
-        <p className="mt-1 text-sm text-coffee-light">
-          Track and view your order history.
-        </p>
+    <div className="min-h-screen bg-dark">
+      <PageBanner
+        title="My Orders"
+        subtitle="Track and view your order history."
+        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Orders' }]}
+      />
 
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Loading */}
         {isLoading && (
           <div className="mt-12">
@@ -57,10 +58,10 @@ export default function OrderHistoryPage() {
           <>
             {orders.length === 0 ? (
               <div className="mt-16 flex flex-col items-center justify-center text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-900/50">
                   <ClipboardList className="h-10 w-10 text-primary-400" />
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-coffee">No orders yet</h3>
+                <h3 className="mt-4 text-lg font-bold text-cream">No orders yet</h3>
                 <p className="mt-1 text-sm text-coffee-light">
                   Your order history will appear here once you place your first order.
                 </p>

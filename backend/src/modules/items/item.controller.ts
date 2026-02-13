@@ -7,10 +7,13 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ItemResponseDto } from "./dto/item-response.dto";
 import { CloudinaryService } from "../cloudinary/cloudinary.service";
 import { Public } from "src/common/decorators/public.decorator";
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Items')
 @Controller('items')
 @ApiBasicAuth()
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class ItemController {
   constructor(
     private readonly itemService: ItemService,

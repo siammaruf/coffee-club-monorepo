@@ -28,19 +28,19 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
 
   if (isCancelled) {
     return (
-      <div className="rounded-2xl border border-primary-100 bg-white p-6">
-        <h3 className="text-lg font-bold text-coffee">Order Timeline</h3>
+      <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6">
+        <h3 className="font-heading text-lg font-bold text-cream">Order Timeline</h3>
         <div className="mt-6 space-y-6">
           {/* Placed */}
           <div className="flex gap-4">
             <div className="flex flex-col items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100">
-                <Check className="h-5 w-5 text-primary-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600/50">
+                <Check className="h-5 w-5 text-primary-400" />
               </div>
               <div className="mt-1 h-full w-0.5 bg-error/30" />
             </div>
             <div className="pb-6">
-              <p className="text-sm font-bold text-coffee">Order Placed</p>
+              <p className="text-sm font-bold text-cream">Order Placed</p>
               <p className="text-xs text-coffee-light">{formatDateTime(createdAt)}</p>
             </div>
           </div>
@@ -63,8 +63,8 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
   }
 
   return (
-    <div className="rounded-2xl border border-primary-100 bg-white p-6">
-      <h3 className="text-lg font-bold text-coffee">Order Timeline</h3>
+    <div className="rounded-2xl border border-primary-800/30 bg-dark-card p-6">
+      <h3 className="font-heading text-lg font-bold text-cream">Order Timeline</h3>
       <div className="mt-6 space-y-0">
         {timelineSteps.map((step, index) => {
           const stepIndex = statusOrder[step.status] ?? 0
@@ -79,20 +79,20 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full transition-colors',
                     isCurrent
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 shadow-md'
+                      ? 'bg-primary-500 shadow-md'
                       : isActive
-                        ? 'bg-primary-100'
-                        : 'bg-gray-100'
+                        ? 'bg-primary-600/50'
+                        : 'bg-dark'
                   )}
                 >
                   <step.icon
                     className={cn(
                       'h-5 w-5',
                       isCurrent
-                        ? 'text-white'
+                        ? 'text-dark'
                         : isActive
-                          ? 'text-primary-600'
-                          : 'text-gray-400'
+                          ? 'text-primary-400'
+                          : 'text-coffee-light/50'
                     )}
                   />
                 </div>
@@ -101,8 +101,8 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                     className={cn(
                       'mt-1 h-10 w-0.5',
                       isActive && stepIndex < currentIndex
-                        ? 'bg-primary-400'
-                        : 'bg-gray-200'
+                        ? 'bg-primary-500'
+                        : 'bg-primary-800/30'
                     )}
                   />
                 )}
@@ -111,7 +111,7 @@ export function OrderTimeline({ status, createdAt, updatedAt }: OrderTimelinePro
                 <p
                   className={cn(
                     'text-sm font-bold',
-                    isActive ? 'text-coffee' : 'text-gray-400'
+                    isActive ? 'text-cream' : 'text-coffee-light/50'
                   )}
                 >
                   {step.label}

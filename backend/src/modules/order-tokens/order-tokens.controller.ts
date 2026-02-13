@@ -4,9 +4,12 @@ import { OrderTokensService } from './provider/order-tokens.service';
 import { CreateOrderTokenDto } from './dto/create-order-token.dto';
 import { UpdateOrderTokenDto } from './dto/update-order-token.dto';
 import { OrderTokenResponseDto } from './dto/order-token-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Order Tokens')
 @Controller('order-tokens')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class OrderTokensController {
   constructor(private readonly orderTokensService: OrderTokensService) {}
 

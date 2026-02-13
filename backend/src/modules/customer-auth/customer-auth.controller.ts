@@ -26,11 +26,11 @@ import { ChangeCustomerPasswordDto } from './dto/change-customer-password.dto';
 import { Customer } from '../customers/entities/customer.entity';
 
 @ApiTags('Customer Auth')
+@Public()
 @Controller('customer-auth')
 export class CustomerAuthController {
   constructor(private readonly customerAuthService: CustomerAuthService) {}
 
-  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Customer registration' })
@@ -45,7 +45,6 @@ export class CustomerAuthController {
     };
   }
 
-  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Customer login' })
@@ -109,7 +108,6 @@ export class CustomerAuthController {
     };
   }
 
-  @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset OTP' })
@@ -124,7 +122,6 @@ export class CustomerAuthController {
     };
   }
 
-  @Public()
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP and get password reset token' })
@@ -144,7 +141,6 @@ export class CustomerAuthController {
     };
   }
 
-  @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using token' })

@@ -4,9 +4,12 @@ import { KitchenStockService } from './providers/kitchen-stock.service';
 import { CreateKitchenStockDto } from './dto/kitchen-stock-create.dto';
 import { UpdateKitchenStockDto } from './dto/kitchen-stock-update.dto';
 import { KitchenStockResponseDto } from './dto/kitchen-stock-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Kitchen Stock')
 @Controller('kitchen-stock')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
 export class KitchenStockController {
   constructor(private readonly kitchenStockService: KitchenStockService) {}
 

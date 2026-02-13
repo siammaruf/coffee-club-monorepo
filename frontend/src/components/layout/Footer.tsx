@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Coffee,
   Facebook,
   Instagram,
   Twitter,
@@ -56,16 +55,16 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-dark text-white">
+    <footer className="bg-dark-light text-cream">
       {/* Newsletter Section */}
-      <div className="border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="border-b border-primary-800/30 bg-dark-surface">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
             <div>
-              <h3 className="text-2xl font-bold">
+              <h3 className="font-heading text-2xl font-bold">
                 Stay Updated with <span className="text-primary-400">CoffeeClub</span>
               </h3>
-              <p className="mt-1 text-white/60">
+              <p className="mt-1 text-coffee-light">
                 Subscribe to our newsletter for exclusive offers and updates.
               </p>
             </div>
@@ -78,11 +77,11 @@ export function Footer() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/40 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400/20"
+                className="flex-1 rounded-lg border border-primary-800/40 bg-dark-card px-4 py-3 text-cream placeholder:text-coffee-light/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               />
               <button
                 type="submit"
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-3 font-semibold text-white transition-all hover:from-primary-600 hover:to-primary-700 hover:shadow-lg"
+                className="flex items-center gap-2 rounded-lg bg-primary-500 px-6 py-3 font-bold text-dark transition-all hover:bg-primary-400 hover:shadow-lg"
               >
                 <Send className="h-4 w-4" />
                 Subscribe
@@ -94,16 +93,15 @@ export function Footer() {
 
       {/* Main Footer Content */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Column 1: About */}
-          <div>
-            <Link to="/" className="flex items-center gap-2">
-              <Coffee className="h-8 w-8 text-primary-400" />
-              <span className="text-xl font-bold">
+          <div className="lg:col-span-2">
+            <Link to="/" className="inline-block">
+              <span className="font-heading text-2xl font-bold tracking-wide">
                 Coffee<span className="text-primary-400">Club</span>
               </span>
             </Link>
-            <p className="mt-4 text-sm leading-relaxed text-white/60">
+            <p className="mt-4 text-sm leading-relaxed text-coffee-light">
               CoffeeClub is your go-to destination for exceptional coffee and delicious cuisine.
               We source the finest beans and ingredients to bring you a memorable dining experience
               every time you visit.
@@ -114,7 +112,7 @@ export function Footer() {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white/70 transition-all hover:bg-primary-500 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800/30 text-coffee-light transition-all hover:bg-primary-500 hover:text-dark"
                 >
                   <social.icon className="h-5 w-5" />
                 </a>
@@ -124,13 +122,13 @@ export function Footer() {
 
           {/* Column 2: Quick Links */}
           <div>
-            <h4 className="mb-4 text-lg font-bold text-primary-400">Quick Links</h4>
+            <h4 className="font-heading mb-4 text-xl text-primary-400">Quick Links</h4>
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="text-sm text-white/60 transition-colors hover:text-primary-400"
+                    className="text-sm text-coffee-light transition-colors hover:text-primary-400"
                   >
                     {link.label}
                   </Link>
@@ -141,56 +139,62 @@ export function Footer() {
 
           {/* Column 3: Menu Categories */}
           <div>
-            <h4 className="mb-4 text-lg font-bold text-primary-400">Menu</h4>
+            <h4 className="font-heading mb-4 text-xl text-primary-400">Menu</h4>
             <ul className="space-y-3">
               {menuCategories.map((cat) => (
                 <li key={cat.label}>
                   <Link
                     to={cat.href}
-                    className="text-sm text-white/60 transition-colors hover:text-primary-400"
+                    className="text-sm text-coffee-light transition-colors hover:text-primary-400"
                   >
                     {cat.label}
                   </Link>
                 </li>
               ))}
             </ul>
+
+            {/* Operating Hours */}
+            <h4 className="font-heading mb-3 mt-8 text-xl text-primary-400">Hours</h4>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 text-sm text-coffee-light">
+                <Clock className="h-4 w-4 shrink-0 text-primary-500" />
+                <span>Mon - Sat: 8 AM - 10 PM</span>
+              </li>
+              <li className="flex items-center gap-2 text-sm text-coffee-light">
+                <Clock className="h-4 w-4 shrink-0 text-primary-500" />
+                <span>Sunday: 9 AM - 9 PM</span>
+              </li>
+            </ul>
           </div>
 
           {/* Column 4: Contact Info */}
           <div>
-            <h4 className="mb-4 text-lg font-bold text-primary-400">Contact Us</h4>
+            <h4 className="font-heading mb-4 text-xl text-primary-400">Contact Us</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-400" />
-                <span className="text-sm text-white/60">
+                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-500" />
+                <span className="text-sm text-coffee-light">
                   123 Coffee Street, Gulshan-2,<br />
                   Dhaka 1212, Bangladesh
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="h-5 w-5 shrink-0 text-primary-400" />
+                <Phone className="h-5 w-5 shrink-0 text-primary-500" />
                 <a
                   href="tel:+8801712345678"
-                  className="text-sm text-white/60 transition-colors hover:text-primary-400"
+                  className="text-sm text-coffee-light transition-colors hover:text-primary-400"
                 >
                   +880 1712-345678
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail className="h-5 w-5 shrink-0 text-primary-400" />
+                <Mail className="h-5 w-5 shrink-0 text-primary-500" />
                 <a
                   href="mailto:hello@coffeeclub.com"
-                  className="text-sm text-white/60 transition-colors hover:text-primary-400"
+                  className="text-sm text-coffee-light transition-colors hover:text-primary-400"
                 >
                   hello@coffeeclub.com
                 </a>
-              </li>
-              <li className="flex items-start gap-3">
-                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary-400" />
-                <div className="text-sm text-white/60">
-                  <p>Mon - Sat: 8:00 AM - 10:00 PM</p>
-                  <p>Sunday: 9:00 AM - 9:00 PM</p>
-                </div>
               </li>
             </ul>
           </div>
@@ -198,14 +202,14 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-white/10">
+      <div className="border-t border-primary-800/30">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-coffee-light/60">
             &copy; {new Date().getFullYear()} CoffeeClub. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-white/30">We accept</span>
-            <div className="flex items-center gap-3 text-white/50">
+            <span className="text-xs text-coffee-light/40">We accept</span>
+            <div className="flex items-center gap-3 text-coffee-light/50">
               <span aria-label="Cash"><Banknote className="h-5 w-5" /></span>
               <span aria-label="bKash"><Smartphone className="h-5 w-5" /></span>
               <span aria-label="Bank Card"><CreditCard className="h-5 w-5" /></span>
