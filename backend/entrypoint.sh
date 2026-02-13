@@ -1,8 +1,13 @@
 #!/bin/sh
 set -e
 
-echo "==> Running database seed (admin user)..."
-node dist/seeds/admin-user.seed.js
+echo "🔄 Running database migrations..."
+if npm run migration:run 2>&1; then
+  echo "✅ Migrations completed successfully"
+else
+  echo "⚠️  Migration failed or no migrations to run"
+fi
 
-echo "==> Starting application..."
-exec node dist/main.js
+echo ""
+echo "🚀 Starting application..."
+exec bun run dist/main.js

@@ -1,49 +1,23 @@
-# ============================================================
-# Stage 1: Install dependencies
-# ============================================================
+# Dependencies
 FROM oven/bun:latest AS deps
-
 WORKDIR /app
-
-COPY package.json bun.lock ./
-
+COPY package.json package-lock.json* bun.lockb* ./
 RUN bun install --frozen-lockfile
 
-# ============================================================
-# Stage 2: Build the SPA
-# ============================================================
+# Build
 FROM oven/bun:latest AS builder
-
 WORKDIR /app
-
-# Vite bakes VITE_ env vars at build time
-ARG VITE_API_URL
-ENV VITE_API_URL=${VITE_API_URL}
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 RUN bun run build
 
-# ============================================================
-# Stage 3: Serve with Node.js + serve
-# ============================================================
-FROM node:24-alpine AS production
-
-RUN npm install -g serve
-
+# Runtime
+FROM oven/bun:latest
 WORKDIR /app
-
 COPY --from=builder /app/dist ./dist
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app
-
-USER appuser
-
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost:3000/ || exit 1
-
-CMD ["serve", "-s", "dist", "-l", "3000"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD bun -e "fetch('http://localhost:3000').then(() => process.exit(0)).catch(() => process.exit(1))" || exit 1
+ENTRYPOINT ["/app/entrypoint.sh"]
