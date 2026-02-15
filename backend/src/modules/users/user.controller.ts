@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseInterceptors, UploadedFiles, UploadedFile, BadRequestException, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBasicAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseInterceptors, UploadedFiles, UploadedFile, BadRequestException, Query, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './providers/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,8 +10,11 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserStatus } from './enum/user-status.enum';
 import { UserRole } from './enum/user-role.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Users')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('users')
 @Roles(UserRole.ADMIN)
 export class UserController {
@@ -60,7 +63,7 @@ export class UserController {
         status: 500,
         description: 'Internal server error - User creation failed'
     })
-    @ApiBasicAuth()
+
     @UseInterceptors(
         FileFieldsInterceptor([
           { name: 'picture', maxCount: 1 },
@@ -182,7 +185,7 @@ export class UserController {
         enumName: 'UserRole',
         description: 'Filter by user role/position' 
     })
-    @ApiBasicAuth()
+
     async findAll(
         @Query('page') page?: string,
         @Query('limit') limit?: string,
@@ -229,8 +232,8 @@ export class UserController {
         }
     })
     @ApiResponse({ status: 404, description: 'User not found' })
-    @ApiBasicAuth()
-    async findById(@Param('id') id: string) {
+
+    async findById(@Param('id', ParseUUIDPipe) id: string) {
         const user = await this.userService.findById(id);
         return {
             data: user,
@@ -264,7 +267,7 @@ export class UserController {
         }
     })
     @ApiResponse({ status: 404, description: 'User not found' })
-    @ApiBasicAuth()
+
     async findByEmail(@Param('email') email: string) {
         const user = await this.userService.findByEmail(email);
         return {
@@ -303,7 +306,7 @@ export class UserController {
     })
     @ApiResponse({ status: 404, description: 'User not found' })
     @ApiResponse({ status: 409, description: 'Email already in use' })
-    @ApiBasicAuth()
+
     @UseInterceptors(
         FileFieldsInterceptor([
           { name: 'picture', maxCount: 1 },
@@ -312,7 +315,7 @@ export class UserController {
         ])
     )
     async update(
-        @Param('id') id: string,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() updateUserDto: UpdateUserDto,
         @UploadedFiles() files?: {
             picture?: Express.Multer.File[],
@@ -401,13 +404,13 @@ export class UserController {
         }
     })
     @UseInterceptors(FileInterceptor('picture'))
-    @ApiBasicAuth()
+
     async updatePicture(
-        @Param('id') id: string,
+        @Param('id', ParseUUIDPipe) id: string,
         @UploadedFile() file: Express.Multer.File
     ) {
         if (!file) {
-            throw new Error('Picture file is required');
+            throw new BadRequestException('Picture file is required');
         }
         
         const uploadResult = await this.cloudinaryService.uploadImage(file, {
@@ -475,16 +478,16 @@ export class UserController {
         { name: 'nid_front_picture', maxCount: 1 },
         { name: 'nid_back_picture', maxCount: 1 }
     ]))
-    @ApiBasicAuth()
+
     async updateNidPictures(
-        @Param('id') id: string,
+        @Param('id', ParseUUIDPipe) id: string,
         @UploadedFiles() files: {
             nid_front_picture?: Express.Multer.File[],
             nid_back_picture?: Express.Multer.File[]
         }
     ) {
         if (!files || (!files.nid_front_picture && !files.nid_back_picture)) {
-            throw new Error('At least one NID picture file is required');
+            throw new BadRequestException('At least one NID picture file is required');
         }
         
         if (files.nid_front_picture && files.nid_front_picture[0]) {
@@ -533,8 +536,8 @@ export class UserController {
         }
     })
     @ApiResponse({ status: 404, description: 'User not found' })
-    @ApiBasicAuth()
-    async deactivateUser(@Param('id') id: string) {
+
+    async deactivateUser(@Param('id', ParseUUIDPipe) id: string) {
         const user = await this.userService.deactivateUser(id);
         return {
             data: user,
@@ -552,8 +555,8 @@ export class UserController {
         type: UserResponseDto 
     })
     @ApiResponse({ status: 404, description: 'User not found' })
-    @ApiBasicAuth()
-    async activateUser(@Param('id') id: string): Promise<UserResponseDto> {
+
+    async activateUser(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
         return this.userService.activateUser(id);
     }
 
@@ -580,8 +583,8 @@ export class UserController {
     })
     @ApiResponse({ status: 404, description: 'User not found' })
     @ApiResponse({ status: 409, description: 'User does not have an email address or failed to send email' })
-    @ApiBasicAuth()
-    async resendPasswordResetEmail(@Param('id') id: string) {
+
+    async resendPasswordResetEmail(@Param('id', ParseUUIDPipe) id: string) {
         const user = await this.userService.resendPasswordResetEmail(id);
         return {
             data: user,
@@ -614,7 +617,7 @@ export class UserController {
         description: 'User not found'
     })
     async changePassword(
-        @Param('id') id: string,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() changePasswordDto: ChangePasswordDto
     ) {
         await this.userService.changePassword(
@@ -664,7 +667,7 @@ export class UserController {
     })
     @UseInterceptors(FileInterceptor('picture'))
     async updateProfilePicture(
-        @Param('id') id: string,
+        @Param('id', ParseUUIDPipe) id: string,
         @UploadedFile() file: Express.Multer.File
     ) {
         if (!file) {

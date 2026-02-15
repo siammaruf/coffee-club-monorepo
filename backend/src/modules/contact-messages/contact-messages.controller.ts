@@ -16,10 +16,19 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 import { ContactMessagesService } from './contact-messages.service';
+import { ReplyContactMessageDto } from './dto/reply-contact-message.dto';
+import { UpdateContactMessageStatusDto } from './dto/update-contact-message-status.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Contact Messages')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('contact-messages')
 export class ContactMessagesController {
   constructor(private readonly contactMessagesService: ContactMessagesService) {}
@@ -81,7 +90,7 @@ export class ContactMessagesController {
   @ApiResponse({ status: 200, description: 'Reply sent successfully' })
   async reply(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { reply: string },
+    @Body() body: ReplyContactMessageDto,
   ) {
     const message = await this.contactMessagesService.reply(id, body.reply);
     return {
@@ -98,7 +107,7 @@ export class ContactMessagesController {
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { status: string },
+    @Body() body: UpdateContactMessageStatusDto,
   ) {
     const message = await this.contactMessagesService.updateStatus(id, body.status);
     return {

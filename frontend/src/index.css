@@ -164,6 +164,11 @@ input:focus, textarea:focus, select:focus {
 textarea {
   @apply resize-none h-[120px];
 }
+input::placeholder,
+textarea::placeholder {
+  @apply text-text-muted uppercase tracking-[3px] text-sm;
+  font-weight: 300;
+}
 
 /* Animations */
 @keyframes fade-in {

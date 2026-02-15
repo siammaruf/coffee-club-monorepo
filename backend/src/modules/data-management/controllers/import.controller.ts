@@ -14,7 +14,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
-  ApiBasicAuth,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -22,10 +22,12 @@ import { UserRole } from '../../users/enum/user-role.enum';
 import { ImportService } from '../providers/import.service';
 import { ImportDataDto } from '../dto/import-data.dto';
 import { ImportPreview, ImportResult } from '../interfaces/backup-metadata.interface';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Data Management - Import')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('data-management/import')
-@ApiBasicAuth()
 @Roles(UserRole.ADMIN)
 export class ImportController {
   constructor(private readonly importService: ImportService) {}

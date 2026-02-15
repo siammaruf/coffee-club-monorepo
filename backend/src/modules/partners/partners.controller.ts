@@ -17,12 +17,19 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 import { PartnersService } from './partners.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Partners')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('partners')
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}

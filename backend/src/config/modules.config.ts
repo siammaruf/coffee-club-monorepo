@@ -1,5 +1,5 @@
 import { UserModule } from '../modules/users/user.module';
-// import { LeaveModule } from '../modules/stuff-leave/leave.module';
+import { LeaveModule } from '../modules/stuff-leave/leave.module';
 import { SalaryModule } from '../modules/staff-salary/salary.module';
 import { ItemModule } from 'src/modules/items/item.module';
 import { CategoryModule } from 'src/modules/categories/category.module';
@@ -34,7 +34,7 @@ import { ContactMessagesModule } from 'src/modules/contact-messages/contact-mess
 export const featureModules = [
     UserModule,
     AuthModule,
-    // LeaveModule,
+    LeaveModule,
     SalaryModule,
     ItemModule,
     CategoryModule,

@@ -93,9 +93,7 @@ export function Header() {
             {/* Logo */}
             <div className="flex justify-center py-6">
               <Link to="/" className="block">
-                <h1 className="font-heading text-3xl font-bold tracking-[8px] text-text-heading mb-0">
-                  COFFEE<span className="text-accent">CLUB</span>
-                </h1>
+                <img src="/img/logo.png" alt="CoffeeClub" className="h-[60px] w-auto" />
               </Link>
             </div>
 
@@ -226,9 +224,7 @@ export function Header() {
           {/* Mobile Header */}
           <div className="flex items-center justify-between px-4 py-4 lg:hidden">
             <Link to="/" className="block">
-              <span className="font-heading text-xl font-bold tracking-[4px] text-text-heading">
-                COFFEE<span className="text-accent">CLUB</span>
-              </span>
+              <img src="/img/logo.png" alt="CoffeeClub" className="h-10 w-auto" />
             </Link>
             <div className="flex items-center gap-3">
               {/* Mobile Cart */}
@@ -299,9 +295,7 @@ export function Header() {
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <span className="font-heading text-lg font-bold tracking-[4px] text-text-heading">
-              COFFEE<span className="text-accent">CLUB</span>
-            </span>
+            <img src="/img/logo.png" alt="CoffeeClub" className="h-8 w-auto" />
             <button
               onClick={() => setIsMobileOpen(false)}
               className="p-1.5 text-text-muted hover:text-text-primary"

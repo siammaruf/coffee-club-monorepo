@@ -20,8 +20,11 @@ import {
   ApiParam,
   ApiQuery,
   ApiConsumes,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 import { WebsiteContentService } from './website-content.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateHeroSlideDto } from './dto/create-hero-slide.dto';
@@ -30,8 +33,12 @@ import { CreateAdvantageDto } from './dto/create-advantage.dto';
 import { UpdateAdvantageDto } from './dto/update-advantage.dto';
 import { CreateTestimonialDto } from './dto/create-testimonial.dto';
 import { UpdateTestimonialDto } from './dto/update-testimonial.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Website Content')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('website-content')
 export class WebsiteContentController {
   constructor(

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, ParseUUIDPipe, UseInterceptors, UploadedFiles, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { SalaryService } from './providers/salary.service';
 import { CreateSalaryDto } from './dto/create-salary.dto';
@@ -9,8 +9,11 @@ import { receiptStorage } from 'src/common/utils/storage.util';
 import { SalaryResponseDto } from './dto/salary-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Staff Salary')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('staff-salary')
 @Roles(UserRole.ADMIN)
 export class SalaryController {
@@ -418,7 +421,6 @@ export class SalaryController {
     statusCode: HttpStatus;
   }> {
     if (files?.receipt_image?.[0]?.path) {
-      console.log('Receipt image stored at:', files.receipt_image[0].path);
       updateSalaryDto.receipt_image = files.receipt_image[0].path.replace(/\\/g, '/');
     }
     

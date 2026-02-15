@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, Query, ParseUUIDPipe, BadRequestException, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpensesService } from './providers/expenses.service';
 import { CreateExpensesDto } from './dto/create-expenses.dto';
 import { UpdateExpensesDto } from './dto/update-expenses.dto';
@@ -7,8 +7,11 @@ import { ExpensesResponseDto } from './dto/expenses-response.dto';
 import { ExpenseStatus } from './enum/expense-status.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Expenses')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('expenses')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ExpensesController {

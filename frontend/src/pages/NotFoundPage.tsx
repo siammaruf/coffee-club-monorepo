@@ -24,14 +24,14 @@ export default function NotFoundPage() {
         404
       </h1>
       <p className="mt-4 text-lg uppercase tracking-[4px] text-text-muted">
-        Page not found
+        Oops, Page Not Found!
       </p>
       <p className="mt-4 max-w-md text-sm text-text-muted">
         The page you are looking for does not exist or may have been moved.
       </p>
       <div className="mt-10">
         <Link to="/" className="btn-vincent-filled">
-          Return to Home
+          Back Home
         </Link>
       </div>
     </div>

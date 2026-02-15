@@ -18,9 +18,11 @@ import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.
 import { CurrentCustomer } from '../../common/decorators/customer.decorator';
 import { Customer } from '../customers/entities/customer.entity';
 import { Public } from '../../common/decorators/public.decorator';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Customer Orders')
-@ApiBearerAuth()
+@ApiBearerAuth('customer-auth')
+@ApiErrorResponses()
 @Public()
 @Controller('customer/orders')
 @UseGuards(CustomerJwtAuthGuard)

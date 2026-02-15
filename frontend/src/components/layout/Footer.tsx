@@ -29,9 +29,7 @@ export function Footer() {
         {/* Logo */}
         <div className="mb-6">
           <Link to="/" className="inline-block">
-            <span className="font-heading text-2xl font-bold tracking-[6px] text-text-heading">
-              COFFEE<span className="text-accent">CLUB</span>
-            </span>
+            <img src="/img/logo_footer.png" alt="CoffeeClub" className="h-[50px] w-auto" />
           </Link>
         </div>
 

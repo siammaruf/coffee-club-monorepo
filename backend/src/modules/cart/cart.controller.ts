@@ -10,7 +10,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CartService } from './providers/cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -18,8 +18,11 @@ import { CustomerJwtAuthGuard } from '../customer-auth/guards/customer-jwt-auth.
 import { CurrentCustomer } from '../../common/decorators/customer.decorator';
 import { Customer } from '../customers/entities/customer.entity';
 import { Public } from '../../common/decorators/public.decorator';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Customer Cart')
+@ApiBearerAuth('customer-auth')
+@ApiErrorResponses()
 @Public()
 @Controller('customer/cart')
 @UseGuards(CustomerJwtAuthGuard)

@@ -6,8 +6,15 @@ interface AdvantagesSectionProps {
 
 export function AdvantagesSection({ advantages }: AdvantagesSectionProps) {
   return (
-    <section className="relative bg-bg-secondary py-16 md:py-24">
-      <div className="vincent-container">
+    <section className="relative overflow-hidden py-16 md:py-24">
+      {/* Parallax background */}
+      <div
+        className="absolute inset-0 bg-cover bg-fixed bg-center"
+        style={{ backgroundImage: "url('/img/back_1.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-black/70" />
+
+      <div className="vincent-container relative z-10">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
           {advantages.map((item) => (
             <div key={item.id ?? item.title} className="text-center">
