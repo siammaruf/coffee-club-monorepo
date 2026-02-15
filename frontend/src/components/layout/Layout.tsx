@@ -23,7 +23,7 @@ export function Layout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-warm-bg">
+    <div className="flex min-h-screen flex-col bg-bg-primary">
       <Header />
       <main className="flex-1">
         <Outlet />
@@ -35,7 +35,7 @@ export function Layout() {
       <button
         onClick={scrollToTop}
         className={cn(
-          'fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-all duration-300 hover:bg-primary-700 hover:shadow-xl',
+          'fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center border-2 border-text-primary text-text-primary transition-all duration-300 hover:border-accent hover:text-accent',
           showBackToTop
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none translate-y-4 opacity-0'

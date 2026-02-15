@@ -28,6 +28,8 @@ import { BlogModule } from 'src/modules/blog/blog.module';
 import { ReservationsModule } from 'src/modules/reservations/reservations.module';
 import { PartnersModule } from 'src/modules/partners/partners.module';
 import { SettingsModule } from 'src/modules/settings/settings.module';
+import { WebsiteContentModule } from 'src/modules/website-content/website-content.module';
+import { ContactMessagesModule } from 'src/modules/contact-messages/contact-messages.module';
 
 export const featureModules = [
     UserModule,
@@ -60,4 +62,6 @@ export const featureModules = [
     ReservationsModule,
     PartnersModule,
     SettingsModule,
+    WebsiteContentModule,
+    ContactMessagesModule,
 ];

@@ -1,5 +1,13 @@
-import { get } from '../httpMethods'
+import { get, post } from '../httpMethods'
 import type { Category, Item, ItemsResponse, ItemFilters } from '@/types/item'
+
+export interface ContactMessagePayload {
+  name: string
+  email: string
+  phone?: string
+  subject?: string
+  message: string
+}
 
 export const publicService = {
   getCategories: (params?: { page?: number; limit?: number; search?: string }) => {
@@ -24,4 +32,7 @@ export const publicService = {
 
   getTables: () =>
     get<{ data: Array<{ id: string; name: string; capacity: number; status: string }> }>('/public/tables').then((res) => res.data),
+
+  submitContactMessage: (data: ContactMessagePayload) =>
+    post<{ data: unknown }>('/public/contact', data),
 }

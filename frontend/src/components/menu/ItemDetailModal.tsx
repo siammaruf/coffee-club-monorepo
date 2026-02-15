@@ -1,7 +1,5 @@
-import { useState } from 'react'
-import { Minus, Plus, ShoppingCart } from 'lucide-react'
-import { Modal } from '@/components/ui/modal'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback } from 'react'
+import { Minus, Plus, ShoppingCart, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import type { Item } from '@/types/item'
@@ -18,17 +16,41 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
   const [notes, setNotes] = useState('')
   const { addItem } = useCart()
 
-  if (!item) return null
+  const handleEscape = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    },
+    [onClose]
+  )
 
-  const price = item.sale_price ?? item.regular_price
-  const total = price * quantity
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, handleEscape])
+
+  // Reset quantity when modal opens with a new item
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1)
+      setNotes('')
+    }
+  }, [isOpen, item?.id])
+
+  if (!isOpen || !item) return null
+
+  const price = item.sale_price ?? item.regular_price ?? 0
+  const totalPrice = price * quantity
+  const imgSrc = item.image || '/img/6-600x600.png'
 
   const handleAddToCart = () => {
     addItem(item, quantity)
-    if (notes) {
-      // Notes are handled separately if needed
-    }
-    toast.success(`${quantity}x ${item.name} added to cart!`)
+    toast.success(`${quantity}x ${item?.name ?? 'Item'} added to cart!`)
     setQuantity(1)
     setNotes('')
     onClose()
@@ -41,52 +63,58 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="lg">
-      <div className="-mx-6 -mt-4">
-        {/* Item Image / Placeholder */}
-        <div className="relative flex h-56 items-center justify-center overflow-hidden bg-warm-surface">
-          {item.image ? (
-            <img
-              src={item.image}
-              alt={item.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-100 to-warm-surface">
-              <span className="text-7xl font-black text-primary-300">
-                {item.name.charAt(0)}
-              </span>
-            </div>
-          )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal */}
+      <div
+        className="relative w-full max-w-lg animate-fade-in overflow-hidden border border-border bg-bg-card shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label={item.name}
+      >
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center bg-black/40 text-white transition-colors hover:bg-black/60"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Item Image */}
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-bg-secondary">
+          <img
+            src={imgSrc}
+            alt={item.name ?? ''}
+            className="h-full w-full object-cover"
+          />
           {item.sale_price && (
-            <div className="absolute right-4 top-4 rounded-full bg-error px-3 py-1 text-sm font-bold text-white shadow-md">
+            <div className="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">
               Sale
             </div>
           )}
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-colors hover:bg-black/50"
-            aria-label="Close"
-          >
-            &times;
-          </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 pb-2 pt-5">
-          <h2 className="text-2xl font-bold text-text-primary">{item.name}</h2>
+        <div className="p-6">
+          <h2 className="text-text-heading">{item.name ?? ''}</h2>
           {item.name_bn && (
-            <p className="mt-0.5 text-sm text-text-muted">{item.name_bn}</p>
+            <p className="mt-1 text-sm text-text-muted">{item.name_bn}</p>
           )}
 
           <p className="mt-3 text-sm leading-relaxed text-text-body">
-            {item.description}
+            {item.description ?? ''}
           </p>
 
           {/* Price */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="font-heading text-2xl font-bold text-primary-600">
+            <span className="font-heading text-2xl tracking-wider text-accent">
               {formatPrice(price)}
             </span>
             {item.sale_price && (
@@ -98,23 +126,21 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Quantity Selector */}
           <div className="mt-6">
-            <label className="mb-2 block text-sm font-medium text-text-primary">
-              Quantity
-            </label>
-            <div className="inline-flex items-center rounded-lg border border-border">
+            <label className="mb-2 block text-sm text-text-muted">Quantity</label>
+            <div className="inline-flex items-center border-2 border-border">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="flex h-10 w-10 items-center justify-center rounded-l-lg text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
+                className="flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="flex h-10 w-12 items-center justify-center border-x border-border text-base font-semibold text-text-primary">
+              <span className="flex h-10 w-12 items-center justify-center border-x-2 border-border text-base text-text-primary">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="flex h-10 w-10 items-center justify-center rounded-r-lg text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
+                className="flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
@@ -124,32 +150,31 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
           {/* Special Notes */}
           <div className="mt-5">
-            <label className="mb-2 block text-sm font-medium text-text-primary">
+            <label className="mb-2 block text-sm text-text-muted">
               Special Notes
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special requests? (e.g., less sugar, extra spicy...)"
-              rows={3}
-              className="w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm text-text-primary shadow-sm transition-colors placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              rows={2}
+              className="h-auto w-full resize-none border-2 border-border bg-transparent px-4 py-2 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-accent focus:outline-none"
             />
           </div>
 
           {/* Add to Cart Button */}
-          <div className="mt-6 pb-2">
-            <Button
+          <div className="mt-6">
+            <button
               onClick={handleAddToCart}
               disabled={item.status === 'UNAVAILABLE'}
-              size="lg"
-              className="w-full"
+              className="btn-vincent-filled flex w-full items-center justify-center gap-2 py-3 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingCart className="h-5 w-5" />
-              Add to Cart - {formatPrice(total)}
-            </Button>
+              Add to Cart - {formatPrice(totalPrice)}
+            </button>
           </div>
         </div>
       </div>
-    </Modal>
+    </div>
   )
 }

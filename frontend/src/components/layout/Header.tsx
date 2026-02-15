@@ -1,55 +1,54 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import {
   ShoppingCart,
-  Menu,
   X,
   User,
   LogOut,
   ClipboardList,
   ChevronDown,
-  MapPin,
-  Phone,
-  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useCart } from '@/hooks/useCart'
+import { formatPrice } from '@/lib/utils'
+import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
+import { defaultSettings } from '@/lib/defaults'
 
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Menu', href: '/menu' },
-  { label: 'Reservation', href: '/reservation' },
   { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
+  {
+    label: 'Shop',
+    href: '#',
+    children: [
+      { label: 'Cart', href: '/cart' },
+      { label: 'Checkout', href: '/checkout' },
+    ],
+  },
   { label: 'Contact', href: '/contact' },
 ]
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null)
   const { isAuthenticated, customer, logout } = useAuth()
-  const { itemCount, openDrawer } = useCart()
+  const { itemCount, total, openDrawer } = useCart()
+  const { data: content } = useWebsiteContent()
+  const phone = content?.settings?.phone ?? defaultSettings.phone
+  const hours = content?.settings?.hours ?? defaultSettings.hours
   const location = useLocation()
   const navigate = useNavigate()
-
-  const handleScroll = useCallback(() => {
-    setIsScrolled(window.scrollY > 50)
-  }, [])
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
 
   useEffect(() => {
     setIsMobileOpen(false)
     setIsDropdownOpen(false)
+    setActiveSubmenu(null)
   }, [location.pathname])
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (isMobileOpen) {
       document.body.style.overflow = 'hidden'
@@ -68,326 +67,335 @@ export function Header() {
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/'
+    if (href === '#') return false
     return location.pathname.startsWith(href)
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
-      {/* Top Bar - hidden on mobile */}
-      <div className="hidden bg-dark text-text-light md:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-xs text-text-light/80">
-            <MapPin className="h-3.5 w-3.5 text-primary-400" />
-            <span>123 Coffee Street, Gulshan-2, Dhaka 1212</span>
+    <header className="bg-bg-primary">
+      <div className="flex items-stretch">
+        {/* Left: Phone + Hours */}
+        <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+          <div className="text-center">
+            <div className="text-sm font-bold tracking-[3px] text-text-primary uppercase">
+              {phone}
+            </div>
+            <div className="mt-1 text-xs tracking-[2px] text-text-muted">
+              {hours}
+            </div>
           </div>
-          <div className="flex items-center gap-5 text-xs text-text-light/80">
-            <a
-              href="tel:+8801712345678"
-              className="flex items-center gap-1.5 transition-colors hover:text-primary-400"
-            >
-              <Phone className="h-3.5 w-3.5 text-primary-400" />
-              +880 1712-345678
-            </a>
-            <a
-              href="mailto:hello@coffeeclub.com"
-              className="flex items-center gap-1.5 transition-colors hover:text-primary-400"
-            >
-              <Mail className="h-3.5 w-3.5 text-primary-400" />
-              hello@coffeeclub.com
-            </a>
+        </div>
+
+        {/* Center: Logo + Nav */}
+        <div className="flex-1 border-b border-border lg:w-1/2">
+          {/* Desktop Nav */}
+          <div className="hidden lg:block">
+            {/* Logo */}
+            <div className="flex justify-center py-6">
+              <Link to="/" className="block">
+                <h1 className="font-heading text-3xl font-bold tracking-[8px] text-text-heading mb-0">
+                  COFFEE<span className="text-accent">CLUB</span>
+                </h1>
+              </Link>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex justify-center border-t border-border">
+              <ul className="flex items-center">
+                {navLinks.map((link) => (
+                  <li
+                    key={link.label}
+                    className="relative group"
+                    onMouseEnter={() =>
+                      link.children && setActiveSubmenu(link.label)
+                    }
+                    onMouseLeave={() => setActiveSubmenu(null)}
+                  >
+                    {link.children ? (
+                      <button
+                        className={cn(
+                          'px-5 py-4 text-xs font-bold uppercase tracking-[3px] transition-colors',
+                          isActive(link.href)
+                            ? 'text-accent'
+                            : 'text-text-primary hover:text-accent'
+                        )}
+                      >
+                        {link.label}
+                        <ChevronDown className="inline-block ml-1 h-3 w-3" />
+                      </button>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className={cn(
+                          'block px-5 py-4 text-xs font-bold uppercase tracking-[3px] transition-colors',
+                          isActive(link.href)
+                            ? 'text-accent'
+                            : 'text-text-primary hover:text-accent'
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+
+                    {/* Submenu */}
+                    {link.children && activeSubmenu === link.label && (
+                      <ul className="absolute left-0 top-full z-50 min-w-[200px] border border-border bg-bg-secondary py-2 shadow-lg">
+                        {link.children.map((child) => (
+                          <li key={child.label}>
+                            <Link
+                              to={child.href}
+                              className="block px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary transition-colors hover:text-accent hover:bg-bg-primary"
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+
+                {/* Auth Links in Nav */}
+                {isAuthenticated && customer ? (
+                  <li
+                    className="relative group"
+                    onMouseEnter={() => setIsDropdownOpen(true)}
+                    onMouseLeave={() => setIsDropdownOpen(false)}
+                  >
+                    <button className="flex items-center px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors">
+                      <User className="h-3.5 w-3.5 mr-1" />
+                      {customer.name?.split(' ')[0] ?? 'Account'}
+                      <ChevronDown className="ml-1 h-3 w-3" />
+                    </button>
+                    {isDropdownOpen && (
+                      <ul className="absolute right-0 top-full z-50 min-w-[200px] border border-border bg-bg-secondary py-2 shadow-lg">
+                        <li>
+                          <Link
+                            to="/profile"
+                            className="flex items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary hover:text-accent hover:bg-bg-primary"
+                          >
+                            <User className="h-3.5 w-3.5" />
+                            Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            to="/orders"
+                            className="flex items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary hover:text-accent hover:bg-bg-primary"
+                          >
+                            <ClipboardList className="h-3.5 w-3.5" />
+                            Orders
+                          </Link>
+                        </li>
+                        <li>
+                          <button
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-error hover:bg-bg-primary"
+                          >
+                            <LogOut className="h-3.5 w-3.5" />
+                            Logout
+                          </button>
+                        </li>
+                      </ul>
+                    )}
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <Link
+                        to="/login"
+                        className="block px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors"
+                      >
+                        Login
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/register"
+                        className="block px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors"
+                      >
+                        Sign Up
+                      </Link>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </nav>
           </div>
+
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between px-4 py-4 lg:hidden">
+            <Link to="/" className="block">
+              <span className="font-heading text-xl font-bold tracking-[4px] text-text-heading">
+                COFFEE<span className="text-accent">CLUB</span>
+              </span>
+            </Link>
+            <div className="flex items-center gap-3">
+              {/* Mobile Cart */}
+              <button
+                onClick={openDrawer}
+                className="relative p-2 text-text-primary"
+                aria-label={`Cart with ${itemCount} items`}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-bg-primary">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </button>
+              {/* Hamburger */}
+              <button
+                onClick={() => setIsMobileOpen(!isMobileOpen)}
+                className="p-2 text-text-primary"
+                aria-label="Toggle mobile menu"
+              >
+                {isMobileOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <div className="space-y-1.5">
+                    <span className="block h-0.5 w-6 bg-text-primary" />
+                    <span className="block h-0.5 w-6 bg-text-primary" />
+                    <span className="block h-0.5 w-6 bg-text-primary" />
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Cart Widget */}
+        <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+          <button onClick={openDrawer} className="text-center group cursor-pointer">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors" />
+              <div>
+                <div className="text-sm font-bold tracking-[2px] text-text-primary group-hover:text-accent transition-colors">
+                  {formatPrice(total)}
+                </div>
+                <div className="text-xs tracking-[1px] text-text-muted">
+                  {itemCount} {itemCount === 1 ? 'item' : 'items'} - View Cart
+                </div>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* Main Navigation */}
-      <nav
-        className={cn(
-          'transition-all duration-300',
-          isScrolled
-            ? 'bg-white/95 shadow-sm backdrop-blur-md'
-            : 'bg-transparent'
-        )}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 transition-opacity hover:opacity-90"
-          >
-            <span
-              className={cn(
-                'font-heading text-2xl font-bold tracking-wide',
-                isScrolled ? 'text-text-primary' : 'text-white'
-              )}
-            >
-              Coffee
-              <span className="text-primary-500">Club</span>
-            </span>
-          </Link>
-
-          {/* Center Navigation Links - Desktop */}
-          <div className="hidden items-center gap-1 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className={cn(
-                  'relative px-4 py-2 text-sm font-medium transition-colors',
-                  isActive(link.href)
-                    ? 'text-primary-500'
-                    : isScrolled
-                      ? 'text-text-body hover:text-primary-500'
-                      : 'text-white/90 hover:text-white'
-                )}
-              >
-                {link.label}
-                {isActive(link.href) && (
-                  <span className="absolute bottom-0 left-1/2 h-[2px] w-6 -translate-x-1/2 bg-primary-500" />
-                )}
-              </Link>
-            ))}
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2">
-            {/* Book a Table CTA - Hidden on mobile */}
-            <Link
-              to="/reservation"
-              className="hidden rounded-lg bg-primary-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md md:inline-flex"
-            >
-              Book a Table
-            </Link>
-
-            {/* Cart Button */}
-            <button
-              onClick={openDrawer}
-              className={cn(
-                'relative rounded-lg p-2 transition-colors',
-                isScrolled
-                  ? 'text-text-body hover:bg-warm-surface hover:text-primary-600'
-                  : 'text-white/90 hover:bg-white/10 hover:text-white'
-              )}
-              aria-label={`Cart with ${itemCount} items`}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
-                  {itemCount > 99 ? '99+' : itemCount}
-                </span>
-              )}
-            </button>
-
-            {/* Auth Section - Desktop */}
-            {isAuthenticated && customer ? (
-              <div className="relative hidden md:block">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-3 py-2 transition-colors',
-                    isScrolled
-                      ? 'text-text-body hover:bg-warm-surface'
-                      : 'text-white/90 hover:bg-white/10'
-                  )}
-                >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
-                    {customer.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium">
-                    {customer.name.split(' ')[0]}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      'h-4 w-4 transition-transform',
-                      isDropdownOpen && 'rotate-180'
-                    )}
-                  />
-                </button>
-
-                {isDropdownOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0"
-                      onClick={() => setIsDropdownOpen(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-white py-2 shadow-xl animate-fade-in">
-                      <Link
-                        to="/profile"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-body hover:bg-warm-surface hover:text-primary-600"
-                      >
-                        <User className="h-4 w-4" />
-                        My Profile
-                      </Link>
-                      <Link
-                        to="/orders"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-text-body hover:bg-warm-surface hover:text-primary-600"
-                      >
-                        <ClipboardList className="h-4 w-4" />
-                        My Orders
-                      </Link>
-                      <hr className="my-1 border-border" />
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-error hover:bg-red-50"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="hidden items-center gap-2 md:flex">
-                <Link
-                  to="/login"
-                  className={cn(
-                    'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                    isScrolled
-                      ? 'text-text-body hover:bg-warm-surface hover:text-primary-600'
-                      : 'text-white/90 hover:bg-white/10 hover:text-white'
-                  )}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="rounded-lg border-2 border-primary-500 bg-transparent px-4 py-2 text-sm font-semibold text-primary-500 transition-all hover:bg-primary-500 hover:text-white"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile Hamburger */}
-            <button
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-              className={cn(
-                'rounded-lg p-2 transition-colors lg:hidden',
-                isScrolled
-                  ? 'text-text-body hover:bg-warm-surface'
-                  : 'text-white/90 hover:bg-white/10'
-              )}
-              aria-label="Toggle mobile menu"
-            >
-              {isMobileOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Drawer Overlay */}
+      {/* Mobile Menu Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 top-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
-          aria-hidden="true"
         />
       )}
 
-      {/* Mobile Slide-in Drawer */}
+      {/* Mobile Menu Drawer */}
       <div
         className={cn(
-          'fixed right-0 top-0 z-50 h-full w-[300px] max-w-[85vw] bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:hidden',
+          'fixed right-0 top-0 z-50 h-full w-[300px] max-w-[85vw] bg-bg-secondary shadow-2xl transition-transform duration-300 lg:hidden',
           isMobileOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Drawer Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <span className="font-heading text-xl font-bold text-text-primary">
-              Coffee<span className="text-primary-500">Club</span>
+            <span className="font-heading text-lg font-bold tracking-[4px] text-text-heading">
+              COFFEE<span className="text-accent">CLUB</span>
             </span>
             <button
               onClick={() => setIsMobileOpen(false)}
-              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-warm-surface hover:text-text-primary"
-              aria-label="Close menu"
+              className="p-1.5 text-text-muted hover:text-text-primary"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Drawer Nav Links */}
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="space-y-1">
               {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  className={cn(
-                    'block rounded-lg px-4 py-3 text-base font-medium transition-colors',
-                    isActive(link.href)
-                      ? 'bg-primary-50 text-primary-600'
-                      : 'text-text-body hover:bg-warm-surface hover:text-primary-600'
+                <div key={link.label}>
+                  {link.children ? (
+                    <>
+                      <div className="px-4 py-3 text-xs font-bold uppercase tracking-[3px] text-text-muted">
+                        {link.label}
+                      </div>
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          to={child.href}
+                          className="block px-6 py-2 text-sm text-text-primary hover:text-accent transition-colors"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      className={cn(
+                        'block px-4 py-3 text-xs font-bold uppercase tracking-[3px] transition-colors',
+                        isActive(link.href)
+                          ? 'text-accent'
+                          : 'text-text-primary hover:text-accent'
+                      )}
+                    >
+                      {link.label}
+                    </Link>
                   )}
-                >
-                  {link.label}
-                </Link>
+                </div>
               ))}
-            </div>
-
-            {/* Mobile Book a Table */}
-            <div className="mt-4">
-              <Link
-                to="/reservation"
-                className="block rounded-lg bg-primary-600 px-4 py-3 text-center text-base font-bold text-white transition-all hover:bg-primary-700"
-              >
-                Book a Table
-              </Link>
             </div>
 
             <hr className="my-4 border-border" />
 
-            {/* Mobile Auth Section */}
             {isAuthenticated && customer ? (
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-4 py-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white">
-                    {customer.name.charAt(0).toUpperCase()}
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-bg-primary">
+                    {customer.name?.charAt(0)?.toUpperCase() ?? 'U'}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">
-                      {customer.name}
+                    <p className="text-sm font-bold text-text-primary">
+                      {customer.name ?? 'User'}
                     </p>
-                    <p className="text-xs text-text-muted">{customer.email}</p>
+                    <p className="text-xs text-text-muted">
+                      {customer.email ?? ''}
+                    </p>
                   </div>
                 </div>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-text-body hover:bg-warm-surface hover:text-primary-600"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-accent"
                 >
-                  <User className="h-5 w-5" />
+                  <User className="h-4 w-4" />
                   My Profile
                 </Link>
                 <Link
                   to="/orders"
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-text-body hover:bg-warm-surface hover:text-primary-600"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-accent"
                 >
-                  <ClipboardList className="h-5 w-5" />
+                  <ClipboardList className="h-4 w-4" />
                   My Orders
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-error hover:bg-red-50"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-error"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                   Logout
                 </button>
               </div>
             ) : (
-              <div className="flex gap-3">
+              <div className="space-y-2">
                 <Link
                   to="/login"
-                  className="flex-1 rounded-lg border-2 border-border py-3 text-center text-base font-medium text-text-body transition-colors hover:border-primary-300 hover:text-primary-600"
+                  className="block w-full border-2 border-border py-3 text-center text-xs font-bold uppercase tracking-[3px] text-text-primary hover:border-accent hover:text-accent transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="flex-1 rounded-lg bg-primary-600 py-3 text-center text-base font-semibold text-white shadow-sm"
+                  className="block w-full border-2 border-accent bg-accent py-3 text-center text-xs font-bold uppercase tracking-[3px] text-bg-primary hover:bg-accent-hover transition-colors"
                 >
                   Sign Up
                 </Link>

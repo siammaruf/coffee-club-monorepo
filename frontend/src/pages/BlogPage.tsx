@@ -1,113 +1,114 @@
-import { useState } from 'react'
 import type { MetaFunction } from 'react-router'
 import { Link, useSearchParams } from 'react-router'
-import { Search, Calendar, User, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
-import { PageBanner } from '@/components/ui/PageBanner'
-
-export const meta: MetaFunction = () => [
-  { title: 'Blog | CoffeeClub' },
-  { name: 'description', content: 'Read the latest articles, stories, and coffee insights from CoffeeClub.' },
-  { property: 'og:title', content: 'Blog | CoffeeClub' },
-  { property: 'og:description', content: 'Read the latest articles, stories, and coffee insights from CoffeeClub.' },
-  { property: 'og:type', content: 'website' },
-]
 import { useBlogPosts } from '@/services/httpServices/queries/useBlog'
+import { BlogSidebar } from '@/components/shared/BlogSidebar'
 import { formatDate, truncate } from '@/lib/utils'
 import type { BlogPost } from '@/types/blog'
 
+export const meta: MetaFunction = () => [
+  { title: 'Blog | CoffeeClub' },
+  {
+    name: 'description',
+    content:
+      'Read the latest articles, stories, and coffee insights from CoffeeClub.',
+  },
+  { property: 'og:title', content: 'Blog | CoffeeClub' },
+  {
+    property: 'og:description',
+    content:
+      'Read the latest articles, stories, and coffee insights from CoffeeClub.',
+  },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: 'CoffeeClub' },
+  { name: 'twitter:card', content: 'summary_large_image' },
+  { name: 'twitter:title', content: 'Blog | CoffeeClub' },
+  {
+    name: 'twitter:description',
+    content:
+      'Read the latest articles, stories, and coffee insights from CoffeeClub.',
+  },
+  { name: 'robots', content: 'index, follow' },
+]
+
 function BlogCardSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
-      <div className="h-48 bg-warm-surface" />
-      <div className="p-5">
-        <div className="h-3 w-24 rounded bg-warm-surface" />
-        <div className="mt-3 h-5 w-3/4 rounded bg-warm-surface" />
-        <div className="mt-3 space-y-2">
-          <div className="h-3 w-full rounded bg-warm-surface" />
-          <div className="h-3 w-2/3 rounded bg-warm-surface" />
-        </div>
-        <div className="mt-4 h-4 w-28 rounded bg-warm-surface" />
-      </div>
+    <div className="animate-pulse border-b border-border pb-8">
+      <div className="h-[250px] bg-bg-lighter" />
+      <div className="mt-4 h-3 w-32 bg-bg-lighter" />
+      <div className="mt-3 h-5 w-3/4 bg-bg-lighter" />
+      <div className="mt-3 h-3 w-full bg-bg-lighter" />
+      <div className="mt-2 h-3 w-2/3 bg-bg-lighter" />
+      <div className="mt-4 h-8 w-28 bg-bg-lighter" />
     </div>
   )
 }
 
 function BlogCard({ post }: { post: BlogPost }) {
+  const imageUrl = post?.image ?? '/img/1-80x80.jpg'
+  const title = post?.title ?? ''
+  const excerpt = post?.excerpt ?? ''
+  const author = post?.author ?? 'CoffeeClub'
+  const date = post?.published_at ?? post?.created_at ?? ''
+
   return (
-    <Link
-      to={`/blog/${post.slug}`}
-      className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary-300 hover:shadow-lg"
-    >
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden bg-warm-surface">
-        {post.image ? (
-          <img
-            src={post.image}
-            alt={post.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary-100 to-warm-surface">
-            <BookOpen className="h-12 w-12 text-primary-400" />
-          </div>
-        )}
+    <article className="border-b border-border pb-8">
+      {/* Featured Image */}
+      <Link to={`/blog/${post?.slug ?? ''}`} className="group block overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={title}
+          className="h-[250px] w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-[300px]"
+        />
+      </Link>
+
+      {/* Meta */}
+      <div className="mt-4 flex items-center gap-4 text-xs uppercase tracking-[2px] text-text-muted">
+        {date && <span>{formatDate(date)}</span>}
+        <span>/</span>
+        <span>{author}</span>
       </div>
 
-      {/* Content */}
-      <div className="p-5">
-        {/* Meta */}
-        <div className="flex items-center gap-4 text-xs text-text-muted">
-          {post.published_at && (
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              {formatDate(post.published_at)}
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5" />
-            {post.author}
-          </span>
-        </div>
+      {/* Title */}
+      <h5 className="mt-3">
+        <Link
+          to={`/blog/${post?.slug ?? ''}`}
+          className="transition-colors hover:text-accent"
+        >
+          {title}
+        </Link>
+      </h5>
 
-        {/* Title */}
-        <h3 className="font-heading mt-2 text-lg font-bold text-text-primary transition-colors group-hover:text-primary-600">
-          {post.title}
-        </h3>
+      {/* Excerpt */}
+      <p className="mt-3 text-sm text-text-body">
+        {truncate(excerpt, 180)}
+      </p>
 
-        {/* Excerpt */}
-        <p className="mt-2 text-sm leading-relaxed text-text-body">
-          {truncate(post.excerpt, 120)}
-        </p>
-
-        {/* Read More */}
-        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary-600 transition-colors group-hover:text-primary-700">
-          Read More
-          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </span>
-      </div>
-    </Link>
+      {/* Read More */}
+      <Link
+        to={`/blog/${post?.slug ?? ''}`}
+        className="btn-vincent mt-4 inline-block"
+      >
+        Read More
+      </Link>
+    </article>
   )
 }
 
 export default function BlogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
 
   const page = Number(searchParams.get('page') || '1')
   const search = searchParams.get('search') || ''
 
-  const { data, isLoading, isError } = useBlogPosts({ page, limit: 9, search })
+  const { data, isLoading, isError } = useBlogPosts({
+    page,
+    limit: 6,
+    search,
+  })
 
   const posts = data?.data ?? []
   const totalPages = data?.totalPages ?? 1
   const total = data?.total ?? 0
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const params: Record<string, string> = {}
-    if (searchInput.trim()) params.search = searchInput.trim()
-    setSearchParams(params)
-  }
 
   const handlePageChange = (newPage: number) => {
     const params: Record<string, string> = {}
@@ -118,133 +119,114 @@ export default function BlogPage() {
 
   return (
     <>
-      <PageBanner
-        title="Our Blog"
-        subtitle="Stories, tips, and insights from the world of coffee and beyond."
-        breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Blog' }]}
-      />
+      {/* Page Title Block */}
+      <div className="page-title-block">
+        <h1>Blog</h1>
+      </div>
 
-      <div className="bg-warm-bg">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mx-auto max-w-xl">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-text-muted">
-                <Search className="h-5 w-5" />
+      <section className="bg-bg-primary py-16 sm:py-24">
+        <div className="vincent-container">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+            {/* Main Content - 8 cols */}
+            <div className="lg:col-span-8">
+              {/* Results Count */}
+              <div className="mb-8 flex items-center justify-between border-b border-border pb-4">
+                <p className="text-sm text-text-muted">
+                  {isLoading
+                    ? 'Loading...'
+                    : `${total} article${total !== 1 ? 's' : ''} found`}
+                </p>
+                {search && (
+                  <button
+                    onClick={() => setSearchParams({})}
+                    className="text-sm text-accent transition-colors hover:text-accent-hover"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search articles..."
-                className="h-12 w-full rounded-xl border border-border bg-white pl-12 pr-24 text-base text-text-primary shadow-sm transition-colors placeholder:text-text-muted/50 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
-              >
-                Search
-              </button>
-            </div>
-          </form>
 
-          {/* Results Count */}
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-text-muted">
-              {isLoading ? 'Loading...' : `${total} article${total !== 1 ? 's' : ''} found`}
-            </p>
-            {search && (
-              <button
-                onClick={() => {
-                  setSearchInput('')
-                  setSearchParams({})
-                }}
-                className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
-              >
-                Clear search
-              </button>
-            )}
-          </div>
-
-          {/* Error State */}
-          {isError && (
-            <div className="mt-6 rounded-xl border border-error/20 bg-error/5 p-4 text-center text-sm text-error">
-              Failed to load blog posts. Please try again later.
-            </div>
-          )}
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <BlogCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
-
-          {/* Posts Grid */}
-          {!isLoading && !isError && (
-            <>
-              {posts.length === 0 ? (
-                <div className="mt-16 flex flex-col items-center justify-center text-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100">
-                    <BookOpen className="h-10 w-10 text-primary-500" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold text-text-primary">No articles found</h3>
-                  <p className="mt-1 max-w-sm text-sm text-text-body">
-                    {search
-                      ? 'Try adjusting your search terms or browse all articles.'
-                      : 'Check back soon for new articles and stories.'}
-                  </p>
+              {/* Error State */}
+              {isError && (
+                <div className="border-2 border-error/30 bg-error/5 p-4 text-center text-sm text-error">
+                  Failed to load blog posts. Please try again later.
                 </div>
-              ) : (
-                <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {posts.map((post) => (
-                    <BlogCard key={post.id} post={post} />
+              )}
+
+              {/* Loading State */}
+              {isLoading && (
+                <div className="space-y-8">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <BlogCardSkeleton key={i} />
                   ))}
                 </div>
               )}
-            </>
-          )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-10 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
+              {/* Posts */}
+              {!isLoading && !isError && (
+                <>
+                  {posts.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <h3 className="text-text-muted">No articles found</h3>
+                      <p className="mt-2 text-sm text-text-muted">
+                        {search
+                          ? 'Try adjusting your search terms.'
+                          : 'Check back soon for new articles.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-10">
+                      {posts.map((post) => (
+                        <BlogCard key={post.id} post={post} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => handlePageChange(p)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                    p === page
-                      ? 'bg-primary-500 text-white shadow-md'
-                      : 'border border-border bg-white text-text-body hover:bg-warm-surface hover:text-primary-600'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-10 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page <= 1}
+                    className="btn-vincent disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Prev
+                  </button>
 
-              <button
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= totalPages}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Next page"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <button
+                        key={p}
+                        onClick={() => handlePageChange(p)}
+                        className={
+                          p === page ? 'btn-vincent-filled' : 'btn-vincent'
+                        }
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page >= totalPages}
+                    className="btn-vincent disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Sidebar - 4 cols */}
+            <aside className="lg:col-span-4">
+              <BlogSidebar />
+            </aside>
+          </div>
         </div>
-      </div>
+      </section>
     </>
   )
 }

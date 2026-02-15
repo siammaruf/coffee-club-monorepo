@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Plus, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import type { LocalCartItem } from '@/types/cart'
@@ -11,70 +11,90 @@ interface CartItemProps {
 export function CartItem({ cartItem, compact = false }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart()
   const { item, quantity } = cartItem
-  const price = item.sale_price ?? item.regular_price
+  const price = item?.sale_price ?? item?.regular_price ?? 0
   const itemTotal = price * quantity
+  const imgSrc = item?.image || '/img/6-600x600.png'
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3 border-b border-border py-3">
+        {/* Thumbnail */}
+        <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-bg-secondary">
+          <img
+            src={imgSrc}
+            alt={item?.name ?? ''}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-text-primary">{item?.name ?? ''}</p>
+          <p className="text-xs text-text-muted">{quantity} x {formatPrice(price)}</p>
+        </div>
+        {/* Total */}
+        <span className="text-sm text-accent">{formatPrice(itemTotal)}</span>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex gap-3 rounded-xl border border-border bg-white p-3">
-      {/* Image / Placeholder */}
-      <div className={`flex flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-warm-surface ${compact ? 'h-12 w-12' : 'h-16 w-16'}`}>
-        {item.image ? (
+    <tr className="border-b border-border">
+      {/* Remove Button */}
+      <td className="py-4 pr-2">
+        <button
+          onClick={() => removeItem(item.id)}
+          className="flex h-6 w-6 items-center justify-center text-text-muted transition-colors hover:text-error"
+          aria-label={`Remove ${item?.name ?? ''}`}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </td>
+      {/* Thumbnail */}
+      <td className="py-4 pr-4">
+        <div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-bg-secondary">
           <img
-            src={item.image}
-            alt={item.name}
-            className="h-full w-full rounded-lg object-cover"
+            src={imgSrc}
+            alt={item?.name ?? ''}
+            className="h-full w-full object-cover"
           />
-        ) : (
-          <span className="text-lg font-bold text-primary-400">
-            {item.name.charAt(0)}
-          </span>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h4 className="truncate text-sm font-bold text-text-primary">{item.name}</h4>
-            <p className="text-xs text-text-muted">{formatPrice(price)} each</p>
-          </div>
+        </div>
+      </td>
+      {/* Product Name */}
+      <td className="py-4 pr-4">
+        <span className="font-heading text-sm uppercase tracking-[2px] text-text-primary">
+          {item?.name ?? ''}
+        </span>
+      </td>
+      {/* Price */}
+      <td className="py-4 pr-4">
+        <span className="text-sm text-text-muted">{formatPrice(price)}</span>
+      </td>
+      {/* Quantity */}
+      <td className="py-4 pr-4">
+        <div className="inline-flex items-center border-2 border-border">
           <button
-            onClick={() => removeItem(item.id)}
-            className="flex-shrink-0 rounded-md p-1 text-text-muted transition-colors hover:bg-error/10 hover:text-error"
-            aria-label={`Remove ${item.name}`}
+            onClick={() => updateQuantity(item.id, quantity - 1)}
+            className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+            aria-label="Decrease quantity"
           >
-            <Trash2 className="h-4 w-4" />
+            <Minus className="h-3 w-3" />
+          </button>
+          <span className="flex h-8 w-10 items-center justify-center border-x-2 border-border text-sm text-text-primary">
+            {quantity}
+          </span>
+          <button
+            onClick={() => updateQuantity(item.id, quantity + 1)}
+            className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+            aria-label="Increase quantity"
+          >
+            <Plus className="h-3 w-3" />
           </button>
         </div>
-
-        <div className="mt-2 flex items-center justify-between">
-          {/* Quantity Controls */}
-          <div className="inline-flex items-center rounded-md border border-border bg-warm-bg">
-            <button
-              onClick={() => updateQuantity(item.id, quantity - 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-l-md text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
-              aria-label="Decrease quantity"
-            >
-              <Minus className="h-3 w-3" />
-            </button>
-            <span className="flex h-7 w-8 items-center justify-center border-x border-border text-xs font-semibold text-text-primary">
-              {quantity}
-            </span>
-            <button
-              onClick={() => updateQuantity(item.id, quantity + 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-r-md text-text-muted transition-colors hover:bg-warm-surface hover:text-primary-600"
-              aria-label="Increase quantity"
-            >
-              <Plus className="h-3 w-3" />
-            </button>
-          </div>
-
-          {/* Item Total */}
-          <span className="text-sm font-bold text-primary-600">
-            {formatPrice(itemTotal)}
-          </span>
-        </div>
-      </div>
-    </div>
+      </td>
+      {/* Total */}
+      <td className="py-4">
+        <span className="text-sm text-accent">{formatPrice(itemTotal)}</span>
+      </td>
+    </tr>
   )
 }

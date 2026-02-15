@@ -8,9 +8,11 @@ import { BlogModule } from '../blog/blog.module';
 import { ReservationsModule } from '../reservations/reservations.module';
 import { PartnersModule } from '../partners/partners.module';
 import { SettingsModule } from '../settings/settings.module';
+import { WebsiteContentModule } from '../website-content/website-content.module';
+import { ContactMessagesModule } from '../contact-messages/contact-messages.module';
 
 @Module({
-  imports: [ItemModule, CategoryModule, TableModule, BlogModule, ReservationsModule, PartnersModule, SettingsModule],
+  imports: [ItemModule, CategoryModule, TableModule, BlogModule, ReservationsModule, PartnersModule, SettingsModule, WebsiteContentModule, ContactMessagesModule],
   controllers: [PublicController],
   providers: [PublicService],
 })

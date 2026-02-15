@@ -108,14 +108,14 @@ export class PartnersController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete partner', description: 'Deletes a partner by ID' })
   @ApiParam({ name: 'id', description: 'Partner ID' })
-  @ApiResponse({ status: 204, description: 'Partner deleted successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiResponse({ status: 200, description: 'Partner deleted successfully' })
+  @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.partnersService.remove(id);
     return {
       status: 'success',
       message: 'Partner deleted successfully.',
-      statusCode: HttpStatus.NO_CONTENT,
+      statusCode: HttpStatus.OK,
     };
   }
 }

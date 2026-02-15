@@ -1,0 +1,205 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Edit, Plus, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { websiteContentService } from "~/services/httpServices/websiteContentService";
+import type { Testimonial } from "~/services/httpServices/websiteContentService";
+import { toast } from "sonner";
+import TestimonialModal from "./TestimonialModal";
+
+export default function TestimonialsTab() {
+  const [items, setItems] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState<Testimonial | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fetchItems = async () => {
+    setIsLoading(true);
+    try {
+      const res = await websiteContentService.getTestimonials();
+      setItems(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setItems([]);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const handleSave = (item: Testimonial) => {
+    if (editItem) {
+      setItems((prev) => prev.map((t) => (t.id === item.id ? item : t)));
+      toast("Testimonial updated!", {
+        description: "The testimonial was updated successfully.",
+        duration: 3000,
+      });
+    } else {
+      setItems((prev) => [...prev, item]);
+      toast("Testimonial created!", {
+        description: "The testimonial was added successfully.",
+        duration: 3000,
+      });
+    }
+    setShowModal(false);
+    setEditItem(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
+    try {
+      await websiteContentService.deleteTestimonial(deleteId);
+      setItems((prev) => prev.filter((t) => t.id !== deleteId));
+      toast("Testimonial deleted!", {
+        description: "The testimonial was removed successfully.",
+        duration: 3000,
+      });
+    } catch {
+      toast("Failed to delete testimonial.", {
+        description: "An error occurred while deleting.",
+        duration: 3000,
+      });
+    }
+    setDeleteLoading(false);
+    setDeleteId(null);
+  };
+
+  const openEdit = (item: Testimonial) => {
+    setEditItem(item);
+    setShowModal(true);
+  };
+
+  const openAdd = () => {
+    setEditItem(null);
+    setShowModal(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Testimonials</h2>
+        <Button className="flex items-center gap-2" onClick={openAdd}>
+          <Plus className="h-4 w-4" />
+          Add Testimonial
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Testimonials ({items.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading testimonials...</div>
+          ) : (
+            <div className="rounded-md border">
+              <div className="p-4 bg-muted/50">
+                <div className="grid grid-cols-7 font-medium text-sm">
+                  <div className="text-left">Order</div>
+                  <div className="text-left">Image</div>
+                  <div className="text-left">Name</div>
+                  <div className="text-left">Position</div>
+                  <div className="text-left">Quote</div>
+                  <div className="text-center">Active</div>
+                  <div className="text-right">Actions</div>
+                </div>
+              </div>
+              <div className="divide-y">
+                {items.length > 0 ? (
+                  [...items]
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((item) => (
+                      <div key={item.id} className="p-4 hover:bg-muted/50">
+                        <div className="grid grid-cols-7 text-sm items-center">
+                          <div className="text-left">{item.sort_order}</div>
+                          <div className="text-left">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="h-10 w-10 rounded-full border object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                                {item.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-left font-medium truncate pr-2">{item.name}</div>
+                          <div className="text-left text-muted-foreground truncate pr-2">
+                            {item.position || "-"}
+                          </div>
+                          <div className="text-left text-muted-foreground truncate pr-2">
+                            {item.quote.length > 60 ? `${item.quote.substring(0, 60)}...` : item.quote}
+                          </div>
+                          <div className="text-center">
+                            <Badge
+                              className={
+                                item.is_active
+                                  ? "bg-green-100 text-green-800 border-green-200"
+                                  : "bg-gray-100 text-gray-600 border-gray-200"
+                              }
+                            >
+                              {item.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              onClick={() => openEdit(item)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              onClick={() => setDeleteId(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <p>No testimonials yet.</p>
+                    <p className="text-sm mt-1">Create your first testimonial to get started.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <TestimonialModal
+        open={showModal}
+        onClose={() => { setShowModal(false); setEditItem(null); }}
+        onSave={handleSave}
+        testimonial={editItem}
+      />
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Delete Testimonial?"
+        description="Are you sure you want to delete this testimonial? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteId(null)}
+        loading={deleteLoading}
+      />
+    </div>
+  );
+}

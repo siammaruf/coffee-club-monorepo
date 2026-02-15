@@ -20,7 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,700;1,300&family=PT+Sans+Narrow:wght@400;700&display=swap"
           rel="stylesheet"
         />
         <script src="/env-config.js" />
@@ -35,12 +35,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               position="top-right"
               toastOptions={{
                 style: {
-                  background: '#FDF8F3',
-                  color: '#2C2118',
-                  border: '1px solid #E8DCC8',
+                  background: '#1d2326',
+                  color: '#dce4e8',
+                  border: '1px solid #252c30',
                 },
                 success: {
-                  iconTheme: { primary: '#A0782C', secondary: '#FDF8F3' },
+                  iconTheme: { primary: '#c8a97e', secondary: '#1d2326' },
                 },
               }}
             />
