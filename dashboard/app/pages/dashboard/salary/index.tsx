@@ -19,11 +19,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import {
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
   Download,
   CreditCard,
   DollarSign,
@@ -34,7 +37,9 @@ import {
   BanknoteIcon,
   Clock,
   Plus,
-  Trash2
+  Trash2,
+  RotateCcw,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import SalarySkeleton from "~/components/skeleton/SalarySkeleton";
@@ -59,9 +64,19 @@ export default function SalaryPage() {
   const [perPage] = useState(20);
   const [viewRecord, setViewRecord] = useState<Salary | null>(null);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchSalaryRecords();
-  }, [currentPage, monthFilter, paymentFilter]);
+    clearSelection();
+  }, [currentPage, monthFilter, paymentFilter, viewMode]);
+
+  useEffect(() => {
+    salaryService.getTrash({ page: 1, per_page: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let filtered = salaryRecords;
@@ -76,7 +91,7 @@ export default function SalaryPage() {
     }
 
     if (departmentFilter) {
-      filtered = filtered.filter(record => 
+      filtered = filtered.filter(record =>
         record.user?.role === departmentFilter
       );
     }
@@ -88,23 +103,32 @@ export default function SalaryPage() {
     try {
       setIsLoading(true);
 
-      const params: any = {
-        page: currentPage,
-        per_page: perPage,
-        salary_month: monthFilter || undefined,
-        payment_status: paymentFilter || undefined,
-        sort_by: 'created_at',
-        sort_order: 'desc'
-      };
-
-      const response = await salaryService.getAll(params);
-
-      if (response.status === 'success') {
+      if (viewMode === 'trash') {
+        const response: any = await salaryService.getTrash({
+          page: currentPage,
+          per_page: perPage,
+        });
         setSalaryRecords(response.data || []);
         setTotalRecords(response.total || 0);
       } else {
-        console.error('Failed to fetch salary records:', response.message);
-        setSalaryRecords([]);
+        const params: any = {
+          page: currentPage,
+          per_page: perPage,
+          salary_month: monthFilter || undefined,
+          payment_status: paymentFilter || undefined,
+          sort_by: 'created_at',
+          sort_order: 'desc'
+        };
+
+        const response = await salaryService.getAll(params);
+
+        if (response.status === 'success') {
+          setSalaryRecords(response.data || []);
+          setTotalRecords(response.total || 0);
+        } else {
+          console.error('Failed to fetch salary records:', response.message);
+          setSalaryRecords([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching salary records:', error);
@@ -138,13 +162,75 @@ export default function SalaryPage() {
   const handleDeleteConfirm = async () => {
     if (!deleteRecord) return;
     try {
-      console.log('Deleting salary record:', deleteRecord);
       await salaryService.delete(deleteRecord);
+      setTrashCount(prev => prev + 1);
       await fetchSalaryRecords();
     } catch (error) {
       console.error('Error deleting salary record:', error);
     }
     setDeleteRecord(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await salaryService.bulkDelete(Array.from(selectedIds));
+      setSalaryRecords(prev => prev.filter(item => !selectedIds.has(item.id ?? '')));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await salaryService.bulkRestore(Array.from(selectedIds));
+      setSalaryRecords(prev => prev.filter(item => !selectedIds.has(item.id ?? '')));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await salaryService.bulkPermanentDelete(Array.from(selectedIds));
+      setSalaryRecords(prev => prev.filter(item => !selectedIds.has(item.id ?? '')));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await salaryService.restore(id);
+      setSalaryRecords(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await salaryService.permanentDelete(id);
+      setSalaryRecords(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const handleGenerateSlips = () => {
@@ -216,116 +302,132 @@ export default function SalaryPage() {
           <p className="text-gray-600">Manage salary payments and records</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAddSalary} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Salary
-          </Button>
-          <Button variant="outline" onClick={handleGenerateSlips} className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Generate Payslips
-          </Button>
+          {viewMode === 'active' && (
+            <>
+              <Button onClick={handleAddSalary} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Salary
+              </Button>
+              <Button variant="outline" onClick={handleGenerateSlips} className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Generate Payslips
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Total Records
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRecords}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <BanknoteIcon className="w-4 h-4 text-green-500" />
-              Total Salary Amount
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalSalaryAmount)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-blue-500" />
-              Paid Salaries
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{paidSalaries}</div>
-          </CardContent>
-        </Card>
-        <Card className={pendingSalaries > 0 ? "border-yellow-300" : ""}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Clock className={`w-4 h-4 ${pendingSalaries > 0 ? "text-yellow-500" : ""}`} />
-              Pending Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${pendingSalaries > 0 ? "text-yellow-600" : ""}`}>
-              {pendingSalaries}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats Cards - Only show in active view */}
+      {viewMode === 'active' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Records
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalRecords}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <BanknoteIcon className="w-4 h-4 text-green-500" />
+                Total Salary Amount
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalSalaryAmount)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-blue-500" />
+                Paid Salaries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{paidSalaries}</div>
+            </CardContent>
+          </Card>
+          <Card className={pendingSalaries > 0 ? "border-yellow-300" : ""}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Clock className={`w-4 h-4 ${pendingSalaries > 0 ? "text-yellow-500" : ""}`} />
+                Pending Payments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${pendingSalaries > 0 ? "text-yellow-600" : ""}`}>
+                {pendingSalaries}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Salary Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasRecords ? (
-                <div className="flex flex-col gap-1">
-                  <span>Salary Records</span>
-                  <span className="text-sm font-normal text-gray-500">
-                    Showing {filteredRecords.length} of {totalRecords} records
-                  </span>
-                </div>
-              ) : (
-                'Salary Records'
-              )}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="flex gap-4 items-center">
-              <Select
-                value={monthFilter}
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Months</option>
-                {monthOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </Select>
+              {viewMode === 'active' && (
+                <>
+                  <Select
+                    value={monthFilter}
+                    onChange={(e) => handleMonthChange(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Months</option>
+                    {monthOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </Select>
 
-              <Select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Roles</option>
-                {uniqueRoles.map(role => (
-                  <option key={role} value={role}>{(role ?? '').charAt(0).toUpperCase() + (role ?? '').slice(1)}</option>
-                ))}
-              </Select>
+                  <Select
+                    value={departmentFilter}
+                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Roles</option>
+                    {uniqueRoles.map(role => (
+                      <option key={role} value={role}>{(role ?? '').charAt(0).toUpperCase() + (role ?? '').slice(1)}</option>
+                    ))}
+                  </Select>
 
-              <Select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Records</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="unpaid">Unpaid</option>
-              </Select>
+                  <Select
+                    value={paymentFilter}
+                    onChange={(e) => setPaymentFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Records</option>
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                    <option value="unpaid">Unpaid</option>
+                  </Select>
+                </>
+              )}
 
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -340,11 +442,26 @@ export default function SalaryPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           {hasRecords && hasFilteredResults ? (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredRecords.filter(r => r.id).map(r => r.id!))}
+                        onChange={() => toggleSelectAll(filteredRecords.filter(r => r.id).map(r => r.id!))}
+                      />
+                    </TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead>Month</TableHead>
                     <TableHead>Base Salary</TableHead>
@@ -357,7 +474,15 @@ export default function SalaryPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredRecords.map((record) => (
-                    <TableRow key={`${record.user_id ?? ''}${record.month}`} className={!record.is_paid ? 'bg-yellow-50' : ''}>
+                    <TableRow key={`${record.user_id ?? ''}${record.month}`} className={
+                      viewMode === 'active' && !record.is_paid ? 'bg-yellow-50' : ''
+                    }>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected(record.id ?? '')}
+                          onChange={() => record.id && toggleSelect(record.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {record.user?.picture ? (
@@ -405,48 +530,71 @@ export default function SalaryPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
+                        {viewMode === 'active' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setViewRecord(record)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/edit`)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Record
+                              </DropdownMenuItem>
+                              {record.is_paid ? (
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/receipt`)}
+                                >
+                                  <Receipt className="w-4 h-4 mr-2" />
+                                  View Payslip
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => record.user_id && handlePaySalary(record.user_id)}
+                                  className="text-green-600"
+                                >
+                                  <CreditCard className="w-4 h-4 mr-2" />
+                                  Mark as Paid
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => record.id && handleDeleteSalary(record.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => record.id && handleRestore(record.id)}
+                              title="Restore"
+                              className="text-green-600 hover:bg-green-50 cursor-pointer"
+                            >
+                              <RotateCcw className="w-4 h-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewRecord(record)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/edit`)}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => record.id && handlePermanentDelete(record.id)}
+                              title="Delete Permanently"
+                              className="text-red-600 hover:bg-red-50 cursor-pointer"
                             >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Record
-                            </DropdownMenuItem>
-                            {record.is_paid ? (
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/receipt`)}
-                              >
-                                <Receipt className="w-4 h-4 mr-2" />
-                                View Payslip
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => record.user_id && handlePaySalary(record.user_id)}
-                                className="text-green-600"
-                              >
-                                <CreditCard className="w-4 h-4 mr-2" />
-                                Mark as Paid
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => record.id && handleDeleteSalary(record.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -471,13 +619,17 @@ export default function SalaryPage() {
             /* No records - Empty state */
             <div className="text-center py-12">
               <CalendarRange className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No salary records found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No salary records found'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                {hasActiveFilters 
-                  ? "Try adjusting your filters to see more results." 
-                  : "Salary records will appear here once they are created."}
+                {viewMode === 'trash'
+                  ? 'No deleted salary records found.'
+                  : hasActiveFilters
+                    ? "Try adjusting your filters to see more results."
+                    : "Salary records will appear here once they are created."}
               </p>
-              {hasActiveFilters ? (
+              {hasActiveFilters && viewMode === 'active' ? (
                 <Button variant="outline" onClick={clearFilters}>
                   Clear All Filters
                 </Button>
@@ -502,7 +654,7 @@ export default function SalaryPage() {
       <ConfirmDialog
         open={!!deleteRecord}
         title="Delete Salary Record"
-        description="Are you sure you want to delete this salary record? This action cannot be undone."
+        description="Are you sure you want to delete this salary record? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}

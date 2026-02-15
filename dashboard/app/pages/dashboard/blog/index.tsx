@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Eye, Plus, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import { blogService } from "~/services/httpServices/blogService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import BlogPostModal from "./components/BlogPostModal";
@@ -23,6 +26,20 @@ export default function BlogPage() {
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
+
+  useEffect(() => {
+    // Fetch trash count on mount
+    blogService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const fetchPosts = async () => {
       setIsLoading(true);
@@ -32,7 +49,9 @@ export default function BlogPage() {
           limit: itemsPerPage,
         };
         if (searchTerm) params.search = searchTerm;
-        const res = await blogService.getAll(params);
+        const res = viewMode === 'active'
+          ? await blogService.getAll(params)
+          : await blogService.getTrash(params) as any;
         setPosts(res.data || []);
         setTotal(res.total || 0);
       } catch {
@@ -42,7 +61,7 @@ export default function BlogPage() {
       setIsLoading(false);
     };
     fetchPosts();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, viewMode]);
 
   const handleAddPost = (postData: BlogPost) => {
     setPosts(prev => [postData, ...prev]);
@@ -61,11 +80,79 @@ export default function BlogPage() {
       await blogService.delete(deleteId);
       setPosts(prev => prev.filter(p => p.id !== deleteId));
       setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
     } catch (error) {
       console.error("Failed to delete blog post:", error);
     }
     setDeleteLoading(false);
     setDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await blogService.bulkDelete(Array.from(selectedIds));
+      setPosts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => blogService.restore(id)));
+      setPosts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => blogService.permanentDelete(id)));
+      setPosts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await blogService.restore(id);
+      setPosts(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await blogService.permanentDelete(id);
+      setPosts(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -81,18 +168,35 @@ export default function BlogPage() {
           <h2 className="text-3xl font-bold tracking-tight">Blog Posts</h2>
           <p className="text-muted-foreground">Manage your blog content</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4" />
-          Add Post
-        </Button>
+        {viewMode === 'active' && (
+          <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add Post
+          </Button>
+        )}
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <span>Blog Posts ({total})</span>
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setViewMode('active'); setCurrentPage(1); }}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setViewMode('trash'); setCurrentPage(1); }}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -108,9 +212,24 @@ export default function BlogPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-6 font-medium text-sm">
+              <div className="grid grid-cols-7 font-medium text-sm">
+                <div className="col-span-1 flex items-center">
+                  <Checkbox
+                    checked={isAllSelected(posts.map(p => p.id))}
+                    onChange={() => toggleSelectAll(posts.map(p => p.id))}
+                  />
+                </div>
                 <div className="col-span-2 text-left">Title</div>
                 <div className="text-center">Author</div>
                 <div className="text-center">Status</div>
@@ -122,7 +241,13 @@ export default function BlogPage() {
               {posts.length > 0 ? (
                 posts.map(post => (
                   <div key={post.id} className="p-4 hover:bg-muted/50">
-                    <div className="grid grid-cols-6 text-sm items-center">
+                    <div className="grid grid-cols-7 text-sm items-center">
+                      <div className="col-span-1 flex items-center">
+                        <Checkbox
+                          checked={isSelected(post.id)}
+                          onChange={() => toggleSelect(post.id)}
+                        />
+                      </div>
                       <div className="col-span-2 text-left">
                         <div className="flex items-center gap-3">
                           {post.image && (
@@ -158,41 +283,71 @@ export default function BlogPage() {
                           : "---"}
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 cursor-pointer"
-                          title="View"
-                          onClick={() => setViewPost(post)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 cursor-pointer"
-                          title="Edit"
-                          type="button"
-                          onClick={() => setEditPost(post)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                          title="Delete"
-                          onClick={() => setDeleteId(post.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {viewMode === 'active' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              title="View"
+                              onClick={() => setViewPost(post)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              title="Edit"
+                              type="button"
+                              onClick={() => setEditPost(post)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete"
+                              onClick={() => setDeleteId(post.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-green-600 hover:bg-green-50 cursor-pointer"
+                              title="Restore"
+                              onClick={() => handleRestore(post.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete Permanently"
+                              onClick={() => handlePermanentDelete(post.id)}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  {searchTerm ? (
+                  {viewMode === 'trash' ? (
+                    <>
+                      <p>Trash is empty.</p>
+                      <p className="text-sm mt-1">No deleted blog posts found.</p>
+                    </>
+                  ) : searchTerm ? (
                     <>
                       <p>No blog posts found matching &quot;{searchTerm}&quot;.</p>
                       <p className="text-sm mt-1">Try adjusting your search terms.</p>
@@ -301,7 +456,8 @@ function BlogLoadingSkeleton() {
         <CardContent>
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-6 gap-4">
+              <div className="grid grid-cols-7 gap-4">
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                 <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-16" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-16" />
@@ -312,7 +468,8 @@ function BlogLoadingSkeleton() {
             <div className="divide-y">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="p-4">
-                  <div className="grid grid-cols-6 items-center gap-4">
+                  <div className="grid grid-cols-7 items-center gap-4">
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                     <div className="col-span-2 flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-200 rounded animate-pulse flex-shrink-0" />
                       <div className="flex flex-col flex-1">

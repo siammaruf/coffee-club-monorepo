@@ -10,4 +10,8 @@ export const kitchenOrderService = {
   update: (id: string, data: KitchenOrder) => httpService.put(`${BASE_URL}/${id}`, data),
   delete: (id: string) => httpService.delete(`${BASE_URL}/${id}`),
   approve: (id: string) => httpService.patch(`${BASE_URL}/approve/${id}`),
+  bulkDelete: (ids: string[]) => httpService.delete(`${BASE_URL}/bulk/delete`, { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get(`${BASE_URL}/trash/list`, params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`${BASE_URL}/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`${BASE_URL}/${id}/permanent`),
 };

@@ -4,7 +4,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import { Eye, Search, Trash2 } from "lucide-react";
+import { Eye, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import { reservationService } from "~/services/httpServices/reservationService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import ReservationModal from "./components/ReservationModal";
@@ -42,6 +45,20 @@ export default function ReservationsPage() {
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
+
+  useEffect(() => {
+    // Fetch trash count on mount
+    reservationService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const fetchReservations = async () => {
       setIsLoading(true);
@@ -52,7 +69,9 @@ export default function ReservationsPage() {
         };
         if (searchTerm) params.search = searchTerm;
         if (statusFilter) params.status = statusFilter;
-        const res = await reservationService.getAll(params);
+        const res = viewMode === 'active'
+          ? await reservationService.getAll(params)
+          : await reservationService.getTrash(params) as any;
         setReservations(res.data || []);
         setTotal(res.total || 0);
       } catch {
@@ -62,7 +81,7 @@ export default function ReservationsPage() {
       setIsLoading(false);
     };
     fetchReservations();
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, searchTerm, statusFilter, viewMode]);
 
   const handleReservationUpdate = (updated: Reservation) => {
     setReservations(prev =>
@@ -78,11 +97,79 @@ export default function ReservationsPage() {
       await reservationService.delete(deleteId);
       setReservations(prev => prev.filter(r => r.id !== deleteId));
       setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
     } catch (error) {
       console.error("Failed to delete reservation:", error);
     }
     setDeleteLoading(false);
     setDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await reservationService.bulkDelete(Array.from(selectedIds));
+      setReservations(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => reservationService.restore(id)));
+      setReservations(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => reservationService.permanentDelete(id)));
+      setReservations(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await reservationService.restore(id);
+      setReservations(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await reservationService.permanentDelete(id);
+      setReservations(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -103,9 +190,24 @@ export default function ReservationsPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center flex-wrap gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <span>Reservations ({total})</span>
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setViewMode('active'); setCurrentPage(1); }}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setViewMode('trash'); setCurrentPage(1); }}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="flex items-center gap-3">
               <Select
                 value={statusFilter}
@@ -136,9 +238,24 @@ export default function ReservationsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-8 font-medium text-sm">
+              <div className="grid grid-cols-9 font-medium text-sm">
+                <div className="col-span-1 flex items-center">
+                  <Checkbox
+                    checked={isAllSelected(reservations.map(r => r.id))}
+                    onChange={() => toggleSelectAll(reservations.map(r => r.id))}
+                  />
+                </div>
                 <div className="col-span-2 text-left">Guest</div>
                 <div className="text-center">Date</div>
                 <div className="text-center">Time</div>
@@ -152,7 +269,13 @@ export default function ReservationsPage() {
               {reservations.length > 0 ? (
                 reservations.map(reservation => (
                   <div key={reservation.id} className="p-4 hover:bg-muted/50">
-                    <div className="grid grid-cols-8 text-sm items-center">
+                    <div className="grid grid-cols-9 text-sm items-center">
+                      <div className="col-span-1 flex items-center">
+                        <Checkbox
+                          checked={isSelected(reservation.id)}
+                          onChange={() => toggleSelect(reservation.id)}
+                        />
+                      </div>
                       <div className="col-span-2 text-left">
                         <div className="flex flex-col">
                           <span className="font-medium">{reservation.name}</span>
@@ -177,31 +300,61 @@ export default function ReservationsPage() {
                         </Badge>
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 cursor-pointer"
-                          title="View / Edit"
-                          onClick={() => setViewReservation(reservation)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                          title="Delete"
-                          onClick={() => setDeleteId(reservation.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {viewMode === 'active' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              title="View / Edit"
+                              onClick={() => setViewReservation(reservation)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete"
+                              onClick={() => setDeleteId(reservation.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-green-600 hover:bg-green-50 cursor-pointer"
+                              title="Restore"
+                              onClick={() => handleRestore(reservation.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete Permanently"
+                              onClick={() => handlePermanentDelete(reservation.id)}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  {searchTerm || statusFilter ? (
+                  {viewMode === 'trash' ? (
+                    <>
+                      <p>Trash is empty.</p>
+                      <p className="text-sm mt-1">No deleted reservations found.</p>
+                    </>
+                  ) : searchTerm || statusFilter ? (
                     <>
                       <p>No reservations found matching your filters.</p>
                       <p className="text-sm mt-1">Try adjusting your search or filter criteria.</p>
@@ -294,7 +447,8 @@ function ReservationsLoadingSkeleton() {
         <CardContent>
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-8 gap-4">
+              <div className="grid grid-cols-9 gap-4">
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                 <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-12" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-12" />
@@ -307,7 +461,8 @@ function ReservationsLoadingSkeleton() {
             <div className="divide-y">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="p-4">
-                  <div className="grid grid-cols-8 items-center gap-4">
+                  <div className="grid grid-cols-9 items-center gap-4">
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                     <div className="col-span-2 flex flex-col gap-1">
                       <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
                       <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />

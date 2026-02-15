@@ -14,4 +14,10 @@ export const discountService = {
     const config = params ? { params } : undefined;
     return httpService.get<DiscountListResponse>('/discounts/not-expired', config);
   },
+  bulkDelete: (ids: string[]) => httpService.delete('/discounts/bulk/delete', { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get('/discounts/trash/list', params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`/discounts/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`/discounts/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/discounts/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/discounts/bulk/permanent', { data: { ids } }),
 };

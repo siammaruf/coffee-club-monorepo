@@ -19,16 +19,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Trash2,
   ShoppingCart,
   User,
   Calendar,
   DollarSign,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import OrdersSkeleton from "~/components/skeleton/OrdersSkeleton";
@@ -37,11 +39,14 @@ import { orderService } from "~/services/httpServices/orderService";
 import type {ApiOrder, GetAllOrdersParams} from "~/types/order";
 import { Pagination } from "~/components/ui/pagination";
 import { getPageFromUrl } from "~/utils/common";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 
 export default function OrdersPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -49,15 +54,21 @@ export default function OrdersPage() {
   const [dateFilter, setDateFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(getPageFromUrl());
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, pageSize, searchTerm, statusFilter, paymentFilter, dateFilter]);
+  }, [currentPage, pageSize, searchTerm, statusFilter, paymentFilter, dateFilter, viewMode]);
 
   useEffect(() => {
     const urlPage = getPageFromUrl();
@@ -65,6 +76,18 @@ export default function OrdersPage() {
       setCurrentPage(urlPage);
     }
   }, [location.search]);
+
+  // Fetch trash count on initial load
+  useEffect(() => {
+    orderService.getTrash({ page: 1, limit: 1 }).then((res: any) => {
+      setTrashCount(res.total || 0);
+    }).catch(() => {});
+  }, []);
+
+  // Clear selection when viewMode changes
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -79,12 +102,14 @@ export default function OrdersPage() {
         dateFilter: dateFilter || undefined,
       };
 
-      const response = await orderService.getAll(params);
-      const data: any = response.data;
+      const response = viewMode === 'trash'
+        ? await orderService.getTrash(params as any)
+        : await orderService.getAll(params);
+      const data: any = response;
 
-      setOrders(data || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalOrders(response.total || 0);
+      setOrders(data.data || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalOrders(data.total || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
       setError('Failed to fetch orders. Please try again.');
@@ -106,11 +131,86 @@ export default function OrdersPage() {
     try {
       await orderService.delete(deleteId);
       setDeleteId(null);
-      fetchOrders();
+      setOrders(prev => prev.filter(order => order.id !== deleteId));
+      setTotalOrders(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
     } catch (error) {
       console.error('Error deleting order:', error);
       setError('Failed to delete order. Please try again.');
     }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await orderService.restore(id);
+      setOrders(prev => prev.filter(order => order.id !== id));
+      setTotalOrders(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
+    try {
+      await orderService.permanentDelete(permanentDeleteId);
+      setOrders(prev => prev.filter(order => order.id !== permanentDeleteId));
+      setTotalOrders(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setPermanentDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await orderService.bulkDelete(Array.from(selectedIds));
+      setOrders(prev => prev.filter(order => !selectedIds.has(order.id)));
+      setTotalOrders(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => orderService.restore(id)));
+      setOrders(prev => prev.filter(order => !selectedIds.has(order.id)));
+      setTotalOrders(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => orderService.permanentDelete(id)));
+      setOrders(prev => prev.filter(order => !selectedIds.has(order.id)));
+      setTotalOrders(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -177,9 +277,9 @@ export default function OrdersPage() {
   }
 
   // Safe calculations with null checks
-  const totalSales = orders.reduce((sum, order) => 
+  const totalSales = orders.reduce((sum, order) =>
     order.status?.toLowerCase() !== 'cancelled' ? sum + (order.total_amount || 0) : sum, 0);
-  
+
   const completedOrders = orders.filter(order => order.status?.toLowerCase() === 'completed').length;
   const pendingOrders = orders.filter(order => order.status?.toLowerCase() === 'pending').length;
   const cancelledOrders = orders.filter(order => order.status?.toLowerCase() === 'cancelled').length;
@@ -213,8 +313,8 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Stats Cards - Only show if we have orders */}
-      {hasOrders && (
+      {/* Stats Cards - Only show if we have orders and in active view */}
+      {hasOrders && viewMode === 'active' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -279,9 +379,27 @@ export default function OrdersPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasOrders ? `Orders (${totalOrders} total)` : 'Orders'}
-            </CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle>
+                {hasOrders ? `Orders (${totalOrders} total)` : 'Orders'}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={viewMode === 'trash' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                >
+                  Trash ({trashCount})
+                </Button>
+              </div>
+            </div>
             <div className="flex gap-4 items-center">
               <Select
                 value={statusFilter}
@@ -332,9 +450,24 @@ export default function OrdersPage() {
         <CardContent>
           {hasOrders ? (
             <>
+              <BulkActionBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={clearSelection}
+                isTrashView={viewMode === 'trash'}
+                onRestore={handleBulkRestore}
+                onPermanentDelete={handleBulkPermanentDelete}
+                loading={bulkLoading}
+              />
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(orders.map(o => o.id))}
+                        onChange={() => toggleSelectAll(orders.map(o => o.id))}
+                      />
+                    </TableHead>
                     <TableHead>Order ID</TableHead>
                     <TableHead>Tables</TableHead>
                     <TableHead>Date</TableHead>
@@ -347,6 +480,12 @@ export default function OrdersPage() {
                 <TableBody>
                   {orders.map((order) => (
                     <TableRow key={order.id}>
+                      <TableCell className="w-[40px]">
+                        <Checkbox
+                          checked={isSelected(order.id)}
+                          onChange={() => toggleSelect(order.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{order.order_id}...</div>
                         <div className="text-xs text-gray-500">
@@ -355,8 +494,8 @@ export default function OrdersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {order.tables?.length > 0 ? 
-                            order.tables.map(table => `${table.number} (${table.seat} seats)`).join(', ') : 
+                          {order.tables?.length > 0 ?
+                            order.tables.map(table => `${table.number} (${table.seat} seats)`).join(', ') :
                             'No table assigned'
                           }
                         </div>
@@ -378,28 +517,39 @@ export default function OrdersPage() {
                         <div className="font-medium">{formatPrice(order.total_amount || 0)}</div>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
+                        {viewMode === 'trash' ? (
+                          <div className="flex gap-1">
+                            <Button variant="outline" size="sm" onClick={() => handleRestore(order.id)} title="Restore">
+                              <RotateCcw className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/dashboard/orders/${order.id}`)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Order
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(order.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(order.id)} title="Delete Permanently">
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/dashboard/orders/${order.id}`)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Order
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(order.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -451,24 +601,39 @@ export default function OrdersPage() {
             /* No orders at all - Empty state */
             <div className="text-center py-12">
               <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No orders yet'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                When customers place orders, they will appear here.
+                {viewMode === 'trash'
+                  ? 'No deleted orders found.'
+                  : 'When customers place orders, they will appear here.'}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Confirm Delete Dialog */}
+      {/* Confirm Delete Dialog (soft delete) */}
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Order?"
-        description="Are you sure you want to delete this order? This action cannot be undone."
+        description="Are you sure you want to delete this order? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+
+      {/* Permanent Delete ConfirmDialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete Order?"
+        description="Are you sure you want to permanently delete this order? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

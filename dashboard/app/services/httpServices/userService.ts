@@ -26,6 +26,10 @@ export const userService = {
     httpService.patch(`/users/${id}/profile-picture`, formData, {
       headers: { "Content-Type": "multipart/form-data" }
     }),
+  bulkDelete: (ids: string[]) => httpService.delete('/users/bulk/delete', { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get('/users/trash/list', params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`/users/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`/users/${id}/permanent`),
 };
 
 export const fetchUsers = createAsyncThunk(

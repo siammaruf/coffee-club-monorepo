@@ -28,9 +28,9 @@ export default function ViewCategoryModal({ isOpen, onClose, category }: ViewCat
         </div>
         <div className="p-6">
           <Card className="p-4 flex flex-col items-center gap-4">
-            {category.image ? (
+            {category.icon ? (
               <img
-                src={category.image}
+                src={category.icon}
                 alt={category.name}
                 className="w-24 h-24 rounded object-cover border"
               />

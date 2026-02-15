@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Package, RotateCcw, AlertTriangle } from "lucide-react";
 import type { Product, ProductCategory } from "~/types/product";
 import ProductsSkeleton from "~/components/skeleton/ProductsSkeleton";
 import { productService } from "~/services/httpServices/productService";
@@ -27,6 +27,9 @@ import { categoryService } from "~/services/httpServices/categoryService";
 import { formatPrice } from "~/lib/utils";
 import { Pagination } from "../../../components/ui/pagination";
 import { ConfirmDialog } from "../../../components/ui/confirm-dialog";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -45,9 +48,15 @@ export default function ProductsPage() {
     return pageParam && !isNaN(Number(pageParam)) ? Number(pageParam) : 1;
   });
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
+
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -59,6 +68,13 @@ export default function ProductsPage() {
       }
     };
     fetchCategories();
+  }, []);
+
+  // Fetch trash count on initial load
+  useEffect(() => {
+    productService.getTrash({ page: 1, limit: 1 }).then((res: any) => {
+      setTrashCount(res.total || 0);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -79,13 +95,16 @@ export default function ProductsPage() {
         };
         if (searchTerm) params.search = searchTerm;
         if (categoryFilter) params.categorySlug = categoryFilter;
-        if (typeFilter) params.type = typeFilter; 
+        if (typeFilter) params.type = typeFilter;
         if (statusFilter) params.status = statusFilter;
 
-        const response = await productService.getAll(params);
-        setProducts(Array.isArray(response.data) ? response.data : []);
-        setTotal(response.total || 0);
-        setTotalPages(response.totalPages || 1);
+        const response = viewMode === 'trash'
+          ? await productService.getTrash(params)
+          : await productService.getAll(params);
+        const data = response as any;
+        setProducts(Array.isArray(data.data) ? data.data : []);
+        setTotal(data.total || 0);
+        setTotalPages(data.totalPages || 1);
       } catch {
         setProducts([]);
         setTotal(0);
@@ -95,7 +114,12 @@ export default function ProductsPage() {
       }
     };
     fetchProducts();
-  }, [currentPage, searchTerm, categoryFilter, typeFilter, statusFilter]);
+  }, [currentPage, searchTerm, categoryFilter, typeFilter, statusFilter, viewMode]);
+
+  // Clear selection when viewMode changes
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -122,6 +146,8 @@ export default function ProductsPage() {
     try {
       await productService.delete(deleteProductId);
       setProducts(products.filter(product => product.id !== deleteProductId));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
       setDeleteProductId(null);
     } catch {
       setDeleteProductId(null);
@@ -130,6 +156,79 @@ export default function ProductsPage() {
 
   const handleDeleteCancel = () => {
     setDeleteProductId(null);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await productService.restore(id);
+      setProducts(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
+    try {
+      await productService.permanentDelete(permanentDeleteId);
+      setProducts(prev => prev.filter(item => item.id !== permanentDeleteId));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setPermanentDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await productService.bulkDelete(Array.from(selectedIds));
+      setProducts(prev => prev.filter(item => !selectedIds.has(item.id!)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => productService.restore(id)));
+      setProducts(prev => prev.filter(item => !selectedIds.has(item.id!)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => productService.permanentDelete(id)));
+      setProducts(prev => prev.filter(item => !selectedIds.has(item.id!)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
   };
 
   const getTypeColor = (type: string) => {
@@ -176,8 +275,8 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      {/* Stats Cards - Only show if we have products */}
-      {hasProducts && (
+      {/* Stats Cards - Only show if we have products and in active view */}
+      {hasProducts && viewMode === 'active' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -226,9 +325,27 @@ export default function ProductsPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasProducts ? `All Products (${total})` : 'Products'}
-            </CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle>
+                {hasProducts ? `All Products (${total})` : 'Products'}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={viewMode === 'trash' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                >
+                  Trash ({trashCount})
+                </Button>
+              </div>
+            </div>
             <div className="flex gap-4 items-center">
               <Select
                 value={categoryFilter}
@@ -278,15 +395,30 @@ export default function ProductsPage() {
         <CardContent>
           {hasProducts ? (
             <>
+              <BulkActionBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={clearSelection}
+                isTrashView={viewMode === 'trash'}
+                onRestore={handleBulkRestore}
+                onPermanentDelete={handleBulkPermanentDelete}
+                loading={bulkLoading}
+              />
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(products.map(p => p.id!))}
+                        onChange={() => toggleSelectAll(products.map(p => p.id!))}
+                      />
+                    </TableHead>
                     <TableHead>Product</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Regular Price</TableHead>
                     <TableHead>Sale Price</TableHead>
-                    <TableHead>Variation</TableHead> {/* New column */}
+                    <TableHead>Variation</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[50px]">Actions</TableHead>
                   </TableRow>
@@ -301,6 +433,12 @@ export default function ProductsPage() {
                     }
                     return (
                       <TableRow key={product.id}>
+                        <TableCell className="w-[40px]">
+                          <Checkbox
+                            checked={isSelected(product.id!)}
+                            onChange={() => toggleSelect(product.id!)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             {product.image ? (
@@ -407,34 +545,45 @@ export default function ProductsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
+                          {viewMode === 'trash' ? (
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm" onClick={() => handleRestore(product.id!)} title="Restore">
+                                <RotateCcw className="h-4 w-4" />
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/dashboard/products/${product.id}`)}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/dashboard/products/edit/${product.id}`)}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(product.id!)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(product.id!)} title="Delete Permanently">
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/dashboard/products/${product.id}`)}
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/dashboard/products/edit/${product.id}`)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(product.id!)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -457,22 +606,28 @@ export default function ProductsPage() {
             /* No products at all - Empty state */
             <div className="text-center py-12">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No products yet</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No products yet'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                Get started by adding your first product to the inventory.
+                {viewMode === 'trash'
+                  ? 'No deleted products found.'
+                  : 'Get started by adding your first product to the inventory.'}
               </p>
-              <Link className="flex justify-center" to="/dashboard/products/create">
-                <Button className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Your First Product
-                </Button>
-              </Link>
+              {viewMode === 'active' && (
+                <Link className="flex justify-center" to="/dashboard/products/create">
+                  <Button className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Your First Product
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Delete ConfirmDialog */}
+      {/* Delete ConfirmDialog (soft delete) */}
       <ConfirmDialog
         open={!!deleteProductId}
         title="Delete Product"
@@ -480,7 +635,18 @@ export default function ProductsPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
-        message="Are you sure you want to delete this product? This action cannot be undone."
+        message="Are you sure you want to delete this product? It will be moved to trash."
+      />
+
+      {/* Permanent Delete ConfirmDialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete Product"
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
+        message="Are you sure you want to permanently delete this product? This action cannot be undone."
       />
     </div>
   );

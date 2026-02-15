@@ -10,4 +10,8 @@ export const blogService = {
   getById: (id: string) => httpService.get<{ data: BlogPost }>(`/blog/${id}`),
   update: (id: string, data: Partial<BlogPostPayload>) => httpService.put<{ data: BlogPost }>(`/blog/${id}`, data),
   delete: (id: string) => httpService.delete(`/blog/${id}`),
+  bulkDelete: (ids: string[]) => httpService.delete('/blog/bulk/delete', { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get('/blog/trash/list', params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`/blog/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`/blog/${id}/permanent`),
 };
