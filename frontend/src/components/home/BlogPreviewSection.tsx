@@ -11,17 +11,17 @@ export function BlogPreviewSection() {
       <div className="vincent-container">
         {/* Header block */}
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h6 className="mb-[22px] text-text-body">
+          <h6 className="mb-[22px] text-bg-primary">
             Not just a pizza, but Lifestyle
           </h6>
-          <h1 className="mb-[44px] text-text-heading">Something From The Blog</h1>
+          <h1 className="mb-[44px] text-bg-primary">Something From The Blog</h1>
           <img
             src="/img/separator_dark.png"
             alt=""
             className="mx-auto mb-[39px]"
             aria-hidden="true"
           />
-          <p className="mb-[40px] text-text-body">
+          <p className="mb-[40px] text-bg-primary">
             And yes, we&apos;re pizza people. But we&apos;re also human people,
             we lead with our hearts, we believe in giving back to the global
             community. Join us, welcome to our pizzerias!
@@ -48,17 +48,17 @@ export function BlogPreviewSection() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {posts.map((post) => (
               <div key={post.id} className="text-center px-5">
-                <div className="mb-[20px] text-sm tracking-[2px] leading-[26px] text-text-muted">
+                <div className="mb-[20px] text-sm tracking-[2px] leading-[26px] text-bg-primary/70">
                   {post.published_at
                     ? formatDate(post.published_at)
                     : post.created_at
                       ? formatDate(post.created_at)
                       : ''}
                 </div>
-                <h5 className="mb-[13px] leading-[26px] text-text-heading">
+                <h5 className="mb-[13px] leading-[26px] text-bg-primary">
                   {post.title ?? ''}
                 </h5>
-                <p className="mb-[26px] text-[14px] text-text-body">
+                <p className="mb-[26px] text-[14px] text-bg-primary/80">
                   {truncate(post.excerpt ?? '', 120)}
                 </p>
                 <Link
@@ -76,7 +76,7 @@ export function BlogPreviewSection() {
         )}
 
         {!isLoading && posts.length === 0 && (
-          <p className="text-center text-text-muted">
+          <p className="text-center text-bg-primary/60">
             No blog posts available yet.
           </p>
         )}

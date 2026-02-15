@@ -4,7 +4,8 @@ import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { FaFacebook, FaTwitter, FaPinterest } from 'react-icons/fa'
 import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
-import { defaultSettings, defaultTestimonials } from '@/lib/defaults'
+import { AdvantagesSection } from '@/components/home/AdvantagesSection'
+import { defaultSettings, defaultTestimonials, defaultAdvantages } from '@/lib/defaults'
 
 export const meta: MetaFunction = () => [
   { title: 'About Us | CoffeeClub' },
@@ -29,12 +30,6 @@ export const meta: MetaFunction = () => [
       "Learn about CoffeeClub's story, our passion for premium coffee, and our commitment to quality dining experiences.",
   },
   { name: 'robots', content: 'index, follow' },
-]
-
-const carouselImages = [
-  '/img/about_4.jpg',
-  '/img/about_1-1.jpg',
-  '/img/about_3-1.jpg',
 ]
 
 const teamMembers = [
@@ -73,26 +68,6 @@ export default function AboutPage() {
   const aboutParagraph1 = about.paragraph1 || defaultSettings.about.paragraph1
   const aboutParagraph2 = about.paragraph2 || defaultSettings.about.paragraph2
 
-  // Image carousel
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
-    Autoplay({ delay: 4000, stopOnInteraction: false }),
-  ])
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return
-    setSelectedIndex(emblaApi.selectedScrollSnap())
-  }, [emblaApi])
-
-  useEffect(() => {
-    if (!emblaApi) return
-    emblaApi.on('select', onSelect)
-    onSelect()
-    return () => {
-      emblaApi.off('select', onSelect)
-    }
-  }, [emblaApi, onSelect])
-
   // Testimonials carousel
   const [testIndex, setTestIndex] = useState(0)
   const [testRef, testApi] = useEmblaCarousel({ loop: true }, [
@@ -119,34 +94,6 @@ export default function AboutPage() {
       <div className="page-title-block">
         <h1>About Our Pizzeria</h1>
       </div>
-
-      {/* Image Carousel */}
-      <section className="overflow-hidden" ref={emblaRef}>
-        <div className="flex">
-          {carouselImages.map((src, i) => (
-            <div key={i} className="min-w-0 flex-[0_0_100%]">
-              <img
-                src={src}
-                alt={`Restaurant view ${i + 1}`}
-                className="h-[350px] w-full object-cover sm:h-[450px] lg:h-[500px]"
-              />
-            </div>
-          ))}
-        </div>
-        {/* Dots */}
-        <div className="flex justify-center gap-2 bg-bg-primary py-6">
-          {carouselImages.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => emblaApi?.scrollTo(i)}
-              className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                i === selectedIndex ? 'bg-accent' : 'bg-border'
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
-        </div>
-      </section>
 
       {/* We Are CoffeeClub - matching template */}
       <section className="bg-bg-primary py-16 sm:py-24">
@@ -313,7 +260,7 @@ export default function AboutPage() {
                         href="https://www.facebook.com/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-accent"
+                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-link-hover"
                       >
                         <FaFacebook className="h-5 w-5" />
                       </a>
@@ -321,7 +268,7 @@ export default function AboutPage() {
                         href="https://twitter.com/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-accent"
+                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-link-hover"
                       >
                         <FaTwitter className="h-5 w-5" />
                       </a>
@@ -329,7 +276,7 @@ export default function AboutPage() {
                         href="https://www.pinterest.com/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-accent"
+                        className="flex h-10 w-10 items-center justify-center text-white transition-colors hover:text-link-hover"
                       >
                         <FaPinterest className="h-5 w-5" />
                       </a>
@@ -350,46 +297,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Advantages with Parallax - matching about1.html */}
-      <section className="relative overflow-hidden py-16 md:py-24">
-        <div
-          className="absolute inset-0 bg-cover bg-fixed bg-center"
-          style={{ backgroundImage: "url('/img/back_1.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-black/70" />
-
-        <div className="vincent-container relative z-10">
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
-            <div className="text-center">
-              <div className="mb-5 flex justify-center">
-                <img src="/img/icon_1.png" alt="Quality Foods" className="h-16 w-auto" />
-              </div>
-              <h4 className="mb-4 text-text-heading">Quality Foods</h4>
-              <p className="text-text-body">
-                Sit amet, consectetur adipiscing elit quisque eget maximus velit, non eleifend libero curabitur dapibus mauris sed leo cursus aliquetcras suscipit.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="mb-5 flex justify-center">
-                <img src="/img/icon_3.png" alt="Fastest Delivery" className="h-16 w-auto" />
-              </div>
-              <h4 className="mb-4 text-text-heading">Fastest Delivery</h4>
-              <p className="text-text-body">
-                Sit amet, consectetur adipiscing elit quisque eget maximus velit, non eleifend libero curabitur dapibus mauris sed leo cursus aliquetcras suscipit.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="mb-5 flex justify-center">
-                <img src="/img/icon_2.png" alt="Original Recipes" className="h-16 w-auto" />
-              </div>
-              <h4 className="mb-4 text-text-heading">Original Recipes</h4>
-              <p className="text-text-body">
-                Sit amet, consectetur adipiscing elit quisque eget maximus velit, non eleifend libero curabitur dapibus mauris sed leo cursus aliquetcras suscipit.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Advantages with Parallax */}
+      <AdvantagesSection advantages={websiteContent?.advantages ?? defaultAdvantages} />
     </>
   )
 }

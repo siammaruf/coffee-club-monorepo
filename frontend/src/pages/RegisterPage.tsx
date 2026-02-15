@@ -57,10 +57,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="mb-10 text-center">
-          <Link to="/" className="text-accent transition-colors hover:text-accent-hover">
-            <h3>CoffeeClub</h3>
-          </Link>
-          <h2 className="mt-6">Create Account</h2>
+          <h2>Create Account</h2>
           <div className="mx-auto mt-4">
             <img src="/img/separator_dark.png" alt="" className="mx-auto" />
           </div>
@@ -135,7 +132,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-accent"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-link-hover"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -167,7 +164,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-accent"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-link-hover"
                   aria-label={
                     showConfirmPassword ? 'Hide password' : 'Show password'
                   }
@@ -196,11 +193,11 @@ export default function RegisterPage() {
                 />
                 <span className="text-xs text-text-muted">
                   I agree to the{' '}
-                  <a href="#" className="text-accent hover:text-accent-hover">
+                  <a href="#" className="text-accent hover:text-link-hover">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-accent hover:text-accent-hover">
+                  <a href="#" className="text-accent hover:text-link-hover">
                     Privacy Policy
                   </a>
                 </span>
@@ -226,7 +223,7 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="text-accent transition-colors hover:text-accent-hover"
+                className="text-accent transition-colors hover:text-link-hover"
               >
                 Login
               </Link>

@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="mb-10 text-center">
-          <Link to="/" className="text-accent transition-colors hover:text-accent-hover">
+          <Link to="/" className="text-accent transition-colors hover:text-link-hover">
             <h3>CoffeeClub</h3>
           </Link>
           <h2 className="mt-6">Reset Password</h2>
@@ -182,7 +182,7 @@ export default function ForgotPasswordPage() {
               <p className="text-center text-sm text-text-muted">
                 <Link
                   to="/login"
-                  className="text-accent transition-colors hover:text-accent-hover"
+                  className="text-accent transition-colors hover:text-link-hover"
                 >
                   Back to Login
                 </Link>
@@ -226,7 +226,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setStep('email')}
-                  className="text-accent transition-colors hover:text-accent-hover"
+                  className="text-accent transition-colors hover:text-link-hover"
                 >
                   Resend
                 </button>
@@ -253,7 +253,7 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-accent"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-link-hover"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />

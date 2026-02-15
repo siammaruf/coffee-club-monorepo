@@ -5,7 +5,8 @@ import type { ItemFilters } from '@/types/item'
 export function useMenu() {
   const [filters, setFilters] = useState<ItemFilters>({ page: 1, limit: 12 })
 
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories()
+  const { data: categoriesRaw, isLoading: categoriesLoading } = useCategories()
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : ((categoriesRaw as any)?.data ?? [])
   const { data: itemsData, isLoading: itemsLoading, error } = useMenuItems(filters)
 
   const items = itemsData?.data ?? []

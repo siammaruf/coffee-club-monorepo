@@ -89,7 +89,7 @@ export function BlogSidebar() {
                     />
                   </div>
                   <div>
-                    <span className="text-sm text-text-primary transition-colors group-hover:text-accent">
+                    <span className="text-sm text-text-primary transition-colors group-hover:text-link-hover">
                       {post.title}
                     </span>
                     <div className="mt-1 text-xs text-text-muted">
@@ -105,7 +105,7 @@ export function BlogSidebar() {
                     <img src="/img/1-80x80.jpg" alt="" className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <span className="text-sm text-text-primary transition-colors group-hover:text-accent">
+                    <span className="text-sm text-text-primary transition-colors group-hover:text-link-hover">
                       Healthy Food for healthy body
                     </span>
                     <div className="mt-1 text-xs text-text-muted">April 6, 2017</div>
@@ -116,7 +116,7 @@ export function BlogSidebar() {
                     <img src="/img/2-80x80.jpg" alt="" className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <span className="text-sm text-text-primary transition-colors group-hover:text-accent">
+                    <span className="text-sm text-text-primary transition-colors group-hover:text-link-hover">
                       Food design trends 2017
                     </span>
                     <div className="mt-1 text-xs text-text-muted">April 6, 2017</div>
@@ -135,7 +135,7 @@ export function BlogSidebar() {
             <li key={cat}>
               <button
                 onClick={() => handleCategoryClick(cat)}
-                className="text-sm text-text-muted transition-colors hover:text-accent"
+                className="text-sm text-text-muted transition-colors hover:text-link-hover"
               >
                 {cat}
               </button>
@@ -152,7 +152,7 @@ export function BlogSidebar() {
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
-              className="border border-border px-3 py-1 text-xs uppercase tracking-[2px] text-text-muted transition-colors hover:border-accent hover:text-accent"
+              className="border border-border px-3 py-1 text-xs uppercase tracking-[2px] text-text-muted transition-colors hover:border-link-hover hover:text-link-hover"
             >
               {tag}
             </button>

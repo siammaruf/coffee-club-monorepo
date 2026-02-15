@@ -65,7 +65,7 @@ export function TabbedMenuSection() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="aspect-square rounded bg-bg-lighter" />
+                <div className="aspect-square rounded-full bg-bg-lighter" />
                 <div className="mt-4 h-4 w-3/4 rounded bg-bg-lighter" />
                 <div className="mt-2 h-3 w-full rounded bg-bg-lighter" />
                 <div className="mt-2 h-4 w-1/4 rounded bg-bg-lighter" />
@@ -79,15 +79,17 @@ export function TabbedMenuSection() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {items.map((item) => (
               <div key={item.id} className="group">
-                {/* Image with hover overlay */}
-                <div className="relative overflow-hidden">
-                  <img
-                    src={item.image ?? '/img/6-600x600.png'}
-                    alt={item.name ?? 'Product'}
-                    className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                {/* Circular image with hover overlay */}
+                <div className="relative overflow-hidden rounded-full">
+                  <div className="aspect-square overflow-hidden rounded-full bg-bg-secondary">
+                    <img
+                      src={item.image ?? '/img/6-600x600.png'}
+                      alt={item.name ?? 'Product'}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
                   {/* Hover overlay with add-to-cart */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/40">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 transition-all duration-300 group-hover:bg-black/40">
                     <button
                       type="button"
                       onClick={() => handleAddToCart(item)}
@@ -100,18 +102,18 @@ export function TabbedMenuSection() {
                 </div>
 
                 {/* Product info */}
-                <h5 className="mt-4 text-text-heading">
+                <h5 className="mt-4 text-center text-text-heading">
                   <Link
-                    to={`/menu/${item.slug ?? item.id}`}
-                    className="transition-colors duration-200 hover:text-accent"
+                    to={`/menu/${item.id}`}
+                    className="transition-colors duration-200 hover:text-link-hover"
                   >
                     {item.name ?? ''}
                   </Link>
                 </h5>
-                <p className="mt-1 text-text-body">
+                <p className="mt-1 text-center text-text-body">
                   {truncate(item.description ?? '', 70)}
                 </p>
-                <div className="mt-2 text-lg tracking-[2px] text-accent">
+                <div className="mt-2 text-center text-lg tracking-[2px] text-accent">
                   {formatPrice(item.sale_price ?? item.regular_price ?? 0)}
                 </div>
               </div>

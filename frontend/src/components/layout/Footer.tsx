@@ -29,7 +29,7 @@ export function Footer() {
         {/* Logo */}
         <div className="mb-6">
           <Link to="/" className="inline-block">
-            <img src="/img/logo_footer.png" alt="CoffeeClub" className="h-[50px] w-auto" />
+            <img src="/img/logo.png" alt="CoffeeClub" className="w-[200px] h-auto" />
           </Link>
         </div>
 
@@ -44,7 +44,7 @@ export function Footer() {
             <li key={link.label}>
               <Link
                 to={link.href}
-                className="text-xs font-bold uppercase tracking-[3px] text-text-primary transition-colors hover:text-accent"
+                className="text-xs font-bold uppercase tracking-[3px] text-text-primary transition-colors hover:text-link-hover"
               >
                 {link.label}
               </Link>
@@ -61,7 +61,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={item.label}
-                className="flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-accent"
+                className="flex h-10 w-10 items-center justify-center text-text-muted transition-colors hover:text-link-hover"
               >
                 <item.icon className="h-5 w-5" />
               </a>
@@ -70,7 +70,7 @@ export function Footer() {
         </ul>
 
         {/* Copyright */}
-        <div className="text-xs tracking-[2px] text-text-muted">
+        <div className="text-xs tracking-[2px] text-text-muted" suppressHydrationWarning>
           Copyright &copy; {new Date().getFullYear()} CoffeeClub. All Rights Reserved.
         </div>
       </div>

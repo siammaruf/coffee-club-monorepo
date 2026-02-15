@@ -75,7 +75,7 @@ export function Header() {
     <header className="bg-bg-primary">
       <div className="flex items-stretch">
         {/* Left: Phone + Hours */}
-        <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+        <div className="hidden w-1/4 items-center justify-center px-4 py-4 lg:flex">
           <div className="flex items-center gap-4">
             <img
               src="/img/icon_phone.png"
@@ -95,18 +95,18 @@ export function Header() {
         </div>
 
         {/* Center: Logo + Nav */}
-        <div className="flex-1 border-b border-border lg:w-1/2">
+        <div className="flex-1 lg:w-1/2">
           {/* Desktop Nav */}
           <div className="hidden lg:block">
             {/* Logo */}
             <div className="flex justify-center" style={{ padding: '55px 0 45px' }}>
               <Link to="/" className="block">
-                <img src="/img/logo.png" alt="CoffeeClub" className="h-[99px] w-[176px]" />
+                <img src="/img/logo.png" alt="CoffeeClub" className="w-[210px] h-auto" />
               </Link>
             </div>
 
             {/* Navigation */}
-            <nav className="flex justify-center border-t border-border">
+            <nav className="flex justify-center">
               <ul className="flex items-center">
                 {navLinks.map((link) => (
                   <li
@@ -123,7 +123,7 @@ export function Header() {
                           'nav-item-link px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] transition-colors',
                           isActive(link.href)
                             ? 'active text-accent'
-                            : 'text-white hover:text-accent'
+                            : 'text-white hover:text-link-hover'
                         )}
                       >
                         {link.label}
@@ -135,7 +135,7 @@ export function Header() {
                           'nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] transition-colors',
                           isActive(link.href)
                             ? 'active text-accent'
-                            : 'text-white hover:text-accent'
+                            : 'text-white hover:text-link-hover'
                         )}
                       >
                         {link.label}
@@ -155,7 +155,7 @@ export function Header() {
                             <Link
                               to={child.href}
                               className={cn(
-                                'block pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent',
+                                'block pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-link-hover',
                                 idx < (link.children?.length ?? 0) - 1
                                   ? 'border-b border-[#2c3235]'
                                   : 'border-b border-transparent'
@@ -178,7 +178,7 @@ export function Header() {
                     onMouseEnter={() => setIsDropdownOpen(true)}
                     onMouseLeave={() => setIsDropdownOpen(false)}
                   >
-                    <button className="nav-item-link flex items-center px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors">
+                    <button className="nav-item-link flex items-center px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-link-hover transition-colors">
                       <User className="h-3.5 w-3.5 mr-1" />
                       {customer.name?.split(' ')[0] ?? 'Account'}
                       <ChevronDown className="ml-1 h-3 w-3" />
@@ -193,7 +193,7 @@ export function Header() {
                         <li className="px-[28px]">
                           <Link
                             to="/profile"
-                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent border-b border-[#2c3235]"
+                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-link-hover border-b border-[#2c3235]"
                             style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <User className="h-3.5 w-3.5" />
@@ -203,7 +203,7 @@ export function Header() {
                         <li className="px-[28px]">
                           <Link
                             to="/orders"
-                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent border-b border-[#2c3235]"
+                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-link-hover border-b border-[#2c3235]"
                             style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <ClipboardList className="h-3.5 w-3.5" />
@@ -213,7 +213,7 @@ export function Header() {
                         <li className="px-[28px]">
                           <button
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-error transition-colors hover:text-accent border-b border-transparent"
+                            className="flex w-full items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-error transition-colors hover:text-link-hover border-b border-transparent"
                             style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <LogOut className="h-3.5 w-3.5" />
@@ -228,7 +228,7 @@ export function Header() {
                     <li>
                       <Link
                         to="/login"
-                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors"
+                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-link-hover transition-colors"
                       >
                         Login
                       </Link>
@@ -236,7 +236,7 @@ export function Header() {
                     <li>
                       <Link
                         to="/register"
-                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors"
+                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-link-hover transition-colors"
                       >
                         Sign Up
                       </Link>
@@ -287,11 +287,11 @@ export function Header() {
         </div>
 
         {/* Right: Cart Widget */}
-        <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+        <div className="hidden w-1/4 items-center justify-center px-4 py-4 lg:flex">
           <button onClick={openDrawer} className="group cursor-pointer">
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="font-heading text-[16px] font-bold tracking-[3px] text-text-primary transition-colors group-hover:text-accent">
+                <div className="font-heading text-[16px] font-bold tracking-[3px] text-text-primary transition-colors group-hover:text-link-hover">
                   {formatPrice(total)}
                 </div>
                 <div className="text-[13px] tracking-[3px] text-text-primary opacity-50 transition-all group-hover:opacity-100">
@@ -354,7 +354,7 @@ export function Header() {
                         <Link
                           key={child.label}
                           to={child.href}
-                          className="block px-6 py-2 text-sm text-text-primary hover:text-accent transition-colors"
+                          className="block px-6 py-2 text-sm text-text-primary hover:text-link-hover transition-colors"
                         >
                           {child.label}
                         </Link>
@@ -367,7 +367,7 @@ export function Header() {
                         'block px-4 py-3 text-xs font-bold uppercase tracking-[3px] transition-colors',
                         isActive(link.href)
                           ? 'text-accent'
-                          : 'text-text-primary hover:text-accent'
+                          : 'text-text-primary hover:text-link-hover'
                       )}
                     >
                       {link.label}
@@ -396,14 +396,14 @@ export function Header() {
                 </div>
                 <Link
                   to="/profile"
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-accent"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-link-hover"
                 >
                   <User className="h-4 w-4" />
                   My Profile
                 </Link>
                 <Link
                   to="/orders"
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-accent"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:text-link-hover"
                 >
                   <ClipboardList className="h-4 w-4" />
                   My Orders
@@ -420,7 +420,7 @@ export function Header() {
               <div className="space-y-2">
                 <Link
                   to="/login"
-                  className="block w-full border-2 border-border py-3 text-center text-xs font-bold uppercase tracking-[3px] text-text-primary hover:border-accent hover:text-accent transition-colors"
+                  className="block w-full border-2 border-border py-3 text-center text-xs font-bold uppercase tracking-[3px] text-text-primary hover:border-link-hover hover:text-link-hover transition-colors"
                 >
                   Login
                 </Link>

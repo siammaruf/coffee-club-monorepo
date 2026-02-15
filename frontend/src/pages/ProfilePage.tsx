@@ -137,7 +137,7 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
-                  <label className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center border border-border bg-bg-lighter text-text-muted transition-colors hover:text-accent">
+                  <label className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center border border-border bg-bg-lighter text-text-muted transition-colors hover:text-link-hover">
                     <span className="text-xs">+</span>
                     <input
                       type="file"

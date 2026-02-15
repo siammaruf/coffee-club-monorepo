@@ -72,7 +72,7 @@ function BlogCard({ post }: { post: BlogPost }) {
       <h5 className="mt-3">
         <Link
           to={`/blog/${post?.slug ?? ''}`}
-          className="transition-colors hover:text-accent"
+          className="transition-colors hover:text-link-hover"
         >
           {title}
         </Link>
@@ -139,7 +139,7 @@ export default function BlogPage() {
                 {search && (
                   <button
                     onClick={() => setSearchParams({})}
-                    className="text-sm text-accent transition-colors hover:text-accent-hover"
+                    className="text-sm text-accent transition-colors hover:text-link-hover"
                   >
                     Clear search
                   </button>
