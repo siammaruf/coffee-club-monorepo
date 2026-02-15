@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
@@ -57,6 +58,9 @@ export class Reservation {
     default: ReservationStatus.PENDING,
   })
   status: ReservationStatus;
+
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

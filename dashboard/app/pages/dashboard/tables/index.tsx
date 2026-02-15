@@ -19,10 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { 
-  Search, 
-  MoreHorizontal, 
-  Edit, 
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import {
+  Search,
+  MoreHorizontal,
+  Edit,
   Trash2,
   Plus,
   CheckCircle,
@@ -32,7 +35,9 @@ import {
   Clock,
   Table as TableIcon,
   Filter,
-  Eye
+  Eye,
+  RotateCcw,
+  AlertTriangle
 } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import TableSkeleton from "~/components/skeleton/TableSkeleton";
@@ -57,8 +62,18 @@ export default function TablesPage() {
   const [viewTable, setViewTable] = useState<RestaurantTable | null>(null);
   const [editTable, setEditTable] = useState<RestaurantTable | null>(null);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchTables();
+    clearSelection();
+  }, [viewMode]);
+
+  useEffect(() => {
+    tableService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -86,9 +101,11 @@ export default function TablesPage() {
   const fetchTables = async () => {
     try {
       setIsLoading(true);
-      const data = await tableService.getAll();
-      setTables(data.data);
-      setFilteredTables(data.data);
+      const data = viewMode === 'active'
+        ? await tableService.getAll()
+        : await tableService.getTrash();
+      setTables((data as any).data);
+      setFilteredTables((data as any).data);
     } catch (error) {
       console.error('Error fetching tables:', error);
       setTables([]);
@@ -111,6 +128,7 @@ export default function TablesPage() {
     try {
       await tableService.delete(tableToDelete);
       setTables(tables.filter(table => table.id !== tableToDelete));
+      setTrashCount(prev => prev + 1);
       setTableToDelete(null);
     } catch (error) {
       console.error('Error deleting table:', error);
@@ -135,6 +153,68 @@ export default function TablesPage() {
       setTableToChangeStatus(null);
     } catch (error) {
       console.error('Error updating table status:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await tableService.bulkDelete(Array.from(selectedIds));
+      setTables(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await tableService.bulkRestore(Array.from(selectedIds));
+      setTables(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await tableService.bulkPermanentDelete(Array.from(selectedIds));
+      setTables(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await tableService.restore(id);
+      setTables(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await tableService.permanentDelete(id);
+      setTables(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
     }
   };
 
@@ -178,12 +258,12 @@ export default function TablesPage() {
 
   const getActionDialogDetails = () => {
     if (!tableToChangeStatus) return { title: '', description: '' };
-    
+
     const table = tables.find(t => t.id === tableToChangeStatus.id);
     if (!table) return { title: '', description: '' };
-    
+
     const statusText = tableToChangeStatus.status.charAt(0).toUpperCase() + tableToChangeStatus.status.slice(1);
-    
+
     return {
       title: `Mark Table ${table.number} as ${statusText}?`,
       description: `Are you sure you want to change the status of table ${table.number} to ${statusText}?`
@@ -231,102 +311,125 @@ export default function TablesPage() {
           <p className="text-gray-600">Manage restaurant tables and seating</p>
         </div>
         <div>
-          <Button onClick={handleAddTable} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add New Table
-          </Button>
+          {viewMode === 'active' && (
+            <Button onClick={handleAddTable} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Add New Table
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card className="border-green-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              Available Tables
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{availableTables}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-blue-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" />
-              Occupied Tables
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{occupiedTables}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-yellow-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-yellow-500" />
-              Reserved Tables
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{reservedTables}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-red-300">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-red-500" />
-              Under Maintenance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{maintenanceTables}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats Cards - Only show in active view */}
+      {viewMode === 'active' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card className="border-green-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                Available Tables
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{availableTables}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                Occupied Tables
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{occupiedTables}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-yellow-500" />
+                Reserved Tables
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{reservedTables}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-red-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-red-500" />
+                Under Maintenance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{maintenanceTables}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tables List */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasTables ? `Tables (${filteredTables.length})` : 'Tables'}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="flex gap-4 items-center">
-              <Select
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Locations</option>
-                {uniqueLocations.map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </Select>
+              {viewMode === 'active' && (
+                <>
+                  <Select
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Locations</option>
+                    {uniqueLocations.map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </Select>
 
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Statuses</option>
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="reserved">Reserved</option>
-                <option value="maintenance">Maintenance</option>
-              </Select>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="maintenance">Maintenance</option>
+                  </Select>
 
-              <Select
-                value={seatFilter}
-                onChange={(e) => setSeatFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Seats</option>
-                {seatOptions.map(seats => (
-                  <option key={seats} value={seats.toString()}>{seats} {seats === 1 ? 'seat' : 'seats'}</option>
-                ))}
-              </Select>
+                  <Select
+                    value={seatFilter}
+                    onChange={(e) => setSeatFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Seats</option>
+                    {seatOptions.map(seats => (
+                      <option key={seats} value={seats.toString()}>{seats} {seats === 1 ? 'seat' : 'seats'}</option>
+                    ))}
+                  </Select>
+                </>
+              )}
 
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -341,11 +444,26 @@ export default function TablesPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           {hasTables && hasFilteredResults ? (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredTables.map(t => t.id))}
+                        onChange={() => toggleSelectAll(filteredTables.map(t => t.id))}
+                      />
+                    </TableHead>
                     <TableHead>Table Number</TableHead>
                     <TableHead className="text-center">Seats</TableHead>
                     <TableHead>Location</TableHead>
@@ -358,13 +476,21 @@ export default function TablesPage() {
                     <TableRow
                       key={table.id}
                       className={
-                        table.status === 'maintenance'
-                          ? 'bg-red-50'
-                          : table.status === 'reserved'
-                          ? 'bg-yellow-50'
+                        viewMode === 'active'
+                          ? table.status === 'maintenance'
+                            ? 'bg-red-50'
+                            : table.status === 'reserved'
+                            ? 'bg-yellow-50'
+                            : ''
                           : ''
                       }
                     >
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected(table.id)}
+                          onChange={() => toggleSelect(table.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{table.number}</div>
                       </TableCell>
@@ -389,48 +515,71 @@ export default function TablesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewTable(table)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Table
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setEditTable(table)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Table
-                            </DropdownMenuItem>
-                            {table.status !== 'available' && (
-                              <DropdownMenuItem
-                                onClick={() => handleChangeStatus(table.id, 'available')}
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Mark Available
+                        {viewMode === 'active' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setViewTable(table)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Table
                               </DropdownMenuItem>
-                            )}
-                            {table.status !== 'occupied' && (
-                              <DropdownMenuItem
-                                onClick={() => handleChangeStatus(table.id, 'occupied')}
-                                className="text-blue-600"
-                              >
-                                <Users className="w-4 h-4 mr-2" />
-                                Mark Occupied
+                              <DropdownMenuItem onClick={() => setEditTable(table)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Table
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteTable(table.id)}
-                              className="text-red-600"
+                              {table.status !== 'available' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleChangeStatus(table.id, 'available')}
+                                  className="text-green-600"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Mark Available
+                                </DropdownMenuItem>
+                              )}
+                              {table.status !== 'occupied' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleChangeStatus(table.id, 'occupied')}
+                                  className="text-blue-600"
+                                >
+                                  <Users className="w-4 h-4 mr-2" />
+                                  Mark Occupied
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteTable(table.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Table
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRestore(table.id)}
+                              title="Restore"
+                              className="text-green-600 hover:bg-green-50 cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete Table
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePermanentDelete(table.id)}
+                              title="Delete Permanently"
+                              className="text-red-600 hover:bg-red-50 cursor-pointer"
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -455,14 +604,20 @@ export default function TablesPage() {
             /* No tables at all - Empty state */
             <div className="text-center py-12">
               <TableIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No tables configured</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No tables configured'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                You haven't added any tables to your restaurant yet. Add your first table to get started.
+                {viewMode === 'trash'
+                  ? 'No deleted tables found.'
+                  : "You haven't added any tables to your restaurant yet. Add your first table to get started."}
               </p>
-              <Button onClick={handleAddTable}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Table
-              </Button>
+              {viewMode === 'active' && (
+                <Button onClick={handleAddTable}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Table
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -472,7 +627,7 @@ export default function TablesPage() {
       <ConfirmDialog
         open={!!tableToDelete}
         title="Delete Table"
-        description="Are you sure you want to delete this table? This action cannot be undone."
+        description="Are you sure you want to delete this table? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}

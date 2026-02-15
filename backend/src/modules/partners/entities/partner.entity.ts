@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -25,6 +26,9 @@ export class Partner {
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
+
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

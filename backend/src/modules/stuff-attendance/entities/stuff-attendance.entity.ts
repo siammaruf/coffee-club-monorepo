@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { AttendanceStatus } from '../enum/attendance-status.enum';
 
@@ -73,6 +73,9 @@ export class StuffAttendance {
     comment: 'Whether this attendance record has been approved'
   })
   is_approved: boolean;
+
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
   @CreateDateColumn({ comment: 'Timestamp when record was created' })
   created_at: Date;

@@ -20,4 +20,10 @@ export const attendanceService = {
     const queryParams = { start_date: startDate, end_date: endDate, ...params };
     return httpService.get<AttendanceListResponse>('/stuff-attendance', { params: queryParams });
   },
+  bulkDelete: (ids: string[]) => httpService.delete('/stuff-attendance/bulk/delete', { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get('/stuff-attendance/trash/list', params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`/stuff-attendance/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`/stuff-attendance/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/stuff-attendance/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/stuff-attendance/bulk/permanent', { data: { ids } }),
 };

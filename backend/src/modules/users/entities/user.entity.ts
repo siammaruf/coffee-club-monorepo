@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UserStatus } from "../enum/user-status.enum";
 import { UserRole } from "../enum/user-role.enum";
 import { IsString, MinLength } from "class-validator";
@@ -67,9 +67,12 @@ export class User {
   })
   base_salary: number;
 
+  @DeleteDateColumn()
+  deleted_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
-  
+
   @UpdateDateColumn()
   updated_at: Date;
 }

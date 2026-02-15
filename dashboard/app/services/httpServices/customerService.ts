@@ -9,4 +9,8 @@ export const customerService = {
   delete: (id: string) => httpService.delete(`/customers/${id}`),
   activate: (id: string) => httpService.patch<Customer>(`/customers/${id}/activate`),
   deactivate: (id: string) => httpService.patch<Customer>(`/customers/${id}/deactivate`),
+  bulkDelete: (ids: string[]) => httpService.delete('/customers/bulk/delete', { data: { ids } }),
+  getTrash: (params?: Record<string, any>) => httpService.get('/customers/trash/list', params ? { params } : undefined),
+  restore: (id: string) => httpService.patch(`/customers/${id}/restore`),
+  permanentDelete: (id: string) => httpService.delete(`/customers/${id}/permanent`),
 };

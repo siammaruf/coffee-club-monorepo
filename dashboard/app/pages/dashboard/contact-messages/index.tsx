@@ -4,7 +4,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import { Eye, Search, Trash2 } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import { Eye, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { contactMessageService } from "~/services/httpServices/contactMessageService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import ContactMessageModal from "./components/ContactMessageModal";
@@ -48,6 +51,11 @@ export default function ContactMessagesPage() {
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     const fetchMessages = async () => {
       setIsLoading(true);
@@ -58,9 +66,12 @@ export default function ContactMessagesPage() {
         };
         if (searchTerm) params.search = searchTerm;
         if (statusFilter) params.status = statusFilter;
-        const res = await contactMessageService.getAll(params);
-        setMessages(res.data || []);
-        setTotal(res.total || 0);
+
+        const res = viewMode === 'active'
+          ? await contactMessageService.getAll(params)
+          : await contactMessageService.getTrash(params);
+        setMessages((res as any).data || []);
+        setTotal((res as any).total || 0);
       } catch {
         setMessages([]);
         setTotal(0);
@@ -68,7 +79,15 @@ export default function ContactMessagesPage() {
       setIsLoading(false);
     };
     fetchMessages();
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, searchTerm, statusFilter, viewMode]);
+
+  useEffect(() => {
+    contactMessageService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const handleMessageUpdate = (updated: ContactMessage) => {
     setMessages(prev =>
@@ -84,11 +103,79 @@ export default function ContactMessagesPage() {
       await contactMessageService.delete(deleteId);
       setMessages(prev => prev.filter(m => m.id !== deleteId));
       setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
     } catch (error) {
       console.error("Failed to delete contact message:", error);
     }
     setDeleteLoading(false);
     setDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await contactMessageService.bulkDelete(Array.from(selectedIds));
+      setMessages(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await contactMessageService.bulkRestore(Array.from(selectedIds));
+      setMessages(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await contactMessageService.bulkPermanentDelete(Array.from(selectedIds));
+      setMessages(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await contactMessageService.restore(id);
+      setMessages(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await contactMessageService.permanentDelete(id);
+      setMessages(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -109,23 +196,40 @@ export default function ContactMessagesPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center flex-wrap gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <span>Contact Messages ({total})</span>
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <Select
-                value={statusFilter}
-                onChange={e => {
-                  setCurrentPage(1);
-                  setStatusFilter(e.target.value);
-                }}
-                className="w-40 h-10"
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
               >
-                <option value="">All Statuses</option>
-                <option value="new">New</option>
-                <option value="read">Read</option>
-                <option value="replied">Replied</option>
-              </Select>
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
+            <div className="flex items-center gap-3">
+              {viewMode === 'active' && (
+                <Select
+                  value={statusFilter}
+                  onChange={e => {
+                    setCurrentPage(1);
+                    setStatusFilter(e.target.value);
+                  }}
+                  className="w-40 h-10"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="new">New</option>
+                  <option value="read">Read</option>
+                  <option value="replied">Replied</option>
+                </Select>
+              )}
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -142,9 +246,24 @@ export default function ContactMessagesPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-7 font-medium text-sm">
+              <div className="grid grid-cols-8 font-medium text-sm">
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={isAllSelected(messages.map(m => m.id))}
+                    onChange={() => toggleSelectAll(messages.map(m => m.id))}
+                  />
+                </div>
                 <div className="col-span-2 text-left">Name</div>
                 <div className="text-center">Email</div>
                 <div className="text-center">Subject</div>
@@ -157,7 +276,13 @@ export default function ContactMessagesPage() {
               {messages.length > 0 ? (
                 messages.map(msg => (
                   <div key={msg.id} className="p-4 hover:bg-muted/50">
-                    <div className="grid grid-cols-7 text-sm items-center">
+                    <div className="grid grid-cols-8 text-sm items-center">
+                      <div className="flex items-center">
+                        <Checkbox
+                          checked={isSelected(msg.id)}
+                          onChange={() => toggleSelect(msg.id)}
+                        />
+                      </div>
                       <div className="col-span-2 text-left">
                         <div className="flex flex-col min-w-0">
                           <span className="font-medium truncate">{msg.name}</span>
@@ -181,31 +306,61 @@ export default function ContactMessagesPage() {
                         {new Date(msg.created_at).toLocaleDateString()}
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 cursor-pointer"
-                          title="View"
-                          onClick={() => setViewMessage(msg)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                          title="Delete"
-                          onClick={() => setDeleteId(msg.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {viewMode === 'active' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              title="View"
+                              onClick={() => setViewMessage(msg)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete"
+                              onClick={() => setDeleteId(msg.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-green-600 hover:bg-green-50 cursor-pointer"
+                              title="Restore"
+                              onClick={() => handleRestore(msg.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete Permanently"
+                              onClick={() => handlePermanentDelete(msg.id)}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  {searchTerm || statusFilter ? (
+                  {viewMode === 'trash' ? (
+                    <>
+                      <p>Trash is empty.</p>
+                      <p className="text-sm mt-1">No deleted contact messages found.</p>
+                    </>
+                  ) : searchTerm || statusFilter ? (
                     <>
                       <p>No contact messages found matching your filters.</p>
                       <p className="text-sm mt-1">Try adjusting your search or filter criteria.</p>
@@ -265,7 +420,7 @@ export default function ContactMessagesPage() {
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Contact Message?"
-        description="Are you sure you want to delete this contact message? This action cannot be undone."
+        description="Are you sure you want to delete this contact message? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
@@ -298,7 +453,8 @@ function ContactMessagesLoadingSkeleton() {
         <CardContent>
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-7 gap-4">
+              <div className="grid grid-cols-8 gap-4">
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                 <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-16" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-14" />
@@ -310,7 +466,8 @@ function ContactMessagesLoadingSkeleton() {
             <div className="divide-y">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="p-4">
-                  <div className="grid grid-cols-7 items-center gap-4">
+                  <div className="grid grid-cols-8 items-center gap-4">
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                     <div className="col-span-2 flex flex-col gap-1">
                       <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
                       <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />

@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import KitchenItemsSkeleton from "~/components/skeleton/KitchenItemsSkeleton";
-import {ConfirmDialog} from "~/components/common/ConfirmDialog";
+import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { kitchenItemsService } from "~/services/httpServices/kitchenItemsService";
-import { useRef } from "react";
 import type { KitchenItem } from "~/types/kitchenItem";
 import AddKitchenItemAddModal from "~/components/modals/AddKitchenItemAddModal";
 import EditKitchenItemModal from "~/components/modals/EditKitchenItemModal";
@@ -25,17 +24,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
   Trash2,
   Filter,
   Coffee,
   Utensils,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 
 
 export default function KitchenItemsPage() {
@@ -80,8 +84,19 @@ export default function KitchenItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchKitchenItems();
+    clearSelection();
+  }, [viewMode]);
+
+  useEffect(() => {
+    // Fetch trash count on mount
+    kitchenItemsService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -98,7 +113,9 @@ export default function KitchenItemsPage() {
   const fetchKitchenItems = async () => {
     setIsLoading(true);
     try {
-      const res = await kitchenItemsService.getAll();
+      const res = viewMode === 'active'
+        ? await kitchenItemsService.getAll()
+        : await kitchenItemsService.getTrash();
       const items = (res as { data: KitchenItem[] }).data || [];
       setKitchenItems(items);
       setFilteredItems(items);
@@ -120,6 +137,7 @@ export default function KitchenItemsPage() {
     try {
       await kitchenItemsService.delete(deleteId);
       setKitchenItems(prev => prev.filter(item => item.id !== deleteId));
+      setTrashCount(prev => prev + 1);
       setDeleteId(null);
     } catch (error) {
       console.error('Error deleting kitchen item:', error);
@@ -128,6 +146,73 @@ export default function KitchenItemsPage() {
 
   const clearFilters = () => {
     setSearchTerm("");
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await kitchenItemsService.bulkDelete(Array.from(selectedIds));
+      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => kitchenItemsService.restore(id)));
+      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => kitchenItemsService.permanentDelete(id)));
+      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await kitchenItemsService.restore(id);
+      setKitchenItems(prev => prev.filter(item => item.id !== id));
+      setFilteredItems(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await kitchenItemsService.permanentDelete(id);
+      setKitchenItems(prev => prev.filter(item => item.id !== id));
+      setFilteredItems(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const hasActiveFilters = !!searchTerm;
@@ -149,13 +234,15 @@ export default function KitchenItemsPage() {
           </h1>
           <p className="text-gray-600">Manage your kitchen supplies and ingredients</p>
         </div>
-        <Button
-          className="flex items-center gap-2"
-          onClick={() => setShowAddModal(true)}
-        >
-          <Plus className="w-4 h-4" />
-          Add Item
-        </Button>
+        {viewMode === 'active' && (
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add Item
+          </Button>
+        )}
         {/* Add Item Modal */}
         <AddKitchenItemAddModal
           open={showAddModal}
@@ -179,9 +266,24 @@ export default function KitchenItemsPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasItems ? `All Items (${filteredItems.length})` : 'Kitchen Items'}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="flex gap-4 items-center">
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -196,11 +298,26 @@ export default function KitchenItemsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           {hasItems ? (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredItems.map(i => i.id))}
+                        onChange={() => toggleSelectAll(filteredItems.map(i => i.id))}
+                      />
+                    </TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Name (Bangla)</TableHead>
                     <TableHead>Slug</TableHead>
@@ -212,6 +329,12 @@ export default function KitchenItemsPage() {
                 <TableBody>
                   {filteredItems.map((item) => (
                     <TableRow key={item.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {item.image ? (
@@ -244,26 +367,51 @@ export default function KitchenItemsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2 items-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditItem(item);
-                              setShowEditModal(true);
-                            }}
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                            title="Delete"
-                            className="text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {viewMode === 'active' ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditItem(item);
+                                  setShowEditModal(true);
+                                }}
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                                title="Delete"
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRestore(item.id)}
+                                title="Restore"
+                                className="text-green-600 hover:bg-green-50"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handlePermanentDelete(item.id)}
+                                title="Delete Permanently"
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -289,9 +437,13 @@ export default function KitchenItemsPage() {
             /* No items at all - Empty state */
             <div className="text-center py-12">
               <Utensils className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No kitchen items yet</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No kitchen items yet'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                Start by adding ingredients and supplies to your kitchen items.
+                {viewMode === 'trash'
+                  ? 'No deleted items found.'
+                  : 'Start by adding ingredients and supplies to your kitchen items.'}
               </p>
             </div>
           )}

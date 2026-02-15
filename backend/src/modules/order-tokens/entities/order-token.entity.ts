@@ -1,6 +1,6 @@
 import type { OrderItem } from 'src/modules/order-items/entities/order-item.entity';
 import type { Order } from 'src/modules/orders/entities/order.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable, CreateDateColumn, Relation, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinTable, CreateDateColumn, DeleteDateColumn, Relation, UpdateDateColumn } from 'typeorm';
 import { OrderTokenPriority } from '../enum/OrderTokenPriority.enum';
 import { OrderTokenStatus } from '../enum/OrderTokenStatus.enum';
 import { TokenType } from '../enum/TokenType.enum';
@@ -31,6 +31,9 @@ export class OrderToken {
 
     @Column({ type: 'timestamp', nullable: true })
     readyAt: Date;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     createdAt: Date;

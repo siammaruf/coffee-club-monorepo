@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn } from "typeorm";
 import { LeaveStatus } from "../enum/leave-status.enum";
 import { User } from "../../users/entities/user.entity";
 
@@ -32,4 +32,7 @@ export class Leave {
         default: LeaveStatus.PENDING
     })
     status: LeaveStatus;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 }

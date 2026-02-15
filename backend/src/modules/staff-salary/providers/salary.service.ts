@@ -306,10 +306,43 @@ export class SalaryService {
     }
 
     async remove(id: string): Promise<void> {
-        const result = await this.salaryRepository.delete(id);
+        const result = await this.salaryRepository.softDelete(id);
         if (result.affected === 0) {
             throw new NotFoundException(`Salary not found`);
         }
         await this.invalidateSalaryCaches();
+    }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.salaryRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.salaryRepository.createQueryBuilder('salary')
+            .withDeleted()
+            .where('salary.deleted_at IS NOT NULL');
+
+        query.orderBy('salary.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.salaryRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.salaryRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.salaryRepository.delete(id);
     }
 }

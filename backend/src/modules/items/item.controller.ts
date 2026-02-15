@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Query, ParseUUIDPipe } from "@nestjs/common";
+import { Controller, Get, Post, Body, Param, Put, Delete, Patch, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Query, ParseUUIDPipe } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes, ApiQuery, ApiBearerAuth } from "@nestjs/swagger";
 import { ItemService } from "./providers/item.service";
 import { CreateItemDto } from './dto/create-item.dto';
@@ -22,6 +22,39 @@ export class ItemController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
+  @Delete('bulk/delete')
+  @ApiOperation({ summary: 'Bulk soft delete items' })
+  async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+    await this.itemService.bulkSoftDelete(body.ids);
+    return {
+      status: 'success',
+      message: `${body.ids.length} record(s) moved to trash.`,
+      statusCode: HttpStatus.OK
+    };
+  }
+
+  @Get('trash/list')
+  @ApiOperation({ summary: 'List trashed items' })
+  async findTrashed(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ): Promise<any> {
+    const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+    const { data, total } = await this.itemService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+    return {
+      data,
+      total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber),
+      status: 'success',
+      message: 'Trashed records retrieved successfully.',
+      statusCode: HttpStatus.OK
+    };
+  }
+
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get all items', description: 'Retrieves a list of all items with their categories' })
@@ -29,12 +62,16 @@ export class ItemController {
   @ApiQuery({ name: 'limit', description: 'Items per page', example: 10, required: false })
   @ApiQuery({ name: 'search', description: 'Search term', example: 'espresso', required: false })
   @ApiQuery({ name: 'categorySlug', description: 'Filter by category slug', example: 'beverages', required: false })
+  @ApiQuery({ name: 'type', description: 'Filter by item type', example: 'food', required: false })
+  @ApiQuery({ name: 'status', description: 'Filter by item status', example: 'available', required: false })
   @ApiResponse({ status: 200, description: 'List of items retrieved successfully' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
-    @Query('categorySlug') categorySlug?: string
+    @Query('categorySlug') categorySlug?: string,
+    @Query('type') type?: string,
+    @Query('status') status?: string
   ): Promise<{
     data: ItemResponseDto[],
     total: number,
@@ -47,11 +84,13 @@ export class ItemController {
   }> {
     const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNumber = limit ? parseInt(limit, 10) : 10;
-    const { data, total } = await this.itemService.findAll({ 
-      page: pageNumber, 
-      limit: limitNumber, 
+    const { data, total } = await this.itemService.findAll({
+      page: pageNumber,
+      limit: limitNumber,
       search,
-      categorySlug 
+      categorySlug,
+      type,
+      status
     });
     const totalPages = Math.ceil(total / limitNumber);
     const responseData: ItemResponseDto[] = data.map(
@@ -147,13 +186,45 @@ export class ItemController {
       categories = [];
     }
 
+    // Parse variations from FormData
+    let variations: any[] = [];
+    if (createItemDto.has_variations) {
+      const rawVariations = (createItemDto as any).variations;
+      if (Array.isArray(rawVariations)) {
+        variations = rawVariations.map((v: any, idx: number) => ({
+          name: v.name || '',
+          name_bn: v.name_bn || '',
+          regular_price: Number(v.regular_price) || 0,
+          sale_price: Number(v.sale_price) || 0,
+          status: v.status || 'available',
+          sort_order: Number(v.sort_order) || idx + 1,
+        }));
+      } else if (typeof rawVariations === 'string') {
+        try {
+          const parsed = JSON.parse(rawVariations);
+          if (Array.isArray(parsed)) {
+            variations = parsed.map((v: any, idx: number) => ({
+              name: v.name || '',
+              name_bn: v.name_bn || '',
+              regular_price: Number(v.regular_price) || 0,
+              sale_price: Number(v.sale_price) || 0,
+              status: v.status || 'available',
+              sort_order: Number(v.sort_order) || idx + 1,
+            }));
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
     const transformedDto = {
       ...createItemDto,
       regular_price: Number(createItemDto.regular_price) || 0,
       sale_price: Number(createItemDto.sale_price) || 0,
-      categories: categories.map((cat) => ({ id: cat })), 
+      has_variations: !!createItemDto.has_variations,
+      variations,
+      categories: categories.map((cat) => ({ id: cat })),
     };
-    
+
     const item = await this.itemService.createWithImage(transformedDto as CreateItemDto, file);
     const responseData = new ItemResponseDto(item);
     return {
@@ -213,11 +284,43 @@ export class ItemController {
       categories = [];
     }
 
+    // Parse variations from FormData
+    let variations: any[] = [];
+    if (updateItemDto.has_variations) {
+      const rawVariations = (updateItemDto as any).variations;
+      if (Array.isArray(rawVariations)) {
+        variations = rawVariations.map((v: any, idx: number) => ({
+          name: v.name || '',
+          name_bn: v.name_bn || '',
+          regular_price: Number(v.regular_price) || 0,
+          sale_price: Number(v.sale_price) || 0,
+          status: v.status || 'available',
+          sort_order: Number(v.sort_order) || idx + 1,
+        }));
+      } else if (typeof rawVariations === 'string') {
+        try {
+          const parsed = JSON.parse(rawVariations);
+          if (Array.isArray(parsed)) {
+            variations = parsed.map((v: any, idx: number) => ({
+              name: v.name || '',
+              name_bn: v.name_bn || '',
+              regular_price: Number(v.regular_price) || 0,
+              sale_price: Number(v.sale_price) || 0,
+              status: v.status || 'available',
+              sort_order: Number(v.sort_order) || idx + 1,
+            }));
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
     const transformedDto = {
       ...updateItemDto,
       regular_price: Number(updateItemDto.regular_price) || 0,
       sale_price: Number(updateItemDto.sale_price) || 0,
-      categories: categories.map((cat) => ({ id: cat })), 
+      has_variations: !!updateItemDto.has_variations,
+      variations,
+      categories: categories.map((cat) => ({ id: cat })),
     };
 
     const item = await this.itemService.updateWithImage(id, transformedDto as UpdateItemDto, file);
@@ -280,6 +383,28 @@ export class ItemController {
       status: 'success',
       message: 'Product deleted successfully.',
       statusCode: HttpStatus.NO_CONTENT
+    };
+  }
+
+  @Patch(':id/restore')
+  @ApiOperation({ summary: 'Restore item from trash' })
+  async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    await this.itemService.restore(id);
+    return {
+      status: 'success',
+      message: 'Record restored successfully.',
+      statusCode: HttpStatus.OK
+    };
+  }
+
+  @Delete(':id/permanent')
+  @ApiOperation({ summary: 'Permanently delete item' })
+  async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    await this.itemService.permanentDelete(id);
+    return {
+      status: 'success',
+      message: 'Record permanently deleted.',
+      statusCode: HttpStatus.OK
     };
   }
 }

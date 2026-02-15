@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import { Edit, Plus, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { partnerService } from "~/services/httpServices/partnerService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import PartnerModal from "./components/PartnerModal";
@@ -21,6 +24,11 @@ export default function PartnersPage() {
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     const fetchPartners = async () => {
       setIsLoading(true);
@@ -30,9 +38,12 @@ export default function PartnersPage() {
           limit: itemsPerPage,
         };
         if (searchTerm) params.search = searchTerm;
-        const res = await partnerService.getAll(params);
-        setPartners(res.data || []);
-        setTotal(res.total || 0);
+
+        const res = viewMode === 'active'
+          ? await partnerService.getAll(params)
+          : await partnerService.getTrash(params);
+        setPartners((res as any).data || []);
+        setTotal((res as any).total || 0);
       } catch {
         setPartners([]);
         setTotal(0);
@@ -40,7 +51,15 @@ export default function PartnersPage() {
       setIsLoading(false);
     };
     fetchPartners();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, viewMode]);
+
+  useEffect(() => {
+    partnerService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const handleAddPartner = (partnerData: Partner) => {
     setPartners(prev => [partnerData, ...prev]);
@@ -59,11 +78,79 @@ export default function PartnersPage() {
       await partnerService.delete(deleteId);
       setPartners(prev => prev.filter(p => p.id !== deleteId));
       setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
     } catch (error) {
       console.error("Failed to delete partner:", error);
     }
     setDeleteLoading(false);
     setDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await partnerService.bulkDelete(Array.from(selectedIds));
+      setPartners(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await partnerService.bulkRestore(Array.from(selectedIds));
+      setPartners(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await partnerService.bulkPermanentDelete(Array.from(selectedIds));
+      setPartners(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await partnerService.restore(id);
+      setPartners(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await partnerService.permanentDelete(id);
+      setPartners(prev => prev.filter(item => item.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -79,18 +166,35 @@ export default function PartnersPage() {
           <h2 className="text-3xl font-bold tracking-tight">Partners</h2>
           <p className="text-muted-foreground">Manage partner brands and logos</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4" />
-          Add Partner
-        </Button>
+        {viewMode === 'active' && (
+          <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add Partner
+          </Button>
+        )}
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <span>Partners ({total})</span>
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -106,9 +210,24 @@ export default function PartnersPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-6 font-medium text-sm">
+              <div className="grid grid-cols-7 font-medium text-sm">
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={isAllSelected(partners.map(p => p.id))}
+                    onChange={() => toggleSelectAll(partners.map(p => p.id))}
+                  />
+                </div>
                 <div className="col-span-2 text-left">Partner</div>
                 <div className="text-center">Website</div>
                 <div className="text-center">Sort Order</div>
@@ -120,7 +239,13 @@ export default function PartnersPage() {
               {partners.length > 0 ? (
                 partners.map(partner => (
                   <div key={partner.id} className="p-4 hover:bg-muted/50">
-                    <div className="grid grid-cols-6 text-sm items-center">
+                    <div className="grid grid-cols-7 text-sm items-center">
+                      <div className="flex items-center">
+                        <Checkbox
+                          checked={isSelected(partner.id)}
+                          onChange={() => toggleSelect(partner.id)}
+                        />
+                      </div>
                       <div className="col-span-2 text-left">
                         <div className="flex items-center gap-3">
                           <img
@@ -162,32 +287,62 @@ export default function PartnersPage() {
                         </Badge>
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 cursor-pointer"
-                          title="Edit"
-                          type="button"
-                          onClick={() => setEditPartner(partner)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                          title="Delete"
-                          onClick={() => setDeleteId(partner.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {viewMode === 'active' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 cursor-pointer"
+                              title="Edit"
+                              type="button"
+                              onClick={() => setEditPartner(partner)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete"
+                              onClick={() => setDeleteId(partner.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-green-600 hover:bg-green-50 cursor-pointer"
+                              title="Restore"
+                              onClick={() => handleRestore(partner.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                              title="Delete Permanently"
+                              onClick={() => handlePermanentDelete(partner.id)}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  {searchTerm ? (
+                  {viewMode === 'trash' ? (
+                    <>
+                      <p>Trash is empty.</p>
+                      <p className="text-sm mt-1">No deleted partners found.</p>
+                    </>
+                  ) : searchTerm ? (
                     <>
                       <p>No partners found matching &quot;{searchTerm}&quot;.</p>
                       <p className="text-sm mt-1">Try adjusting your search terms.</p>
@@ -255,7 +410,7 @@ export default function PartnersPage() {
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Partner?"
-        description="Are you sure you want to delete this partner? This action cannot be undone."
+        description="Are you sure you want to delete this partner? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
@@ -288,7 +443,8 @@ function PartnersLoadingSkeleton() {
         <CardContent>
           <div className="rounded-md border">
             <div className="p-4 bg-muted/50">
-              <div className="grid grid-cols-6 gap-4">
+              <div className="grid grid-cols-7 gap-4">
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                 <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-16" />
                 <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-16" />
@@ -299,7 +455,8 @@ function PartnersLoadingSkeleton() {
             <div className="divide-y">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="p-4">
-                  <div className="grid grid-cols-6 items-center gap-4">
+                  <div className="grid grid-cols-7 items-center gap-4">
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
                     <div className="col-span-2 flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-200 rounded animate-pulse flex-shrink-0" />
                       <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />

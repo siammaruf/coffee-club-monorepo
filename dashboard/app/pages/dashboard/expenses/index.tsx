@@ -13,12 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import { 
-  Plus, 
-  Search, 
-  Eye, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Eye,
+  Edit,
+  Trash2,
   Calendar,
   DollarSign,
   CreditCard,
@@ -26,6 +26,8 @@ import {
   Filter,
   CheckCircle2,
   XCircle,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import ExpensesSkeleton from "~/components/skeleton/ExpensesSkeleton";
@@ -35,7 +37,10 @@ import expenseCategoryService from "~/services/httpServices/expenseCategory";
 import type { Expense } from "~/types/expense";
 import AddExpenseModal from "~/components/modals/AddExpenseModal";
 import EditExpenseModal from "~/components/modals/EditExpenseModal";
-import ViewExpenseModal from "~/components/modals/ViewExpenseModalProps"; 
+import ViewExpenseModal from "~/components/modals/ViewExpenseModalProps";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 
 export default function ExpensesPage() {
   const navigate = useNavigate();
@@ -47,6 +52,7 @@ export default function ExpensesPage() {
   const [dateFilter, setDateFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -54,8 +60,12 @@ export default function ExpensesPage() {
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
-    fetchExpenses();
     // Fetch categories only once
     expenseCategoryService.getAll().then((res: any) => {
       setCategories(res?.data || []);
@@ -63,10 +73,22 @@ export default function ExpensesPage() {
     // eslint-disable-next-line
   }, []);
 
+  // Fetch trash count on initial load
+  useEffect(() => {
+    expenseService.getTrash({ page: 1, limit: 1 }).then((res: any) => {
+      setTrashCount(res.total || 0);
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     fetchExpenses();
     // eslint-disable-next-line
-  }, [categoryFilter, statusFilter, dateFilter]);
+  }, [categoryFilter, statusFilter, dateFilter, viewMode]);
+
+  // Clear selection when viewMode changes
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -76,7 +98,13 @@ export default function ExpensesPage() {
       if (statusFilter) params.status = statusFilter;
       if (dateFilter) params.dateFilter = dateFilter;
 
-      const res = await expenseService.getAll(params);
+      let res: any;
+      if (viewMode === 'trash') {
+        res = await expenseService.getTrash(params);
+      } else {
+        res = await expenseService.getAll(params);
+      }
+
       if (res && typeof res === "object" && "data" in res) {
         setExpenses((res as { data: Expense[] }).data || []);
         setFilteredExpenses((res as { data: Expense[] }).data || []);
@@ -114,10 +142,84 @@ export default function ExpensesPage() {
       await expenseService.delete(deleteId);
       setExpenses(expenses.filter(expense => expense.id !== deleteId));
       setFilteredExpenses(filteredExpenses.filter(expense => expense.id !== deleteId));
+      setTrashCount(prev => prev + 1);
       setDeleteId(null);
     } catch (error) {
       console.error('Error deleting expense:', error);
     }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await expenseService.restore(id);
+      setExpenses(prev => prev.filter(e => e.id !== id));
+      setFilteredExpenses(prev => prev.filter(e => e.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
+    try {
+      await expenseService.permanentDelete(permanentDeleteId);
+      setExpenses(prev => prev.filter(e => e.id !== permanentDeleteId));
+      setFilteredExpenses(prev => prev.filter(e => e.id !== permanentDeleteId));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setPermanentDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await expenseService.bulkDelete(Array.from(selectedIds));
+      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setFilteredExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => expenseService.restore(id)));
+      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setFilteredExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => expenseService.permanentDelete(id)));
+      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setFilteredExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
   };
 
   const handleApprove = async (expenseId: string) => {
@@ -220,8 +322,8 @@ export default function ExpensesPage() {
         </Button>
       </div>
 
-      {/* Stats Cards - Only show if we have expenses */}
-      {hasExpenses && (
+      {/* Stats Cards - Only show if we have expenses and in active view */}
+      {hasExpenses && viewMode === 'active' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -274,9 +376,27 @@ export default function ExpensesPage() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasExpenses ? `All Expenses (${filteredExpenses.length})` : 'Expenses'}
-            </CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle>
+                {hasExpenses ? `All Expenses (${filteredExpenses.length})` : 'Expenses'}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('active'); clearSelection(); }}
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={viewMode === 'trash' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => { setViewMode('trash'); clearSelection(); }}
+                >
+                  Trash ({trashCount})
+                </Button>
+              </div>
+            </div>
             <div className="flex gap-4 items-center">
               <Select
                 value={categoryFilter}
@@ -328,9 +448,24 @@ export default function ExpensesPage() {
         <CardContent>
           {hasExpenses ? (
             <>
+              <BulkActionBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={clearSelection}
+                isTrashView={viewMode === 'trash'}
+                onRestore={handleBulkRestore}
+                onPermanentDelete={handleBulkPermanentDelete}
+                loading={bulkLoading}
+              />
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredExpenses.map(e => e.id))}
+                        onChange={() => toggleSelectAll(filteredExpenses.map(e => e.id))}
+                      />
+                    </TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Category</TableHead>
@@ -342,6 +477,12 @@ export default function ExpensesPage() {
                 <TableBody>
                   {filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
+                      <TableCell className="w-[40px]">
+                        <Checkbox
+                          checked={isSelected(expense.id)}
+                          onChange={() => toggleSelect(expense.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{expense.title}</div>
                       </TableCell>
@@ -365,53 +506,78 @@ export default function ExpensesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="View"
-                            className="cursor-pointer"
-                            onClick={() => handleViewExpense(expense)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit"
-                            className="cursor-pointer"
-                            onClick={() => handleEdit(expense)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Delete"
-                            className="text-red-600 hover:bg-red-50 cursor-pointer"
-                            onClick={() => handleDelete(expense.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          {expense.status === "pending" && (
+                          {viewMode === 'trash' ? (
                             <>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                title="Approve"
-                                className="text-green-600 hover:bg-green-50 cursor-pointer"
-                                onClick={() => handleApprove(expense.id)}
+                                title="Restore"
+                                className="cursor-pointer"
+                                onClick={() => handleRestore(expense.id)}
                               >
-                                <CheckCircle2 className="w-4 h-4" />
+                                <RotateCcw className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                title="Reject"
+                                title="Delete Permanently"
                                 className="text-red-600 hover:bg-red-50 cursor-pointer"
-                                onClick={() => handleReject(expense.id)}
+                                onClick={() => handlePermanentDelete(expense.id)}
                               >
-                                <XCircle className="w-4 h-4" />
+                                <AlertTriangle className="w-4 h-4" />
                               </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="View"
+                                className="cursor-pointer"
+                                onClick={() => handleViewExpense(expense)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Edit"
+                                className="cursor-pointer"
+                                onClick={() => handleEdit(expense)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete"
+                                className="text-red-600 hover:bg-red-50 cursor-pointer"
+                                onClick={() => handleDelete(expense.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              {expense.status === "pending" && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Approve"
+                                    className="text-green-600 hover:bg-green-50 cursor-pointer"
+                                    onClick={() => handleApprove(expense.id)}
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Reject"
+                                    className="text-red-600 hover:bg-red-50 cursor-pointer"
+                                    onClick={() => handleReject(expense.id)}
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
@@ -439,9 +605,13 @@ export default function ExpensesPage() {
             /* No expenses at all - Empty state */
             <div className="text-center py-12">
               <TrendingDown className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No expenses recorded yet</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No expenses recorded yet'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                Start tracking your business expenses to manage your finances more effectively.
+                {viewMode === 'trash'
+                  ? 'No deleted expenses found.'
+                  : 'Start tracking your business expenses to manage your finances more effectively.'}
               </p>
             </div>
           )}
@@ -486,15 +656,26 @@ export default function ExpensesPage() {
         onDelete={handleDelete}
       />
 
-      {/* Confirm Delete Dialog */}
+      {/* Confirm Delete Dialog (soft delete) */}
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Expense?"
-        description="Are you sure you want to delete this expense? This action cannot be undone."
+        description="Are you sure you want to delete this expense? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+
+      {/* Permanent Delete ConfirmDialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete Expense?"
+        description="Are you sure you want to permanently delete this expense? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );
