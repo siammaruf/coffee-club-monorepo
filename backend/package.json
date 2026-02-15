@@ -18,7 +18,13 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:admin": "ts-node -r tsconfig-paths/register src/seeds/admin-user.seed.ts"
+    "seed:admin": "ts-node -r tsconfig-paths/register src/seeds/admin-user.seed.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register node_modules/typeorm/cli.js",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts"
   },
   "dependencies": {
     "@keyv/redis": "^5.1.6",
@@ -43,6 +49,7 @@
     "cloudinary": "^2.9.0",
     "coffee-club-backend": "file:",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^17.3.1",
     "exceljs": "^4.4.0",
     "googleapis": "^171.4.0",
     "handlebars": "^4.7.8",
