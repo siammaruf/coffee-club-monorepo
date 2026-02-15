@@ -1,4 +1,5 @@
 export enum ItemType {
-    BAR = 'bar', 
+    BAR = 'bar',
     KITCHEN = 'kitchen',
+    SIMPLE = 'simple',
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
@@ -91,6 +92,22 @@ export class ImportService {
 
   /** Sheet name -> entity mapping with column definitions */
   private readonly sheetMappings: Record<string, SheetEntityMapping>;
+
+  /**
+   * Maps FK column names to the sheet whose ID mapping should be used
+   * to resolve non-UUID cross-references during import.
+   */
+  private readonly fkSheetMap: Record<string, string> = {
+    item_id: 'Items',
+    category_id: 'Categories',
+    user_id: 'Users',
+    customer_id: 'Customers',
+    order_id: 'Orders',
+    kitchen_item_id: 'Kitchen Items',
+    kitchen_stock_id: 'Kitchen Stock',
+    kitchen_order_id: 'Kitchen Orders',
+    expense_category_id: 'Expense Categories',
+  };
 
   constructor(
     @InjectRepository(Category) private categoryRepo: Repository<Category>,
@@ -194,10 +211,15 @@ export class ImportService {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer as any);
 
-    // Collect parsed data per sheet keyed by sheet name
-    const parsedSheets = new Map<
+    // Collect raw sheet data -- conversion is deferred to phase processing
+    // so that cross-sheet ID mappings are available for FK resolution.
+    const rawSheets = new Map<
       string,
-      { mapping: SheetEntityMapping; rows: Record<string, any>[] }
+      {
+        mapping: SheetEntityMapping;
+        headers: string[];
+        dataRows: Array<{ rowNumber: number; rowData: (ExcelJS.CellValue | undefined)[] }>;
+      }
     >();
 
     workbook.eachSheet((worksheet) => {
@@ -206,15 +228,11 @@ export class ImportService {
       if (!mapping) return;
 
       const { headers, dataRows } = this.extractSheetData(worksheet);
-      const rows: Record<string, any>[] = [];
-
-      for (const { rowData } of dataRows) {
-        const converted = this.convertRow(rowData, headers, mapping);
-        if (converted) rows.push(converted);
-      }
-
-      parsedSheets.set(sheetName, { mapping, rows });
+      rawSheets.set(sheetName, { mapping, headers, dataRows });
     });
+
+    // Cross-sheet ID mapping: sheetName -> (originalId -> generatedUUID)
+    const allIdMappings = new Map<string, Map<string, string>>();
 
     // Define import phases (dependency order)
     const importPhases: string[][] = [
@@ -245,10 +263,32 @@ export class ImportService {
     try {
       for (const phase of importPhases) {
         for (const sheetName of phase) {
-          const sheetData = parsedSheets.get(sheetName);
-          if (!sheetData) continue;
+          const rawData = rawSheets.get(sheetName);
+          if (!rawData) continue;
 
-          const { mapping, rows } = sheetData;
+          const { mapping, headers, dataRows } = rawData;
+
+          // Create an ID map for this sheet to track non-UUID id → generated UUID
+          const sheetIdMap = new Map<string, string>();
+
+          // Convert rows now (deferred), with access to accumulated ID mappings
+          const rows: Record<string, any>[] = [];
+          for (const { rowData } of dataRows) {
+            const converted = this.convertRow(
+              rowData,
+              headers,
+              mapping,
+              sheetIdMap,
+              allIdMappings,
+            );
+            if (converted) rows.push(converted);
+          }
+
+          // Store this sheet's ID mapping for downstream FK resolution
+          if (sheetIdMap.size > 0) {
+            allIdMappings.set(sheetName, sheetIdMap);
+          }
+
           let imported = 0;
           let skipped = 0;
 
@@ -450,8 +490,12 @@ export class ImportService {
       switch (colDef.type) {
         case 'uuid':
           // Skip UUID validation for the 'id' field -- non-UUID values will be
-          // ignored during import and TypeORM will auto-generate a UUID.
-          if (fieldName !== 'id' && !UUID_REGEX.test(strValue)) {
+          // handled during import (pre-generate UUID + ID mapping).
+          if (fieldName === 'id') break;
+          // Skip validation for integer cross-references from other sheets
+          // (e.g., item_id: "1"). These will be resolved via ID mapping during execution.
+          if (/^\d+$/.test(strValue)) break;
+          if (!UUID_REGEX.test(strValue)) {
             errors.push({ field: fieldName, message: `Invalid UUID format: "${strValue}"` });
           }
           break;
@@ -489,12 +533,21 @@ export class ImportService {
 
   /**
    * Convert a raw data row into a plain object suitable for TypeORM save/upsert.
-   * Handles type coercion, field remapping, and FK-to-relation conversion.
+   * Handles type coercion, field remapping, FK-to-relation conversion,
+   * and cross-sheet ID mapping for non-UUID references.
+   *
+   * @param sheetIdMap  Map of original non-UUID id -> generated UUID for this sheet.
+   *                    When an `id` field has a non-UUID value, a UUID is pre-generated
+   *                    and stored here so downstream FK sheets can reference it.
+   * @param allIdMappings  All ID mappings across sheets (sheetName -> (oldId -> newUUID)).
+   *                       Used to resolve FK fields like item_id, category_id, etc.
    */
   private convertRow(
     rowData: (ExcelJS.CellValue | undefined)[],
     headers: string[],
     mapping: SheetEntityMapping,
+    sheetIdMap?: Map<string, string>,
+    allIdMappings?: Map<string, Map<string, string>>,
   ): Record<string, any> | null {
     const obj: Record<string, any> = {};
 
@@ -522,14 +575,36 @@ export class ImportService {
         continue;
       }
 
-      // For the 'id' field, only include it if it's a valid UUID -- otherwise
-      // skip it so TypeORM will auto-generate a UUID on insert.
+      // For the 'id' field: use valid UUIDs as-is, or pre-generate a UUID
+      // for non-UUID values and store the mapping for FK resolution.
       if (headerName === 'id' && colDef.type === 'uuid') {
         const strVal = this.cellValueToString(value);
         if (UUID_REGEX.test(strVal)) {
           obj[propertyName] = strVal;
+        } else if (strVal && sheetIdMap) {
+          const newUuid = randomUUID();
+          sheetIdMap.set(strVal, newUuid);
+          obj[propertyName] = newUuid;
         }
         continue;
+      }
+
+      // For FK UUID fields, resolve non-UUID values via cross-sheet ID mappings.
+      if (colDef.type === 'uuid' && allIdMappings) {
+        const strVal = this.cellValueToString(value);
+        if (!UUID_REGEX.test(strVal)) {
+          const sourceSheet = this.fkSheetMap[headerName];
+          if (sourceSheet) {
+            const sheetMap = allIdMappings.get(sourceSheet);
+            const resolved = sheetMap?.get(strVal);
+            if (resolved) {
+              obj[propertyName] = resolved;
+              continue;
+            }
+          }
+          // If can't resolve, skip the value (will be null or cause FK error)
+          continue;
+        }
       }
 
       obj[propertyName] = this.convertValue(value, colDef);
