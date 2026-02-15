@@ -35,14 +35,14 @@ export function Layout() {
       <button
         onClick={scrollToTop}
         className={cn(
-          'fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center border-2 border-text-primary text-text-primary transition-all duration-300 hover:border-accent hover:text-accent',
+          'fixed bottom-[50px] right-[50px] z-40 flex h-[60px] w-[60px] items-center justify-center bg-accent text-bg-primary transition-all duration-300 hover:opacity-70',
           showBackToTop
-            ? 'translate-y-0 opacity-100'
-            : 'pointer-events-none translate-y-4 opacity-0'
+            ? 'opacity-100'
+            : 'pointer-events-none opacity-0'
         )}
         aria-label="Back to top"
       >
-        <ArrowUp className="h-5 w-5" />
+        <ArrowUp className="h-6 w-6" />
       </button>
     </div>
   )

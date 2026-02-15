@@ -68,6 +68,7 @@ h1, h2, h3, h4, h5, h6 {
   @apply text-text-heading font-normal uppercase;
   font-family: var(--font-heading);
   word-wrap: break-word;
+  margin-bottom: 35px;
 }
 
 h1 { font-size: 40px; line-height: 40px; letter-spacing: 8px; }
@@ -76,6 +77,15 @@ h3 { font-size: 28px; line-height: 28px; letter-spacing: 5px; }
 h4 { font-size: 24px; line-height: 24px; letter-spacing: 5px; }
 h5 { font-size: 18px; line-height: 18px; letter-spacing: 4px; font-weight: 700; }
 h6 { font-size: 16px; line-height: 16px; letter-spacing: 3px; }
+
+p {
+  margin: 18px 0;
+}
+
+a {
+  text-decoration: none;
+  transition: all 0.2s;
+}
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
@@ -115,16 +125,41 @@ html {
 
 /* Vincent-style button */
 .btn-vincent {
-  @apply inline-block border-2 border-text-primary text-text-primary uppercase tracking-[3px] text-sm px-4 py-1.5 transition-all duration-200;
+  @apply inline-block border-2 border-text-primary text-text-primary uppercase tracking-[3px] text-[14px] transition-all duration-200;
+  padding: 6px 14px 6px 17px;
 }
 .btn-vincent:hover {
   @apply border-accent text-accent;
 }
 .btn-vincent-filled {
-  @apply inline-block border-2 border-accent bg-accent text-bg-primary uppercase tracking-[3px] text-sm px-4 py-1.5 transition-all duration-200;
+  @apply inline-block border-2 border-accent bg-accent text-bg-primary uppercase tracking-[3px] text-[14px] transition-all duration-200;
+  padding: 6px 14px 6px 17px;
 }
 .btn-vincent-filled:hover {
   @apply bg-accent-hover border-accent-hover;
+}
+
+/* Nav item hover underline animation */
+.nav-item-link {
+  position: relative;
+}
+.nav-item-link::after {
+  content: '';
+  position: absolute;
+  height: 1px;
+  background: #ffffff;
+  width: 0;
+  top: 50%;
+  left: 50%;
+  margin-top: 10px;
+  transition: 0.3s all;
+  transform: translateX(-50%);
+}
+.nav-item-link:hover::after {
+  width: 100%;
+}
+.nav-item-link.active::after {
+  width: 10px;
 }
 
 /* Section styles */
@@ -156,7 +191,7 @@ blockquote {
 
 /* Form elements */
 input, textarea, select {
-  @apply bg-transparent border-2 border-border text-text-primary w-full text-sm tracking-[3px] py-1.5 px-4 rounded-none;
+  @apply bg-transparent border-2 border-border-light text-text-primary w-full text-sm tracking-[3px] py-1.5 px-4 rounded-none;
 }
 input:focus, textarea:focus, select:focus {
   @apply border-accent outline-none;

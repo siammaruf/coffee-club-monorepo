@@ -76,12 +76,20 @@ export function Header() {
       <div className="flex items-stretch">
         {/* Left: Phone + Hours */}
         <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
-          <div className="text-center">
-            <div className="text-sm font-bold tracking-[3px] text-text-primary uppercase">
-              {phone}
-            </div>
-            <div className="mt-1 text-xs tracking-[2px] text-text-muted">
-              {hours}
+          <div className="flex items-center gap-4">
+            <img
+              src="/img/icon_phone.png"
+              alt=""
+              className="h-[41px] w-[28px]"
+              aria-hidden="true"
+            />
+            <div>
+              <div className="font-heading text-[16px] font-bold tracking-[3px] text-white">
+                {phone}
+              </div>
+              <div className="mt-1 text-[13px] tracking-[3px] text-text-primary opacity-50">
+                {hours}
+              </div>
             </div>
           </div>
         </div>
@@ -91,9 +99,9 @@ export function Header() {
           {/* Desktop Nav */}
           <div className="hidden lg:block">
             {/* Logo */}
-            <div className="flex justify-center py-6">
+            <div className="flex justify-center" style={{ padding: '55px 0 45px' }}>
               <Link to="/" className="block">
-                <img src="/img/logo.png" alt="CoffeeClub" className="h-[60px] w-auto" />
+                <img src="/img/logo.png" alt="CoffeeClub" className="h-[99px] w-[176px]" />
               </Link>
             </div>
 
@@ -112,23 +120,22 @@ export function Header() {
                     {link.children ? (
                       <button
                         className={cn(
-                          'px-5 py-4 text-xs font-bold uppercase tracking-[3px] transition-colors',
+                          'nav-item-link px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] transition-colors',
                           isActive(link.href)
-                            ? 'text-accent'
-                            : 'text-text-primary hover:text-accent'
+                            ? 'active text-accent'
+                            : 'text-white hover:text-accent'
                         )}
                       >
                         {link.label}
-                        <ChevronDown className="inline-block ml-1 h-3 w-3" />
                       </button>
                     ) : (
                       <Link
                         to={link.href}
                         className={cn(
-                          'block px-5 py-4 text-xs font-bold uppercase tracking-[3px] transition-colors',
+                          'nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] transition-colors',
                           isActive(link.href)
-                            ? 'text-accent'
-                            : 'text-text-primary hover:text-accent'
+                            ? 'active text-accent'
+                            : 'text-white hover:text-accent'
                         )}
                       >
                         {link.label}
@@ -137,12 +144,23 @@ export function Header() {
 
                     {/* Submenu */}
                     {link.children && activeSubmenu === link.label && (
-                      <ul className="absolute left-0 top-full z-50 min-w-[200px] border border-border bg-bg-secondary py-2 shadow-lg">
-                        {link.children.map((child) => (
-                          <li key={child.label}>
+                      <ul className="absolute top-[53px] left-1/2 z-[10000] w-[210px] -translate-x-1/2 bg-bg-secondary pt-[15px] pb-[14px] text-left">
+                        {/* Triangle arrow */}
+                        <div
+                          className="absolute -top-[12px] left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-bg-secondary"
+                          aria-hidden="true"
+                        />
+                        {link.children.map((child, idx) => (
+                          <li key={child.label} className="px-[28px]">
                             <Link
                               to={child.href}
-                              className="block px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary transition-colors hover:text-accent hover:bg-bg-primary"
+                              className={cn(
+                                'block pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent',
+                                idx < (link.children?.length ?? 0) - 1
+                                  ? 'border-b border-[#2c3235]'
+                                  : 'border-b border-transparent'
+                              )}
+                              style={{ fontFamily: "'Open Sans', sans-serif" }}
                             >
                               {child.label}
                             </Link>
@@ -160,35 +178,43 @@ export function Header() {
                     onMouseEnter={() => setIsDropdownOpen(true)}
                     onMouseLeave={() => setIsDropdownOpen(false)}
                   >
-                    <button className="flex items-center px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors">
+                    <button className="nav-item-link flex items-center px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors">
                       <User className="h-3.5 w-3.5 mr-1" />
                       {customer.name?.split(' ')[0] ?? 'Account'}
                       <ChevronDown className="ml-1 h-3 w-3" />
                     </button>
                     {isDropdownOpen && (
-                      <ul className="absolute right-0 top-full z-50 min-w-[200px] border border-border bg-bg-secondary py-2 shadow-lg">
-                        <li>
+                      <ul className="absolute right-0 top-[53px] z-[10000] w-[210px] bg-bg-secondary pt-[15px] pb-[14px] text-left">
+                        {/* Triangle arrow */}
+                        <div
+                          className="absolute -top-[12px] right-[20px] border-[6px] border-transparent border-b-bg-secondary"
+                          aria-hidden="true"
+                        />
+                        <li className="px-[28px]">
                           <Link
                             to="/profile"
-                            className="flex items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary hover:text-accent hover:bg-bg-primary"
+                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent border-b border-[#2c3235]"
+                            style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <User className="h-3.5 w-3.5" />
                             Profile
                           </Link>
                         </li>
-                        <li>
+                        <li className="px-[28px]">
                           <Link
                             to="/orders"
-                            className="flex items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-text-primary hover:text-accent hover:bg-bg-primary"
+                            className="flex items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-white transition-colors hover:text-accent border-b border-[#2c3235]"
+                            style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <ClipboardList className="h-3.5 w-3.5" />
                             Orders
                           </Link>
                         </li>
-                        <li>
+                        <li className="px-[28px]">
                           <button
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-2 px-5 py-2 text-xs uppercase tracking-[2px] text-error hover:bg-bg-primary"
+                            className="flex w-full items-center gap-2 pt-[11px] pb-[13px] text-[14px] font-normal leading-[15px] tracking-normal text-error transition-colors hover:text-accent border-b border-transparent"
+                            style={{ fontFamily: "'Open Sans', sans-serif" }}
                           >
                             <LogOut className="h-3.5 w-3.5" />
                             Logout
@@ -202,7 +228,7 @@ export function Header() {
                     <li>
                       <Link
                         to="/login"
-                        className="block px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors"
+                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors"
                       >
                         Login
                       </Link>
@@ -210,7 +236,7 @@ export function Header() {
                     <li>
                       <Link
                         to="/register"
-                        className="block px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent transition-colors"
+                        className="nav-item-link block px-[15px] pt-[10px] pb-[29px] font-heading text-[14px] font-normal uppercase tracking-[4px] leading-[14px] text-white hover:text-accent transition-colors"
                       >
                         Sign Up
                       </Link>
@@ -262,16 +288,27 @@ export function Header() {
 
         {/* Right: Cart Widget */}
         <div className="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
-          <button onClick={openDrawer} className="text-center group cursor-pointer">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-text-muted group-hover:text-accent transition-colors" />
-              <div>
-                <div className="text-sm font-bold tracking-[2px] text-text-primary group-hover:text-accent transition-colors">
+          <button onClick={openDrawer} className="group cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="font-heading text-[16px] font-bold tracking-[3px] text-text-primary transition-colors group-hover:text-accent">
                   {formatPrice(total)}
                 </div>
-                <div className="text-xs tracking-[1px] text-text-muted">
+                <div className="text-[13px] tracking-[3px] text-text-primary opacity-50 transition-all group-hover:opacity-100">
                   {itemCount} {itemCount === 1 ? 'item' : 'items'} - View Cart
                 </div>
+              </div>
+              <div className="relative">
+                <img
+                  src="/img/icon_cart.png"
+                  alt="Cart"
+                  className="h-[37px] w-[35px]"
+                />
+                {itemCount > 0 && (
+                  <span className="absolute -top-[6px] -right-[3px] flex h-[19px] w-[19px] items-center justify-center rounded-full bg-accent font-heading text-[10px] leading-[18px] tracking-normal text-bg-primary">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
               </div>
             </div>
           </button>
