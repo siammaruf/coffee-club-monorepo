@@ -33,4 +33,6 @@ Thumbs.db
 
 # Large binary assets
 .claude-project/resources/
-frontend/public/img/
+# frontend/public/img/
+
+menual-sc/

@@ -6,7 +6,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 
-export function Layout() {
+export default function Layout() {
   const [showBackToTop, setShowBackToTop] = useState(false)
 
   const handleScroll = useCallback(() => {

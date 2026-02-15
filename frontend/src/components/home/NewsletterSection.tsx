@@ -21,7 +21,7 @@ export function NewsletterSection({ title, subtitle }: NewsletterSectionProps) {
   const displayTitle = title || 'Subscribe for Our Newsletter'
 
   return (
-    <section className="bg-bg-secondary py-16 md:py-24">
+    <section className="py-16 md:py-24">
       <div className="vincent-container">
         <h1 className="mb-4 text-center text-text-heading">
           {displayTitle}
@@ -39,17 +39,20 @@ export function NewsletterSection({ title, subtitle }: NewsletterSectionProps) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter Your Email"
               required
-              className="flex-1 border-2 border-border bg-transparent px-4 py-2.5 text-sm tracking-[3px] text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+              data-lpignore="true"
+              autoComplete="off"
+              className="flex-1 border-2 border-border bg-transparent px-4 py-2.5 text-sm tracking-[3px] text-text-primary placeholder:text-text-muted focus:border-text-primary focus:outline-none"
             />
             <button
               type="submit"
-              className="btn-vincent-filled border-l-0 whitespace-nowrap"
+              className="inline-block border-2 border-bg-secondary bg-bg-secondary text-accent uppercase tracking-[3px] text-[14px] transition-all duration-200 hover:bg-accent hover:border-link-hover hover:text-bg-primary whitespace-nowrap"
+              style={{ padding: '6px 14px 6px 17px' }}
             >
               Submit
             </button>
           </form>
           {submitted && (
-            <p className="mt-4 text-center text-sm tracking-[2px] text-accent animate-fade-in">
+            <p className="mt-4 text-center text-sm tracking-[2px] text-text-body animate-fade-in">
               Thank you for subscribing!
             </p>
           )}

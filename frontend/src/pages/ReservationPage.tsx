@@ -111,10 +111,13 @@ export default function ReservationPage() {
 
   const selectedEventType = watch('event_type')
 
-  // Minimum date is tomorrow
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const minDate = tomorrow.toISOString().split('T')[0]
+  // Minimum date is tomorrow (SSR-safe: empty on server, computed on client)
+  const [minDate] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toISOString().split('T')[0]
+  })
 
   const onSubmit = async (data: ReservationFormData) => {
     try {
@@ -334,6 +337,7 @@ export default function ReservationPage() {
                         type="date"
                         min={minDate}
                         {...register('date')}
+                        suppressHydrationWarning
                       />
                       {errors.date?.message && (
                         <p className="mt-1 text-xs text-error">
@@ -375,7 +379,7 @@ export default function ReservationPage() {
                           className={`border-2 px-3 py-2 text-xs uppercase tracking-[1px] transition-all ${
                             selectedEventType === type.value
                               ? 'border-accent bg-accent/10 text-accent'
-                              : 'border-border text-text-muted hover:border-accent/50 hover:text-text-primary'
+                              : 'border-border text-text-muted hover:border-link-hover/50 hover:text-text-primary'
                           }`}
                         >
                           {type.label}

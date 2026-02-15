@@ -19,7 +19,7 @@ import { cn } from "~/lib/utils";
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-const iconOptions: Array<{ value: string; label: string; icon: IconComponent }> = [
+export const iconOptions: Array<{ value: string; label: string; icon: IconComponent }> = [
   { value: "cafe-outline", label: "Coffee", icon: IoCafeOutline },
   { value: "restaurant-outline", label: "Restaurant", icon: IoRestaurantOutline },
   { value: "cart-outline", label: "Cart", icon: IoCartOutline },

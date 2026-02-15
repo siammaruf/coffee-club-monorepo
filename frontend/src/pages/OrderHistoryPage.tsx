@@ -105,7 +105,7 @@ export default function OrderHistoryPage() {
                         <Link
                           key={order.id}
                           to={`/orders/${order.id}`}
-                          className="group block border-2 border-border bg-bg-card p-5 transition-colors hover:border-accent"
+                          className="group block border-2 border-border bg-bg-card p-5 transition-colors hover:border-link-hover"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
@@ -125,7 +125,7 @@ export default function OrderHistoryPage() {
                                 {formatDateTime(order.created_at)}
                               </p>
                             </div>
-                            <span className="text-sm text-text-muted transition-colors group-hover:text-accent">
+                            <span className="text-sm text-text-muted transition-colors group-hover:text-link-hover">
                               View
                             </span>
                           </div>

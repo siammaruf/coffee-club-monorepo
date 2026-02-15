@@ -209,9 +209,8 @@ export default function ContactPage() {
                   placeholder="Date"
                   value={formData.reservation_date}
                   onChange={handleChange}
-                  min={
-                    new Date(Date.now() + 86400000).toISOString().split('T')[0]
-                  }
+                  min={typeof window === 'undefined' ? '' : new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                  suppressHydrationWarning
                 />
                 <input
                   type="number"

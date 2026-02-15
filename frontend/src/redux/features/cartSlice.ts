@@ -31,7 +31,7 @@ const loadCartFromStorage = (): LocalCartItem[] => {
 }
 
 const initialState: CartState = {
-  items: loadCartFromStorage(),
+  items: [],
   isOpen: false,
 }
 
@@ -86,6 +86,9 @@ const cartSlice = createSlice({
     closeDrawer: (state) => {
       state.isOpen = false
     },
+    hydrateCart: (state) => {
+      state.items = loadCartFromStorage()
+    },
   },
 })
 
@@ -99,5 +102,5 @@ export const selectCartTotal = (state: RootState) =>
 export const selectCartItemCount = (state: RootState) =>
   (state.cart.items ?? []).reduce((count, ci) => count + (ci?.quantity ?? 0), 0)
 
-export const { addItem, removeItem, updateQuantity, updateNotes, clearCart, toggleDrawer, openDrawer, closeDrawer } = cartSlice.actions
+export const { addItem, removeItem, updateQuantity, updateNotes, clearCart, toggleDrawer, openDrawer, closeDrawer, hydrateCart } = cartSlice.actions
 export default cartSlice.reducer

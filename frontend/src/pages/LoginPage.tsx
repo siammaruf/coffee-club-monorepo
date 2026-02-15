@@ -58,10 +58,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="mb-10 text-center">
-          <Link to="/" className="text-accent transition-colors hover:text-accent-hover">
-            <h3>CoffeeClub</h3>
-          </Link>
-          <h2 className="mt-6">Login</h2>
+          <h2>Login</h2>
           <div className="mx-auto mt-4">
             <img src="/img/separator_dark.png" alt="" className="mx-auto" />
           </div>
@@ -106,7 +103,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-accent"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-link-hover"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -127,7 +124,7 @@ export default function LoginPage() {
             <div className="text-right">
               <Link
                 to="/forgot-password"
-                className="text-xs uppercase tracking-[2px] text-text-muted transition-colors hover:text-accent"
+                className="text-xs uppercase tracking-[2px] text-text-muted transition-colors hover:text-link-hover"
               >
                 Forgot password?
               </Link>
@@ -147,7 +144,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link
                 to="/register"
-                className="text-accent transition-colors hover:text-accent-hover"
+                className="text-accent transition-colors hover:text-link-hover"
               >
                 Register
               </Link>
