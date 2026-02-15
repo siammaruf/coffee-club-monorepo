@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import * as ExcelJS from 'exceljs';
@@ -89,6 +90,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 @Injectable()
 export class ImportService {
   private readonly logger = new Logger(ImportService.name);
+  private readonly tablePrefix: string;
 
   /** Sheet name -> entity mapping with column definitions */
   private readonly sheetMappings: Record<string, SheetEntityMapping>;
@@ -131,7 +133,9 @@ export class ImportService {
     @InjectRepository(KitchenOrderItem) private kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport) private dailyReportRepo: Repository<DailyReport>,
     private dataSource: DataSource,
+    private configService: ConfigService,
   ) {
+    this.tablePrefix = this.configService.get<string>('DB_TABLE_PREFIX', '');
     this.sheetMappings = this.buildSheetMappings();
   }
 
@@ -146,8 +150,15 @@ export class ImportService {
   async parseAndPreview(file: Express.Multer.File): Promise<ImportPreview> {
     this.validateFile(file);
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer as any);
+    let workbook: ExcelJS.Workbook;
+    try {
+      workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer as any);
+    } catch (err: any) {
+      throw new BadRequestException(
+        `Failed to parse Excel file: ${err?.message || 'Invalid or corrupted file'}`,
+      );
+    }
 
     const sheets: ImportPreviewSheet[] = [];
     let totalRows = 0;
@@ -208,59 +219,62 @@ export class ImportService {
   ): Promise<ImportResult> {
     this.validateFile(file);
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer as any);
-
-    // Collect raw sheet data -- conversion is deferred to phase processing
-    // so that cross-sheet ID mappings are available for FK resolution.
-    const rawSheets = new Map<
-      string,
-      {
-        mapping: SheetEntityMapping;
-        headers: string[];
-        dataRows: Array<{ rowNumber: number; rowData: (ExcelJS.CellValue | undefined)[] }>;
-      }
-    >();
-
-    workbook.eachSheet((worksheet) => {
-      const sheetName = worksheet.name;
-      const mapping = this.sheetMappings[sheetName];
-      if (!mapping) return;
-
-      const { headers, dataRows } = this.extractSheetData(worksheet);
-      rawSheets.set(sheetName, { mapping, headers, dataRows });
-    });
-
-    // Cross-sheet ID mapping: sheetName -> (originalId -> generatedUUID)
-    const allIdMappings = new Map<string, Map<string, string>>();
-
-    // Define import phases (dependency order)
-    const importPhases: string[][] = [
-      // Phase 1: no FK dependencies
-      ['Categories', 'Expense Categories', 'Tables', 'Kitchen Items'],
-      // Phase 2: depend on phase 1
-      ['Users', 'Customers', 'Discounts'],
-      // Phase 3: depend on phase 2
-      ['Items', 'Banks', 'Kitchen Stock'],
-      // Phase 3.5: junction table for Item <-> Category
-      ['Item-Categories'],
-      // Phase 4: depend on phase 3
-      ['Orders', 'Expenses', 'Daily Reports'],
-      // Phase 5: depend on phase 4
-      ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave', 'Kitchen Orders'],
-      // Phase 6: depend on phase 5
-      ['Kitchen Order Items'],
-    ];
-
-    const importedCounts: Record<string, number> = {};
-    const skippedCounts: Record<string, number> = {};
-    const errors: Array<{ entity: string; row: number; message: string }> = [];
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    let queryRunner: QueryRunner | null = null;
 
     try {
+      // Parse workbook (wrapped in try/catch to avoid unhandled 500)
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer as any);
+
+      // Collect raw sheet data -- conversion is deferred to phase processing
+      // so that cross-sheet ID mappings are available for FK resolution.
+      const rawSheets = new Map<
+        string,
+        {
+          mapping: SheetEntityMapping;
+          headers: string[];
+          dataRows: Array<{ rowNumber: number; rowData: (ExcelJS.CellValue | undefined)[] }>;
+        }
+      >();
+
+      workbook.eachSheet((worksheet) => {
+        const sheetName = worksheet.name;
+        const mapping = this.sheetMappings[sheetName];
+        if (!mapping) return;
+
+        const { headers, dataRows } = this.extractSheetData(worksheet);
+        rawSheets.set(sheetName, { mapping, headers, dataRows });
+      });
+
+      // Cross-sheet ID mapping: sheetName -> (originalId -> generatedUUID)
+      const allIdMappings = new Map<string, Map<string, string>>();
+
+      // Define import phases (dependency order)
+      const importPhases: string[][] = [
+        // Phase 1: no FK dependencies
+        ['Categories', 'Expense Categories', 'Tables', 'Kitchen Items'],
+        // Phase 2: depend on phase 1
+        ['Users', 'Customers', 'Discounts'],
+        // Phase 3: depend on phase 2
+        ['Items', 'Banks', 'Kitchen Stock'],
+        // Phase 3.5: junction table for Item <-> Category
+        ['Item-Categories'],
+        // Phase 4: depend on phase 3
+        ['Orders', 'Expenses', 'Daily Reports'],
+        // Phase 5: depend on phase 4
+        ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave', 'Kitchen Orders'],
+        // Phase 6: depend on phase 5
+        ['Kitchen Order Items'],
+      ];
+
+      const importedCounts: Record<string, number> = {};
+      const skippedCounts: Record<string, number> = {};
+      const errors: Array<{ entity: string; row: number; message: string }> = [];
+
+      queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       for (const phase of importPhases) {
         for (const sheetName of phase) {
           const rawData = rawSheets.get(sheetName);
@@ -362,8 +376,10 @@ export class ImportService {
         errors,
       };
     } catch (err: any) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error('Import transaction rolled back', err?.stack);
+      if (queryRunner?.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      this.logger.error('Import failed', err?.stack);
 
       if (err instanceof BadRequestException) throw err;
 
@@ -371,7 +387,9 @@ export class ImportService {
         `Import failed: ${err?.message || 'Unknown error'}`,
       );
     } finally {
-      await queryRunner.release();
+      if (queryRunner) {
+        await queryRunner.release();
+      }
     }
   }
 
@@ -593,7 +611,7 @@ export class ImportService {
       if (colDef.type === 'uuid' && allIdMappings) {
         const strVal = this.cellValueToString(value);
         if (!UUID_REGEX.test(strVal)) {
-          const sourceSheet = this.fkSheetMap[headerName];
+          const sourceSheet = this.resolveFkSheet(headerName, mapping);
           if (sourceSheet) {
             const sheetMap = allIdMappings.get(sourceSheet);
             const resolved = sheetMap?.get(strVal);
@@ -703,6 +721,7 @@ export class ImportService {
   ): Promise<{ imported: number; skipped: number }> {
     let imported = 0;
     let skipped = 0;
+    const tableName = `${this.tablePrefix}item_categories`;
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -722,12 +741,12 @@ export class ImportService {
       try {
         if (dto.mode === ImportMode.UPSERT) {
           await queryRunner.query(
-            `INSERT INTO item_categories (item_id, category_id) VALUES ($1, $2) ON CONFLICT (item_id, category_id) DO NOTHING`,
+            `INSERT INTO "${tableName}" (item_id, category_id) VALUES ($1, $2) ON CONFLICT (item_id, category_id) DO NOTHING`,
             [itemId, categoryId],
           );
         } else {
           await queryRunner.query(
-            `INSERT INTO item_categories (item_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            `INSERT INTO "${tableName}" (item_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
             [itemId, categoryId],
           );
         }
@@ -752,6 +771,21 @@ export class ImportService {
   /**
    * Get the TypeORM repository for a given entity name.
    */
+  /**
+   * Resolve which sheet to use for FK resolution, accounting for cases
+   * where the same FK column name refers to different entities depending
+   * on the current sheet (e.g. Expenses.category_id -> ExpenseCategory).
+   */
+  private resolveFkSheet(
+    fkField: string,
+    currentMapping: SheetEntityMapping,
+  ): string | undefined {
+    if (fkField === 'category_id' && currentMapping.entityName === 'Expenses') {
+      return 'Expense Categories';
+    }
+    return this.fkSheetMap[fkField];
+  }
+
   private getRepository(entityName: string): Repository<any> | null {
     const repoMap: Record<string, Repository<any>> = {
       Category: this.categoryRepo,
