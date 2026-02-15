@@ -7,21 +7,21 @@ export function BlogPreviewSection() {
   const posts = data?.data ?? []
 
   return (
-    <section className="bg-bg-primary py-16 md:py-24">
+    <section className="py-16 md:py-24 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/img/back_3.jpg')" }}>
       <div className="vincent-container">
         {/* Header block */}
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h6 className="mb-3 text-text-body">
+          <h6 className="mb-[22px] text-text-body">
             Not just a pizza, but Lifestyle
           </h6>
-          <h1 className="mb-4 text-text-heading">Something From The Blog</h1>
+          <h1 className="mb-[44px] text-text-heading">Something From The Blog</h1>
           <img
             src="/img/separator_dark.png"
             alt=""
-            className="mx-auto mb-5"
+            className="mx-auto mb-[39px]"
             aria-hidden="true"
           />
-          <p className="text-text-body">
+          <p className="mb-[40px] text-text-body">
             And yes, we&apos;re pizza people. But we&apos;re also human people,
             we lead with our hearts, we believe in giving back to the global
             community. Join us, welcome to our pizzerias!
@@ -47,18 +47,18 @@ export function BlogPreviewSection() {
         {!isLoading && posts.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {posts.map((post) => (
-              <div key={post.id}>
-                <div className="mb-3 text-sm tracking-[2px] text-text-muted">
+              <div key={post.id} className="text-center px-5">
+                <div className="mb-[20px] text-sm tracking-[2px] leading-[26px] text-text-muted">
                   {post.published_at
                     ? formatDate(post.published_at)
                     : post.created_at
                       ? formatDate(post.created_at)
                       : ''}
                 </div>
-                <h5 className="mb-3 text-text-heading">
+                <h5 className="mb-[13px] leading-[26px] text-text-heading">
                   {post.title ?? ''}
                 </h5>
-                <p className="mb-4 text-text-body">
+                <p className="mb-[26px] text-[14px] text-text-body">
                   {truncate(post.excerpt ?? '', 120)}
                 </p>
                 <Link
