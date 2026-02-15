@@ -9,7 +9,8 @@ export function HotSalesSection() {
   return (
     <section className="bg-bg-primary py-16 md:py-24">
       <div className="vincent-container">
-        <h2 className="mb-10 text-center text-text-heading">Hot Sales</h2>
+        <h2 className="mb-4 text-center text-text-heading">Hot Sales</h2>
+        <img src="/img/separator_dark.png" alt="" className="mx-auto mb-10" aria-hidden="true" />
 
         {isLoading && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">

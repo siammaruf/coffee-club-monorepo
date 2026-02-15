@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useCategories, useMenuItems } from '@/services/httpServices/queries/useMenu'
@@ -11,6 +11,13 @@ export function TabbedMenuSection() {
 
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories()
   const categories = Array.isArray(categoriesData) ? categoriesData : []
+
+  // Default to first category when categories load
+  useEffect(() => {
+    if (categories.length > 0 && activeSlug === undefined) {
+      setActiveSlug(categories[0]?.slug)
+    }
+  }, [categories, activeSlug])
 
   const { data: itemsData, isLoading: itemsLoading } = useMenuItems({
     categorySlug: activeSlug,
@@ -27,25 +34,14 @@ export function TabbedMenuSection() {
   return (
     <section className="bg-bg-primary py-16 md:py-24">
       <div className="vincent-container">
-        <h2 className="mb-8 text-center text-text-heading">
+        <h2 className="mb-4 text-center text-text-heading">
           Discover Our Menu
         </h2>
+        <img src="/img/separator_dark.png" alt="" className="mx-auto mb-8" aria-hidden="true" />
 
-        {/* Category tabs */}
+        {/* Category tabs - no "All" tab, matching template */}
         {!categoriesLoading && categories.length > 0 && (
           <div className="mb-10 flex flex-wrap justify-center gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveSlug(undefined)}
-              className={cn(
-                'px-4 py-2 font-heading text-sm uppercase tracking-[3px] transition-colors duration-200',
-                activeSlug === undefined
-                  ? 'text-accent border-b-2 border-accent'
-                  : 'text-text-muted hover:text-text-heading',
-              )}
-            >
-              All
-            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -115,7 +111,7 @@ export function TabbedMenuSection() {
                 <p className="mt-1 text-text-body">
                   {truncate(item.description ?? '', 70)}
                 </p>
-                <div className="mt-2 text-lg tracking-[2px] text-text-heading">
+                <div className="mt-2 text-lg tracking-[2px] text-accent">
                   {formatPrice(item.sale_price ?? item.regular_price ?? 0)}
                 </div>
               </div>
