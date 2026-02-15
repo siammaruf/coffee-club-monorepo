@@ -274,7 +274,7 @@ export class ImportService {
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             try {
-              if (dto.mode === ImportMode.UPSERT) {
+              if (dto.mode === ImportMode.UPSERT && row.id) {
                 await queryRunner.manager.getRepository(repo.target).upsert(row, ['id']);
               } else {
                 // INSERT mode: save, but catch unique constraint errors
@@ -449,7 +449,9 @@ export class ImportService {
 
       switch (colDef.type) {
         case 'uuid':
-          if (!UUID_REGEX.test(strValue)) {
+          // Skip UUID validation for the 'id' field -- non-UUID values will be
+          // ignored during import and TypeORM will auto-generate a UUID.
+          if (fieldName !== 'id' && !UUID_REGEX.test(strValue)) {
             errors.push({ field: fieldName, message: `Invalid UUID format: "${strValue}"` });
           }
           break;
@@ -495,7 +497,6 @@ export class ImportService {
     mapping: SheetEntityMapping,
   ): Record<string, any> | null {
     const obj: Record<string, any> = {};
-    let hasId = false;
 
     for (let i = 0; i < headers.length; i++) {
       const headerName = headers[i];
@@ -516,17 +517,23 @@ export class ImportService {
         continue;
       }
 
-      if (headerName === 'id') hasId = true;
-
       if (!colDef) {
         obj[propertyName] = this.cellValueToString(value);
         continue;
       }
 
+      // For the 'id' field, only include it if it's a valid UUID -- otherwise
+      // skip it so TypeORM will auto-generate a UUID on insert.
+      if (headerName === 'id' && colDef.type === 'uuid') {
+        const strVal = this.cellValueToString(value);
+        if (UUID_REGEX.test(strVal)) {
+          obj[propertyName] = strVal;
+        }
+        continue;
+      }
+
       obj[propertyName] = this.convertValue(value, colDef);
     }
-
-    if (!hasId && !obj['id']) return null;
 
     // Transform FK columns into relation objects for TypeORM:
     // e.g. { customer_id: 'uuid' } -> { customer: { id: 'uuid' } }
@@ -715,7 +722,7 @@ export class ImportService {
       'Categories': {
         entityName: 'Category',
         tableName: 'categories',
-        requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        requiredFields: ['name', 'name_bn', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -734,7 +741,7 @@ export class ImportService {
       'Expense Categories': {
         entityName: 'ExpenseCategory',
         tableName: 'expense_categories',
-        requiredFields: ['id', 'name', 'slug'],
+        requiredFields: ['name', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -752,7 +759,7 @@ export class ImportService {
       'Tables': {
         entityName: 'Table',
         tableName: 'tables',
-        requiredFields: ['id', 'number', 'seat'],
+        requiredFields: ['number', 'seat'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -775,7 +782,7 @@ export class ImportService {
       'Kitchen Items': {
         entityName: 'KitchenItems',
         tableName: 'kitchen_items',
-        requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        requiredFields: ['name', 'name_bn', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -799,7 +806,7 @@ export class ImportService {
       'Users': {
         entityName: 'User',
         tableName: 'users',
-        requiredFields: ['id', 'first_name', 'last_name', 'phone'],
+        requiredFields: ['first_name', 'last_name', 'phone'],
         skipFields: ['password'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -835,7 +842,7 @@ export class ImportService {
       'Customers': {
         entityName: 'Customer',
         tableName: 'customers',
-        requiredFields: ['id', 'name', 'phone'],
+        requiredFields: ['name', 'phone'],
         skipFields: ['password', 'refresh_token', 'otp', 'otp_expires_at'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -863,7 +870,7 @@ export class ImportService {
       'Discounts': {
         entityName: 'Discount',
         tableName: 'discount',
-        requiredFields: ['id', 'name', 'discount_type', 'discount_value', 'expiry_date'],
+        requiredFields: ['name', 'discount_type', 'discount_value', 'expiry_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -884,7 +891,7 @@ export class ImportService {
       'Items': {
         entityName: 'Item',
         tableName: 'items',
-        requiredFields: ['id', 'name', 'name_bn', 'slug', 'description', 'regular_price', 'image'],
+        requiredFields: ['name', 'name_bn', 'slug', 'description', 'regular_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -906,7 +913,7 @@ export class ImportService {
           },
           regular_price: { type: 'decimal' },
           sale_price: { type: 'decimal', nullable: true },
-          image: { type: 'string' },
+          image: { type: 'string', nullable: true },
           created_at: { type: 'timestamp', nullable: true },
           updated_at: { type: 'timestamp', nullable: true },
         },
@@ -928,7 +935,7 @@ export class ImportService {
       'Banks': {
         entityName: 'Bank',
         tableName: 'banks',
-        requiredFields: ['id', 'bank_name', 'branch_name', 'account_number', 'routing_number'],
+        requiredFields: ['bank_name', 'branch_name', 'account_number', 'routing_number'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -947,7 +954,7 @@ export class ImportService {
       'Kitchen Stock': {
         entityName: 'KitchenStock',
         tableName: 'kitchen_stock',
-        requiredFields: ['id', 'quantity', 'price', 'total_price'],
+        requiredFields: ['quantity', 'price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { kitchen_item_id: 'kitchen_item' },
@@ -966,7 +973,7 @@ export class ImportService {
       'Orders': {
         entityName: 'Order',
         tableName: 'orders',
-        requiredFields: ['id'],
+        requiredFields: [],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1011,7 +1018,7 @@ export class ImportService {
       'Order Items': {
         entityName: 'OrderItem',
         tableName: 'order_items',
-        requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        requiredFields: ['quantity', 'unit_price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1033,7 +1040,7 @@ export class ImportService {
       'Order Tokens': {
         entityName: 'OrderToken',
         tableName: 'order_tokens',
-        requiredFields: ['id', 'token', 'token_type'],
+        requiredFields: ['token', 'token_type'],
         skipFields: noSkip,
         // OrderToken entity uses camelCase for timestamps and auto-generated FK
         fieldRemap: {
@@ -1070,7 +1077,7 @@ export class ImportService {
       'Salary': {
         entityName: 'Salary',
         tableName: 'salary',
-        requiredFields: ['id', 'month', 'base_salary', 'total_payble'],
+        requiredFields: ['month', 'base_salary', 'total_payble'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1093,7 +1100,7 @@ export class ImportService {
       'Attendance': {
         entityName: 'StuffAttendance',
         tableName: 'stuff_attendance',
-        requiredFields: ['id', 'attendance_date'],
+        requiredFields: ['attendance_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1121,7 +1128,7 @@ export class ImportService {
       'Leave': {
         entityName: 'Leave',
         tableName: 'leave',
-        requiredFields: ['id', 'user_id', 'leave_type', 'leave_start_date', 'leave_end_date', 'reason'],
+        requiredFields: ['user_id', 'leave_type', 'leave_start_date', 'leave_end_date', 'reason'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         // Leave entity has an explicit user_id @Column, so no relation mapping needed
@@ -1144,7 +1151,7 @@ export class ImportService {
       'Kitchen Orders': {
         entityName: 'KitchenOrder',
         tableName: 'kitchen_orders',
-        requiredFields: ['id'],
+        requiredFields: [],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1163,7 +1170,7 @@ export class ImportService {
       'Kitchen Order Items': {
         entityName: 'KitchenOrderItem',
         tableName: 'kitchen_order_items',
-        requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        requiredFields: ['quantity', 'unit_price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1185,7 +1192,7 @@ export class ImportService {
       'Expenses': {
         entityName: 'Expenses',
         tableName: 'expenses',
-        requiredFields: ['id', 'title', 'amount'],
+        requiredFields: ['title', 'amount'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { category_id: 'category' },
@@ -1209,7 +1216,7 @@ export class ImportService {
       'Daily Reports': {
         entityName: 'DailyReport',
         tableName: 'daily_reports',
-        requiredFields: ['id', 'report_date'],
+        requiredFields: ['report_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
