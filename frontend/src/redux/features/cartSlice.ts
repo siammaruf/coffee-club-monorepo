@@ -91,13 +91,13 @@ const cartSlice = createSlice({
 
 // Selectors
 export const selectCartTotal = (state: RootState) =>
-  state.cart.items.reduce((total, ci) => {
-    const price = ci.item.sale_price ?? ci.item.regular_price
-    return total + price * ci.quantity
+  (state.cart.items ?? []).reduce((total, ci) => {
+    const price = ci?.item?.sale_price ?? ci?.item?.regular_price ?? 0
+    return total + price * (ci?.quantity ?? 0)
   }, 0)
 
 export const selectCartItemCount = (state: RootState) =>
-  state.cart.items.reduce((count, ci) => count + ci.quantity, 0)
+  (state.cart.items ?? []).reduce((count, ci) => count + (ci?.quantity ?? 0), 0)
 
 export const { addItem, removeItem, updateQuantity, updateNotes, clearCart, toggleDrawer, openDrawer, closeDrawer } = cartSlice.actions
 export default cartSlice.reducer

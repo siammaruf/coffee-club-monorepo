@@ -96,40 +96,45 @@ This document maps frontend routes to their corresponding API endpoints for both
 
 ---
 
-## Frontend (Customer Website) Routes -> API Mapping [NEW]
+## Frontend (Customer Website) Routes -> API Mapping
+
+Routes are defined in `frontend/src/routes.ts` using React Router 7 framework mode with nested layouts.
 
 ### Public Pages (no auth)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/` | pages/Home | `GET /public/categories`, `GET /public/items`, `GET /public/blog`, `GET /public/partners` | Complete |
-| `/menu` | pages/Menu | `GET /public/categories`, `GET /public/items` | Complete |
-| `/about` | pages/About | - | Complete |
-| `/contact` | pages/Contact | - | Complete |
-| `/blog` | pages/Blog | `GET /public/blog` | Pending |
-| `/blog/:slug` | pages/BlogPost | `GET /public/blog/:slug` | Pending |
-| `/reservation` | pages/Reservation | `POST /public/reservations` | Pending |
+| `/` | pages/HomePage | `GET /public/items`, `GET /public/categories`, `GET /public/blog` | Complete |
+| `/menu` | pages/MenuPage | `GET /public/categories`, `GET /public/items?categorySlug=X` | Complete |
+| `/about` | pages/AboutPage | Static content (no API) | Complete |
+| `/contact` | pages/ContactPage | `POST /public/reservations` (inline reservation form) | Complete |
+| `/blog` | pages/BlogPage | `GET /public/blog?page=X&limit=10` | Complete |
+| `/blog/:slug` | pages/BlogPostPage | `GET /public/blog/:slug` | Complete |
+| `/reservation` | pages/ReservationPage | `POST /public/reservations` | Complete |
+| `/cart` | pages/CartPage | Redux local state (no API) | Complete |
 
-### Customer Auth Pages (no auth)
-
-| Route | Component | APIs Used | Status |
-|-------|-----------|-----------|--------|
-| `/login` | pages/Login | `POST /customer-auth/login` | Complete |
-| `/register` | pages/Register | `POST /customer-auth/register` | Complete |
-| `/forgot-password` | pages/ForgotPassword | `POST /customer-auth/forgot-password` | Complete |
-| `/verify-otp` | pages/VerifyOtp | `POST /customer-auth/verify-otp` | Complete |
-| `/reset-password` | pages/ResetPassword | `POST /customer-auth/reset-password` | Complete |
-
-### Customer Protected Pages (customer auth required)
+### Customer Auth Pages (GuestLayout - redirect if logged in)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/cart` | pages/Cart | `GET /cart`, `PUT /cart/items/:id`, `DELETE /cart/items/:id` | Complete |
-| `/checkout` | pages/Checkout | `POST /customer-orders` | Complete |
-| `/orders` | pages/Orders | `GET /customer-orders` | Complete |
-| `/orders/:id` | pages/OrderDetail | `GET /customer-orders/:id` | Complete |
-| `/account` | pages/Account | `GET /customer-auth/me` | Complete |
-| `/reservations` | pages/MyReservations | `GET /customer/reservations` | Pending |
+| `/login` | pages/LoginPage | `POST /customer-auth/login` | Complete |
+| `/register` | pages/RegisterPage | `POST /customer-auth/register` | Complete |
+| `/forgot-password` | pages/ForgotPasswordPage | `POST /customer-auth/forgot-password`, `POST /customer-auth/reset-password` | Complete |
+
+### Customer Protected Pages (ProtectedLayout - auth required)
+
+| Route | Component | APIs Used | Status |
+|-------|-----------|-----------|--------|
+| `/checkout` | pages/CheckoutPage | `POST /customer/orders` | Complete |
+| `/orders` | pages/OrderHistoryPage | `GET /customer/orders` | Complete |
+| `/orders/:id` | pages/OrderDetailPage | `GET /customer/orders/:id` | Complete |
+| `/profile` | pages/ProfilePage | `GET /customer-auth/profile`, `PUT /customer-auth/profile` | Complete |
+
+### Catch-all
+
+| Route | Component | APIs Used | Status |
+|-------|-----------|-----------|--------|
+| `*` | pages/NotFoundPage | None | Complete |
 
 ---
 
@@ -170,23 +175,33 @@ This document maps frontend routes to their corresponding API endpoints for both
 | reservationService | `src/services/httpServices/reservationService.ts` | createReservation, getMyReservations |
 | partnerService | `src/services/httpServices/partnerService.ts` | getPartners |
 
-**React Query Hooks:**
+**React Query Hooks (in `src/services/httpServices/queries/`):**
 
 | Hook | Location | Purpose |
 |------|----------|---------|
-| useMenu | `src/services/httpServices/queries/useMenu.ts` | Fetches menu categories and items |
-| useTables | `src/services/httpServices/queries/useTables.ts` | Fetches available tables |
-| useBlog | `src/services/httpServices/queries/useBlog.ts` | Fetches blog posts |
-| usePartners | `src/services/httpServices/queries/usePartners.ts` | Fetches partner logos |
-| useReservations | `src/services/httpServices/queries/useReservations.ts` | Reservation operations |
+| useMenu | `queries/useMenu.ts` | Fetches menu categories and items (also re-exported as `src/hooks/useMenu.ts`) |
+| useTables | `queries/useTables.ts` | Fetches available tables |
+| useBlog / useBlogPosts | `queries/useBlog.ts` | Fetches blog posts list and single post |
+| usePartners | `queries/usePartners.ts` | Fetches partner logos |
+| useReservations / useCreateReservation | `queries/useReservations.ts` | Reservation creation and listing |
+
+**Custom Hooks (in `src/hooks/`):**
+
+| Hook | Location | Purpose |
+|------|----------|---------|
+| useAuth | `src/hooks/useAuth.ts` | Auth state, login, logout, customer profile |
+| useCart | `src/hooks/useCart.ts` | Cart state, addItem, removeItem, clearCart, openDrawer, total, itemCount |
+| useMenu | `src/hooks/useMenu.ts` | Menu items, categories, filters, loading state |
+| useInView | `src/hooks/useInView.ts` | Intersection Observer for scroll animations |
+| useCountUp | `src/hooks/useCountUp.ts` | Animated number counter |
 
 ## Frontend (Customer) Redux Slices
 
 | Slice | Location | State |
 |-------|----------|-------|
-| authSlice | `src/redux/features/authSlice.ts` | customer, isAuthenticated, login, logout, checkAuth |
-| cartSlice | `src/redux/features/cartSlice.ts` | items, total, addItem, removeItem, updateQuantity, clearCart |
-| orderSlice | `src/redux/features/orderSlice.ts` | orders, currentOrder, placeOrder, cancelOrder |
+| authSlice | `src/redux/features/authSlice.ts` | customer, isAuthenticated, initialized, login, logout, checkAuth |
+| cartSlice | `src/redux/features/cartSlice.ts` | items, total, isDrawerOpen, addItem, removeItem, updateQuantity, clearCart |
+| orderSlice | `src/redux/features/orderSlice.ts` | orders, currentOrder, placeOrder (createOrderThunk), cancelOrder |
 
 ---
 
@@ -217,10 +232,12 @@ const httpService = axios.create({
 ### Key Integration Notes
 - Both apps use `withCredentials: true` for httpOnly cookie auth
 - Dashboard uses Redux async thunks for auth state
-- Frontend uses Redux Toolkit slices for auth, cart, and order state + React Query for data fetching
-- Frontend API base URL defaults to `http://localhost:3000/api/v1` (supports runtime config override via `window.__RUNTIME_CONFIG__`)
+- Frontend uses Redux Toolkit slices for auth, cart, and order state + React Query (TanStack Query) for data fetching
+- Frontend runs on React Router 7 framework mode with SSR (`react-router-serve`)
+- Frontend API base URL resolved from `src/lib/config.ts`
 - File uploads use `Content-Type: multipart/form-data` (Axios auto-sets boundary)
 - All responses follow the standard wrapper format: `{ data, status, message, statusCode, timestamp }`
+- Frontend cart is client-side only (Redux cartSlice) -- no server-side cart API used in the new design
 
 ---
 
@@ -235,13 +252,16 @@ const httpService = axios.create({
 
 ### Frontend (Customer)
 - [x] Axios httpService configured with `withCredentials: true`
-- [x] Redux auth slice with async thunks
-- [x] Redux cart slice (synced with backend)
-- [x] Redux order slice
-- [x] React Query hooks for menu and tables
-- [x] Public API services (categories, items, tables)
-- [x] Customer auth services (register, login, OTP)
-- [x] Cart services (add, update, remove)
+- [x] Redux auth slice with async thunks + `initialized` flag
+- [x] Redux cart slice (client-side only, not synced with backend)
+- [x] Redux order slice with `createOrderThunk`
+- [x] React Query hooks for menu, blog, tables, partners, reservations
+- [x] Public API services (categories, items, tables, blog, partners)
+- [x] Customer auth services (register, login, forgot-password, reset-password)
 - [x] Order services (place, history, cancel)
 - [x] Profile services (get, update)
+- [x] Reservation services (create)
 - [x] Request/response interceptors (error handling)
+- [x] React Router 7 framework mode with SSR
+- [x] Form validation via React Hook Form + Zod
+- [x] Toast notifications via react-hot-toast

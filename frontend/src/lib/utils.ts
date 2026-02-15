@@ -5,20 +5,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatPrice(price: number): string {
-  return `৳${price.toFixed(2)}`
+export function formatPrice(price: number | null | undefined): string {
+  const safePrice = Number(price) || 0
+  return `৳${safePrice.toFixed(2)}`
 }
 
-export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return ''
+  const parsed = new Date(date)
+  if (isNaN(parsed.getTime())) return ''
+  return parsed.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   })
 }
 
-export function formatDateTime(date: string | Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return ''
+  const parsed = new Date(date)
+  if (isNaN(parsed.getTime())) return ''
+  return parsed.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

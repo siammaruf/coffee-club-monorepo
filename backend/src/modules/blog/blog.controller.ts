@@ -108,14 +108,14 @@ export class BlogController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete blog post', description: 'Deletes a blog post by ID' })
   @ApiParam({ name: 'id', description: 'Blog post ID' })
-  @ApiResponse({ status: 204, description: 'Blog post deleted successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiResponse({ status: 200, description: 'Blog post deleted successfully' })
+  @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.blogService.remove(id);
     return {
       status: 'success',
       message: 'Blog post deleted successfully.',
-      statusCode: HttpStatus.NO_CONTENT,
+      statusCode: HttpStatus.OK,
     };
   }
 }

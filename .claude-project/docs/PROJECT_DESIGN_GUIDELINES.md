@@ -1,8 +1,8 @@
 # Design Guidelines - CoffeeClub
 
-**Last Updated:** 2026-02-13
+**Last Updated:** 2026-02-15
 
-This document provides the design system guidelines for both the **Dashboard** (admin panel) and **Frontend** (customer website). The Dashboard uses **shadcn/ui** with **Tailwind CSS v4** and **OKLCH color space**. The Frontend uses a **dark gold premium restaurant theme** with **TailwindCSS**, featuring dark backgrounds, gold accents, and serif headings.
+This document provides the design system guidelines for both the **Dashboard** (admin panel) and **Frontend** (customer website). The Dashboard uses **shadcn/ui** with **Tailwind CSS v4** and **OKLCH color space**. The Frontend uses the **Vincent dark restaurant theme** with **TailwindCSS v4**, featuring dark charcoal backgrounds, gold accents, and uppercase sans-serif headings (PT Sans Narrow).
 
 ---
 
@@ -35,9 +35,10 @@ This document provides the design system guidelines for both the **Dashboard** (
 
 ### Frontend (`frontend/`)
 - **Purpose**: Customer-facing website for browsing menu & placing orders
-- **Framework**: React 19 + Vite + TailwindCSS
-- **Theme**: Dark gold premium - dark backgrounds, gold accents, serif headings (Playfair Display)
-- **Style**: Upscale, elegant, dark-mode-first, conversion-focused
+- **Framework**: React 19 + React Router 7 (framework mode) + TailwindCSS v4
+- **Theme**: Vincent dark restaurant - dark charcoal backgrounds, gold accents, uppercase sans-serif headings (PT Sans Narrow)
+- **Style**: Upscale, elegant, dark-mode-only, conversion-focused
+- **Source**: HTML template adapted from `.claude-project/resources/HTML/`
 
 ---
 
@@ -113,60 +114,55 @@ Defined via `--radius: 0.625rem` (10px) in `:root`:
 
 ## 3. Frontend (Customer) Color System
 
-### 3.1 Primary Palette: Warm Light Coffee (Basilico-inspired)
+### 3.1 Primary Palette: Vincent Dark Restaurant Theme
 
-The customer-facing website uses a warm light coffee palette -- cream/beige backgrounds with coffee brown accents for an elegant, inviting cafe aesthetic.
+The customer-facing website uses a dark charcoal palette with gold accents, inspired by the Vincent HTML restaurant template. All pages are dark-mode-only.
 
 | Token | Hex Value | CSS Variable / Tailwind | Usage |
 |-------|-----------|------------------------|-------|
-| Primary 50 | `#FBF6EF` | `--color-primary-50` | Very light accent bg |
-| Primary 100 | `#F5E8D0` | `--color-primary-100` | Badge backgrounds |
-| Primary 200 | `#EBCEA0` | `--color-primary-200` | Light accents |
-| Primary 300 | `#D9AD6B` | `--color-primary-300` | Medium accents |
-| Primary 400 | `#C4903E` | `--color-primary-400` | Light brown accent |
-| Primary 500 | `#A0782C` | `--color-primary-500` | Main coffee brown, CTA buttons |
-| Primary 600 | `#8B6914` | `--color-primary-600` | Hover states, dark accent |
-| Primary 700 | `#6F5410` | `--color-primary-700` | Badge text on light |
-| Primary 800 | `#56420D` | `--color-primary-800` | Dark borders |
-| Primary 900 | `#3D2E09` | `--color-primary-900` | Very dark accent |
-| Warm Bg | `#FDF8F3` | `bg-warm-bg` | Main page background (warm cream) |
-| Warm Light | `#F9F3EB` | `bg-warm-light` | Alternate section bg |
-| Warm Surface | `#F5EFE6` | `bg-warm-surface` | Surface/panel bg |
-| Card | `#FFFFFF` | `bg-warm-card` / `bg-white` | Card backgrounds |
-| Dark | `#1A110A` | `bg-dark` | Hero, footer, CTA dark sections |
-| Dark Light | `#2C2118` | `bg-dark-light` | Dark section variants |
-| Dark Card | `#3D2D1E` | `bg-dark-card` | Cards on dark sections |
-| Text Primary | `#2C2118` | `text-text-primary` | Headings (dark brown) |
-| Text Body | `#5C4A3A` | `text-text-body` | Body text (medium brown) |
-| Text Muted | `#8B7B6B` | `text-text-muted` | Descriptions, secondary |
-| Text Light | `#F5F0E1` | `text-text-light` | Text on dark backgrounds |
-| Border | `#E8DCC8` | `border-border` | Warm borders, dividers |
-| Success | `#22c55e` | `text-green-500` | Success states |
-| Error | `#ef4444` | `text-red-500` | Error states |
+| Bg Primary | `#121618` | `--color-bg-primary` / `bg-bg-primary` | Main page background (dark charcoal) |
+| Bg Secondary | `#1d2326` | `--color-bg-secondary` / `bg-bg-secondary` | Alternate section bg, page title blocks |
+| Bg Card | `#1a1f22` | `--color-bg-card` / `bg-bg-card` | Card backgrounds |
+| Bg Lighter | `#252c30` | `--color-bg-lighter` / `bg-bg-lighter` | Elevated surfaces, borders |
+| Accent | `#c8a97e` | `--color-accent` / `text-accent` / `bg-accent` | Gold accent, links, badges, CTAs |
+| Accent Hover | `#d4b88f` | `--color-accent-hover` / `bg-accent-hover` | Hover state for accent |
+| Accent Dark | `#a08050` | `--color-accent-dark` / `bg-accent-dark` | Darker accent variant |
+| Text Primary | `#dce4e8` | `--color-text-primary` / `text-text-primary` | Headings, nav links, primary text |
+| Text Heading | `#dce4e8` | `--color-text-heading` / `text-text-heading` | H1-H6 headings (same as primary) |
+| Text Body | `#b0bec5` | `--color-text-body` / `text-text-body` | Body text, descriptions |
+| Text Muted | `#8a9ba5` | `--color-text-muted` / `text-text-muted` | Secondary text, placeholders |
+| Border | `#252c30` | `--color-border` / `border-border` | Borders, dividers |
+| Border Light | `#1d2326` | `--color-border-light` / `border-border-light` | Subtle borders |
+| Success | `#22c55e` | `--color-success` | Success states |
+| Error | `#ef4444` | `--color-error` / `text-error` | Error states, logout button |
+| Warning | `#DAA520` | `--color-warning` | Warning states |
+| Info | `#3b82f6` | `--color-info` | Info states |
 
-### 3.2 Light Theme (Default for Frontend)
+### 3.2 Dark Theme (Only Theme for Frontend)
 
-The frontend is LIGHT by default with warm, earthy tones. Some sections (hero, footer, CTA, page banners) use dark backgrounds for contrast.
+The frontend is DARK by default and dark-only. There is no light mode. Sections alternate between `bg-bg-primary` and `bg-bg-secondary` for visual separation.
 
 | Context | Background | Text | Accent |
 |---------|-----------|------|--------|
-| Main page | `#FDF8F3` warm cream | `#5C4A3A` medium brown | `#A0782C` coffee brown |
-| Alternate sections | `#F5EFE6` warm surface | `#5C4A3A` medium brown | `#A0782C` coffee brown |
-| Cards | `#FFFFFF` white | `#2C2118` dark brown | `#A0782C` coffee brown |
-| Dark sections | `#1A110A` very dark | `#F5F0E1` cream | `#C4903E` light brown |
-| Footer | `#1A110A` very dark | `#F5F0E1` cream | `#C4903E` light brown |
+| Main page | `#121618` bg-primary | `#b0bec5` body | `#c8a97e` gold |
+| Alternate sections | `#1d2326` bg-secondary | `#b0bec5` body | `#c8a97e` gold |
+| Page title blocks | `#1d2326` bg-secondary | `#dce4e8` heading | `#c8a97e` gold |
+| Cards | `#1a1f22` bg-card | `#dce4e8` primary | `#c8a97e` gold |
+| Header | `#121618` bg-primary | `#dce4e8` primary | `#c8a97e` gold |
+| Footer | `#121618` bg-primary | `#dce4e8` primary | `#c8a97e` gold |
 
 ### 3.3 Frontend Color Usage Guidelines
 
-- **Brown CTAs on white/cream backgrounds**: "Add to Cart", "Order Now" use `bg-primary-600 text-white`
-- **Dark brown text on light surfaces**: Use `text-text-primary` (#2C2118) for headings, `text-text-body` (#5C4A3A) for body
-- **White card pattern**: Cards use white bg with `border-border` (#E8DCC8) warm border and `shadow-sm`
-- **Light backgrounds only**: Main bg is warm cream (#FDF8F3), alternate sections use warm surface (#F5EFE6)
-- **Dark sections for contrast**: Hero, footer, CTA sections use `bg-dark` with cream text
-- **Status colors**: Green for success, red for errors (same as before)
-- **Serif headings**: Playfair Display for hero text and section titles
-- **Script decorative text**: Dancing Script for taglines like "Welcome to", "Since 2003"
-- **Card hover lift**: `hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50`
+- **Gold accent for CTAs**: Use `bg-accent text-bg-primary` for filled buttons (`.btn-vincent-filled`)
+- **Outlined buttons by default**: Use `.btn-vincent` (border + uppercase + tracking) for most actions
+- **Light text on dark backgrounds**: `text-text-primary` (#dce4e8) for headings, `text-text-body` (#b0bec5) for body
+- **Dark backgrounds throughout**: Main bg is `#121618`, alternate sections use `#1d2326`
+- **No white surfaces**: Cards use `bg-bg-card` (#1a1f22), never white
+- **Status colors**: Green for success, red for errors, goldenrod for warnings
+- **Uppercase headings**: All H1-H6 are uppercase with letter-spacing via PT Sans Narrow
+- **No serif or script fonts**: Removed Playfair Display, Dancing Script, Inter
+- **Hover = gold**: Navigation links, buttons, and icons all transition to `text-accent` on hover
+- **Product hover overlay**: Image darkens to `bg-black/50` with a circular cart button appearing
 
 ---
 
@@ -174,19 +170,18 @@ The frontend is LIGHT by default with warm, earthy tones. Some sections (hero, f
 
 ### 4.1 Font Families
 
-| Application | Font Family | Weights | Tailwind Class |
+| Application | Font Family | Weights | Tailwind / CSS |
 |-------------|-------------|---------|----------------|
 | Dashboard | System/sans-serif | 400-800 | `font-sans` |
-| Frontend (Headings) | Playfair Display (serif) | 400-700 | `font-heading` |
-| Frontend (Body) | Inter (sans-serif) | 400-700 | `font-sans` |
-| Frontend (Taglines) | Dancing Script (cursive) | 400-700 | `font-script` |
+| Frontend (Headings) | PT Sans Narrow (sans-serif, condensed) | 400, 700 | `font-heading` / `var(--font-heading)` |
+| Frontend (Body) | Open Sans (sans-serif) | 300-700 | `var(--font-body)` (default body font) |
 | Monospace | System mono | 400-600 | `font-mono` |
 
 **Frontend Typography Notes:**
-- `font-heading` (Playfair Display) is used for hero titles, section headings, and the logo to convey a premium restaurant feel
-- `font-sans` (Inter) is used for body text, descriptions, buttons, and UI elements
-- `font-script` (Dancing Script) is used for decorative taglines like "Welcome to", "Since 2003", section subtitles
-- The combination of serif headings + script taglines + sans-serif body creates visual hierarchy and elegance
+- `font-heading` (PT Sans Narrow) is used for all H1-H6 headings, the logo, category tabs, and nav links. All headings are **uppercase** with generous **letter-spacing**.
+- Body font (Open Sans) is the default via `body { font-family: var(--font-body) }` with `font-weight: 300` and `line-height: 28px`.
+- **No serif or script fonts**: Playfair Display, Inter, and Dancing Script have been completely removed.
+- Heading sizes are defined in `index.css` with specific `font-size`, `line-height`, and `letter-spacing` values per level (H1: 40px/8px spacing, H2: 32px/6px, H3: 28px/5px, H4: 24px/5px, H5: 18px/4px bold, H6: 16px/3px).
 
 ### 4.2 Font Size Scale
 
@@ -242,11 +237,17 @@ Container (max-w-7xl mx-auto px-6)
 
 **Frontend Page Layout:**
 ```
-Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
-  + Hero Slider (min-h-screen bg-dark text-text-light)  /* or full-width */
-  + Section (py-16 bg-warm-bg or bg-warm-light)
-  + Menu Grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6)
-    + Item Card (p-4 rounded-xl bg-white border border-border shadow-sm)
+Layout (flex min-h-screen flex-col bg-bg-primary)
+  + Header (3-column: phone | logo+nav | cart)
+  + Main (flex-1)
+    + Page Title Block (.page-title-block: bg-bg-secondary py-16 text-center)
+    + Content (.vincent-container: max-w-[1170px] mx-auto px-4)
+      + Section (py-16 bg-bg-primary or bg-bg-secondary alternating)
+      + Menu Grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8)
+        + Item Card (no border/radius - image + centered text below)
+  + Footer (bg-bg-primary border-t border-border, centered layout)
+  + CartDrawer (fixed right slide-in panel)
+  + BackToTop button (fixed bottom-right, outlined square)
 ```
 
 ---
@@ -305,37 +306,31 @@ Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
 
 ### 8.2 Frontend (Customer) Button States
 
-**Primary (Coffee Brown):**
+**Vincent Outlined (`.btn-vincent` - Default button style):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-primary-600 text-white font-semibold rounded-lg px-6 py-3 shadow-sm` |
-| Hover | `hover:bg-primary-700 hover:shadow-md` |
-| Focus | `focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2` |
-| Active | `active:scale-[0.98]` |
-| Disabled | `disabled:opacity-50 disabled:cursor-not-allowed` |
+| Default | `inline-block border-2 border-text-primary text-text-primary uppercase tracking-[3px] text-sm px-4 py-1.5 transition-all duration-200` |
+| Hover | `hover:border-accent hover:text-accent` |
+| Focus | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent` |
 
-**Outline (Coffee Brown Border):**
+**Vincent Filled (`.btn-vincent-filled` - Gold CTA):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-transparent text-primary-600 border-2 border-primary-600 rounded-lg px-6 py-3` |
-| Hover | `hover:bg-primary-50` |
-| Focus | `focus-visible:ring-2 focus-visible:ring-primary-500` |
+| Default | `inline-block border-2 border-accent bg-accent text-bg-primary uppercase tracking-[3px] text-sm px-4 py-1.5 transition-all duration-200` |
+| Hover | `hover:bg-accent-hover hover:border-accent-hover` |
+| Focus | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent` |
 
-**Ghost (Subtle):**
-
-| State | Tailwind Classes |
-|-------|------------------|
-| Default | `text-text-body bg-transparent` |
-| Hover | `hover:bg-warm-surface hover:text-primary-600` |
-
-**Gold (Premium CTA):**
+**Nav Link (Header navigation):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `bg-primary-500 text-white font-bold rounded-lg px-6 py-3 shadow-md` |
-| Hover | `hover:bg-primary-600 hover:shadow-lg` |
+| Default | `text-xs font-bold uppercase tracking-[3px] text-text-primary` |
+| Hover | `hover:text-accent` |
+| Active | `text-accent` |
+
+**Note**: Frontend buttons are NOT rounded. They use sharp corners (no `rounded-*` classes) to match the Vincent template aesthetic. All buttons use uppercase text with wide letter-spacing.
 
 ### 8.3 Input Field States
 
@@ -349,15 +344,16 @@ Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
 | Error | `border-red-500 focus:ring-red-500` |
 | Disabled | `disabled:bg-gray-100 disabled:cursor-not-allowed` |
 
-**Frontend (Light Inputs with Coffee Focus):**
+**Frontend (Dark Inputs with Gold Focus):**
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `border-border bg-white text-text-primary placeholder:text-text-muted/50 rounded-lg` |
-| Hover | `hover:border-primary-400` |
-| Focus | `focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20` |
-| Error | `border-error focus:ring-red-500` |
-| Disabled | `disabled:bg-warm-light disabled:opacity-50 disabled:cursor-not-allowed` |
+| Default | `bg-transparent border-2 border-border text-text-primary w-full text-sm tracking-[3px] py-1.5 px-4 rounded-none` |
+| Focus | `focus:border-accent focus:outline-none` |
+| Error | `border-error` |
+| Disabled | `disabled:opacity-50 disabled:cursor-not-allowed` |
+
+**Note**: Frontend inputs have NO border-radius (`rounded-none`), use transparent backgrounds, and match the Vincent template's minimalist form style with wide letter-spacing.
 
 ### 8.4 Card States
 
@@ -369,13 +365,22 @@ Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
 | Hover | `hover:shadow-lg hover:scale-[1.02] transition-all duration-300` |
 | Selected | `border-primary bg-primaryLight` |
 
-**Frontend (Light Cards):**
+**Frontend (Dark Cards - Vincent style):**
+
+Menu item cards in the Vincent theme do NOT use traditional card borders/shadows. Instead, they use:
 
 | State | Tailwind Classes |
 |-------|------------------|
-| Default | `border border-border bg-white rounded-xl shadow-sm` |
-| Hover | `hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50 transition-all duration-300` |
-| Selected | `border-primary-500 ring-2 ring-primary-500/20` |
+| Default | Product image (`aspect-square bg-bg-secondary`) + text below (no card border) |
+| Hover | Image: `group-hover:scale-110` with dark overlay `bg-black/50` and circular cart button |
+| Sale Badge | `absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary` |
+
+For general-purpose cards (e.g., blog, orders):
+
+| State | Tailwind Classes |
+|-------|------------------|
+| Default | `bg-bg-card border border-border` |
+| Hover | `hover:border-accent/30 transition-colors` |
 
 ---
 
@@ -402,21 +407,23 @@ Container (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-warm-bg)
 | Dropdown | `transition-all duration-300 ease-out` |
 | Modal | `transition-all duration-300` |
 
-### 9.3 Custom Animations
+### 9.3 Custom Animations (Frontend)
 
-```javascript
-// Dashboard: Coffee steam animation
-keyframes: {
-  steam: {
-    '0%': { transform: 'translateY(0) scale(0.8)', opacity: '0.5' },
-    '50%': { transform: 'translateY(-5px) scale(1)', opacity: '0.7' },
-    '100%': { transform: 'translateY(-10px) scale(1.2)', opacity: '0' },
-  },
-},
-animation: {
-  steam: 'steam 2s ease-out infinite',  // Usage: animate-steam
-},
+Defined in `frontend/src/index.css`:
+
+```css
+/* Fade in with slight upward slide */
+@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* Fade up (larger distance) */
+@keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* Slide in/out from right (cart drawer) */
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slide-out-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
+/* Floating effect (decorative elements) */
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 ```
+
+Usage: `.animate-fade-in`, `.animate-fade-up`, `.animate-slide-in-right`, `.animate-slide-out-right`, `.animate-float`
 
 ---
 
@@ -433,68 +440,73 @@ animation: {
 
 ### 10.2 Frontend Navigation
 
-**Two-Tier Light Header (Customer):**
+**Three-Column Dark Header (Vincent style):**
 ```html
-<!-- Top Bar (hidden on mobile) -->
-<div class="hidden md:block bg-dark text-text-light text-sm py-2">
-  <div class="max-w-7xl mx-auto px-4 flex justify-between">
-    <span>4517 Washington Ave., Manchester</span>
-    <span>(540) 218-2423 | coffeeclub@email.com</span>
-  </div>
-</div>
-<!-- Main Nav -->
-<header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-    <a class="text-2xl font-heading font-bold text-primary-600">CoffeeClub</a>
-    <a class="text-text-body hover:text-primary-600 transition-colors">Menu</a>
-    <button class="relative text-text-muted hover:text-primary-600">
-      <span class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs font-bold rounded-full w-5 h-5">3</span>
-    </button>
+<header class="bg-bg-primary">
+  <div class="flex items-stretch">
+    <!-- Left: Phone + Hours (hidden on mobile) -->
+    <div class="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+      <div class="text-center">
+        <div class="text-sm font-bold tracking-[3px] text-text-primary uppercase">+1 215 456 15 15</div>
+        <div class="mt-1 text-xs tracking-[2px] text-text-muted">8:00 am - 11:30 pm</div>
+      </div>
+    </div>
+    <!-- Center: Logo + Nav -->
+    <div class="flex-1 border-b border-border lg:w-1/2">
+      <div class="flex justify-center py-6">
+        <h1 class="font-heading text-3xl font-bold tracking-[8px] text-text-heading">
+          COFFEE<span class="text-accent">CLUB</span>
+        </h1>
+      </div>
+      <nav class="flex justify-center border-t border-border">
+        <a class="px-5 py-4 text-xs font-bold uppercase tracking-[3px] text-text-primary hover:text-accent">Home</a>
+        <!-- ... more links ... -->
+      </nav>
+    </div>
+    <!-- Right: Cart Widget (hidden on mobile) -->
+    <div class="hidden w-1/4 items-center justify-center border-b border-border px-4 py-4 lg:flex">
+      <button class="text-center group">
+        <div class="text-sm font-bold tracking-[2px] text-text-primary">$12.00</div>
+        <div class="text-xs tracking-[1px] text-text-muted">2 items - View Cart</div>
+      </button>
+    </div>
   </div>
 </header>
 ```
 
-### 10.3 Frontend Menu Item Card
+### 10.3 Frontend Menu Item Card (Vincent style)
 
 ```html
-<div class="bg-white rounded-xl border border-border overflow-hidden shadow-sm
-            hover:shadow-md hover:-translate-y-1 hover:border-primary-400/50
-            transition-all duration-300 group">
-  <div class="relative aspect-square overflow-hidden">
-    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-    <span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">SALE</span>
-  </div>
-  <div class="p-4">
-    <h3 class="font-semibold text-text-primary">Item Name</h3>
-    <p class="text-sm text-text-muted mt-1">Description</p>
-    <div class="flex items-center justify-between mt-3">
-      <div>
-        <span class="text-lg font-bold text-primary-600">$4.50</span>
-        <span class="text-sm text-text-muted line-through ml-2">$5.50</span>
-      </div>
-      <button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold
-                     hover:bg-primary-700 hover:shadow-md transition-all">
-        Add to Cart
+<!-- No card border/shadow - image + text below -->
+<div class="group">
+  <div class="relative cursor-pointer overflow-hidden">
+    <div class="aspect-square overflow-hidden bg-bg-secondary">
+      <img class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+    </div>
+    <!-- Dark overlay with cart button on hover -->
+    <div class="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/50">
+      <button class="flex h-12 w-12 translate-y-4 items-center justify-center rounded-full border-2 border-white text-white opacity-0 transition-all duration-300 hover:border-accent hover:text-accent group-hover:translate-y-0 group-hover:opacity-100">
+        <!-- ShoppingCart icon -->
       </button>
     </div>
+    <!-- Sale badge -->
+    <div class="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">Sale</div>
+  </div>
+  <div class="mt-4 text-center">
+    <h5 class="cursor-pointer transition-colors hover:text-accent">Item Name</h5>
+    <p class="mt-2 text-sm text-text-muted">Description text</p>
+    <div class="mt-2 font-heading text-lg tracking-wider text-accent">$4.50</div>
   </div>
 </div>
 ```
 
-### 10.4 Frontend Cart Item
+### 10.4 Frontend Page Title Block
 
 ```html
-<div class="flex items-center gap-4 py-4 border-b border-border">
-  <img class="w-16 h-16 rounded-lg object-cover" />
-  <div class="flex-1">
-    <h4 class="font-medium text-text-primary">Item Name</h4>
-    <p class="text-sm text-primary-600 font-semibold">$4.50</p>
-  </div>
-  <div class="flex items-center gap-2">
-    <button class="w-8 h-8 rounded-full border border-border text-text-muted flex items-center justify-center hover:bg-primary-50 hover:text-primary-600">-</button>
-    <span class="w-8 text-center font-medium text-text-primary">2</span>
-    <button class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center hover:bg-primary-700">+</button>
-  </div>
+<!-- Used on Menu, Cart, Blog, Checkout, and other inner pages -->
+<div class="page-title-block">
+  <!-- .page-title-block = bg-bg-secondary py-16 text-center -->
+  <h1>Page Title Here</h1>
 </div>
 ```
 
@@ -551,7 +563,7 @@ animation: {
 ### 11.1 Libraries
 
 - **Dashboard**: Lucide React (`lucide-react`) + React Icons (`react-icons`)
-- **Frontend**: Lucide React (or Heroicons for customer-facing UI)
+- **Frontend**: Lucide React (`lucide-react`) for UI icons (ShoppingCart, User, X, ChevronDown, etc.) + React Icons (`react-icons/fa`) for social icons (FaTwitter, FaFacebook, FaInstagram)
 
 ### 11.2 Icon Sizes
 
@@ -594,12 +606,14 @@ animation: {
 - Error messages: `text-xs text-red-600 mt-1`
 
 ### 13.2 Frontend Forms
-- Clean, warm design with coffee brown accents on light backgrounds
-- Focus ring: `focus:ring-2 focus:ring-primary-500/20`
-- Labels: `text-sm font-medium text-text-primary mb-1`
-- Inputs: `border border-border bg-white text-text-primary rounded-lg px-4 py-3 focus:border-primary-500`
-- Error: `border-red-500 text-red-600`
-- Placeholder: `placeholder:text-text-muted/50`
+- Dark minimalist design with gold accent on focus
+- Global input styles in `index.css`: `bg-transparent border-2 border-border text-text-primary text-sm tracking-[3px] py-1.5 px-4 rounded-none`
+- Focus: `border-accent outline-none`
+- Labels: `text-sm uppercase tracking-[2px] text-text-muted mb-2`
+- Error: `border-error text-error`
+- Textarea: `resize-none h-[120px]`
+- Validation: React Hook Form + Zod schemas
+- No border-radius on any form elements
 
 ---
 
@@ -610,16 +624,18 @@ animation: {
 | Element | Tailwind Classes |
 |---------|------------------|
 | Dashboard Button | `focus:ring-2 focus:ring-primary focus:ring-offset-2` |
-| Frontend Button | `focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2` |
-| Input | `focus:ring-2 focus:ring-primary` (Dashboard) or `focus:ring-primary-500/20` (Frontend) |
+| Frontend Button | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent` |
+| Frontend Input | `focus:border-accent focus:outline-none` |
 | Link | `focus:ring-2 focus:ring-offset-1 rounded` |
 
 ### Color Contrast (WCAG AA)
 - Normal text: 4.5:1 minimum contrast ratio
 - Large text: 3:1 minimum contrast ratio
 - Dashboard: Amber-600 on white passes AA for large text; stone-900 on white passes AA and AAA
-- Frontend: Dark brown (`#2C2118`) on warm cream (`#FDF8F3`) has excellent contrast (~14:1); coffee (`#A0782C`) on white passes AA for large text
-- Frontend dark sections: Cream (`#F5F0E1`) on dark (`#1A110A`) has excellent contrast (~16:1)
+- Frontend: Light text (`#dce4e8`) on dark charcoal (`#121618`) has excellent contrast (~12:1)
+- Frontend body text: `#b0bec5` on `#121618` has good contrast (~8:1)
+- Frontend gold accent: `#c8a97e` on `#121618` passes AA for large text (~5.5:1)
+- Frontend muted text: `#8a9ba5` on `#121618` has adequate contrast (~5:1)
 
 ### Touch Targets
 - Minimum 44x44px for interactive elements
@@ -640,6 +656,6 @@ animation: {
 
 ---
 
-**Version:** 4.0
-**Last Updated:** 2026-02-13
-**Theme Change:** Dark Gold Premium -> Warm Light Coffee (Basilico-inspired)
+**Version:** 5.0
+**Last Updated:** 2026-02-15
+**Theme Change:** Warm Light Coffee (Basilico) -> Vincent Dark Restaurant Theme

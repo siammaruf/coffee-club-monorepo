@@ -112,14 +112,14 @@ export class ReservationsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete reservation', description: 'Deletes a reservation by ID' })
   @ApiParam({ name: 'id', description: 'Reservation ID' })
-  @ApiResponse({ status: 204, description: 'Reservation deleted successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiResponse({ status: 200, description: 'Reservation deleted successfully' })
+  @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.reservationsService.remove(id);
     return {
       status: 'success',
       message: 'Reservation deleted successfully.',
-      statusCode: HttpStatus.NO_CONTENT,
+      statusCode: HttpStatus.OK,
     };
   }
 }

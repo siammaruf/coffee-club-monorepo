@@ -1,165 +1,160 @@
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay, Pagination, Navigation, EffectFade } from 'swiper/modules'
-import { ArrowRight, ArrowLeft, Coffee, Utensils, CalendarDays } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import useEmblaCarousel from 'embla-carousel-react'
+import Autoplay from 'embla-carousel-autoplay'
+import { cn } from '@/lib/utils'
+import type { HeroSlide } from '@/types/websiteContent'
 
-import 'swiper/css'
-import 'swiper/css/pagination'
-import 'swiper/css/navigation'
-import 'swiper/css/effect-fade'
+interface HeroSliderProps {
+  slides: HeroSlide[]
+}
 
-const slides = [
-  {
-    tagline: 'Welcome to CoffeeClub',
-    heading: 'The Art of Fine Coffee & Dining',
-    description:
-      'Experience the finest hand-crafted coffee and exquisite cuisine in a warm, inviting atmosphere. Every cup tells a story, every dish is a masterpiece.',
-    primaryCta: { label: 'Explore Menu', link: '/menu', icon: Coffee },
-    secondaryCta: { label: 'Book a Table', link: '/reservation', icon: CalendarDays },
-    gradient: 'from-dark via-dark/95 to-dark-light/90',
-  },
-  {
-    tagline: 'Crafted with Passion',
-    heading: 'Premium Beans, Exceptional Taste',
-    description:
-      'We source our beans from the finest farms around the world. Each blend is roasted to perfection, delivering a rich, full-bodied flavor in every sip.',
-    primaryCta: { label: 'Order Now', link: '/menu', icon: ArrowRight },
-    secondaryCta: { label: 'Our Story', link: '/about', icon: ArrowRight },
-    gradient: 'from-dark-light via-dark/95 to-dark/90',
-  },
-  {
-    tagline: 'A Culinary Journey',
-    heading: 'Savor Every Moment with Us',
-    description:
-      'From artisan breakfasts to gourmet dinners, our chefs create dishes that delight the senses. Pair your meal with our signature beverages for the perfect experience.',
-    primaryCta: { label: 'View Specials', link: '/menu', icon: Utensils },
-    secondaryCta: { label: 'Private Events', link: '/reservation', icon: CalendarDays },
-    gradient: 'from-dark via-dark-light/95 to-dark/90',
-  },
-]
+export function HeroSlider({ slides }: HeroSliderProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
 
-export function HeroSlider() {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({ delay: 5000, stopOnInteraction: false }),
+  ])
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return
+    setSelectedIndex(emblaApi.selectedScrollSnap())
+  }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApi) return
+    onSelect()
+    emblaApi.on('select', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
+  }, [emblaApi, onSelect])
+
+  const scrollTo = useCallback(
+    (index: number) => {
+      emblaApi?.scrollTo(index)
+    },
+    [emblaApi],
+  )
+
   return (
-    <section className="relative min-h-screen">
-      <Swiper
-        modules={[Autoplay, Pagination, Navigation, EffectFade]}
-        effect="fade"
-        autoplay={{ delay: 6000, disableOnInteraction: false }}
-        pagination={{
-          clickable: true,
-          bulletClass: 'swiper-pagination-bullet !bg-white/40 !w-3 !h-3 !rounded-full transition-all duration-300',
-          bulletActiveClass: '!bg-primary-400 !w-8 !rounded-full',
-        }}
-        navigation={{
-          prevEl: '.hero-prev',
-          nextEl: '.hero-next',
-        }}
-        loop
-        speed={800}
-        className="h-screen min-h-[90vh]"
-      >
-        {slides.map((slide, index) => (
-          <SwiperSlide key={index}>
-            <div className="relative flex min-h-screen items-center">
-              {/* Background gradient */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`} />
-
-              {/* Subtle radial accents */}
-              <div className="absolute inset-0">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      'radial-gradient(circle at 20% 30%, rgba(160,120,44,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(196,144,62,0.06) 0%, transparent 50%)',
-                  }}
-                />
-              </div>
-
-              {/* Decorative circles */}
-              <div className="absolute right-[10%] top-[15%] h-72 w-72 rounded-full border border-primary-500/10 opacity-40" />
-              <div className="absolute -left-20 bottom-[20%] h-64 w-64 rounded-full bg-gradient-to-br from-primary-500/5 to-transparent" />
-              <div className="absolute left-[15%] top-1/4 h-2 w-2 rounded-full bg-primary-400/30 animate-float" style={{ animationDelay: '0s' }} />
-              <div className="absolute right-[25%] top-1/3 h-1.5 w-1.5 rounded-full bg-primary-300/20 animate-float" style={{ animationDelay: '1s' }} />
-              <div className="absolute left-[30%] bottom-1/4 h-2.5 w-2.5 rounded-full bg-primary-500/15 animate-float" style={{ animationDelay: '0.5s' }} />
-
-              {/* Content */}
-              <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-3xl text-center">
-                  <p className="font-script text-xl text-primary-400 md:text-2xl animate-fade-in">
-                    {slide.tagline}
-                  </p>
-
-                  <h1
-                    className="mt-4 font-heading text-4xl font-bold leading-tight text-text-light sm:text-5xl lg:text-6xl xl:text-7xl animate-fade-up"
-                    style={{ animationDelay: '0.15s' }}
-                  >
-                    {slide.heading}
+    <section className="relative bg-bg-primary overflow-hidden">
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex">
+          {slides.map((slide, index) => (
+            <div className="relative min-w-0 flex-[0_0_100%]" key={slide.id ?? index}>
+              {/* Slide 1: Centered pizza image with title below */}
+              {slide.type === 'centered' && (
+                <div className="flex min-h-[85vh] flex-col items-center justify-center px-4 py-20">
+                  <div className="mb-8 flex justify-center">
+                    <img
+                      src={slide.image ?? ''}
+                      alt={slide.title}
+                      className="h-auto w-[320px] max-w-full object-contain drop-shadow-2xl md:w-[420px] lg:w-[500px]"
+                    />
+                  </div>
+                  <h1 className="mb-4 text-center text-text-heading">
+                    {slide.title}
                   </h1>
-
-                  <p
-                    className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-light/70 sm:text-xl animate-fade-up"
-                    style={{ animationDelay: '0.3s' }}
-                  >
+                  <p className="max-w-lg text-center text-base text-text-body tracking-[2px]">
                     {slide.description}
                   </p>
+                </div>
+              )}
 
-                  <div
-                    className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-up"
-                    style={{ animationDelay: '0.45s' }}
-                  >
-                    <Link to={slide.primaryCta.link}>
-                      <Button variant="gold" size="lg" className="w-full sm:w-auto">
-                        {slide.primaryCta.label}
-                        <slide.primaryCta.icon className="h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link to={slide.secondaryCta.link}>
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="w-full border-text-light/30 text-text-light hover:bg-text-light/10 sm:w-auto"
-                      >
-                        {slide.secondaryCta.label}
-                        <slide.secondaryCta.icon className="h-5 w-5" />
-                      </Button>
-                    </Link>
+              {/* Slides 2 & 3: Pizza image left, text content right */}
+              {slide.type === 'side-text' && (
+                <div className="flex min-h-[85vh] items-center px-4 py-20">
+                  <div className="vincent-container flex flex-col items-center gap-8 md:flex-row md:gap-12">
+                    <div className="flex flex-1 justify-center">
+                      <img
+                        src={slide.image ?? ''}
+                        alt={slide.title}
+                        className="h-auto w-[280px] max-w-full object-contain drop-shadow-2xl md:w-[360px] lg:w-[440px]"
+                      />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <h1 className="mb-3 text-text-heading">
+                        {slide.title}
+                      </h1>
+                      {slide.heading && (
+                        <h2 className="mb-5 text-text-heading">
+                          {slide.heading}
+                        </h2>
+                      )}
+                      <p className="mb-8 text-base text-text-body tracking-[2px]">
+                        {slide.description}
+                      </p>
+                      {slide.show_cta && (
+                        <div className="flex flex-wrap justify-center gap-3 md:justify-start">
+                          <Link to="/contact" className="btn-vincent">
+                            Book Now
+                            <span className="ml-2" aria-hidden="true">&rsaquo;</span>
+                          </Link>
+                          <Link to="/menu" className="btn-vincent-filled">
+                            View Menu
+                            <span className="ml-2" aria-hidden="true">&rsaquo;</span>
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Slide 4: Full background image with overlay */}
+              {slide.type === 'bg-image' && (
+                <div className="relative min-h-[85vh]">
+                  <img
+                    src={slide.image ?? ''}
+                    alt={slide.title}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/55" />
+                  <div className="relative flex min-h-[85vh] items-center justify-center px-4 py-20">
+                    <div className="text-center">
+                      {slide.heading && (
+                        <h2 className="mb-3 text-text-heading">
+                          {slide.heading}
+                        </h2>
+                      )}
+                      <h1 className="mb-5 text-text-heading">
+                        {slide.title}
+                      </h1>
+                      <p className="mx-auto mb-8 max-w-lg text-base text-text-body tracking-[2px]">
+                        {slide.description}
+                      </p>
+                      {slide.show_cta && (
+                        <Link to="/menu" className="btn-vincent-filled">
+                          View Menu
+                          <span className="ml-2" aria-hidden="true">&rsaquo;</span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+          ))}
+        </div>
+      </div>
 
-      {/* Custom navigation arrows */}
-      <button
-        className="hero-prev absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-dark/40 text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-primary-400/50 hover:bg-dark/60 hover:text-primary-400 lg:left-8"
-        aria-label="Previous slide"
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </button>
-      <button
-        className="hero-next absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-dark/40 text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-primary-400/50 hover:bg-dark/60 hover:text-primary-400 lg:right-8"
-        aria-label="Next slide"
-      >
-        <ArrowRight className="h-5 w-5" />
-      </button>
-
-      {/* Bottom wave transition */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <svg
-          viewBox="0 0 1440 80"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0 80L60 68C120 56 240 32 360 24C480 16 600 24 720 32C840 40 960 48 1080 48C1200 48 1320 40 1380 36L1440 32V80H0Z"
-            fill="#FDF8F3"
+      {/* Dot navigation */}
+      <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2.5">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => scrollTo(index)}
+            className={cn(
+              'h-2.5 w-2.5 rounded-full border border-white/30 transition-all duration-300',
+              selectedIndex === index
+                ? 'w-7 bg-accent border-accent'
+                : 'bg-white/30 hover:bg-white/50',
+            )}
+            aria-label={`Go to slide ${index + 1}`}
           />
-        </svg>
+        ))}
       </div>
     </section>
   )

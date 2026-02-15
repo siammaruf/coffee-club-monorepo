@@ -36,16 +36,21 @@ CoffeeClub is a **restaurant/cafe management system** with three applications:
 - **Notifications**: Sonner
 
 ### Frontend (`frontend/`)
-- **Framework**: React 19.2.4 + Vite 7
-- **Routing**: React Router 7
+- **Framework**: React 19.2.4 + React Router 7 (framework mode with SSR)
+- **Routing**: React Router 7 with `@react-router/dev` (file-based route config in `src/routes.ts`)
+- **Build**: `react-router dev` / `react-router build` / `react-router-serve`
 - **State**: Redux Toolkit + React Query (TanStack Query)
-- **CSS**: TailwindCSS v4
-- **SSR**: Vite SSR + Express + React 19.2 PPR (Partial Pre-rendering)
-- **SEO**: react-helmet-async for meta tags, JSON-LD structured data
-- **Carousel**: Swiper for hero slider, testimonials
-- **Theme**: Warm light coffee theme (Basilico-inspired) - Playfair Display headings + Inter body + Dancing Script taglines
-- **Design**: Warm cream backgrounds (`#FDF8F3`), coffee brown accents (`#A0782C`), dark brown text (`#2C2118`), serif headings
-- **React 19.2 Features**: PPR, Activity component, cacheSignal, useEffectEvent, Batched Suspense Boundaries
+- **CSS**: TailwindCSS v4 with `@theme` directive in `index.css`
+- **SSR**: React Router 7 framework mode (`ssr: true` in `react-router.config.ts`)
+- **SEO**: React Router `MetaFunction` exports per page for meta tags, JSON-LD structured data
+- **Carousel**: Embla Carousel (`embla-carousel-react` + `embla-carousel-autoplay`) for hero slider and testimonials
+- **Icons**: Lucide React (UI icons) + React Icons (`react-icons/fa` for social icons)
+- **Forms**: React Hook Form + Zod validation
+- **Toasts**: react-hot-toast
+- **Theme**: Vincent dark restaurant theme - PT Sans Narrow headings + Open Sans body (dark-mode-only)
+- **Design**: Dark charcoal backgrounds (`#121618`), gold accents (`#c8a97e`), light text (`#dce4e8`), uppercase sans-serif headings
+- **Source**: HTML template adapted from `.claude-project/resources/HTML/`
+- **All old components removed**: HeroSlider, AboutSection, SpecialMenuSection, WhyChooseUs, etc. were rebuilt from scratch
 
 ## Architecture
 
@@ -115,34 +120,32 @@ coffeeclub/
 │       ├── styles/                 # CSS (Tailwind + typography)
 │       ├── types/                  # TypeScript type definitions
 │       └── utils/                  # Error handling, validation
-├── frontend/                       # Customer-facing website (SSR-enabled)
-│   ├── server.ts                   # Express SSR server
+├── frontend/                       # Customer-facing website (React Router 7 framework mode, SSR)
+│   ├── react-router.config.ts     # SSR config (ssr: true, appDirectory: "src")
 │   └── src/
-│       ├── entry-client.tsx        # Client hydration entry
-│       ├── entry-server.tsx        # SSR rendering entry (React 19.2 PPR)
-│       ├── routes.ts              # Shared route config (client + server)
+│       ├── entry.client.tsx       # Client hydration entry
+│       ├── entry.server.tsx       # SSR rendering entry
+│       ├── root.tsx               # Root layout (html, head, body)
+│       ├── routes.ts              # Route config (layout + pages)
+│       ├── index.css              # Vincent dark theme (@theme directive, global styles, .btn-vincent, etc.)
 │       ├── components/
-│       │   ├── layout/            # Header (TopBar + Nav), Footer, Layout
-│       │   ├── home/              # HeroSlider, AboutSection, SpecialMenuSection, WhyChooseUs, etc.
-│       │   ├── menu/              # MenuGrid, MenuCard, CategoryFilter, SearchBar
-│       │   ├── cart/              # CartDrawer, CartItem, CartSummary
-│       │   ├── checkout/          # CheckoutForm, DeliveryForm, PaymentSelector
-│       │   ├── orders/            # OrderCard, OrderTimeline
-│       │   ├── auth/              # ProtectedRoute, GuestRoute, LoginForm, RegisterForm
-│       │   ├── profile/           # ProfileForm
-│       │   ├── ui/                # Button, Input, Card, Badge, Modal, SectionHeading, ScrollFadeIn
-│       │   └── SEO.tsx            # Meta tags + structured data
-│       ├── pages/                  # All page components including Blog, Reservation
+│       │   ├── layout/            # Header (3-column), Footer (centered), Layout (with BackToTop)
+│       │   ├── home/              # HeroSlider, AdvantagesSection, HotSalesSection, AboutTestimonialsSection, TabbedMenuSection, BlogPreviewSection, NewsletterSection
+│       │   ├── menu/              # ItemDetailModal
+│       │   ├── cart/              # CartDrawer, CartItem
+│       │   ├── auth/              # ProtectedRoute, ProtectedLayout, GuestRoute, GuestLayout
+│       │   └── ui/                # Loading spinner
+│       ├── pages/                  # HomePage, MenuPage, AboutPage, ContactPage, BlogPage, BlogPostPage, CartPage, CheckoutPage, ReservationPage, LoginPage, RegisterPage, ForgotPasswordPage, ProfilePage, OrderHistoryPage, OrderDetailPage, NotFoundPage
 │       ├── redux/
 │       │   ├── features/           # authSlice, cartSlice, orderSlice
-│       │   └── store/              # Redux store factory + hooks
-│       ├── hooks/                  # useAuth, useCart, useInView, useCountUp
+│       │   └── store/              # Redux store config + hooks
+│       ├── hooks/                  # useAuth, useCart, useMenu, useInView, useCountUp
 │       ├── services/
 │       │   ├── httpService.ts      # Axios base client
-│       │   ├── httpServices/       # Per-resource API services (auth, public, cart, order, blog, etc.)
-│       │   └── httpMethods/        # HTTP method wrappers + interceptors
+│       │   └── httpServices/       # Per-resource API services + queries/ (React Query hooks)
 │       ├── types/                  # TypeScript types (customer, item, order, blog, reservation, partner)
-│       └── lib/                    # Config (SSR-safe), queryClient, utilities
+│       ├── utils/                  # Validation schemas (auth, etc.)
+│       └── lib/                    # Config, queryClient, utilities (cn, formatPrice, truncate, etc.)
 └── .claude-project/                # Project documentation
 ```
 

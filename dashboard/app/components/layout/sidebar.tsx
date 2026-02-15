@@ -20,7 +20,12 @@ import {
   Ticket,
   Utensils,
   Table,
-  HardDrive
+  HardDrive,
+  Globe,
+  FileText,
+  CalendarDays,
+  MessageSquare,
+  Handshake,
 } from "lucide-react";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
 
@@ -33,6 +38,7 @@ export default function Sidebar() {
     financial: true,
     reports: true,
     dataManagement: true,
+    website: true,
     settings: true,
   });
 
@@ -239,6 +245,43 @@ export default function Sidebar() {
                 <Link to="/dashboard/data-management" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <HardDrive className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Data Management</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Website Management */}
+          <div>
+            <div
+              className="flex items-center justify-between cursor-pointer mb-1"
+              onClick={() => toggleSection("website")}
+            >
+              <h3 className="text-base font-bold text-black">Website Management</h3>
+              <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
+                {openSections.website ? "-" : "+"}
+              </span>
+            </div>
+            {openSections.website && (
+              <div className="space-y-1">
+                <Link to="/dashboard/website" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Website Content</span>
+                </Link>
+                <Link to="/dashboard/blog" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <FileText className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Blog Posts</span>
+                </Link>
+                <Link to="/dashboard/reservations" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <CalendarDays className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Reservations</span>
+                </Link>
+                <Link to="/dashboard/contact-messages" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <MessageSquare className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Contact Messages</span>
+                </Link>
+                <Link to="/dashboard/partners" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <Handshake className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Partners</span>
                 </Link>
               </div>
             )}

@@ -4,6 +4,7 @@ import { PublicService } from './providers/public.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { ItemResponseDto } from '../items/dto/item-response.dto';
 import { CreateReservationDto } from '../reservations/dto/create-reservation.dto';
+import { CreateContactMessageDto } from '../contact-messages/dto/create-contact-message.dto';
 
 @ApiTags('Public')
 @Controller('public')
@@ -203,6 +204,38 @@ export class PublicController {
       data: reservation,
       status: 'success',
       message: 'Reservation created successfully.',
+      statusCode: HttpStatus.CREATED,
+    };
+  }
+
+  // Website Content public endpoint
+
+  @Public()
+  @Get('website-content')
+  @ApiOperation({ summary: 'Get all website content for frontend', description: 'Retrieves all active website content including hero slides, advantages, testimonials, and settings' })
+  @ApiResponse({ status: 200, description: 'Website content retrieved successfully' })
+  async getWebsiteContent() {
+    const content = await this.publicService.getWebsiteContent();
+    return {
+      data: content,
+      status: 'success',
+      message: 'Website content retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  // Contact form public endpoint
+
+  @Public()
+  @Post('contact')
+  @ApiOperation({ summary: 'Submit contact form', description: 'Submits a new contact message (no auth required)' })
+  @ApiResponse({ status: 201, description: 'Contact message submitted successfully' })
+  async submitContactMessage(@Body() dto: CreateContactMessageDto) {
+    const message = await this.publicService.submitContactMessage(dto);
+    return {
+      data: message,
+      status: 'success',
+      message: 'Contact message submitted successfully.',
       statusCode: HttpStatus.CREATED,
     };
   }

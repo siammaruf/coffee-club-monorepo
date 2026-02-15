@@ -8,10 +8,10 @@ export function useMenu() {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories()
   const { data: itemsData, isLoading: itemsLoading, error } = useMenuItems(filters)
 
-  const items = itemsData?.data || []
+  const items = itemsData?.data ?? []
   // Backend returns pagination fields at root level, not inside a `meta` object
-  const totalPages = itemsData?.totalPages || 1
-  const total = itemsData?.total || 0
+  const totalPages = itemsData?.totalPages ?? 1
+  const total = itemsData?.total ?? 0
 
   return {
     items,
