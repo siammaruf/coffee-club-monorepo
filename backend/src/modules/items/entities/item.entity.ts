@@ -48,7 +48,7 @@ export class Item {
     @Column({ type: 'decimal', precision: 10, scale: 2, nullable:true })
     sale_price: number;
 
-    @Column()
+    @Column({ nullable: true })
     image: string;
 
     @ManyToMany(() => Category)

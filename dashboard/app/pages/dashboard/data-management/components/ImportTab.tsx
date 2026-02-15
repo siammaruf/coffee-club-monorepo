@@ -8,6 +8,7 @@ import {
   XCircle,
   Trash2,
   FileUp,
+  Info,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -62,7 +63,7 @@ const TEMPLATE_GROUPS = [
 export default function ImportTab() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const [importMode, setImportMode] = useState<ImportMode>(ImportMode.UPSERT);
+  const [importMode, setImportMode] = useState<ImportMode>(ImportMode.INSERT);
   const [skipErrors, setSkipErrors] = useState(true);
   const [importing, setImporting] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -192,7 +193,7 @@ export default function ImportTab() {
     setFile(null);
     setPreview(null);
     setResult(null);
-    setImportMode(ImportMode.UPSERT);
+    setImportMode(ImportMode.INSERT);
     setSkipErrors(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -250,6 +251,13 @@ export default function ImportTab() {
               )}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            The <span className="font-medium">id</span> column is optional —
+            leave it blank and IDs will be auto-generated. Fields like{" "}
+            <span className="font-medium">image</span>,{" "}
+            <span className="font-medium">status</span>, and{" "}
+            <span className="font-medium">type</span> are also optional.
+          </p>
         </CardContent>
       </Card>
 
@@ -435,6 +443,20 @@ export default function ImportTab() {
             {/* Import Options */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium">Import Options</h4>
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs">
+                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                <div>
+                  <p>
+                    The <span className="font-medium">id</span> column is
+                    optional — leave it blank to auto-generate IDs.
+                  </p>
+                  <p className="mt-1">
+                    For Upsert mode, only rows with a valid UUID in the{" "}
+                    <span className="font-medium">id</span> column will update
+                    existing records.
+                  </p>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-6">
                 <div className="space-y-2 min-w-[200px]">
                   <Label htmlFor="import-mode">Import Mode</Label>
@@ -446,12 +468,17 @@ export default function ImportTab() {
                     }
                   >
                     <option value={ImportMode.INSERT}>
-                      Insert Only (skip duplicates)
+                      Insert (add new records)
                     </option>
                     <option value={ImportMode.UPSERT}>
-                      Upsert (update existing, insert new)
+                      Upsert (update or add by ID)
                     </option>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {importMode === ImportMode.INSERT
+                      ? "Inserts all rows as new records. Duplicates are skipped."
+                      : "Rows with a valid UUID in the id column will update existing records. Rows without an id are inserted as new."}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 self-end pb-1">
                   <Checkbox
