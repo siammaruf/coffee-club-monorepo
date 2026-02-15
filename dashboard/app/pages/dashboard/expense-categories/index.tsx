@@ -28,7 +28,7 @@ import AddExpenseCategoryModal from "~/components/modals/AddExpenseCategoryModal
 import EditExpenseCategoryModal from "~/components/modals/EditExpenseCategoryModal";
 import type { EditExpenseCategoryModalProps } from "~/components/modals/EditExpenseCategoryModal";
 import ViewExpenseCategoryModal from "~/components/modals/ViewExpenseCategoryModalProps";
-import * as IoIcons from "react-icons/io5";
+import { getCategoryIcon } from "~/utils/categoryIcons";
 
 export default function ExpenseCategoriesPage() {
   const navigate = useNavigate();
@@ -189,18 +189,7 @@ export default function ExpenseCategoriesPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map((category) => {
-                    let IconComp: React.ComponentType<{ className?: string }> | undefined;
-                    if (category.icon) {
-                      const iconKey =
-                        "Io" +
-                        category.icon
-                          .split("-")
-                          .map((part) =>
-                            part.length > 0 ? part[0].toUpperCase() + part.slice(1) : ""
-                          )
-                          .join("");
-                      IconComp = (IoIcons as any)[iconKey];
-                    }
+                    const IconComp = category.icon ? getCategoryIcon(category.icon) : null;
 
                     return (
                       <TableRow key={category.id}>

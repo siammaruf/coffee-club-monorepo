@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import { Select } from "~/components/ui/select";
 import type { ExpenseCreate } from "~/types/expense";
 import expenseCategoryService from "~/services/httpServices/expenseCategory";
-import * as IoIcons from "react-icons/io5";
 
 interface AddExpenseModalProps {
   open: boolean;
