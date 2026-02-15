@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 import { Exclude } from "class-transformer";
 
 @Entity('customers')
@@ -50,6 +50,9 @@ export class Customer {
 
     @Column({ type: 'boolean', default: true })
     is_active: boolean;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

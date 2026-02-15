@@ -9,6 +9,7 @@ import {
   HttpStatus,
   HttpCode,
   ParseUUIDPipe,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -32,6 +33,40 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @Controller('contact-messages')
 export class ContactMessagesController {
   constructor(private readonly contactMessagesService: ContactMessagesService) {}
+
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.contactMessagesService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.contactMessagesService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
 
   @Get()
   @ApiOperation({ summary: 'List all contact messages', description: 'Retrieves a paginated list of all contact messages' })
@@ -131,4 +166,26 @@ export class ContactMessagesController {
       statusCode: HttpStatus.OK,
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.contactMessagesService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.contactMessagesService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

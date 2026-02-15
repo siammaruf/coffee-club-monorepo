@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from "typeorm";
 import { ExpenseStatus } from "../enum/expense-status.enum";
 import { ExpenseCategory } from "../../expense-categories/entities/expense-categories.entity";
 
@@ -30,9 +30,12 @@ export class Expenses {
     @Column({ nullable: true })
     receipt_reference?: string;
     
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @CreateDateColumn()
     created_at: Date;
-    
+
     @UpdateDateColumn()
     updated_at: Date;
 }

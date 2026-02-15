@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, ManyToMany, JoinTable, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, ManyToMany, JoinTable, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 import { OrderType } from "../enum/order-type.enum";
 import { OrderStatus } from "../enum/order-status.enum";
 import { PaymentMethod } from "../enum/payment-method.enum";
@@ -88,6 +88,9 @@ export class Order {
 
     @OneToMany("OrderToken", "order")
     orderTokens: Relation<OrderToken[]>;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

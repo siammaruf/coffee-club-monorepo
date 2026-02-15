@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -34,6 +35,9 @@ export class ContactMessage {
 
   @Column({ type: 'timestamp', nullable: true })
   replied_at: Date | null;
+
+  @DeleteDateColumn()
+  deleted_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

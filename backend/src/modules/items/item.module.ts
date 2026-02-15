@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Item } from "./entities/item.entity";
+import { ItemVariation } from "./entities/item-variation.entity";
 import { ItemService } from "./providers/item.service";
 import { ItemController } from "./item.controller";
 import { CategoryModule } from "../categories/category.module";
@@ -10,7 +11,7 @@ import { CacheModule } from "../cache/cache.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Item, Category]),
+    TypeOrmModule.forFeature([Item, ItemVariation, Category]),
     CategoryModule,
     CloudinaryModule,
     CacheModule,

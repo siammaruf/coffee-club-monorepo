@@ -113,7 +113,7 @@ export class DiscountService {
     }
 
     async remove(id: string): Promise<void> {
-        const result = await this.discountRepository.delete(id);
+        const result = await this.discountRepository.softDelete(id);
         if (result.affected === 0) {
             throw new NotFoundException(`Discount with ID ${id} not found`);
         }
@@ -157,5 +157,42 @@ export class DiscountService {
         await this.cacheService.set(cacheKey, result, 1800);
         
         return result;
+    }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.discountRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.discountRepository.createQueryBuilder('discount')
+            .withDeleted()
+            .where('discount.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(discount.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('discount.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.discountRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.discountRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.discountRepository.delete(id);
     }
 }

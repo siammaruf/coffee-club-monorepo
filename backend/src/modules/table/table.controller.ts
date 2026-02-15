@@ -35,6 +35,40 @@ export class TableController {
     };
   }
 
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.tableService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.tableService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+
   @Get()
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Get all tables with optional filtering' })
@@ -234,4 +268,26 @@ export class TableController {
       statusCode: HttpStatus.OK
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.tableService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.tableService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

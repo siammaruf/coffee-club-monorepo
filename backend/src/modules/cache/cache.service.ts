@@ -33,11 +33,15 @@ export class CacheService {
 
   async deleteMany(keys: string[]): Promise<void> {
     if (keys.length === 0) return;
-    
+
     try {
       await Promise.all(keys.map(key => this.cache.delete(key)));
     } catch (error) {
       console.error('Error deleting multiple keys:', error);
     }
+  }
+
+  async clear(): Promise<void> {
+    await this.cache.clear();
   }
 }

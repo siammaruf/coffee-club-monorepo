@@ -22,6 +22,7 @@ import { User } from '../../users/entities/user.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { Discount } from '../../discount/entities/discount.entity';
 import { Item } from '../../items/entities/item.entity';
+import { ItemVariation } from '../../items/entities/item-variation.entity';
 import { Bank } from '../../banks/entities/bank.entity';
 import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
 import { Order } from '../../orders/entities/order.entity';
@@ -34,6 +35,9 @@ import { Expenses } from '../../expenses/entities/expenses.entity';
 import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
 import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
+
+// Cache
+import { CacheService } from '../../cache/cache.service';
 
 // Enums for validation
 import { ItemType } from '../../items/enum/item-type.enum';
@@ -109,6 +113,7 @@ export class ImportService {
     kitchen_stock_id: 'Kitchen Stock',
     kitchen_order_id: 'Kitchen Orders',
     expense_category_id: 'Expense Categories',
+    item_variation_id: 'Item Variations',
   };
 
   constructor(
@@ -132,8 +137,10 @@ export class ImportService {
     @InjectRepository(KitchenOrder) private kitchenOrderRepo: Repository<KitchenOrder>,
     @InjectRepository(KitchenOrderItem) private kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport) private dailyReportRepo: Repository<DailyReport>,
+    @InjectRepository(ItemVariation) private itemVariationRepo: Repository<ItemVariation>,
     private dataSource: DataSource,
     private configService: ConfigService,
+    private cacheService: CacheService,
   ) {
     this.tablePrefix = this.configService.get<string>('DB_TABLE_PREFIX', '');
     this.sheetMappings = this.buildSheetMappings();
@@ -257,8 +264,8 @@ export class ImportService {
         ['Users', 'Customers', 'Discounts'],
         // Phase 3: depend on phase 2
         ['Items', 'Banks', 'Kitchen Stock'],
-        // Phase 3.5: junction table for Item <-> Category
-        ['Item-Categories'],
+        // Phase 3.5: junction table for Item <-> Category + Item Variations
+        ['Item-Categories', 'Item Variations'],
         // Phase 4: depend on phase 3
         ['Orders', 'Expenses', 'Daily Reports'],
         // Phase 5: depend on phase 4
@@ -368,6 +375,9 @@ export class ImportService {
       }
 
       await queryRunner.commitTransaction();
+
+      // Invalidate all cached data after successful import
+      await this.cacheService.clear();
 
       return {
         success: true,
@@ -808,6 +818,7 @@ export class ImportService {
       KitchenOrder: this.kitchenOrderRepo,
       KitchenOrderItem: this.kitchenOrderItemRepo,
       DailyReport: this.dailyReportRepo,
+      ItemVariation: this.itemVariationRepo,
     };
     return repoMap[entityName] || null;
   }
@@ -1022,7 +1033,33 @@ export class ImportService {
           },
           regular_price: { type: 'decimal' },
           sale_price: { type: 'decimal', nullable: true },
+          has_variations: { type: 'boolean', nullable: true },
           image: { type: 'string', nullable: true },
+          created_at: { type: 'timestamp', nullable: true },
+          updated_at: { type: 'timestamp', nullable: true },
+        },
+      },
+
+      'Item Variations': {
+        entityName: 'ItemVariation',
+        tableName: 'item_variations',
+        requiredFields: ['item_id', 'name', 'name_bn', 'regular_price'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { item_id: 'item' },
+        columns: {
+          id: { type: 'uuid' },
+          item_id: { type: 'uuid' },
+          name: { type: 'string' },
+          name_bn: { type: 'string' },
+          regular_price: { type: 'decimal' },
+          sale_price: { type: 'decimal', nullable: true },
+          status: {
+            type: 'enum',
+            enumValues: Object.values(ItemStatus),
+            nullable: true,
+          },
+          sort_order: { type: 'integer', nullable: true },
           created_at: { type: 'timestamp', nullable: true },
           updated_at: { type: 'timestamp', nullable: true },
         },

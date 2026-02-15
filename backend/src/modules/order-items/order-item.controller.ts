@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe , HttpStatus} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderItemService } from './providers/order-item.service';
 import { CreateOrderItemDto } from './dto/order-item-create.dto';
@@ -23,6 +23,40 @@ export class OrderItemController {
   create(@Body() createOrderItemDto: CreateOrderItemDto): Promise<OrderItemResponseDto> {
     return this.orderItemService.create(createOrderItemDto);
   }
+
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.orderItemService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.orderItemService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
 
   @Get()
   @ApiOperation({ summary: 'Get all order items or filter by order ID' })
@@ -64,4 +98,26 @@ export class OrderItemController {
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.orderItemService.remove(id);
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.orderItemService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.orderItemService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

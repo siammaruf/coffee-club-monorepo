@@ -141,7 +141,7 @@ export class CustomerService {
       );
     }
   
-    await this.customerRepository.delete(id);
+    await this.customerRepository.softDelete(id);
     await this.invalidateCache(id);
   }
 
@@ -393,4 +393,41 @@ export class CustomerService {
       await this.cacheService.delete(key);
     }
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.customerRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.customerRepository.createQueryBuilder('customer')
+            .withDeleted()
+            .where('customer.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(customer.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('customer.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.customerRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.customerRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.customerRepository.delete(id);
+    }
 }

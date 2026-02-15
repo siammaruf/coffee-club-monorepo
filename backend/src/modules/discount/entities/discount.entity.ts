@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { DiscountType } from "../enum/discount-type.enum";
 
 @Entity()
@@ -21,6 +21,9 @@ export class Discount {
 
     @Column()
     expiry_date: Date;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

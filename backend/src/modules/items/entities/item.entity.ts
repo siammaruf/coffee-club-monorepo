@@ -4,12 +4,15 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import { ItemType } from "../enum/item-type.enum";
 import { Category } from "../../categories/entities/category.entity";
 import { ItemStatus } from "../enum/item-status.enum";
+import { ItemVariation } from "./item-variation.entity";
 
 @Entity('items')
 export class Item {
@@ -51,6 +54,9 @@ export class Item {
     @Column({ nullable: true })
     image: string;
 
+    @Column({ default: false })
+    has_variations: boolean;
+
     @ManyToMany(() => Category)
     @JoinTable({
       name: "item_categories",
@@ -64,6 +70,12 @@ export class Item {
       }
     })
     categories: Category[];
+
+    @OneToMany(() => ItemVariation, (variation) => variation.item, { cascade: true })
+    variations: ItemVariation[];
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

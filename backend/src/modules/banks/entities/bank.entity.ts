@@ -1,5 +1,5 @@
 import { User } from "src/modules/users/entities/user.entity";
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('banks')
 export class Bank {
@@ -22,9 +22,12 @@ export class Bank {
   @JoinColumn({ name: 'user_id' })
   user: User;
   
+  @DeleteDateColumn()
+  deleted_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
-  
+
   @UpdateDateColumn()
   updated_at: Date;
 }

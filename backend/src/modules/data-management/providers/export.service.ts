@@ -22,6 +22,7 @@ import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity
 import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
 import { Bank } from '../../banks/entities/bank.entity';
+import { ItemVariation } from '../../items/entities/item-variation.entity';
 
 import { ExportGroup } from '../enums/export-group.enum';
 import { ExportDataDto } from '../dto/export-data.dto';
@@ -91,6 +92,8 @@ export class ExportService {
     private readonly dailyReportRepo: Repository<DailyReport>,
     @InjectRepository(Bank)
     private readonly bankRepo: Repository<Bank>,
+    @InjectRepository(ItemVariation)
+    private readonly itemVariationRepo: Repository<ItemVariation>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -173,8 +176,8 @@ export class ExportService {
     return {
       [ExportGroup.MENU]: {
         label: 'Menu',
-        description: 'Items, categories, and item-category mappings',
-        entities: ['Item', 'Category', 'ItemCategories'],
+        description: 'Items, categories, variations, and item-category mappings',
+        entities: ['Item', 'Category', 'ItemVariation', 'ItemCategories'],
         sheets: [
           {
             name: 'Items',
@@ -191,11 +194,17 @@ export class ExportService {
             columns: this.getItemCategoryColumns(),
             getData: () => this.fetchItemCategories(),
           },
+          {
+            name: 'Item Variations',
+            columns: this.getItemVariationColumns(),
+            getData: (from, to) => this.fetchItemVariations(from, to),
+          },
         ],
         getCount: async () => {
           const items = await this.itemRepo.count();
           const cats = await this.categoryRepo.count();
-          return items + cats;
+          const variations = await this.itemVariationRepo.count();
+          return items + cats + variations;
         },
       },
 
@@ -471,6 +480,7 @@ export class ExportService {
       { header: 'Regular Price', key: 'regular_price', width: 15 },
       { header: 'Sale Price', key: 'sale_price', width: 15 },
       { header: 'Image', key: 'image', width: 50 },
+      { header: 'Has Variations', key: 'has_variations', width: 16 },
       { header: 'Created At', key: 'created_at', width: 22 },
       { header: 'Updated At', key: 'updated_at', width: 22 },
     ];
@@ -492,6 +502,7 @@ export class ExportService {
       regular_price: i.regular_price,
       sale_price: i.sale_price,
       image: i.image,
+      has_variations: i.has_variations,
       created_at: i.created_at,
       updated_at: i.updated_at,
     }));
@@ -540,6 +551,40 @@ export class ExportService {
       `SELECT "item_id", "category_id" FROM "${tableName}" ORDER BY "item_id"`,
     );
     return rows;
+  }
+
+  private getItemVariationColumns(): ColumnDef[] {
+    return [
+      { header: 'ID', key: 'id', width: 38 },
+      { header: 'Item ID', key: 'item_id', width: 38 },
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Name (BN)', key: 'name_bn', width: 25 },
+      { header: 'Regular Price', key: 'regular_price', width: 15 },
+      { header: 'Sale Price', key: 'sale_price', width: 15 },
+      { header: 'Status', key: 'status', width: 14 },
+      { header: 'Sort Order', key: 'sort_order', width: 12 },
+      { header: 'Created At', key: 'created_at', width: 22 },
+      { header: 'Updated At', key: 'updated_at', width: 22 },
+    ];
+  }
+
+  private async fetchItemVariations(dateFrom?: string, dateTo?: string): Promise<Record<string, any>[]> {
+    const qb = this.itemVariationRepo.createQueryBuilder('v');
+    this.applyDateFilter(qb, 'v', dateFrom, dateTo);
+    qb.orderBy('v.item_id', 'ASC').addOrderBy('v.sort_order', 'ASC');
+    const variations = await qb.getMany();
+    return variations.map((v) => ({
+      id: v.id,
+      item_id: v.item_id,
+      name: v.name,
+      name_bn: v.name_bn,
+      regular_price: v.regular_price,
+      sale_price: v.sale_price,
+      status: v.status,
+      sort_order: v.sort_order,
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+    }));
   }
 
   // ---------------------------------------------------------------------------

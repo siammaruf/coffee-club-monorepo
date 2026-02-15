@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('expense_categories')
 export class ExpenseCategory {
@@ -16,6 +16,9 @@ export class ExpenseCategory {
 
     @Column({ nullable: true })
     icon: string;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

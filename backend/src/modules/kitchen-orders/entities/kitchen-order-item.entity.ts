@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Relation } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn, Relation } from "typeorm";
 import type { KitchenOrder } from "./kitchen-order.entity";
 import { KitchenStock } from "../../kitchen-stock/entities/kitchen-stock.entity";
 
@@ -24,9 +24,12 @@ export class KitchenOrderItem {
     @Column({type:'decimal', precision: 10, scale: 2})
     total_price: number;
 
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @Column({ nullable: true })
     created_at: Date;
-    
+
     @Column({ nullable: true })
     updated_at: Date;
 }

@@ -308,7 +308,7 @@ export class ExpensesService {
     }
 
     async remove(id: string): Promise<void> {
-        const result = await this.expensesRepository.delete(id);
+        const result = await this.expensesRepository.softDelete(id);
 
         if (result.affected === 0) {
             throw new NotFoundException(`Expense with ID ${id} not found`);
@@ -387,5 +387,42 @@ export class ExpensesService {
         totalPages: number;
     }> {
         return this.findAll({ status, page, limit });
+    }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.expensesRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.expensesRepository.createQueryBuilder('expense')
+            .withDeleted()
+            .where('expense.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(expense.title) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('expense.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.expensesRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.expensesRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.expensesRepository.delete(id);
     }
 }

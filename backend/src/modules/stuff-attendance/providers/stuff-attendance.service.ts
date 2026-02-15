@@ -421,4 +421,37 @@ export class StuffAttendanceService {
       }
     }
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.stuffAttendanceRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.stuffAttendanceRepository.createQueryBuilder('attendance')
+            .withDeleted()
+            .where('attendance.deleted_at IS NOT NULL');
+
+        query.orderBy('attendance.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.stuffAttendanceRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.stuffAttendanceRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.stuffAttendanceRepository.delete(id);
+    }
 }

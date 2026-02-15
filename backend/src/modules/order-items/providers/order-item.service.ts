@@ -71,7 +71,7 @@ export class OrderItemService {
 
   async remove(id: string): Promise<void> {
     const orderItem = await this.findEntityById(id);
-    await this.orderItemRepository.remove(orderItem);
+    await this.orderItemRepository.softDelete(id);
   }
 
   private async findEntityById(id: string): Promise<OrderItem> {
@@ -99,4 +99,37 @@ export class OrderItemService {
     dto.updated_at = orderItem.updated_at;
     return dto;
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.orderItemRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.orderItemRepository.createQueryBuilder('orderItem')
+            .withDeleted()
+            .where('orderItem.deleted_at IS NOT NULL');
+
+        query.orderBy('orderItem.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.orderItemRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.orderItemRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.orderItemRepository.delete(id);
+    }
 }

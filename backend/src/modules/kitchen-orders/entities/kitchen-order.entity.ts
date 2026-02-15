@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Relation } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn, Relation } from "typeorm";
 import type { KitchenOrderItem } from "./kitchen-order-item.entity";
 import { User } from "../../users/entities/user.entity";
 
@@ -26,9 +26,12 @@ export class KitchenOrder {
     @Column({nullable: true})
     description: string;
     
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @CreateDateColumn()
     created_at: Date;
-    
+
     @UpdateDateColumn()
     updated_at: Date;
 }
