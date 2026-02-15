@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, ParseUUIDPipe, BadRequestException, UseInterceptors, UploadedFiles } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ExpenseCategoriesService } from './providers/expense-categories.service';
 import { CreateExpenseCategoryDto } from './dto/create-expense-category.dto';
@@ -8,8 +8,11 @@ import { ExpenseCategoryResponseDto } from './dto/expense-category-response.dto'
 import { iconStorage } from 'src/common/utils/storage.util';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Expense Categories')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('expense-categories')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ExpenseCategoriesController {

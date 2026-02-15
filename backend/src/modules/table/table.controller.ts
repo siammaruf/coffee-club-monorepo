@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { TableService } from './providers/table.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
@@ -7,8 +7,11 @@ import { TableResponseDto } from './dto/table-response.dto';
 import { TableStatus } from './enum/table-status.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Tables')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('tables')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class TableController {

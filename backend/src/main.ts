@@ -26,7 +26,9 @@ async function bootstrap() {
     .setDescription('API documentation')
     .setVersion('1.0')
     .addBasicAuth(BasicAuthOptions)
-    .setExternalDoc('Postman Collection', '/api/v1/docs-json') 
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Employee JWT token' }, 'staff-auth')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Customer JWT token' }, 'customer-auth')
+    .setExternalDoc('Postman Collection', '/api/v1/docs-json')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
 

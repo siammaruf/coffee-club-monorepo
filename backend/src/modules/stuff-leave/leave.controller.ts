@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, Patch, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
 import { LeaveService } from './providers/leave.service';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveDto } from './dto/update-leave.dto';
@@ -7,8 +7,11 @@ import { LeaveStatus } from './enum/leave-status.enum';
 import { Leave } from './entities/leave.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('leaves')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('leaves')
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA, UserRole.CHEF)
 export class LeaveController {

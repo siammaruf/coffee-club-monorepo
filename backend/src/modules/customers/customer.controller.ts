@@ -12,16 +12,21 @@ import {
   HttpStatus,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { CustomerService } from './providers/customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { RedeemPointsDto } from './dto/redeem-points.dto';
+import { AddPointsDto } from './dto/add-points.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Customers')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('customers')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class CustomerController {
@@ -197,7 +202,7 @@ export class CustomerController {
     @ApiResponse({ status: 404, description: 'Customer not found' })
     async redeemPoints(
         @Param('id', ParseUUIDPipe) id: string,
-        @Body() body: { amount: number }
+        @Body() body: RedeemPointsDto,
     ): Promise<{ data: any; status: string; message: string; statusCode: HttpStatus }> {
         const result = await this.customerService.redeemPoints(id, body.amount);
         return {
@@ -247,7 +252,7 @@ export class CustomerController {
     @ApiResponse({ status: 404, description: 'Customer not found' })
     async addPointsFromOrder(
         @Param('id', ParseUUIDPipe) id: string,
-        @Body() body: { orderAmount: number }
+        @Body() body: AddPointsDto,
     ): Promise<{ data: any; status: string; message: string; statusCode: HttpStatus }> {
         const result = await this.customerService.addPointsFromOrder(id, body.orderAmount);
         return {

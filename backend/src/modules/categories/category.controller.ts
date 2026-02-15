@@ -2,15 +2,17 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpS
 import { CategoryService } from './providers/category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBasicAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Categories')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('categories')
-@ApiBasicAuth()
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}

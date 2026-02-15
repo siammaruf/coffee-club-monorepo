@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -27,8 +28,11 @@ import { UpdateBackupSettingsDto } from '../dto/update-backup-settings.dto';
 import { BackupService } from '../providers/backup.service';
 import { BackupSchedulerService } from '../providers/backup-scheduler.service';
 import { GoogleDriveService } from '../providers/google-drive.service';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Data Management - Backup')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('data-management/backup')
 @Roles(UserRole.ADMIN)
 export class BackupController {

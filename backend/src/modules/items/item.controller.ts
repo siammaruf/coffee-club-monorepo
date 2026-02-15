@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Query } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes, ApiQuery, ApiBasicAuth } from "@nestjs/swagger";
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Query, ParseUUIDPipe } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiConsumes, ApiQuery, ApiBearerAuth } from "@nestjs/swagger";
 import { ItemService } from "./providers/item.service";
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from "./dto/update-item.dto";
@@ -9,10 +9,12 @@ import { CloudinaryService } from "../cloudinary/cloudinary.service";
 import { Public } from "src/common/decorators/public.decorator";
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Items')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('items')
-@ApiBasicAuth()
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class ItemController {
   constructor(
@@ -72,7 +74,7 @@ export class ItemController {
   @ApiOperation({ summary: 'Get item by ID', description: 'Retrieves a single item by its ID' })
   @ApiParam({ name: 'id', description: 'Item ID', example: 'uuid' })
   @ApiResponse({ status: 200, description: 'Item retrieved successfully' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const item = await this.itemService.findOne(id);
     const responseData = new ItemResponseDto(item);
     return {
@@ -172,7 +174,7 @@ export class ItemController {
     }
   }))
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateItemDto: UpdateItemDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -238,7 +240,7 @@ export class ItemController {
     }
   }))
   async uploadImage(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     const imageUrl = await this.itemService.uploadItemImage(file);
@@ -254,7 +256,7 @@ export class ItemController {
   @Delete(':id/remove-image')
   @ApiOperation({ summary: 'Remove item image', description: 'Remove item image' })
   @ApiParam({ name: 'id', description: 'Item ID', example: 'uuid' })
-  async removeImage(@Param('id') id: string) {
+  async removeImage(@Param('id', ParseUUIDPipe) id: string) {
     const item = await this.itemService.findOne(id);
     if (item.image) {
       await this.itemService.removeItemImage(item.image);
@@ -272,7 +274,7 @@ export class ItemController {
   @ApiParam({ name: 'id', description: 'Item ID', example: 'uuid' })
   @ApiResponse({ status: 204, description: 'Item deleted successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.itemService.remove(id);
     return {
       status: 'success',

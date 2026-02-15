@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, Query, UseInterceptors, UploadedFile, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { KitchenItemService } from './providers/kitchen-item.service'; 
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, Query, UseInterceptors, UploadedFile, Patch, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { KitchenItemService } from './providers/kitchen-item.service';
 import { CreateKitchenItemDto } from './dto/create-kitchen-item.dto';
 import { UpdateKitchenItemDto } from './dto/update-kitchen-item.dto';
 import { KitchenResponseDto } from './dto/kitchen-response-item.dto';
@@ -8,8 +8,11 @@ import { KitchenItemType } from './enum/kitchen-item-type.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Kitchen Items')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('kitchen-items')
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
 export class KitchenItemController {
@@ -63,7 +66,7 @@ export class KitchenItemController {
   @ApiParam({ name: 'id', description: 'Kitchen item ID' })
   @ApiResponse({ status: 200, description: 'Kitchen item retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Kitchen item not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const data = await this.kitchenItemService.findOne(id);
     
     return {
@@ -97,7 +100,7 @@ export class KitchenItemController {
     }
     
     return {
-      response,
+      data: response,
       status: 'success',
       message: 'Kitchen item created successfully.',
       statusCode: HttpStatus.CREATED
@@ -116,7 +119,7 @@ export class KitchenItemController {
     }
   }))
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateKitchenItemDto: UpdateKitchenItemDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -141,7 +144,7 @@ export class KitchenItemController {
   @ApiParam({ name: 'id', description: 'Kitchen item ID' })
   @ApiResponse({ status: 204, description: 'Kitchen item deleted successfully' })
   @ApiResponse({ status: 404, description: 'Kitchen item not found' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.kitchenItemService.remove(id);
     
     return {

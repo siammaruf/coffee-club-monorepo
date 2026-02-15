@@ -1,13 +1,16 @@
 import { Controller, Get, Post, Body, Query, Param, ParseUUIDPipe, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ActivityService } from '../providers/activity.service';
 import { CreateActivityDto } from '../dto/create-activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
 import { ActivityType } from '../entities/activity.entity';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Activities')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('activities')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ActivityController {

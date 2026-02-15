@@ -13,11 +13,14 @@ import { DiscountApplicationService } from './provider/discount-application.serv
 import { CreateDiscountApplicationDto } from './dto/create-discount-application.dto';
 import { UpdateDiscountApplicationDto } from './dto/update-discount-application.dto';
 import { DiscountApplicationResponseDto } from './dto/discount-application-response.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Discount Applications')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('discount-applications')
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class DiscountApplicationController {

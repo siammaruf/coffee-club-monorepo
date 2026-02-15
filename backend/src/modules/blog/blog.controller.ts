@@ -17,12 +17,19 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
 import { BlogService } from './blog.service';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Blog')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('blog')
 export class BlogController {
   constructor(private readonly blogService: BlogService) {}

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { StuffAttendanceService } from './providers/stuff-attendance.service';
 import { CreateStuffAttendanceDto } from './dto/create-stuff-attendance.dto';
 import { UpdateStuffAttendanceDto } from './dto/update-stuff-attendance.dto';
@@ -7,8 +7,14 @@ import { StuffAttendanceResponseDto } from './dto/stuff-attendance-response.dto'
 import { AttendanceStatus } from './enum/attendance-status.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { CheckInDto } from './dto/check-in.dto';
+import { CheckOutDto } from './dto/check-out.dto';
+import { ApproveAttendanceDto } from './dto/approve-attendance.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Staff Attendance')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('stuff-attendance')
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA, UserRole.CHEF)
 export class StuffAttendanceController {
@@ -192,7 +198,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async checkIn(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() data: { notes?: string }
+    @Body() data: CheckInDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;
@@ -220,7 +226,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async checkOut(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() data: { notes?: string, overtime_hours?: number }
+    @Body() data: CheckOutDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;
@@ -269,7 +275,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'Attendance record not found' })
   async approve(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() approveDto: { approved_by: string }
+    @Body() approveDto: ApproveAttendanceDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;

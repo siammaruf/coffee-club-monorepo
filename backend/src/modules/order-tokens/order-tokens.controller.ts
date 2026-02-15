@@ -1,13 +1,16 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpStatus, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { OrderTokensService } from './provider/order-tokens.service';
 import { CreateOrderTokenDto } from './dto/create-order-token.dto';
 import { UpdateOrderTokenDto } from './dto/update-order-token.dto';
 import { OrderTokenResponseDto } from './dto/order-token-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Order Tokens')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('order-tokens')
 @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class OrderTokensController {

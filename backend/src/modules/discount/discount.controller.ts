@@ -1,12 +1,15 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpStatus, Query } from '@nestjs/common';
 import { DiscountService } from './providers/discount.service';
 import { BaseDiscountDto } from './dto/base-discount.dto'; 
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { DiscountResponseDto } from './dto/discount-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Discounts')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('discounts')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class DiscountController {
