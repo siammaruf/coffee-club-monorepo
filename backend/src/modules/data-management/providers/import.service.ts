@@ -305,6 +305,15 @@ export class ImportService {
             if (converted) rows.push(converted);
           }
 
+          // For Items: default regular_price to 0 for variable items (price lives on variations)
+          if (sheetName === 'Items') {
+            for (const row of rows) {
+              if (row.regular_price == null || row.regular_price === '') {
+                row.regular_price = 0;
+              }
+            }
+          }
+
           // Store this sheet's ID mapping for downstream FK resolution
           if (sheetIdMap.size > 0) {
             allIdMappings.set(sheetName, sheetIdMap);
@@ -334,7 +343,11 @@ export class ImportService {
 
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
+            const useSavepoint = dto.skip_errors || dto.mode === ImportMode.INSERT;
             try {
+              if (useSavepoint) {
+                await queryRunner.query('SAVEPOINT sp_row');
+              }
               if (dto.mode === ImportMode.UPSERT && row.id) {
                 await queryRunner.manager.getRepository(repo.target).upsert(row, ['id']);
               } else {
@@ -342,6 +355,9 @@ export class ImportService {
                 await queryRunner.manager.getRepository(repo.target).save(
                   queryRunner.manager.getRepository(repo.target).create(row),
                 );
+              }
+              if (useSavepoint) {
+                await queryRunner.query('RELEASE SAVEPOINT sp_row');
               }
               imported++;
             } catch (err: any) {
@@ -353,6 +369,10 @@ export class ImportService {
                 err?.code === '23505';
 
               if (dto.skip_errors || (dto.mode === ImportMode.INSERT && isConstraintError)) {
+                // Rollback to savepoint so the transaction stays usable
+                if (useSavepoint) {
+                  await queryRunner.query('ROLLBACK TO SAVEPOINT sp_row');
+                }
                 skipped++;
                 errors.push({
                   entity: mapping.entityName,
@@ -749,6 +769,9 @@ export class ImportService {
       }
 
       try {
+        if (dto.skip_errors) {
+          await queryRunner.query('SAVEPOINT sp_junc');
+        }
         if (dto.mode === ImportMode.UPSERT) {
           await queryRunner.query(
             `INSERT INTO "${tableName}" (item_id, category_id) VALUES ($1, $2) ON CONFLICT (item_id, category_id) DO NOTHING`,
@@ -760,9 +783,13 @@ export class ImportService {
             [itemId, categoryId],
           );
         }
+        if (dto.skip_errors) {
+          await queryRunner.query('RELEASE SAVEPOINT sp_junc');
+        }
         imported++;
       } catch (err: any) {
         if (dto.skip_errors) {
+          await queryRunner.query('ROLLBACK TO SAVEPOINT sp_junc');
           skipped++;
           errors.push({
             entity: 'Item-Categories',
@@ -1011,7 +1038,7 @@ export class ImportService {
       'Items': {
         entityName: 'Item',
         tableName: 'items',
-        requiredFields: ['name', 'name_bn', 'slug', 'description', 'regular_price'],
+        requiredFields: ['name', 'name_bn', 'slug', 'description'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
