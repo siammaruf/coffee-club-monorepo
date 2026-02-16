@@ -1,6 +1,9 @@
 import { BaseItemDto } from './base-item.dto';
 
 export class ItemResponseDto extends BaseItemDto {
+    max_price?: number;
+    max_sale_price?: number;
+
     constructor(partial: Partial<ItemResponseDto>) {
         super();
         Object.assign(this, partial);
@@ -15,18 +18,26 @@ export class ItemResponseDto extends BaseItemDto {
                 .filter(p => p > 0);
             if (prices.length > 0) {
                 this.regular_price = Math.min(...prices);
+                this.max_price = Math.max(...prices);
             }
             const salePrices = this.variations
                 .map(v => parseFloat(String(v.sale_price)) || 0)
                 .filter(p => p > 0);
             if (salePrices.length > 0) {
                 this.sale_price = Math.min(...salePrices);
+                this.max_sale_price = Math.max(...salePrices);
             }
         }
         // Ensure numeric types (PostgreSQL decimal returns strings)
         this.regular_price = parseFloat(String(this.regular_price)) || 0;
         if (this.sale_price) {
             this.sale_price = parseFloat(String(this.sale_price)) || 0;
+        }
+        if (this.max_price) {
+            this.max_price = parseFloat(String(this.max_price)) || 0;
+        }
+        if (this.max_sale_price) {
+            this.max_sale_price = parseFloat(String(this.max_sale_price)) || 0;
         }
     }
 
