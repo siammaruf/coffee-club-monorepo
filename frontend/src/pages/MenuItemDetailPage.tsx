@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router'
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react'
 import { useMenuItem, useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useCart } from '@/hooks/useCart'
-import { formatPrice, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Item, ItemVariation } from '@/types/item'
 
@@ -151,8 +151,7 @@ export default function MenuItemDetailPage() {
                   )
                 ) : item.has_variations ? (
                   <span className="text-accent">
-                    <span className="text-lg text-text-muted">From </span>
-                    {formatPrice(item.regular_price)}
+                    {formatPriceRange(item.regular_price, item.max_price)}
                   </span>
                 ) : item.sale_price ? (
                   <span className="flex items-center gap-3">
@@ -435,12 +434,23 @@ export default function MenuItemDetailPage() {
                       </p>
                       <div className="mt-2 font-heading text-lg tracking-wider text-accent">
                         {relItem.has_variations ? (
-                          <>
-                            <span className="text-sm text-text-muted">From </span>
-                            {formatPrice(relItem.regular_price ?? 0)}
-                          </>
+                          relItem.sale_price ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="text-text-muted line-through">
+                                {formatPriceRange(relItem.regular_price, relItem.max_price)}
+                              </span>
+                              <span>{formatPriceRange(relItem.sale_price, relItem.max_sale_price)}</span>
+                            </span>
+                          ) : (
+                            formatPriceRange(relItem.regular_price, relItem.max_price)
+                          )
+                        ) : relItem.sale_price ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="text-text-muted line-through">{formatPrice(relItem.regular_price)}</span>
+                            <span>{formatPrice(relItem.sale_price)}</span>
+                          </span>
                         ) : (
-                          formatPrice(relItem.sale_price ?? relItem.regular_price ?? 0)
+                          formatPrice(relItem.regular_price)
                         )}
                       </div>
                       {relItem.has_variations ? (

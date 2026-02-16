@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { MetaFunction } from 'react-router'
 import { useSearchParams, Link, useNavigate } from 'react-router'
-import { ShoppingCart, LayoutGrid } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import { useMenu } from '@/hooks/useMenu'
+import { ScrollableCategories } from '@/components/menu/ScrollableCategories'
 import { useCart } from '@/hooks/useCart'
 import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
 import { AdvantagesSection } from '@/components/home/AdvantagesSection'
 import { defaultAdvantages } from '@/lib/defaults'
-import { formatPrice, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
 import type { Item } from '@/types/item'
 import toast from 'react-hot-toast'
 
@@ -83,35 +84,11 @@ export default function MenuPage() {
       <div className="bg-bg-primary">
         <div className="vincent-container py-16">
           {/* Category Pills */}
-          <div className="mb-12 flex justify-center">
-            <div className="no-scrollbar flex gap-3 overflow-x-auto px-1 py-1">
-              {/* All button */}
-              <button
-                onClick={() => handleTabClick('all')}
-                className={`flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 font-heading text-xs uppercase tracking-[2px] transition-all duration-300 ${
-                  activeTab === 'all'
-                    ? 'bg-accent text-bg-primary shadow-[0_0_20px_rgba(255,200,81,0.15)]'
-                    : 'border border-border bg-bg-card text-text-muted hover:border-accent/40 hover:text-text-primary'
-                }`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                All
-              </button>
-              {categories?.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleTabClick(cat.slug)}
-                  className={`shrink-0 rounded-full px-5 py-2.5 font-heading text-xs uppercase tracking-[2px] transition-all duration-300 ${
-                    activeTab === cat.slug
-                      ? 'bg-accent text-bg-primary shadow-[0_0_20px_rgba(255,200,81,0.15)]'
-                      : 'border border-border bg-bg-card text-text-muted hover:border-accent/40 hover:text-text-primary'
-                  }`}
-                >
-                  {cat.name ?? ''}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ScrollableCategories
+            categories={categories}
+            activeTab={activeTab}
+            onTabClick={handleTabClick}
+          />
 
           {/* Loading State */}
           {isLoading && (
@@ -178,16 +155,24 @@ export default function MenuPage() {
                         {truncate(item?.description ?? '', 70)}
                       </p>
                       <div className="mt-2 font-heading text-lg tracking-wider text-accent">
-                        {item?.sale_price ? (
+                        {item.has_variations ? (
+                          item.sale_price ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="text-text-muted line-through">
+                                {formatPriceRange(item.regular_price, item.max_price)}
+                              </span>
+                              <span>{formatPriceRange(item.sale_price, item.max_sale_price)}</span>
+                            </span>
+                          ) : (
+                            formatPriceRange(item.regular_price, item.max_price)
+                          )
+                        ) : item.sale_price ? (
                           <span className="flex items-center justify-center gap-2">
-                            <span className="text-text-muted line-through">{formatPrice(item?.regular_price ?? 0)}</span>
-                            <span>{formatPrice(price)}</span>
+                            <span className="text-text-muted line-through">{formatPrice(item.regular_price)}</span>
+                            <span>{formatPrice(item.sale_price)}</span>
                           </span>
                         ) : (
-                          <>
-                            {item.has_variations && <span className="text-sm text-text-muted">From </span>}
-                            {formatPrice(price)}
-                          </>
+                          formatPrice(item.regular_price)
                         )}
                       </div>
                     </div>

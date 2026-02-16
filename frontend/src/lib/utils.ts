@@ -10,6 +10,11 @@ export function formatPrice(price: number | null | undefined): string {
   return `৳${safePrice.toFixed(2)}`
 }
 
+export function formatPriceRange(min: number, max: number | undefined): string {
+  if (!max || min === max) return formatPrice(min)
+  return `${formatPrice(min)} - ${formatPrice(max)}`
+}
+
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return ''
   const parsed = new Date(date)
