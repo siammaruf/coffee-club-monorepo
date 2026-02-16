@@ -81,7 +81,7 @@ export function TabbedMenuSection() {
 
                   {/* Product info */}
                   <div className="mt-4 text-center">
-                    <h5 className="text-text-heading">
+                    <h5 className="mb-[10px] text-text-heading">
                       <Link
                         to={`/menu/${item.slug}`}
                         className="transition-colors duration-200 hover:text-link-hover"
@@ -89,7 +89,7 @@ export function TabbedMenuSection() {
                         {item.name ?? ''}
                       </Link>
                     </h5>
-                    <p className="mt-1 text-text-body">
+                    <p className="mb-[10px] text-text-body">
                       {truncate(item.description ?? '', 70)}
                     </p>
                     <div className="mt-2 font-heading text-lg tracking-wider text-accent">

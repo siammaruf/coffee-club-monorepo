@@ -287,6 +287,9 @@ export default function OrderDetailPage() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm text-text-primary">
                             {orderItem.item?.name || 'Unknown Item'}
+                            {orderItem.variation && (
+                              <span className="text-text-muted"> - {orderItem.variation.name}</span>
+                            )}
                           </p>
                           <p className="text-xs text-text-muted">
                             {formatPrice(orderItem?.unit_price ?? 0)} x{' '}

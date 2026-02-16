@@ -36,6 +36,9 @@ export default function MenuPage() {
     error,
     filters,
     setCategory,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
   } = useMenu()
 
   const { addItem } = useCart()
@@ -148,13 +151,13 @@ export default function MenuPage() {
                     </Link>
                     {/* Product Info */}
                     <div className="mt-4 text-center">
-                      <h5 className="transition-colors hover:text-link-hover">
+                      <h5 className="mb-[10px] transition-colors hover:text-link-hover">
                         <Link to={`/menu/${item.slug}`}>{item?.name ?? ''}</Link>
                       </h5>
-                      <p className="mt-2 text-sm text-text-muted">
+                      <p className="mb-[10px] text-sm text-text-muted">
                         {truncate(item?.description ?? '', 70)}
                       </p>
-                      <div className="mt-2 font-heading text-lg tracking-wider text-accent">
+                      <div className="mt-2.5 font-heading text-lg tracking-wider text-accent">
                         {item.has_variations ? (
                           item.sale_price ? (
                             <span className="flex items-center justify-center gap-2">
@@ -179,6 +182,20 @@ export default function MenuPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {!isLoading && !error && hasNextPage && (
+            <div className="mt-12 text-center">
+              <button
+                type="button"
+                onClick={() => loadMore()}
+                disabled={isFetchingNextPage}
+                className="btn-vincent inline-block disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isFetchingNextPage ? 'Loading...' : 'Load More'}
+              </button>
             </div>
           )}
 

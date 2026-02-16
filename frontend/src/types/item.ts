@@ -14,7 +14,7 @@ export interface ItemVariation {
   name_bn: string
   regular_price: number
   sale_price: number | null
-  status: 'AVAILABLE' | 'ACTIVE' | 'ON_SALE' | 'OUT_OF_STOCK' | 'DISCONTINUED'
+  status: 'available' | 'active' | 'on_sale' | 'out_of_stock' | 'discontinued'
   sort_order: number
 }
 
@@ -25,7 +25,7 @@ export interface Item {
   slug: string
   description: string
   type: 'BAR' | 'KITCHEN'
-  status: 'AVAILABLE' | 'UNAVAILABLE'
+  status: 'available' | 'active' | 'on_sale' | 'out_of_stock' | 'discontinued'
   regular_price: number
   sale_price: number | null
   max_price?: number
