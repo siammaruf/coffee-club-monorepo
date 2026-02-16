@@ -43,6 +43,7 @@ export class CategoryService {
             query.where('LOWER(category.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
 
+        query.orderBy('category.name', 'ASC');
         query.skip((page - 1) * limit).take(limit);
         const [data, total] = await query.getManyAndCount();
         const result = { data, total };

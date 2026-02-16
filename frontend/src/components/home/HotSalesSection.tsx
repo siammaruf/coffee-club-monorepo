@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useCart } from '@/hooks/useCart'
-import { formatPrice, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Item } from '@/types/item'
 
@@ -86,16 +86,24 @@ export function HotSalesSection() {
                     {truncate(item.description ?? '', 70)}
                   </p>
                   <div className="mt-2 font-heading text-lg tracking-wider text-accent">
-                    {item?.sale_price ? (
+                    {item.has_variations ? (
+                      item.sale_price ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="text-text-muted line-through">
+                            {formatPriceRange(item.regular_price, item.max_price)}
+                          </span>
+                          <span>{formatPriceRange(item.sale_price, item.max_sale_price)}</span>
+                        </span>
+                      ) : (
+                        formatPriceRange(item.regular_price, item.max_price)
+                      )
+                    ) : item.sale_price ? (
                       <span className="flex items-center justify-center gap-2">
-                        <span className="text-text-muted line-through">{formatPrice(item?.regular_price ?? 0)}</span>
+                        <span className="text-text-muted line-through">{formatPrice(item.regular_price)}</span>
                         <span>{formatPrice(item.sale_price)}</span>
                       </span>
                     ) : (
-                      <>
-                        {item.has_variations && <span className="text-sm text-text-muted">From </span>}
-                        {formatPrice(item.regular_price ?? 0)}
-                      </>
+                      formatPrice(item.regular_price)
                     )}
                   </div>
                 </div>

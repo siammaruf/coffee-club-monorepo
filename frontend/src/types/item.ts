@@ -28,6 +28,8 @@ export interface Item {
   status: 'AVAILABLE' | 'UNAVAILABLE'
   regular_price: number
   sale_price: number | null
+  max_price?: number
+  max_sale_price?: number
   has_variations: boolean
   variations?: ItemVariation[]
   image: string
