@@ -11,7 +11,7 @@ import {
   selectCartTotal,
   selectCartItemCount,
 } from '@/redux/features/cartSlice'
-import type { Item } from '@/types/item'
+import type { Item, ItemVariation } from '@/types/item'
 
 export function useCart() {
   const dispatch = useAppDispatch()
@@ -24,10 +24,13 @@ export function useCart() {
     isOpen,
     total,
     itemCount,
-    addItem: (item: Item, quantity?: number) => dispatch(addItem({ item, quantity })),
-    removeItem: (itemId: string) => dispatch(removeItem(itemId)),
-    updateQuantity: (itemId: string, quantity: number) => dispatch(updateQuantity({ itemId, quantity })),
-    updateNotes: (itemId: string, notes: string) => dispatch(updateNotes({ itemId, notes })),
+    addItem: (item: Item, quantity?: number, selectedVariation?: ItemVariation) =>
+      dispatch(addItem({ item, quantity, selectedVariation })),
+    removeItem: (cartItemId: string) => dispatch(removeItem(cartItemId)),
+    updateQuantity: (cartItemId: string, quantity: number) =>
+      dispatch(updateQuantity({ cartItemId, quantity })),
+    updateNotes: (cartItemId: string, notes: string) =>
+      dispatch(updateNotes({ cartItemId, notes })),
     clearCart: () => dispatch(clearCart()),
     toggleDrawer: () => dispatch(toggleDrawer()),
     openDrawer: () => dispatch(openDrawer()),

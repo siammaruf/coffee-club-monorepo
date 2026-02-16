@@ -1,4 +1,4 @@
-import type { Item } from './item'
+import type { Item, ItemVariation } from './item'
 
 /** Shape returned by backend CartItemResponseDto */
 export interface CartItemResponse {
@@ -41,4 +41,5 @@ export interface LocalCartItem {
   item: Item
   quantity: number
   special_notes?: string
+  selectedVariation?: ItemVariation
 }

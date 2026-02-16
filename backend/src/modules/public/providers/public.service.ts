@@ -53,6 +53,10 @@ export class PublicService {
     return this.itemService.findOne(id);
   }
 
+  async getItemBySlug(slug: string) {
+    return this.itemService.findBySlug(slug);
+  }
+
   async getAvailableTables() {
     return this.tableService.getAvailableTables();
   }

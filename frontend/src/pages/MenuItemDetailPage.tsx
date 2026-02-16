@@ -1,20 +1,34 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router'
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router'
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react'
 import { useMenuItem, useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, truncate } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import type { Item } from '@/types/item'
+import type { Item, ItemVariation } from '@/types/item'
 
 type TabKey = 'description' | 'additional' | 'reviews'
 
 export default function MenuItemDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { data: item, isLoading, error } = useMenuItem(id ?? '')
+  const { slug } = useParams<{ slug: string }>()
+  const { data: item, isLoading, error } = useMenuItem(slug ?? '')
   const { addItem } = useCart()
+  const navigate = useNavigate()
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<TabKey>('description')
+  const [selectedVariation, setSelectedVariation] = useState<ItemVariation | null>(null)
+
+  // Auto-select first available variation when item loads
+  useEffect(() => {
+    if (item?.has_variations && item.variations && item.variations.length > 0) {
+      const available = item.variations
+        .filter((v) => v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE')
+        .sort((a, b) => a.sort_order - b.sort_order)
+      if (available.length > 0) {
+        setSelectedVariation(available[0])
+      }
+    }
+  }, [item])
 
   // Fetch related products from same category
   const categorySlug = item?.categories?.[0]?.slug
@@ -28,21 +42,27 @@ export default function MenuItemDetailPage() {
 
   const handleAddToCart = () => {
     if (!item) return
-    addItem(item, quantity)
+    if (item.has_variations && !selectedVariation) {
+      toast.error('Please select an option')
+      return
+    }
+    addItem(item, quantity, selectedVariation ?? undefined)
     toast.success(`${item.name} added to cart!`)
   }
 
   const handleQuickAdd = (e: React.MouseEvent, relatedItem: Item) => {
     e.preventDefault()
     e.stopPropagation()
+    if (relatedItem.has_variations) {
+      navigate(`/menu/${relatedItem.slug}`)
+      return
+    }
     addItem(relatedItem, 1)
     toast.success(`${relatedItem.name} added to cart!`)
   }
 
   const incrementQty = () => setQuantity((q) => q + 1)
   const decrementQty = () => setQuantity((q) => Math.max(1, q - 1))
-
-  const price = item?.sale_price ?? item?.regular_price ?? 0
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'description', label: 'Description' },
@@ -79,6 +99,13 @@ export default function MenuItemDetailPage() {
     )
   }
 
+  // Available variations (filtered + sorted)
+  const availableVariations = item.has_variations && item.variations
+    ? item.variations
+        .filter((v) => v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE')
+        .sort((a, b) => a.sort_order - b.sort_order)
+    : []
+
   return (
     <>
       {/* Page Title Block */}
@@ -111,7 +138,23 @@ export default function MenuItemDetailPage() {
 
               {/* Price */}
               <div className="mt-4 font-heading text-2xl tracking-wider">
-                {item.sale_price ? (
+                {item.has_variations && selectedVariation ? (
+                  selectedVariation.sale_price ? (
+                    <span className="flex items-center gap-3">
+                      <span className="text-text-muted line-through">
+                        {formatPrice(selectedVariation.regular_price)}
+                      </span>
+                      <span className="text-accent">{formatPrice(selectedVariation.sale_price)}</span>
+                    </span>
+                  ) : (
+                    <span className="text-accent">{formatPrice(selectedVariation.regular_price)}</span>
+                  )
+                ) : item.has_variations ? (
+                  <span className="text-accent">
+                    <span className="text-lg text-text-muted">From </span>
+                    {formatPrice(item.regular_price)}
+                  </span>
+                ) : item.sale_price ? (
                   <span className="flex items-center gap-3">
                     <span className="text-text-muted line-through">
                       {formatPrice(item.regular_price)}
@@ -127,6 +170,52 @@ export default function MenuItemDetailPage() {
               <p className="mt-6 leading-relaxed text-text-body">
                 {item.description}
               </p>
+
+              {/* Variation Selector */}
+              {item.has_variations && availableVariations.length > 0 && (
+                <div className="mt-6">
+                  <h6 className="mb-3 font-heading text-xs uppercase tracking-[2px] text-text-heading">
+                    Select Option
+                  </h6>
+                  <div className="flex flex-wrap gap-3">
+                    {availableVariations.map((variation) => {
+                      const isSelected = selectedVariation?.id === variation.id
+                      return (
+                        <button
+                          key={variation.id}
+                          type="button"
+                          onClick={() => setSelectedVariation(variation)}
+                          className={`border-2 px-4 py-3 text-left transition-all duration-200 ${
+                            isSelected
+                              ? 'border-accent bg-bg-card text-text-heading'
+                              : 'border-border bg-bg-secondary text-text-muted hover:border-accent/40 hover:text-text-primary'
+                          }`}
+                        >
+                          <span className="block font-heading text-sm uppercase tracking-[2px]">
+                            {variation.name}
+                          </span>
+                          <span
+                            className={`mt-1 block font-heading text-base tracking-wider ${
+                              isSelected ? 'text-accent' : 'text-text-muted'
+                            }`}
+                          >
+                            {variation.sale_price ? (
+                              <>
+                                <span className="mr-2 text-xs line-through">
+                                  {formatPrice(variation.regular_price)}
+                                </span>
+                                {formatPrice(variation.sale_price)}
+                              </>
+                            ) : (
+                              formatPrice(variation.regular_price)
+                            )}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Quantity Selector + Add to Cart */}
               <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -245,6 +334,56 @@ export default function MenuItemDetailPage() {
                       )}
                     </tbody>
                   </table>
+
+                  {/* Variations Table */}
+                  {item.has_variations && item.variations && item.variations.length > 0 && (
+                    <div className="mt-8">
+                      <h6 className="mb-4 font-heading text-xs uppercase tracking-[2px] text-text-heading">
+                        Available Options
+                      </h6>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="pb-2 text-left font-heading text-xs uppercase tracking-[2px] text-text-muted">
+                              Option
+                            </th>
+                            <th className="pb-2 text-left font-heading text-xs uppercase tracking-[2px] text-text-muted">
+                              Price
+                            </th>
+                            <th className="pb-2 text-left font-heading text-xs uppercase tracking-[2px] text-text-muted">
+                              Availability
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {item.variations
+                            .sort((a, b) => a.sort_order - b.sort_order)
+                            .map((v) => (
+                              <tr key={v.id} className="border-b border-border">
+                                <td className="py-3 text-text-primary">{v.name}</td>
+                                <td className="py-3 text-accent">
+                                  {v.sale_price ? (
+                                    <>
+                                      <span className="mr-2 text-text-muted line-through">
+                                        {formatPrice(v.regular_price)}
+                                      </span>
+                                      {formatPrice(v.sale_price)}
+                                    </>
+                                  ) : (
+                                    formatPrice(v.regular_price)
+                                  )}
+                                </td>
+                                <td className="py-3 text-text-muted">
+                                  {v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE'
+                                    ? 'In Stock'
+                                    : 'Out of Stock'}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -263,7 +402,7 @@ export default function MenuItemDetailPage() {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedItems.map((relItem) => (
                   <div key={relItem.id} className="group">
-                    <Link to={`/menu/${relItem.id}`} className="relative block overflow-hidden">
+                    <Link to={`/menu/${relItem.slug}`} className="relative block overflow-hidden">
                       <div className="aspect-square overflow-hidden rounded-full bg-bg-secondary">
                         <img
                           src={relItem.image ?? '/img/6-600x600.png'}
@@ -285,7 +424,7 @@ export default function MenuItemDetailPage() {
                     <div className="mt-4 text-center">
                       <h5 className="text-text-heading">
                         <Link
-                          to={`/menu/${relItem.id}`}
+                          to={`/menu/${relItem.slug}`}
                           className="transition-colors duration-200 hover:text-link-hover"
                         >
                           {relItem.name}
@@ -295,15 +434,31 @@ export default function MenuItemDetailPage() {
                         {truncate(relItem.description ?? '', 70)}
                       </p>
                       <div className="mt-2 font-heading text-lg tracking-wider text-accent">
-                        {formatPrice(relItem.sale_price ?? relItem.regular_price ?? 0)}
+                        {relItem.has_variations ? (
+                          <>
+                            <span className="text-sm text-text-muted">From </span>
+                            {formatPrice(relItem.regular_price ?? 0)}
+                          </>
+                        ) : (
+                          formatPrice(relItem.sale_price ?? relItem.regular_price ?? 0)
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickAdd(e, relItem)}
-                        className="btn-vincent mt-3 inline-flex items-center gap-2 text-sm"
-                      >
-                        Add to cart
-                      </button>
+                      {relItem.has_variations ? (
+                        <Link
+                          to={`/menu/${relItem.slug}`}
+                          className="btn-vincent mt-3 inline-flex items-center gap-2 text-sm"
+                        >
+                          Select options
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => handleQuickAdd(e, relItem)}
+                          className="btn-vincent mt-3 inline-flex items-center gap-2 text-sm"
+                        >
+                          Add to cart
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
