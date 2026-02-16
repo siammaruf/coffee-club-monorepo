@@ -89,6 +89,23 @@ export class PublicController {
   }
 
   @Public()
+  @Get('items/by-slug/:slug')
+  @ApiOperation({ summary: 'Get single item by slug', description: 'Retrieves a single item by its URL slug' })
+  @ApiParam({ name: 'slug', description: 'Item slug' })
+  @ApiResponse({ status: 200, description: 'Item retrieved successfully' })
+  async getItemBySlug(@Param('slug') slug: string) {
+    const item = await this.publicService.getItemBySlug(slug);
+    const responseData = new ItemResponseDto(item);
+
+    return {
+      data: responseData,
+      status: 'success',
+      message: 'Item retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Public()
   @Get('items/:id')
   @ApiOperation({ summary: 'Get single item', description: 'Retrieves a single item with category details' })
   @ApiParam({ name: 'id', description: 'Item ID' })
