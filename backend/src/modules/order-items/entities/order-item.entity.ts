@@ -1,4 +1,5 @@
 import { Item } from "../../items/entities/item.entity";
+import { ItemVariation } from "../../items/entities/item-variation.entity";
 import type { Order } from "../../orders/entities/order.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 
@@ -23,6 +24,10 @@ export class OrderItem {
     @ManyToOne(() => Item, { eager: true })
     @JoinColumn({ name: 'item_id' })
     item: Item;
+
+    @ManyToOne(() => ItemVariation, { eager: true, nullable: true })
+    @JoinColumn({ name: 'variation_id' })
+    variation: ItemVariation | null;
 
     @DeleteDateColumn()
     deleted_at: Date | null;

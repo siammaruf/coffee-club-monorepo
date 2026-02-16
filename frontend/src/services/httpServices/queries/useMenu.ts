@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { publicService } from '../publicService'
 import type { ItemFilters } from '@/types/item'
 
@@ -21,6 +21,20 @@ export function useMenuItems(filters: ItemFilters) {
   return useQuery({
     queryKey: menuKeys.itemList(filters),
     queryFn: () => publicService.getItems(filters),
+  })
+}
+
+export function useInfiniteMenuItems(filters: Omit<ItemFilters, 'page'>) {
+  return useInfiniteQuery({
+    queryKey: [...menuKeys.items(), 'infinite', filters],
+    queryFn: ({ pageParam = 1 }) =>
+      publicService.getItems({ ...filters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const current = lastPage?.page ?? 1
+      const total = lastPage?.totalPages ?? 1
+      return current < total ? current + 1 : undefined
+    },
   })
 }
 

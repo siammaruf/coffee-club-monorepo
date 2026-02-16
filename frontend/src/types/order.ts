@@ -14,6 +14,11 @@ export interface OrderItem {
     regular_price: number
     sale_price: number
   }
+  variation?: {
+    id: string
+    name: string
+    name_bn: string
+  }
   created_at: string
   updated_at: string
 }
@@ -68,5 +73,6 @@ export interface CreateOrderPayload {
   items: Array<{
     item_id: string
     quantity: number
+    variation_id?: string
   }>
 }

@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router'
 import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react'
 import { useMenuItem, useMenuItems } from '@/services/httpServices/queries/useMenu'
+import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
 import { useCart } from '@/hooks/useCart'
 import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
+import { defaultAdvantages } from '@/lib/defaults'
+import { AdvantagesSection } from '@/components/home/AdvantagesSection'
 import toast from 'react-hot-toast'
 import type { Item, ItemVariation } from '@/types/item'
 
@@ -14,21 +17,10 @@ export default function MenuItemDetailPage() {
   const { data: item, isLoading, error } = useMenuItem(slug ?? '')
   const { addItem } = useCart()
   const navigate = useNavigate()
+  const { data: websiteContent } = useWebsiteContent()
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<TabKey>('description')
   const [selectedVariation, setSelectedVariation] = useState<ItemVariation | null>(null)
-
-  // Auto-select first available variation when item loads
-  useEffect(() => {
-    if (item?.has_variations && item.variations && item.variations.length > 0) {
-      const available = item.variations
-        .filter((v) => v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE')
-        .sort((a, b) => a.sort_order - b.sort_order)
-      if (available.length > 0) {
-        setSelectedVariation(available[0])
-      }
-    }
-  }, [item])
 
   // Fetch related products from same category
   const categorySlug = item?.categories?.[0]?.slug
@@ -102,7 +94,7 @@ export default function MenuItemDetailPage() {
   // Available variations (filtered + sorted)
   const availableVariations = item.has_variations && item.variations
     ? item.variations
-        .filter((v) => v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE')
+        .filter((v) => v.status === 'available' || v.status === 'active' || v.status === 'on_sale')
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
@@ -245,7 +237,8 @@ export default function MenuItemDetailPage() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="btn-vincent-filled flex items-center gap-2"
+                  disabled={item.has_variations && !selectedVariation}
+                  className="btn-vincent-filled flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <ShoppingCart className="h-4 w-4" />
                   Add to Cart
@@ -373,7 +366,7 @@ export default function MenuItemDetailPage() {
                                   )}
                                 </td>
                                 <td className="py-3 text-text-muted">
-                                  {v.status === 'AVAILABLE' || v.status === 'ACTIVE' || v.status === 'ON_SALE'
+                                  {v.status === 'available' || v.status === 'active' || v.status === 'on_sale'
                                     ? 'In Stock'
                                     : 'Out of Stock'}
                                 </td>
@@ -421,7 +414,7 @@ export default function MenuItemDetailPage() {
                       </div>
                     </Link>
                     <div className="mt-4 text-center">
-                      <h5 className="text-text-heading">
+                      <h5 className="mb-[10px] text-text-heading">
                         <Link
                           to={`/menu/${relItem.slug}`}
                           className="transition-colors duration-200 hover:text-link-hover"
@@ -429,10 +422,10 @@ export default function MenuItemDetailPage() {
                           {relItem.name}
                         </Link>
                       </h5>
-                      <p className="mt-1 text-sm text-text-muted">
+                      <p className="mb-[10px] text-sm text-text-muted">
                         {truncate(relItem.description ?? '', 70)}
                       </p>
-                      <div className="mt-2 font-heading text-lg tracking-wider text-accent">
+                      <div className="mt-2.5 font-heading text-lg tracking-wider text-accent">
                         {relItem.has_variations ? (
                           relItem.sale_price ? (
                             <span className="flex items-center justify-center gap-2">
@@ -453,22 +446,6 @@ export default function MenuItemDetailPage() {
                           formatPrice(relItem.regular_price)
                         )}
                       </div>
-                      {relItem.has_variations ? (
-                        <Link
-                          to={`/menu/${relItem.slug}`}
-                          className="btn-vincent mt-3 inline-flex items-center gap-2 text-sm"
-                        >
-                          Select options
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => handleQuickAdd(e, relItem)}
-                          className="btn-vincent mt-3 inline-flex items-center gap-2 text-sm"
-                        >
-                          Add to cart
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -477,6 +454,9 @@ export default function MenuItemDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Advantages Section */}
+      <AdvantagesSection advantages={websiteContent?.advantages ?? defaultAdvantages} />
     </>
   )
 }

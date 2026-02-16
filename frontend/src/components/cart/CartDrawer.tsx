@@ -22,7 +22,7 @@ export function CartDrawer() {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[200]">
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
@@ -37,7 +37,7 @@ export function CartDrawer() {
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-accent" />
-              <h2 className="text-lg font-bold tracking-[3px] text-text-primary">
+              <h2 className="text-lg mb-0 font-bold leading-none tracking-[3px] text-text-primary">
                 YOUR CART
                 {itemCount > 0 && (
                   <span className="ml-2 text-sm font-normal tracking-normal text-text-muted">
@@ -78,11 +78,13 @@ export function CartDrawer() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
-                {items.map((cartItem) => (
-                  <CartItem key={cartItem.id} cartItem={cartItem} />
-                ))}
-              </div>
+              <table className="w-full">
+                <tbody>
+                  {items.map((cartItem) => (
+                    <CartItem key={cartItem.id} cartItem={cartItem} />
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 

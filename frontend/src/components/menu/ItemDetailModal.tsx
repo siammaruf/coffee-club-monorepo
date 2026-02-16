@@ -166,7 +166,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
           <div className="mt-6">
             <button
               onClick={handleAddToCart}
-              disabled={item.status === 'UNAVAILABLE'}
+              disabled={item.status === 'out_of_stock' || item.status === 'discontinued'}
               className="btn-vincent-filled flex w-full items-center justify-center gap-2 py-3 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingCart className="h-5 w-5" />

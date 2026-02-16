@@ -67,7 +67,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
         </div>
       </td>
       {/* Product Name */}
-      <td className="py-4 pr-4">
+      <td className="py-4 pr-4 whitespace-nowrap">
         <span className="font-heading text-sm uppercase tracking-[2px] text-text-primary">
           {item?.name ?? ''}
         </span>
