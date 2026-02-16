@@ -23,14 +23,14 @@ export class ItemService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async findAll(options: { page: number, limit: number, search?: string, categoryId?: string, categorySlug?: string, type?: string, status?: string }) {
+  async findAll(options: { page: number, limit: number, search?: string, categoryId?: string, categorySlug?: string, type?: string, status?: string, statuses?: string[] }) {
     const cacheKey = `items:findAll:${JSON.stringify(options)}`;
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       return cached as { data: Item[], total: number };
     }
 
-    const { page, limit, search, categoryId, categorySlug, type, status } = options;
+    const { page, limit, search, categoryId, categorySlug, type, status, statuses } = options;
     const query = this.itemRepository.createQueryBuilder('item')
       .leftJoin('item.categories', 'category')
       .addSelect([
@@ -52,6 +52,10 @@ export class ItemService {
 
     if (status) {
       query.andWhere('item.status = :status', { status });
+    }
+
+    if (statuses && statuses.length > 0) {
+      query.andWhere('item.status IN (:...statuses)', { statuses });
     }
 
     if (search) {

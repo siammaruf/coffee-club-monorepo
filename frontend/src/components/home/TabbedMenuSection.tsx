@@ -10,7 +10,7 @@ export function TabbedMenuSection() {
   const [activeSlug, setActiveSlug] = useState<string | undefined>(undefined)
 
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories()
-  const categories = Array.isArray(categoriesData) ? categoriesData : []
+  const categories = Array.isArray(categoriesData) ? categoriesData : ((categoriesData as any)?.data ?? [])
 
   // Default to first category when categories load
   useEffect(() => {

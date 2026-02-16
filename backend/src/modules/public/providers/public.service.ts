@@ -40,24 +40,13 @@ export class PublicService {
     search?: string;
     categorySlug?: string;
   }) {
-    // Use existing ItemService but only return available items
-    const result = await this.itemService.findAll({
+    return this.itemService.findAll({
       page: options.page,
       limit: options.limit,
       search: options.search,
       categorySlug: options.categorySlug,
+      statuses: [ItemStatus.AVAILABLE, ItemStatus.ACTIVE, ItemStatus.ON_SALE],
     });
-
-    // Filter to only include available items (AVAILABLE and ON_SALE)
-    const availableItems = result.data.filter(
-      (item) =>
-        item.status === ItemStatus.AVAILABLE || item.status === ItemStatus.ON_SALE,
-    );
-
-    return {
-      data: availableItems,
-      total: availableItems.length,
-    };
   }
 
   async getItem(id: string) {
