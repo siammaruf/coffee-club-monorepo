@@ -27,8 +27,8 @@ export const publicService = {
     return get<ItemsResponse>('/public/items', { params })
   },
 
-  getItem: (id: string) =>
-    get<{ data: Item }>(`/public/items/${id}`).then((res) => res.data),
+  getItemBySlug: (slug: string) =>
+    get<{ data: Item }>(`/public/items/by-slug/${slug}`).then((res) => res.data),
 
   getTables: () =>
     get<{ data: Array<{ id: string; name: string; capacity: number; status: string }> }>('/public/tables').then((res) => res.data),

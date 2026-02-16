@@ -23,7 +23,12 @@ export function useMenu() {
     totalPages,
     total,
     setSearch: useCallback((search: string) => setFilters((prev) => ({ ...prev, search, page: 1 })), []),
-    setCategory: useCallback((categorySlug: string) => setFilters((prev) => ({ ...prev, categorySlug, page: 1 })), []),
+    setCategory: useCallback((categorySlug: string) => setFilters((prev) => {
+      const next = { ...prev, page: 1 }
+      if (categorySlug) next.categorySlug = categorySlug
+      else delete next.categorySlug
+      return next
+    }), []),
     setPage: useCallback((page: number) => setFilters((prev) => ({ ...prev, page })), []),
   }
 }

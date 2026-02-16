@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useCart } from '@/hooks/useCart'
@@ -9,11 +9,16 @@ import type { Item } from '@/types/item'
 export function HotSalesSection() {
   const { data, isLoading } = useMenuItems({ limit: 4 })
   const { addItem } = useCart()
+  const navigate = useNavigate()
   const items = data?.data ?? []
 
   const handleQuickAdd = (e: React.MouseEvent, item: Item) => {
     e.preventDefault()
     e.stopPropagation()
+    if (item.has_variations) {
+      navigate(`/menu/${item.slug}`)
+      return
+    }
     addItem(item, 1)
     toast.success(`${item?.name ?? 'Item'} added to cart!`)
   }
@@ -41,7 +46,7 @@ export function HotSalesSection() {
             {items.map((item) => (
               <div key={item.id} className="group">
                 {/* Circular Image with hover overlay */}
-                <Link to={`/menu/${item.id}`} className="relative block overflow-hidden">
+                <Link to={`/menu/${item.slug}`} className="relative block overflow-hidden">
                   <div className="aspect-square overflow-hidden rounded-full bg-bg-secondary">
                     <img
                       src={item.image ?? '/img/6-600x600.png'}
@@ -71,7 +76,7 @@ export function HotSalesSection() {
                 <div className="mt-4 text-center">
                   <h5 className="text-text-heading">
                     <Link
-                      to={`/menu/${item.id}`}
+                      to={`/menu/${item.slug}`}
                       className="transition-colors duration-200 hover:text-link-hover"
                     >
                       {item.name ?? ''}
@@ -87,7 +92,10 @@ export function HotSalesSection() {
                         <span>{formatPrice(item.sale_price)}</span>
                       </span>
                     ) : (
-                      formatPrice(item.regular_price ?? 0)
+                      <>
+                        {item.has_variations && <span className="text-sm text-text-muted">From </span>}
+                        {formatPrice(item.regular_price ?? 0)}
+                      </>
                     )}
                   </div>
                 </div>

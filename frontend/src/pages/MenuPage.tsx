@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { MetaFunction } from 'react-router'
-import { useSearchParams, Link } from 'react-router'
-import { ShoppingCart } from 'lucide-react'
+import { useSearchParams, Link, useNavigate } from 'react-router'
+import { ShoppingCart, LayoutGrid } from 'lucide-react'
 import { useMenu } from '@/hooks/useMenu'
 import { useCart } from '@/hooks/useCart'
 import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
@@ -26,7 +26,7 @@ export const meta: MetaFunction = () => [
 
 export default function MenuPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<string>('all')
 
   const {
     items,
@@ -38,6 +38,7 @@ export default function MenuPage() {
   } = useMenu()
 
   const { addItem } = useCart()
+  const navigate = useNavigate()
   const { data: websiteContent } = useWebsiteContent()
 
   // Sync URL category param with filter and active tab
@@ -49,28 +50,24 @@ export default function MenuPage() {
     }
   }, [searchParams, filters.categorySlug, setCategory])
 
-  // Set first category as active if none selected
-  useEffect(() => {
-    if (categories && categories.length > 0 && !activeTab) {
-      const firstSlug = categories[0]?.slug ?? ''
-      setActiveTab(firstSlug)
-      setCategory(firstSlug)
-    }
-  }, [categories, activeTab, setCategory])
-
   const handleTabClick = (slug: string) => {
     setActiveTab(slug)
-    setCategory(slug)
-    if (slug) {
-      setSearchParams({ category: slug })
-    } else {
+    if (slug === 'all') {
+      setCategory('')
       setSearchParams({})
+    } else {
+      setCategory(slug)
+      setSearchParams({ category: slug })
     }
   }
 
   const handleQuickAdd = (e: React.MouseEvent, item: Item) => {
     e.preventDefault()
     e.stopPropagation()
+    if (item.has_variations) {
+      navigate(`/menu/${item.slug}`)
+      return
+    }
     addItem(item, 1)
     toast.success(`${item?.name ?? 'Item'} added to cart!`)
   }
@@ -85,27 +82,48 @@ export default function MenuPage() {
       {/* Menu Content */}
       <div className="bg-bg-primary">
         <div className="vincent-container py-16">
-          {/* Category Tabs */}
-          <div className="mb-10 flex flex-wrap justify-center gap-0 border-b border-border">
-            {categories?.map((cat) => (
+          {/* Category Pills */}
+          <div className="mb-12 flex justify-center">
+            <div className="no-scrollbar flex gap-3 overflow-x-auto px-1 py-1">
+              {/* All button */}
               <button
-                key={cat.id}
-                onClick={() => handleTabClick(cat.slug)}
-                className={`relative px-6 py-3 font-heading text-sm uppercase tracking-[3px] transition-all duration-200 ${
-                  activeTab === cat.slug
-                    ? 'text-accent after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-accent'
-                    : 'text-text-muted hover:text-text-primary'
+                onClick={() => handleTabClick('all')}
+                className={`flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 font-heading text-xs uppercase tracking-[2px] transition-all duration-300 ${
+                  activeTab === 'all'
+                    ? 'bg-accent text-bg-primary shadow-[0_0_20px_rgba(255,200,81,0.15)]'
+                    : 'border border-border bg-bg-card text-text-muted hover:border-accent/40 hover:text-text-primary'
                 }`}
               >
-                {cat.name ?? ''}
+                <LayoutGrid className="h-4 w-4" />
+                All
               </button>
-            ))}
+              {categories?.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleTabClick(cat.slug)}
+                  className={`shrink-0 rounded-full px-5 py-2.5 font-heading text-xs uppercase tracking-[2px] transition-all duration-300 ${
+                    activeTab === cat.slug
+                      ? 'bg-accent text-bg-primary shadow-[0_0_20px_rgba(255,200,81,0.15)]'
+                      : 'border border-border bg-bg-card text-text-muted hover:border-accent/40 hover:text-text-primary'
+                  }`}
+                >
+                  {cat.name ?? ''}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Loading State */}
           {isLoading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-border border-t-accent" />
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-square rounded-full bg-bg-lighter" />
+                  <div className="mx-auto mt-4 h-4 w-3/4 rounded bg-bg-lighter" />
+                  <div className="mx-auto mt-2 h-3 w-full rounded bg-bg-lighter" />
+                  <div className="mx-auto mt-2 h-4 w-1/4 rounded bg-bg-lighter" />
+                </div>
+              ))}
             </div>
           )}
 
@@ -126,7 +144,7 @@ export default function MenuPage() {
                 return (
                   <div key={item.id} className="group">
                     {/* Image Container */}
-                    <Link to={`/menu/${item.id}`} className="relative block cursor-pointer overflow-hidden">
+                    <Link to={`/menu/${item.slug}`} className="relative block cursor-pointer overflow-hidden">
                       <div className="aspect-square overflow-hidden rounded-full bg-bg-secondary">
                         <img
                           src={imgSrc}
@@ -154,7 +172,7 @@ export default function MenuPage() {
                     {/* Product Info */}
                     <div className="mt-4 text-center">
                       <h5 className="transition-colors hover:text-link-hover">
-                        <Link to={`/menu/${item.id}`}>{item?.name ?? ''}</Link>
+                        <Link to={`/menu/${item.slug}`}>{item?.name ?? ''}</Link>
                       </h5>
                       <p className="mt-2 text-sm text-text-muted">
                         {truncate(item?.description ?? '', 70)}
@@ -166,7 +184,10 @@ export default function MenuPage() {
                             <span>{formatPrice(price)}</span>
                           </span>
                         ) : (
-                          formatPrice(price)
+                          <>
+                            {item.has_variations && <span className="text-sm text-text-muted">From </span>}
+                            {formatPrice(price)}
+                          </>
                         )}
                       </div>
                     </div>

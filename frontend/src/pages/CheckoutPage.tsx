@@ -78,6 +78,7 @@ export default function CheckoutPage() {
           items: items.map((ci) => ({
             item_id: ci?.item?.id ?? '',
             quantity: ci?.quantity ?? 1,
+            ...(ci.selectedVariation?.id && { variation_id: ci.selectedVariation.id }),
           })),
         })
       ).unwrap()
@@ -313,12 +314,17 @@ export default function CheckoutPage() {
                 </thead>
                 <tbody>
                   {items?.map((cartItem) => {
-                    const price = cartItem?.item?.sale_price ?? cartItem?.item?.regular_price ?? 0
+                    const price = cartItem.selectedVariation
+                      ? (cartItem.selectedVariation.sale_price ?? cartItem.selectedVariation.regular_price ?? 0)
+                      : (cartItem?.item?.sale_price ?? cartItem?.item?.regular_price ?? 0)
                     const lineTotal = price * (cartItem?.quantity ?? 0)
                     return (
                       <tr key={cartItem?.id} className="border-b border-border">
                         <td className="py-3 text-sm text-text-primary">
-                          {cartItem?.item?.name ?? ''}{' '}
+                          {cartItem?.item?.name ?? ''}
+                          {cartItem.selectedVariation && (
+                            <span className="text-text-muted"> - {cartItem.selectedVariation.name}</span>
+                          )}{' '}
                           <strong className="text-text-muted">x {cartItem?.quantity ?? 0}</strong>
                         </td>
                         <td className="py-3 text-right text-sm text-text-primary">

@@ -290,6 +290,15 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* Hide scrollbar for horizontal scroll containers */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Advantages section with parallax background */
 .vincent-advantages {
   position: relative;

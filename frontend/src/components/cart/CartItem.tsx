@@ -10,8 +10,10 @@ interface CartItemProps {
 
 export function CartItem({ cartItem, compact = false }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart()
-  const { item, quantity } = cartItem
-  const price = item?.sale_price ?? item?.regular_price ?? 0
+  const { item, quantity, selectedVariation } = cartItem
+  const price = selectedVariation
+    ? (selectedVariation.sale_price ?? selectedVariation.regular_price ?? 0)
+    : (item?.sale_price ?? item?.regular_price ?? 0)
   const itemTotal = price * quantity
   const imgSrc = item?.image || '/img/6-600x600.png'
 
@@ -28,7 +30,12 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
         </div>
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-text-primary">{item?.name ?? ''}</p>
+          <p className="truncate text-sm text-text-primary">
+            {item?.name ?? ''}
+            {selectedVariation && (
+              <span className="text-text-muted"> - {selectedVariation.name}</span>
+            )}
+          </p>
           <p className="text-xs text-text-muted">{quantity} x {formatPrice(price)}</p>
         </div>
         {/* Total */}
@@ -42,7 +49,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
       {/* Remove Button */}
       <td className="py-4 pr-2">
         <button
-          onClick={() => removeItem(item.id)}
+          onClick={() => removeItem(cartItem.id)}
           className="flex h-6 w-6 items-center justify-center text-text-muted transition-colors hover:text-error"
           aria-label={`Remove ${item?.name ?? ''}`}
         >
@@ -64,6 +71,11 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
         <span className="font-heading text-sm uppercase tracking-[2px] text-text-primary">
           {item?.name ?? ''}
         </span>
+        {selectedVariation && (
+          <span className="block text-xs font-normal normal-case tracking-normal text-text-muted">
+            {selectedVariation.name}
+          </span>
+        )}
       </td>
       {/* Price */}
       <td className="py-4 pr-4">
@@ -73,7 +85,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
       <td className="py-4 pr-4">
         <div className="inline-flex items-center border-2 border-border">
           <button
-            onClick={() => updateQuantity(item.id, quantity - 1)}
+            onClick={() => updateQuantity(cartItem.id, quantity - 1)}
             className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
             aria-label="Decrease quantity"
           >
@@ -83,7 +95,7 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
             {quantity}
           </span>
           <button
-            onClick={() => updateQuantity(item.id, quantity + 1)}
+            onClick={() => updateQuantity(cartItem.id, quantity + 1)}
             className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
             aria-label="Increase quantity"
           >

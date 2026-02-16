@@ -8,6 +8,16 @@ export interface Category {
   item_count?: number
 }
 
+export interface ItemVariation {
+  id: string
+  name: string
+  name_bn: string
+  regular_price: number
+  sale_price: number | null
+  status: 'AVAILABLE' | 'ACTIVE' | 'ON_SALE' | 'OUT_OF_STOCK' | 'DISCONTINUED'
+  sort_order: number
+}
+
 export interface Item {
   id: string
   name: string
@@ -18,6 +28,8 @@ export interface Item {
   status: 'AVAILABLE' | 'UNAVAILABLE'
   regular_price: number
   sale_price: number | null
+  has_variations: boolean
+  variations?: ItemVariation[]
   image: string
   categories: Category[]
   created_at: string

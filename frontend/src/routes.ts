@@ -5,7 +5,7 @@ export default [
     // Public pages
     index('./pages/HomePage.tsx'),
     route('menu', './pages/MenuPage.tsx'),
-    route('menu/:id', './pages/MenuItemDetailPage.tsx'),
+    route('menu/:slug', './pages/MenuItemDetailPage.tsx'),
     route('about', './pages/AboutPage.tsx'),
     route('contact', './pages/ContactPage.tsx'),
     route('blog', './pages/BlogPage.tsx'),

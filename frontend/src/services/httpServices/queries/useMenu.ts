@@ -7,13 +7,13 @@ export const menuKeys = {
   categories: () => [...menuKeys.all, 'categories'] as const,
   items: () => [...menuKeys.all, 'items'] as const,
   itemList: (filters: ItemFilters) => [...menuKeys.items(), filters] as const,
-  detail: (id: string) => [...menuKeys.all, 'detail', id] as const,
+  detail: (slug: string) => [...menuKeys.all, 'detail', slug] as const,
 }
 
 export function useCategories() {
   return useQuery({
     queryKey: menuKeys.categories(),
-    queryFn: () => publicService.getCategories(),
+    queryFn: () => publicService.getCategories({ limit: 100 }),
   })
 }
 
@@ -24,10 +24,10 @@ export function useMenuItems(filters: ItemFilters) {
   })
 }
 
-export function useMenuItem(id: string) {
+export function useMenuItem(slug: string) {
   return useQuery({
-    queryKey: menuKeys.detail(id),
-    queryFn: () => publicService.getItem(id),
-    enabled: Boolean(id),
+    queryKey: menuKeys.detail(slug),
+    queryFn: () => publicService.getItemBySlug(slug),
+    enabled: Boolean(slug),
   })
 }
