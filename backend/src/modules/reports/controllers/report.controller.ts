@@ -8,6 +8,7 @@ import { DashboardResponseDto } from '../dto/dashboard-response.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
+import { KitchenReportsService } from '../../kitchen-reports/providers/kitchen-reports.service';
 
 @ApiTags('Sales Reports')
 @ApiBearerAuth('staff-auth')
@@ -15,7 +16,10 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @Controller('sales-reports')
 @Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class SalesReportController {
-    constructor(private readonly reportService: ReportService) {}
+    constructor(
+        private readonly reportService: ReportService,
+        private readonly kitchenReportsService: KitchenReportsService,
+    ) {}
 
     @Get('financial-summary')
     @ApiOperation({ summary: 'Get overall financial summary (total sales, expenses, and current fund)' })
@@ -311,32 +315,26 @@ export class SalesReportController {
         };
     }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Get daily sales report by ID' })
-    @ApiParam({ name: 'id', description: 'Daily sales report UUID' })
-    @ApiResponse({ status: 200, description: 'Daily sales report retrieved successfully', type: DailyReportResponseDto })
-    @ApiResponse({ status: 404, description: 'Daily sales report not found' })
-    async findOne(@Param('id', ParseUUIDPipe) id: string) {
-        const response = await this.reportService.findOne(id);
+    @Get('kitchen-report')
+    @ApiOperation({ summary: 'Get kitchen report summary' })
+    @ApiQuery({ name: 'date', required: false, description: 'Specific date (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'startDate', required: false, description: 'Start date for range (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'endDate', required: false, description: 'End date for range (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'filterType', required: false, enum: ['month', 'year'], description: 'Filter type' })
+    @ApiQuery({ name: 'filterValue', required: false, description: 'Filter value: YYYY-MM for month, YYYY for year' })
+    @ApiResponse({ status: 200, description: 'Kitchen report retrieved successfully' })
+    async getKitchenReport(
+        @Query('date') date?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('filterType') filterType?: string,
+        @Query('filterValue') filterValue?: string,
+    ) {
+        const data = await this.kitchenReportsService.getSummary(date, startDate, endDate, filterType, filterValue);
         return {
-            data: response,
+            data,
             status: 'success',
-            message: 'Daily sales report retrieved successfully',
-            statusCode: HttpStatus.OK
-        };
-    }
-
-    @Delete(':id')
-    @ApiOperation({ summary: 'Delete daily sales report' })
-    @ApiParam({ name: 'id', description: 'Daily sales report UUID' })
-    @ApiResponse({ status: 200, description: 'Daily sales report deleted successfully' })
-    @ApiResponse({ status: 404, description: 'Daily sales report not found' })
-    async remove(@Param('id', ParseUUIDPipe) id: string) {
-        const response = await this.reportService.remove(id);
-        return {
-            data: response,
-            status: 'success',
-            message: 'Daily sales report deleted successfully',
+            message: 'Kitchen report retrieved successfully',
             statusCode: HttpStatus.OK
         };
     }
@@ -553,5 +551,35 @@ export class SalesReportController {
                 error: error.message
             });
         }
+    }
+
+    @Get(':id')
+    @ApiOperation({ summary: 'Get daily sales report by ID' })
+    @ApiParam({ name: 'id', description: 'Daily sales report UUID' })
+    @ApiResponse({ status: 200, description: 'Daily sales report retrieved successfully', type: DailyReportResponseDto })
+    @ApiResponse({ status: 404, description: 'Daily sales report not found' })
+    async findOne(@Param('id', ParseUUIDPipe) id: string) {
+        const response = await this.reportService.findOne(id);
+        return {
+            data: response,
+            status: 'success',
+            message: 'Daily sales report retrieved successfully',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete daily sales report' })
+    @ApiParam({ name: 'id', description: 'Daily sales report UUID' })
+    @ApiResponse({ status: 200, description: 'Daily sales report deleted successfully' })
+    @ApiResponse({ status: 404, description: 'Daily sales report not found' })
+    async remove(@Param('id', ParseUUIDPipe) id: string) {
+        const response = await this.reportService.remove(id);
+        return {
+            data: response,
+            status: 'success',
+            message: 'Daily sales report deleted successfully',
+            statusCode: HttpStatus.OK
+        };
     }
 }

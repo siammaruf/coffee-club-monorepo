@@ -152,7 +152,7 @@ export class ReportService {
                     slug: 'daily-expense'
                 }
             },
-            relations: ['expense_categories']
+            relations: ['category']
         });
 
         const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
