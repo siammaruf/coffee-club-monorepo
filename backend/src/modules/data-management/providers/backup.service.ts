@@ -33,9 +33,6 @@ import { Salary } from '../../staff-salary/entities/salary.entity';
 import { StuffAttendance } from '../../stuff-attendance/entities/stuff-attendance.entity';
 import { Leave } from '../../stuff-leave/entities/leave.entity';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
-import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
-import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
 import { Bank } from '../../banks/entities/bank.entity';
 import { Cart } from '../../cart/entities/cart.entity';
@@ -84,12 +81,6 @@ export class BackupService {
     private readonly leaveRepo: Repository<Leave>,
     @InjectRepository(KitchenItems)
     private readonly kitchenItemsRepo: Repository<KitchenItems>,
-    @InjectRepository(KitchenStock)
-    private readonly kitchenStockRepo: Repository<KitchenStock>,
-    @InjectRepository(KitchenOrder)
-    private readonly kitchenOrderRepo: Repository<KitchenOrder>,
-    @InjectRepository(KitchenOrderItem)
-    private readonly kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport)
     private readonly dailyReportRepo: Repository<DailyReport>,
     @InjectRepository(Bank)
@@ -267,27 +258,6 @@ export class BackupService {
     const kitchenItems = await this.kitchenItemsRepo.find();
     data['kitchen_items'] = kitchenItems;
     entityCounts['kitchen_items'] = kitchenItems.length;
-
-    // Dump kitchen_stock
-    const kitchenStock = await this.kitchenStockRepo.find({
-      relations: ['kitchen_item'],
-    });
-    data['kitchen_stock'] = kitchenStock;
-    entityCounts['kitchen_stock'] = kitchenStock.length;
-
-    // Dump kitchen_orders
-    const kitchenOrders = await this.kitchenOrderRepo.find({
-      relations: ['user', 'order_items'],
-    });
-    data['kitchen_orders'] = kitchenOrders;
-    entityCounts['kitchen_orders'] = kitchenOrders.length;
-
-    // Dump kitchen_order_items
-    const kitchenOrderItems = await this.kitchenOrderItemRepo.find({
-      relations: ['kitchen_order', 'kitchen_stock'],
-    });
-    data['kitchen_order_items'] = kitchenOrderItems;
-    entityCounts['kitchen_order_items'] = kitchenOrderItems.length;
 
     // Dump daily_reports
     const dailyReports = await this.dailyReportRepo.find();
@@ -489,9 +459,6 @@ export class BackupService {
         'carts',
         'activities',
         'daily_reports',
-        'kitchen_order_items',
-        'kitchen_orders',
-        'kitchen_stock',
         'kitchen_items',
         'leaves',
         'stuff_attendance',
@@ -538,9 +505,6 @@ export class BackupService {
         { key: 'stuff_attendance', table: 'stuff_attendance' },
         { key: 'leaves', table: 'leaves' },
         { key: 'kitchen_items', table: 'kitchen_items' },
-        { key: 'kitchen_stock', table: 'kitchen_stock' },
-        { key: 'kitchen_orders', table: 'kitchen_orders' },
-        { key: 'kitchen_order_items', table: 'kitchen_order_items' },
         { key: 'daily_reports', table: 'daily_reports' },
         { key: 'banks', table: 'banks' },
         { key: 'carts', table: 'carts' },
