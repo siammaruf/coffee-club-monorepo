@@ -69,6 +69,10 @@ This API uses **httpOnly cookie-based JWT authentication** for both staff and cu
 | GET | `/public/items` | List all available items (with filters) | Public |
 | GET | `/public/items/:id` | Get item detail by ID | Public |
 | GET | `/public/tables` | List all tables with availability | Public |
+| GET | `/public/blog` | List published blog posts (paginated, search) | Public |
+| GET | `/public/blog/:slug` | Get single published blog post by slug | Public |
+| POST | `/public/reservations` | Create a reservation (no auth required) | Public |
+| GET | `/public/partners` | List active partners (sorted by sort_order) | Public |
 
 ## Users (Staff Management)
 
@@ -282,6 +286,37 @@ This API uses **httpOnly cookie-based JWT authentication** for both staff and cu
 | GET | `/customer-orders` | Get customer's order history | Customer Auth |
 | GET | `/customer-orders/:id` | Get order detail | Customer Auth |
 | PUT | `/customer-orders/:id/cancel` | Cancel pending order | Customer Auth |
+
+## Blog [NEW]
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/blog` | Create blog post | Auth + Admin |
+| GET | `/blog` | List all blog posts (paginated) | Auth |
+| GET | `/blog/:id` | Get blog post by ID | Auth |
+| PUT | `/blog/:id` | Update blog post | Auth + Admin |
+| DELETE | `/blog/:id` | Delete blog post | Auth + Admin |
+
+## Reservations [NEW]
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/reservations` | Create reservation (admin) | Auth |
+| GET | `/reservations` | List all reservations (paginated) | Auth |
+| GET | `/reservations/:id` | Get reservation by ID | Auth |
+| PUT | `/reservations/:id` | Update reservation status | Auth |
+| DELETE | `/reservations/:id` | Delete reservation | Auth + Admin |
+| GET | `/customer/reservations` | Get customer's reservations | Customer Auth |
+
+## Partners [NEW]
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/partners` | Create partner | Auth + Admin |
+| GET | `/partners` | List all partners | Auth |
+| GET | `/partners/:id` | Get partner by ID | Auth |
+| PUT | `/partners/:id` | Update partner | Auth + Admin |
+| DELETE | `/partners/:id` | Delete partner | Auth + Admin |
 
 ---
 

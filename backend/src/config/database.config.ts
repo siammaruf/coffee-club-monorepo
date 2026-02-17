@@ -11,6 +11,7 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     password: configService.get('DB_PASSWORD'),
     database: configService.get('DB_NAME'),
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
     synchronize: configService.get<boolean>('DB_SYNC', true),
     logging: configService.get<boolean>('DB_LOGGING', false),
     entityPrefix: configService.get<string>('DB_TABLE_PREFIX', ''), 

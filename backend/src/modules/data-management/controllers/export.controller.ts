@@ -12,6 +12,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 
@@ -20,8 +21,11 @@ import { ExportDataDto } from '../dto/export-data.dto';
 import { ExportGroup } from '../enums/export-group.enum';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Data Management - Export')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('data-management/export')
 @Roles(UserRole.ADMIN)
 export class ExportController {

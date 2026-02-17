@@ -1,5 +1,5 @@
 import { UserModule } from '../modules/users/user.module';
-// import { LeaveModule } from '../modules/stuff-leave/leave.module';
+import { LeaveModule } from '../modules/stuff-leave/leave.module';
 import { SalaryModule } from '../modules/staff-salary/salary.module';
 import { ItemModule } from 'src/modules/items/item.module';
 import { CategoryModule } from 'src/modules/categories/category.module';
@@ -24,11 +24,17 @@ import { PublicModule } from 'src/modules/public/public.module';
 import { CartModule } from 'src/modules/cart/cart.module';
 import { CustomerOrdersModule } from 'src/modules/customer-orders/customer-orders.module';
 import { DataManagementModule } from 'src/modules/data-management/data-management.module';
+import { BlogModule } from 'src/modules/blog/blog.module';
+import { ReservationsModule } from 'src/modules/reservations/reservations.module';
+import { PartnersModule } from 'src/modules/partners/partners.module';
+import { SettingsModule } from 'src/modules/settings/settings.module';
+import { WebsiteContentModule } from 'src/modules/website-content/website-content.module';
+import { ContactMessagesModule } from 'src/modules/contact-messages/contact-messages.module';
 
 export const featureModules = [
     UserModule,
     AuthModule,
-    // LeaveModule,
+    LeaveModule,
     SalaryModule,
     ItemModule,
     CategoryModule,
@@ -52,4 +58,10 @@ export const featureModules = [
     CartModule,
     CustomerOrdersModule,
     DataManagementModule,
+    BlogModule,
+    ReservationsModule,
+    PartnersModule,
+    SettingsModule,
+    WebsiteContentModule,
+    ContactMessagesModule,
 ];

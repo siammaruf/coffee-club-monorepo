@@ -1,13 +1,22 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { StuffAttendanceService } from './providers/stuff-attendance.service';
 import { CreateStuffAttendanceDto } from './dto/create-stuff-attendance.dto';
 import { UpdateStuffAttendanceDto } from './dto/update-stuff-attendance.dto';
 import { StuffAttendanceResponseDto } from './dto/stuff-attendance-response.dto';
 import { AttendanceStatus } from './enum/attendance-status.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
+import { CheckInDto } from './dto/check-in.dto';
+import { CheckOutDto } from './dto/check-out.dto';
+import { ApproveAttendanceDto } from './dto/approve-attendance.dto';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Staff Attendance')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('stuff-attendance')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA, UserRole.CHEF)
 export class StuffAttendanceController {
   constructor(private readonly stuffAttendanceService: StuffAttendanceService) {}
 
@@ -35,12 +44,46 @@ export class StuffAttendanceController {
     };
   }
 
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.stuffAttendanceService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.stuffAttendanceService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+
   @Get()
   @ApiOperation({ summary: 'Get all attendance records with optional filtering' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number', type: Number })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page', type: Number })
   @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'status', required: false, enum: AttendanceStatus, description: 'Filter by attendance status' })
+  @ApiQuery({ name: 'status', required: false, enum: AttendanceStatus, enumName: 'AttendanceStatus', description: 'Filter by attendance status' })
   @ApiQuery({ name: 'startDate', required: false, type: Date, description: 'Filter by start date (YYYY-MM-DD)' })
   @ApiQuery({ name: 'endDate', required: false, type: Date, description: 'Filter by end date (YYYY-MM-DD)' })
   @ApiResponse({ 
@@ -189,7 +232,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async checkIn(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() data: { notes?: string }
+    @Body() data: CheckInDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;
@@ -217,7 +260,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async checkOut(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() data: { notes?: string, overtime_hours?: number }
+    @Body() data: CheckOutDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;
@@ -266,7 +309,7 @@ export class StuffAttendanceController {
   @ApiResponse({ status: 404, description: 'Attendance record not found' })
   async approve(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() approveDto: { approved_by: string }
+    @Body() approveDto: ApproveAttendanceDto,
   ): Promise<{
     data: StuffAttendanceResponseDto;
     status: string;
@@ -328,4 +371,26 @@ export class StuffAttendanceController {
       statusCode: HttpStatus.OK
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.stuffAttendanceService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.stuffAttendanceService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

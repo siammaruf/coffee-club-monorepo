@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, ParseUUIDPipe, UseInterceptors, UploadedFiles, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpStatus, ParseUUIDPipe, UseInterceptors, UploadedFiles, BadRequestException , Patch} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { SalaryService } from './providers/salary.service';
 import { CreateSalaryDto } from './dto/create-salary.dto';
@@ -7,9 +7,15 @@ import { UpdateSalaryDto } from './dto/update-salary.dto';
 import { Salary } from './entities/salary.entity';
 import { receiptStorage } from 'src/common/utils/storage.util';
 import { SalaryResponseDto } from './dto/salary-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Staff Salary')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('staff-salary')
+@Roles(UserRole.ADMIN)
 export class SalaryController {
   constructor(private readonly salaryService: SalaryService) {}
 
@@ -122,6 +128,40 @@ export class SalaryController {
       statusCode: HttpStatus.CREATED
     };
   }
+
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.salaryService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.salaryService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
 
   @Get()
   @ApiOperation({ 
@@ -415,7 +455,6 @@ export class SalaryController {
     statusCode: HttpStatus;
   }> {
     if (files?.receipt_image?.[0]?.path) {
-      console.log('Receipt image stored at:', files.receipt_image[0].path);
       updateSalaryDto.receipt_image = files.receipt_image[0].path.replace(/\\/g, '/');
     }
     
@@ -681,4 +720,26 @@ export class SalaryController {
       statusCode: HttpStatus.OK
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.salaryService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.salaryService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

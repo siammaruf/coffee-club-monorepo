@@ -1,9 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsUUID, IsString, IsEnum, IsNumber, IsArray, ValidateNested, IsOptional, IsPositive } from "class-validator";
+import { IsUUID, IsString, IsEnum, IsNumber, IsArray, ValidateNested, IsOptional, IsPositive, IsBoolean } from "class-validator";
 import { ItemType } from "../enum/item-type.enum";
 import { Category } from "src/modules/categories/entities/category.entity";
 import { Type, Transform } from "class-transformer";
 import { ItemStatus } from "../enum/item-status.enum";
+import { VariationDto } from "./variation.dto";
 
 export class BaseItemDto {
   @ApiProperty()
@@ -48,7 +49,6 @@ export class BaseItemDto {
   @ApiProperty()
   @IsNumber()
   @IsOptional()
-  // @IsPositive({ message: 'Sale price must be a positive number' })
   @Transform(({ value }) => {
     const num = parseFloat(value);
     return isNaN(num) ? value : num;
@@ -59,6 +59,12 @@ export class BaseItemDto {
   @IsString()
   @IsOptional()
   image?: string;
+
+  @ApiProperty({ description: 'Whether this item has variations' })
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  has_variations?: boolean;
 
   @ApiProperty({
     description: 'Categories associated with this item',
@@ -77,4 +83,11 @@ export class BaseItemDto {
     return Array.isArray(value) ? value : [value];
   })
   categories?: Category[];
+
+  @ApiProperty({ description: 'Item variations', type: () => [VariationDto], isArray: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariationDto)
+  variations?: VariationDto[];
 }

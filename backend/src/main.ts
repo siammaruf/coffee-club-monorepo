@@ -6,12 +6,11 @@ import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
-import * as cookieParser from 'cookie-parser';
+import { RolesGuard } from './common/guards/roles.guard';
+import cookieParser from 'cookie-parser';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as chalk from 'chalk';
-
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
@@ -27,7 +26,9 @@ async function bootstrap() {
     .setDescription('API documentation')
     .setVersion('1.0')
     .addBasicAuth(BasicAuthOptions)
-    .setExternalDoc('Postman Collection', '/api/v1/docs-json') 
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Employee JWT token' }, 'staff-auth')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Customer JWT token' }, 'customer-auth')
+    .setExternalDoc('Postman Collection', '/api/v1/docs-json')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
 
@@ -43,7 +44,7 @@ async function bootstrap() {
 
   // Apply global guards
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  app.useGlobalGuards(new JwtAuthGuard(reflector), new RolesGuard(reflector));
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new DatabaseExceptionFilter());
 
@@ -61,12 +62,12 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   
   const serverUrl = `http://localhost:${port}`;
   const docsUrl = `${serverUrl}/api/v1/docs`;
   
-  console.log('\n🚀 Application is running on:', chalk.blue.underline(serverUrl));
-  console.log('📚 API Documentation:', chalk.blue.underline(docsUrl), '\n');
+  console.log('\n🚀 Application is running on:', serverUrl);
+  console.log('📚 API Documentation:', docsUrl, '\n');
 }
 bootstrap();

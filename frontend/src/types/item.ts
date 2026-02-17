@@ -8,6 +8,16 @@ export interface Category {
   item_count?: number
 }
 
+export interface ItemVariation {
+  id: string
+  name: string
+  name_bn: string
+  regular_price: number
+  sale_price: number | null
+  status: 'available' | 'active' | 'on_sale' | 'out_of_stock' | 'discontinued'
+  sort_order: number
+}
+
 export interface Item {
   id: string
   name: string
@@ -15,29 +25,38 @@ export interface Item {
   slug: string
   description: string
   type: 'BAR' | 'KITCHEN'
-  status: 'AVAILABLE' | 'UNAVAILABLE'
+  status: 'available' | 'active' | 'on_sale' | 'out_of_stock' | 'discontinued'
   regular_price: number
   sale_price: number | null
+  max_price?: number
+  max_sale_price?: number
+  has_variations: boolean
+  variations?: ItemVariation[]
   image: string
   categories: Category[]
   created_at: string
   updated_at: string
 }
 
+/**
+ * Backend returns pagination fields at the root level, not inside a `meta` object.
+ * Shape: { data, total, page, limit, totalPages, status, message, statusCode }
+ */
 export interface ItemsResponse {
   data: Item[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  status: string
+  message: string
+  statusCode: number
 }
 
 export interface ItemFilters {
-  category?: string
+  /** Filter by category slug -- backend param is `categorySlug` */
+  categorySlug?: string
   search?: string
-  type?: 'BAR' | 'KITCHEN'
   page?: number
   limit?: number
 }

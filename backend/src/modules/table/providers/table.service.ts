@@ -163,7 +163,7 @@ export class TableService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.tableRepository.delete(id);
+    const result = await this.tableRepository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Table with ID ${id} not found`);
     }
@@ -221,4 +221,41 @@ export class TableService {
       }
     }
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.tableRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.tableRepository.createQueryBuilder('table')
+            .withDeleted()
+            .where('table.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(table.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('table.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.tableRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.tableRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.tableRepository.delete(id);
+    }
 }

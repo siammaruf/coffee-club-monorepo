@@ -7,7 +7,7 @@ export const initialCategories: Category[] = [
     name_bn: "ইউটিলিটিজ",
     slug: "utilities",
     description: "Utility items for the coffee club.",
-    image: "https://via.placeholder.com/40",
+    icon: "https://via.placeholder.com/40",
   },
   {
     id: "2",
@@ -15,7 +15,7 @@ export const initialCategories: Category[] = [
     name_bn: "কফি",
     slug: "coffee",
     description: "Various coffee products and blends.",
-    image: "https://via.placeholder.com/40",
+    icon: "https://via.placeholder.com/40",
   },
   {
     id: "3",
@@ -23,6 +23,6 @@ export const initialCategories: Category[] = [
     name_bn: "চা",
     slug: "tea",
     description: "Different types of tea varieties.",
-    image: "https://via.placeholder.com/40",
+    icon: "https://via.placeholder.com/40",
   },
 ];

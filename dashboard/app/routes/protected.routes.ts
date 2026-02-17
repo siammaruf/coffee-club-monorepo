@@ -42,4 +42,10 @@ export const protectedRoutes = [
   route("attendance", "pages/dashboard/attendance/index.tsx"),
   route("tables", "pages/dashboard/tables/index.tsx"),
   route("expenses/categories", "pages/dashboard/expense-categories/index.tsx"),
+  route("data-management", "pages/dashboard/data-management/index.tsx"),
+  route("website", "pages/dashboard/website/index.tsx"),
+  route("blog", "pages/dashboard/blog/index.tsx"),
+  route("reservations", "pages/dashboard/reservations/index.tsx"),
+  route("contact-messages", "pages/dashboard/contact-messages/index.tsx"),
+  route("partners", "pages/dashboard/partners/index.tsx"),
 ];

@@ -19,11 +19,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import {
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
   CheckCircle,
   XCircle,
   Clock,
@@ -35,7 +38,9 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Trash2
+  Trash2,
+  RotateCcw,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import AttendanceSkeleton from "~/components/skeleton/AttendanceSkeleton";
@@ -43,10 +48,10 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddAttendanceFormModal from "~/components/modals/AddAttendanceFormModal";
 import { attendanceService } from "~/services/httpServices/attendanceService";
 import { userService } from "~/services/httpServices/userService";
-import type { 
-  Attendance, 
-  AttendanceFormData, 
-  AttendanceStatus, 
+import type {
+  Attendance,
+  AttendanceFormData,
+  AttendanceStatus,
   GetAllAttendanceParams,
   AttendanceListResponse
 } from "~/types/attendance";
@@ -76,14 +81,23 @@ export default function AttendancePage() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [perPage] = useState(20);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchEmployees();
-    fetchAttendance();
   }, []);
 
   useEffect(() => {
     fetchAttendance();
-  }, [selectedDate, statusFilter, approvalFilter, currentPage]);
+    clearSelection();
+  }, [selectedDate, statusFilter, approvalFilter, currentPage, viewMode]);
+
+  useEffect(() => {
+    attendanceService.getTrash({ page: 1, per_page: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let filtered = attendanceRecords;
@@ -99,7 +113,7 @@ export default function AttendancePage() {
     }
 
     if (roleFilter) {
-      filtered = filtered.filter(record => 
+      filtered = filtered.filter(record =>
         record.user?.role === roleFilter
       );
     }
@@ -120,26 +134,36 @@ export default function AttendancePage() {
   const fetchAttendance = async () => {
     try {
       setIsLoading(true);
-      
-      const params: GetAllAttendanceParams = {
-        page: currentPage,
-        per_page: perPage,
-        attendance_date: selectedDate,
-        status: statusFilter || undefined,
-        is_approved: approvalFilter ? approvalFilter === 'approved' : undefined,
-        sort_by: 'attendance_date',
-        sort_order: 'desc'
-      };
 
-      const response: AttendanceListResponse = await attendanceService.getAll(params);
-      
-      if (response.status === 'success') {
+      if (viewMode === 'trash') {
+        const response: any = await attendanceService.getTrash({
+          page: currentPage,
+          per_page: perPage,
+        });
         setAttendanceRecords(response.data || []);
         setTotalRecords(response.total || 0);
         setTotalPages(response.totalPages || 1);
       } else {
-        console.error('Failed to fetch attendance:', response.message);
-        setAttendanceRecords([]);
+        const params: GetAllAttendanceParams = {
+          page: currentPage,
+          per_page: perPage,
+          attendance_date: selectedDate,
+          status: statusFilter || undefined,
+          is_approved: approvalFilter ? approvalFilter === 'approved' : undefined,
+          sort_by: 'attendance_date',
+          sort_order: 'desc'
+        };
+
+        const response: AttendanceListResponse = await attendanceService.getAll(params);
+
+        if (response.status === 'success') {
+          setAttendanceRecords(response.data || []);
+          setTotalRecords(response.total || 0);
+          setTotalPages(response.totalPages || 1);
+        } else {
+          console.error('Failed to fetch attendance:', response.message);
+          setAttendanceRecords([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
@@ -161,7 +185,7 @@ export default function AttendancePage() {
         console.error('User not authenticated');
         return;
       }
-    
+
     try {
       await attendanceService.approve(approvalId, user.id);
       await fetchAttendance();
@@ -177,13 +201,76 @@ export default function AttendancePage() {
 
   const handleDeleteConfirm = async () => {
     if (!deleteId) return;
-    
+
     try {
       await attendanceService.delete(deleteId);
+      setTrashCount(prev => prev + 1);
       await fetchAttendance();
       setDeleteId(null);
     } catch (error) {
       console.error('Error deleting attendance:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await attendanceService.bulkDelete(Array.from(selectedIds));
+      setAttendanceRecords(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await attendanceService.bulkRestore(Array.from(selectedIds));
+      setAttendanceRecords(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await attendanceService.bulkPermanentDelete(Array.from(selectedIds));
+      setAttendanceRecords(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await attendanceService.restore(id);
+      setAttendanceRecords(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await attendanceService.permanentDelete(id);
+      setAttendanceRecords(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
     }
   };
 
@@ -194,7 +281,7 @@ export default function AttendancePage() {
   const handleAddAttendanceSubmit = async (data: AttendanceFormData) => {
     try {
       const response = await attendanceService.create(data);
-      
+
       if (response.status === 'success') {
         console.log('Attendance record added successfully');
         await fetchAttendance();
@@ -249,13 +336,13 @@ export default function AttendancePage() {
 
   const formatTime = (timeString: string | null) => {
     if (!timeString) return "N/A";
-    
+
     try {
       const [hours, minutes] = timeString.split(':');
       const hoursNum = parseInt(hours);
       const period = hoursNum >= 12 ? 'PM' : 'AM';
       const hours12 = hoursNum % 12 || 12;
-      
+
       return `${hours12}:${minutes} ${period}`;
     } catch (error) {
       console.error('Error formatting time:', error);
@@ -310,7 +397,7 @@ export default function AttendancePage() {
   const hasFilteredResults = filteredRecords.length > 0;
 
   const totalEmployees = employees.length;
-  const presentCount = filteredRecords.filter(record => 
+  const presentCount = filteredRecords.filter(record =>
     ['present', 'late', 'half_day'].includes(record.status)
   ).length;
   const absentCount = filteredRecords.filter(record => record.status === 'absent').length;
@@ -332,126 +419,142 @@ export default function AttendancePage() {
           <p className="text-gray-600">Monitor and manage employee attendance</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAddAttendance} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Attendance
-          </Button>
-          <Button variant="outline" onClick={exportAttendance} className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-          <Input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="w-auto"
-          />
+          {viewMode === 'active' && (
+            <>
+              <Button onClick={handleAddAttendance} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Attendance
+              </Button>
+              <Button variant="outline" onClick={exportAttendance} className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="w-auto"
+              />
+            </>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Total Employees
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEmployees}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              Present
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{presentCount}</div>
-            <div className="text-sm text-gray-500">
-              {totalEmployees ? Math.round((presentCount / totalEmployees) * 100) : 0}% attendance
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-red-500" />
-              Absent
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{absentCount}</div>
-          </CardContent>
-        </Card>
-        <Card className={pendingApprovals > 0 ? "border-yellow-300" : ""}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Clock className={`w-4 h-4 ${pendingApprovals > 0 ? "text-yellow-500" : ""}`} />
-              Pending Approvals
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${pendingApprovals > 0 ? "text-yellow-600" : ""}`}>
-              {pendingApprovals}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats Cards - Only show in active view */}
+      {viewMode === 'active' && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalEmployees}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                Present
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{presentCount}</div>
+              <div className="text-sm text-gray-500">
+                {totalEmployees ? Math.round((presentCount / totalEmployees) * 100) : 0}% attendance
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-red-500" />
+                Absent
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{absentCount}</div>
+            </CardContent>
+          </Card>
+          <Card className={pendingApprovals > 0 ? "border-yellow-300" : ""}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Clock className={`w-4 h-4 ${pendingApprovals > 0 ? "text-yellow-500" : ""}`} />
+                Pending Approvals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${pendingApprovals > 0 ? "text-yellow-600" : ""}`}>
+                {pendingApprovals}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Attendance Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>
-              {hasRecords ? (
-                <div className="flex flex-col gap-1">
-                  <span>Attendance for {format(new Date(selectedDate), 'MMMM d, yyyy')}</span>
-                  <span className="text-sm font-normal text-gray-500">
-                    Showing {filteredRecords.length} of {totalRecords} records
-                  </span>
-                </div>
-              ) : (
-                'Attendance Records'
-              )}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'active' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={viewMode === 'trash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('trash')}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash {trashCount > 0 && `(${trashCount})`}
+              </Button>
+            </div>
             <div className="flex gap-4 items-center">
-              <Select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Roles</option>
-                {uniqueRoles.map(role => (
-                  <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
-                ))}
-              </Select>
+              {viewMode === 'active' && (
+                <>
+                  <Select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Roles</option>
+                    {uniqueRoles.map(role => (
+                      <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                    ))}
+                  </Select>
 
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as AttendanceStatus | "")}
-                className="w-40"
-              >
-                <option value="">All Statuses</option>
-                <option value="present">Present</option>
-                <option value="late">Late</option>
-                <option value="absent">Absent</option>
-                <option value="half_day">Half Day</option>
-                <option value="on_leave">On Leave</option>
-              </Select>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as AttendanceStatus | "")}
+                    className="w-40"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="present">Present</option>
+                    <option value="late">Late</option>
+                    <option value="absent">Absent</option>
+                    <option value="half_day">Half Day</option>
+                    <option value="on_leave">On Leave</option>
+                  </Select>
 
-              <Select
-                value={approvalFilter}
-                onChange={(e) => setApprovalFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Records</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending Approval</option>
-              </Select>
+                  <Select
+                    value={approvalFilter}
+                    onChange={(e) => setApprovalFilter(e.target.value)}
+                    className="w-40"
+                  >
+                    <option value="">All Records</option>
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending Approval</option>
+                  </Select>
+                </>
+              )}
 
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -466,11 +569,26 @@ export default function AttendancePage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === 'trash'}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
           {hasRecords && hasFilteredResults ? (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredRecords.map(r => r.id))}
+                        onChange={() => toggleSelectAll(filteredRecords.map(r => r.id))}
+                      />
+                    </TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead>Check In</TableHead>
                     <TableHead>Check Out</TableHead>
@@ -484,9 +602,17 @@ export default function AttendancePage() {
                 <TableBody>
                   {filteredRecords.map((record) => (
                     <TableRow key={record.id} className={
-                      record.status === 'absent' ? 'bg-red-50' : 
-                      record.status === 'late' ? 'bg-yellow-50' : ''
+                      viewMode === 'active'
+                        ? record.status === 'absent' ? 'bg-red-50' :
+                          record.status === 'late' ? 'bg-yellow-50' : ''
+                        : ''
                     }>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected(record.id)}
+                          onChange={() => toggleSelect(record.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {record.user?.picture ? (
@@ -565,43 +691,66 @@ export default function AttendancePage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/dashboard/attendance/${record.id}`)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/dashboard/attendance/${record.id}/edit`)}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Record
-                            </DropdownMenuItem>
-                            {!record.is_approved && (
+                        {viewMode === 'active' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => handleApprove(record.id)}
-                                className="text-green-600"
+                                onClick={() => navigate(`/dashboard/attendance/${record.id}`)}
                               >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(record.id)}
-                              className="text-red-600"
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/dashboard/attendance/${record.id}/edit`)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Record
+                              </DropdownMenuItem>
+                              {!record.is_approved && (
+                                <DropdownMenuItem
+                                  onClick={() => handleApprove(record.id)}
+                                  className="text-green-600"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(record.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRestore(record.id)}
+                              title="Restore"
+                              className="text-green-600 hover:bg-green-50 cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePermanentDelete(record.id)}
+                              title="Delete Permanently"
+                              className="text-red-600 hover:bg-red-50 cursor-pointer"
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -614,7 +763,7 @@ export default function AttendancePage() {
                   <div className="text-sm text-gray-600">
                     Showing {((currentPage - 1) * perPage) + 1} to {Math.min(currentPage * perPage, totalRecords)} of {totalRecords} entries
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -705,9 +854,13 @@ export default function AttendancePage() {
             /* No records for the selected date - Empty state */
             <div className="text-center py-12">
               <CalendarDays className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No attendance records for this date</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === 'trash' ? 'Trash is empty' : 'No attendance records for this date'}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                There are no attendance records available for {format(new Date(selectedDate), 'MMMM d, yyyy')}.
+                {viewMode === 'trash'
+                  ? 'No deleted attendance records found.'
+                  : `There are no attendance records available for ${format(new Date(selectedDate), 'MMMM d, yyyy')}.`}
               </p>
             </div>
           )}
@@ -736,7 +889,7 @@ export default function AttendancePage() {
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Attendance Record"
-        description="Are you sure you want to delete this attendance record? This action cannot be undone."
+        description="Are you sure you want to delete this attendance record? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}

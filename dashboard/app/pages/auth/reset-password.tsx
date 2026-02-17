@@ -87,7 +87,7 @@ export default function ResetPassword() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => navigate('/auth/forgot-password')} 
+              onClick={() => navigate('/forgot-password')} 
               className="w-full"
             >
               Request New Reset Link

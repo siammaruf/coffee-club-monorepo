@@ -30,3 +30,9 @@ Thumbs.db
 # Temporary plans (keep .gitkeep)
 .claude-project/status/temp/*
 !.claude-project/status/temp/.gitkeep
+
+# Large binary assets
+.claude-project/resources/
+# frontend/public/img/
+
+menual-sc/

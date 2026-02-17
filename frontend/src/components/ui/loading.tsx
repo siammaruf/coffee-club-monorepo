@@ -18,13 +18,13 @@ function Loading({ size = 'md', className, text, fullPage = false }: LoadingProp
   const spinner = (
     <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
       <Loader2 className={cn('animate-spin text-primary-500', sizeClasses[size])} />
-      {text && <p className="text-sm text-coffee-light">{text}</p>}
+      {text && <p className="text-sm text-text-muted">{text}</p>}
     </div>
   )
 
   if (fullPage) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center bg-warm-bg">
         {spinner}
       </div>
     )
@@ -37,7 +37,7 @@ function LoadingSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-lg bg-primary-100',
+        'animate-pulse rounded-lg bg-warm-surface',
         className
       )}
     />

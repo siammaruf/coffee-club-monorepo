@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Plus, X } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import type { LocalCartItem } from '@/types/cart'
@@ -10,75 +10,90 @@ interface CartItemProps {
 
 export function CartItem({ cartItem, compact = false }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart()
-  const { item, quantity } = cartItem
-  const price = item.sale_price ?? item.regular_price
+  const { item, quantity, selectedVariation } = cartItem
+  const price = selectedVariation
+    ? (selectedVariation.sale_price ?? selectedVariation.regular_price ?? 0)
+    : (item?.sale_price ?? item?.regular_price ?? 0)
   const itemTotal = price * quantity
+  const imgSrc = item?.image || '/img/6-600x600.png'
 
-  const gradientMap: Record<string, string> = {
-    BAR: 'from-primary-400 to-amber-500',
-    KITCHEN: 'from-emerald-400 to-teal-500',
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3 border-b border-border py-3">
+        {/* Thumbnail */}
+        <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-bg-secondary">
+          <img
+            src={imgSrc}
+            alt={item?.name ?? ''}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-text-primary">
+            {item?.name ?? ''}
+            {selectedVariation && (
+              <span className="text-text-muted"> - {selectedVariation.name}</span>
+            )}
+          </p>
+          <p className="text-xs text-text-muted">{quantity} x {formatPrice(price)}</p>
+        </div>
+        {/* Total */}
+        <span className="text-sm text-accent">{formatPrice(itemTotal)}</span>
+      </div>
+    )
   }
-  const gradient = gradientMap[item.type] ?? 'from-primary-400 to-primary-600'
 
   return (
-    <div className="flex gap-3 rounded-xl border border-primary-50 bg-cream/50 p-3">
-      {/* Image / Placeholder */}
-      <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${gradient} ${compact ? 'h-12 w-12' : ''}`}>
-        {item.image ? (
-          <img
-            src={item.image}
-            alt={item.name}
-            className="h-full w-full rounded-lg object-cover"
-          />
-        ) : (
-          <span className="text-lg font-bold text-white/50">
-            {item.name.charAt(0)}
+    <div className="flex items-center gap-3 border-b border-border py-4">
+      {/* Remove Button */}
+      <button
+        onClick={() => removeItem(cartItem.id)}
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center text-text-muted transition-colors hover:text-error"
+        aria-label={`Remove ${item?.name ?? ''}`}
+      >
+        <X className="h-4 w-4" />
+      </button>
+      {/* Thumbnail */}
+      <div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-bg-secondary">
+        <img
+          src={imgSrc}
+          alt={item?.name ?? ''}
+          className="h-full w-full object-cover"
+        />
+      </div>
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <span className="font-heading text-sm uppercase tracking-[2px] text-text-primary">
+          {item?.name ?? ''}
+        </span>
+        {selectedVariation && (
+          <span className="block text-xs font-normal normal-case tracking-normal text-text-muted">
+            {selectedVariation.name}
           </span>
         )}
-      </div>
-
-      {/* Info */}
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h4 className="truncate text-sm font-bold text-coffee">{item.name}</h4>
-            <p className="text-xs text-coffee-light">{formatPrice(price)} each</p>
-          </div>
-          <button
-            onClick={() => removeItem(item.id)}
-            className="flex-shrink-0 rounded-md p-1 text-coffee-light transition-colors hover:bg-red-50 hover:text-error"
-            aria-label={`Remove ${item.name}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between">
-          {/* Quantity Controls */}
-          <div className="inline-flex items-center rounded-md border border-primary-200 bg-white">
+        {/* Price & Quantity */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-text-muted">{formatPrice(price)}</span>
+          <div className="inline-flex items-center border-2 border-border">
             <button
-              onClick={() => updateQuantity(item.id, quantity - 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-l-md text-coffee-light transition-colors hover:bg-primary-50 hover:text-coffee"
+              onClick={() => updateQuantity(cartItem.id, quantity - 1)}
+              className="flex h-7 w-7 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
               aria-label="Decrease quantity"
             >
               <Minus className="h-3 w-3" />
             </button>
-            <span className="flex h-7 w-8 items-center justify-center border-x border-primary-200 text-xs font-semibold text-coffee">
+            <span className="flex h-7 w-8 items-center justify-center border-x-2 border-border text-sm text-text-primary">
               {quantity}
             </span>
             <button
-              onClick={() => updateQuantity(item.id, quantity + 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-r-md text-coffee-light transition-colors hover:bg-primary-50 hover:text-coffee"
+              onClick={() => updateQuantity(cartItem.id, quantity + 1)}
+              className="flex h-7 w-7 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
               aria-label="Increase quantity"
             >
               <Plus className="h-3 w-3" />
             </button>
           </div>
-
-          {/* Item Total */}
-          <span className="text-sm font-bold text-primary-600">
-            {formatPrice(itemTotal)}
-          </span>
         </div>
       </div>
     </div>

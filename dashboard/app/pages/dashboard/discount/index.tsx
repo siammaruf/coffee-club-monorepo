@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Percent } from "lucide-react";
+import { Plus, Search, Edit, Trash2, MoreHorizontal, Percent, RotateCcw, AlertTriangle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import AddDiscountModal from "~/components/modals/AddDiscountModal";
 import AddDiscountApplicationModal from "~/components/modals/AddDiscountApplicationModal";
 import { discountService } from "~/services/httpServices/discountService";
@@ -38,15 +41,27 @@ export default function DiscountsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [discountApplications, setDiscountApplications] = useState<DiscountApplication[]>([]);
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   // Fetch discounts from API
   useEffect(() => {
     fetchDiscounts();
+    clearSelection();
+  }, [viewMode]);
+
+  useEffect(() => {
+    discountService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
   const fetchDiscounts = async () => {
     try {
-      const res = await discountService.getAll();
-      setDiscounts(res.data || []);
+      const res = viewMode === 'active'
+        ? await discountService.getAll()
+        : await discountService.getTrash();
+      setDiscounts((res as any).data || []);
     } catch (error) {
       setDiscounts([]);
     }
@@ -113,6 +128,7 @@ export default function DiscountsPage() {
     try {
       await discountService.delete(discountToDelete.id);
       setDiscounts(discounts.filter(d => d.id !== discountToDelete.id));
+      setTrashCount(prev => prev + 1);
       setDiscountToDelete(null);
     } catch (error) {
       // Optionally show error feedback
@@ -121,13 +137,75 @@ export default function DiscountsPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await discountService.bulkDelete(Array.from(selectedIds));
+      setDiscounts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await discountService.bulkRestore(Array.from(selectedIds));
+      setDiscounts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await discountService.bulkPermanentDelete(Array.from(selectedIds));
+      setDiscounts(prev => prev.filter(item => !selectedIds.has(item.id)));
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await discountService.restore(id);
+      setDiscounts(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    try {
+      await discountService.permanentDelete(id);
+      setDiscounts(prev => prev.filter(item => item.id !== id));
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+  };
+
   const formatDiscountValue = (type: string, value: number) => {
     return type === "percentage" ? `${value}%` : `$${value}`;
   };
 
   const getDiscountTypeColor = (type: string) => {
-    return type === "percentage" 
-      ? "bg-green-100 text-green-800" 
+    return type === "percentage"
+      ? "bg-green-100 text-green-800"
       : "bg-blue-100 text-blue-800";
   };
 
@@ -138,17 +216,17 @@ export default function DiscountsPage() {
   const getStatus = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
-    
+
     if (expiry < now) {
       return { label: "Expired", color: "bg-red-100 text-red-800" };
     }
-    
+
     const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (daysUntilExpiry <= 7) {
       return { label: "Expiring Soon", color: "bg-yellow-100 text-yellow-800" };
     }
-    
+
     return { label: "Active", color: "bg-green-100 text-green-800" };
   };
 
@@ -163,17 +241,17 @@ export default function DiscountsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Discounts</h2>
           <p className="text-muted-foreground">Manage your discount offers and promotions</p>
         </div>
-        {activeTab === "Discount List" ? (
+        {activeTab === "Discount List" && viewMode === 'active' ? (
           <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" />
             Add Discount
           </Button>
-        ) : (
+        ) : activeTab === "Discount Application" ? (
           <Button className="flex items-center gap-2" onClick={() => setShowAddApplicationModal(true)}>
             <Plus className="h-4 w-4" />
             Add Discount Application
           </Button>
-        )}
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -199,10 +277,24 @@ export default function DiscountsPage() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <Percent className="h-5 w-5" />
-                <span>Discount List ({filteredDiscounts.length})</span>
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === 'active' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('active')}
+                >
+                  Active
+                </Button>
+                <Button
+                  variant={viewMode === 'trash' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('trash')}
+                  className="flex items-center gap-1"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Trash {trashCount > 0 && `(${trashCount})`}
+                </Button>
+              </div>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -215,9 +307,24 @@ export default function DiscountsPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <BulkActionBar
+              selectedCount={selectedCount}
+              onDelete={handleBulkDelete}
+              onClearSelection={clearSelection}
+              isTrashView={viewMode === 'trash'}
+              onRestore={handleBulkRestore}
+              onPermanentDelete={handleBulkPermanentDelete}
+              loading={bulkLoading}
+            />
             <div className="rounded-md border">
               <div className="p-4 bg-muted/50">
-                <div className="grid grid-cols-6 font-medium text-sm">
+                <div className="grid grid-cols-7 font-medium text-sm">
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={isAllSelected(filteredDiscounts.map(d => d.id))}
+                      onChange={() => toggleSelectAll(filteredDiscounts.map(d => d.id))}
+                    />
+                  </div>
                   <div className="text-left">Name</div>
                   <div className="text-center">Type</div>
                   <div className="text-center">Value</div>
@@ -232,7 +339,13 @@ export default function DiscountsPage() {
                     const status = getStatus(discount.expiry_date);
                     return (
                       <div key={discount.id} className="p-4 hover:bg-muted/50">
-                        <div className="grid grid-cols-6 text-sm items-center">
+                        <div className="grid grid-cols-7 text-sm items-center">
+                          <div className="flex items-center">
+                            <Checkbox
+                              checked={isSelected(discount.id)}
+                              onChange={() => toggleSelect(discount.id)}
+                            />
+                          </div>
                           <div className="text-left flex items-center gap-3">
                             <div className="p-2 rounded-full bg-orange-100 flex-shrink-0">
                               <Percent className="w-4 h-4 text-orange-600" />
@@ -267,26 +380,49 @@ export default function DiscountsPage() {
                             </Badge>
                           </div>
                           <div className="flex justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEdit(discount.id)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDelete(discount.id)}
-                                  className="text-red-600 focus:text-red-600"
+                            {viewMode === 'active' ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEdit(discount.id)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(discount.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRestore(discount.id)}
+                                  title="Restore"
+                                  className="text-green-600 hover:bg-green-50 cursor-pointer h-8 w-8"
                                 >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handlePermanentDelete(discount.id)}
+                                  title="Delete Permanently"
+                                  className="text-red-600 hover:bg-red-50 cursor-pointer h-8 w-8"
+                                >
+                                  <AlertTriangle className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -294,7 +430,12 @@ export default function DiscountsPage() {
                   })
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
-                    {searchTerm ? (
+                    {viewMode === 'trash' ? (
+                      <>
+                        <p>Trash is empty.</p>
+                        <p className="text-sm mt-1">No deleted discounts found.</p>
+                      </>
+                    ) : searchTerm ? (
                       <>
                         <p>No discounts found matching "{searchTerm}".</p>
                         <p className="text-sm mt-1">Try adjusting your search terms.</p>
@@ -337,7 +478,7 @@ export default function DiscountsPage() {
       <ConfirmDialog
         open={!!discountToDelete}
         title="Delete Discount"
-        description={`Are you sure you want to delete "${discountToDelete?.name}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${discountToDelete?.name}"? It will be moved to trash.`}
         confirmText={isDeleting ? "Deleting..." : "Delete"}
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}

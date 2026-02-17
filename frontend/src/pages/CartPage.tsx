@@ -1,89 +1,162 @@
-import { Link } from 'react-router-dom'
-import { ShoppingBag, ArrowLeft, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import type { MetaFunction } from 'react-router'
+import { Link } from 'react-router'
+import { ShoppingCart } from 'lucide-react'
 import { CartItem } from '@/components/cart/CartItem'
-import { CartSummary } from '@/components/cart/CartSummary'
-import { Button } from '@/components/ui/button'
 import { useCart } from '@/hooks/useCart'
+import { formatPrice } from '@/lib/utils'
+
+export const meta: MetaFunction = () => [
+  { title: 'Cart | CoffeeClub' },
+  { name: 'description', content: 'View and manage items in your shopping cart.' },
+  { property: 'og:title', content: 'Cart | CoffeeClub' },
+  { property: 'og:description', content: 'View and manage items in your shopping cart.' },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: 'CoffeeClub' },
+  { name: 'twitter:card', content: 'summary_large_image' },
+  { name: 'twitter:title', content: 'Cart | CoffeeClub' },
+  { name: 'twitter:description', content: 'View and manage items in your shopping cart.' },
+  { name: 'robots', content: 'index, follow' },
+]
 
 export default function CartPage() {
-  const { items, itemCount, clearCart } = useCart()
+  const { items, total, clearCart } = useCart()
+  const [couponCode, setCouponCode] = useState('')
 
-  if (items.length === 0) {
+  // Empty Cart State
+  if (!items || items.length === 0) {
     return (
       <>
-        <title>Your Cart | CoffeeClub</title>
-        <meta name="robots" content="noindex, nofollow" />
-      <div className="min-h-[60vh] bg-cream">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-100">
-            <ShoppingBag className="h-12 w-12 text-primary-400" />
-          </div>
-          <h1 className="mt-6 text-2xl font-bold text-coffee">Your cart is empty</h1>
-          <p className="mt-2 text-coffee-light">
-            Looks like you have not added anything to your cart yet.
-          </p>
-          <Link to="/menu" className="mt-8">
-            <Button size="lg">
-              Browse Menu
-            </Button>
-          </Link>
+        <div className="page-title-block">
+          <h1>Cart</h1>
         </div>
-      </div>
+        <div className="bg-bg-primary py-20">
+          <div className="vincent-container text-center">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-2 border-border">
+              <ShoppingCart className="h-12 w-12 text-text-muted" />
+            </div>
+            <h3 className="mt-8">Your cart is empty</h3>
+            <p className="mt-4 text-text-muted">
+              Looks like you have not added anything to your cart yet.
+            </p>
+            <Link to="/menu" className="btn-vincent-filled mt-8 inline-block">
+              Browse Menu
+            </Link>
+          </div>
+        </div>
       </>
     )
   }
 
   return (
     <>
-      <title>Your Cart | CoffeeClub</title>
-      <meta name="robots" content="noindex, nofollow" />
-    <div className="min-h-screen bg-cream">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-coffee sm:text-3xl">Your Cart</h1>
-            <p className="mt-1 text-sm text-coffee-light">
-              {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
-            </p>
+      {/* Page Title Block */}
+      <div className="page-title-block">
+        <h1>Cart</h1>
+      </div>
+
+      <div className="bg-bg-primary">
+        <div className="vincent-container py-16">
+          {/* Cart Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-3 text-left" />
+                  <th className="pb-3 text-left" />
+                  <th className="pb-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Product
+                  </th>
+                  <th className="pb-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Price
+                  </th>
+                  <th className="pb-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Quantity
+                  </th>
+                  <th className="pb-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items?.map((cartItem) => (
+                  <CartItem key={cartItem.id} cartItem={cartItem} />
+                ))}
+                {/* Cart Actions Row */}
+                <tr>
+                  <td colSpan={6} className="pt-6">
+                    <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                      {/* Coupon */}
+                      <div className="flex gap-0">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          placeholder="Coupon code"
+                          className="w-48 border-2 border-border bg-transparent px-4 py-1.5 text-sm tracking-[3px] text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+                        />
+                        <button className="btn-vincent border-l-0">
+                          Apply coupon
+                        </button>
+                      </div>
+                      {/* Update / Clear */}
+                      <div className="flex gap-3">
+                        <button onClick={clearCart} className="btn-vincent">
+                          Clear cart
+                        </button>
+                        <button className="btn-vincent">
+                          Update cart
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <button
-            onClick={clearCart}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-error transition-colors hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear Cart
-          </button>
-        </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="space-y-4">
-              {items.map((cartItem) => (
-                <CartItem key={cartItem.id} cartItem={cartItem} />
-              ))}
-            </div>
-
-            {/* Continue Shopping */}
-            <div className="mt-6">
-              <Link
-                to="/menu"
-                className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Continue Shopping
-              </Link>
-            </div>
+          {/* Cart Totals */}
+          <div className="mt-10">
+            <h5 className="mb-4">Cart totals</h5>
+            <table className="w-full max-w-sm">
+              <tbody>
+                <tr className="border-b border-border">
+                  <th className="py-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Subtotal
+                  </th>
+                  <td className="py-3 text-right">
+                    <span className="text-sm text-text-primary">{formatPrice(total)}</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-border">
+                  <th className="py-3 text-left font-heading text-sm uppercase tracking-[3px] text-text-muted">
+                    Total
+                  </th>
+                  <td className="py-3 text-right">
+                    <span className="text-sm font-bold text-accent">{formatPrice(total)}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <Link
+              to="/checkout"
+              className="btn-vincent-filled mt-6 inline-block"
+            >
+              Proceed to checkout
+            </Link>
           </div>
 
-          {/* Summary */}
-          <div>
-            <CartSummary />
+          {/* Continue Shopping */}
+          <div className="mt-8">
+            <Link
+              to="/menu"
+              className="text-sm uppercase tracking-[2px] text-text-muted transition-colors hover:text-link-hover"
+            >
+              &larr; Continue Shopping
+            </Link>
           </div>
         </div>
       </div>
-    </div>
     </>
   )
 }

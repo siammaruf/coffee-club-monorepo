@@ -5,7 +5,7 @@
 This document maps frontend routes to their corresponding API endpoints for both applications.
 
 - **Dashboard** (`dashboard/`): Admin panel for staff, uses React Router v7 + Redux Toolkit + Axios
-- **Frontend** (`frontend/`): Customer-facing website, uses React Router + Zustand + fetch/Axios
+- **Frontend** (`frontend/`): Customer-facing website, uses React Router + Redux Toolkit + Axios
 - **API Base**: `http://localhost:5000/api/v1`
 
 ---
@@ -96,37 +96,45 @@ This document maps frontend routes to their corresponding API endpoints for both
 
 ---
 
-## Frontend (Customer Website) Routes -> API Mapping [NEW]
+## Frontend (Customer Website) Routes -> API Mapping
+
+Routes are defined in `frontend/src/routes.ts` using React Router 7 framework mode with nested layouts.
 
 ### Public Pages (no auth)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/` | pages/Home | `GET /public/categories`, `GET /public/items` | Planned |
-| `/menu` | pages/Menu | `GET /public/categories`, `GET /public/items` | Planned |
-| `/menu/:id` | pages/ItemDetail | `GET /public/items/:id` | Planned |
-| `/about` | pages/About | - | Planned |
-| `/contact` | pages/Contact | - | Planned |
+| `/` | pages/HomePage | `GET /public/items`, `GET /public/categories`, `GET /public/blog` | Complete |
+| `/menu` | pages/MenuPage | `GET /public/categories`, `GET /public/items?categorySlug=X` | Complete |
+| `/about` | pages/AboutPage | Static content (no API) | Complete |
+| `/contact` | pages/ContactPage | `POST /public/reservations` (inline reservation form) | Complete |
+| `/blog` | pages/BlogPage | `GET /public/blog?page=X&limit=10` | Complete |
+| `/blog/:slug` | pages/BlogPostPage | `GET /public/blog/:slug` | Complete |
+| `/reservation` | pages/ReservationPage | `POST /public/reservations` | Complete |
+| `/cart` | pages/CartPage | Redux local state (no API) | Complete |
 
-### Customer Auth Pages (no auth)
-
-| Route | Component | APIs Used | Status |
-|-------|-----------|-----------|--------|
-| `/login` | pages/Login | `POST /customer-auth/login` | Planned |
-| `/register` | pages/Register | `POST /customer-auth/register` | Planned |
-| `/forgot-password` | pages/ForgotPassword | `POST /customer-auth/forgot-password` | Planned |
-| `/verify-otp` | pages/VerifyOtp | `POST /customer-auth/verify-otp` | Planned |
-| `/reset-password` | pages/ResetPassword | `POST /customer-auth/reset-password` | Planned |
-
-### Customer Protected Pages (customer auth required)
+### Customer Auth Pages (GuestLayout - redirect if logged in)
 
 | Route | Component | APIs Used | Status |
 |-------|-----------|-----------|--------|
-| `/cart` | pages/Cart | `GET /cart`, `PUT /cart/items/:id`, `DELETE /cart/items/:id` | Planned |
-| `/checkout` | pages/Checkout | `POST /customer-orders` | Planned |
-| `/orders` | pages/Orders | `GET /customer-orders` | Planned |
-| `/orders/:id` | pages/OrderDetail | `GET /customer-orders/:id` | Planned |
-| `/account` | pages/Account | `GET /customer-auth/me` | Planned |
+| `/login` | pages/LoginPage | `POST /customer-auth/login` | Complete |
+| `/register` | pages/RegisterPage | `POST /customer-auth/register` | Complete |
+| `/forgot-password` | pages/ForgotPasswordPage | `POST /customer-auth/forgot-password`, `POST /customer-auth/reset-password` | Complete |
+
+### Customer Protected Pages (ProtectedLayout - auth required)
+
+| Route | Component | APIs Used | Status |
+|-------|-----------|-----------|--------|
+| `/checkout` | pages/CheckoutPage | `POST /customer/orders` | Complete |
+| `/orders` | pages/OrderHistoryPage | `GET /customer/orders` | Complete |
+| `/orders/:id` | pages/OrderDetailPage | `GET /customer/orders/:id` | Complete |
+| `/profile` | pages/ProfilePage | `GET /customer-auth/profile`, `PUT /customer-auth/profile` | Complete |
+
+### Catch-all
+
+| Route | Component | APIs Used | Status |
+|-------|-----------|-----------|--------|
+| `*` | pages/NotFoundPage | None | Complete |
 
 ---
 
@@ -153,23 +161,47 @@ This document maps frontend routes to their corresponding API endpoints for both
 | kitchenStockService | `app/services/httpServices/kitchenStockService.ts` | Kitchen Stock CRUD |
 | tableService | `app/services/httpServices/tableService.ts` | Table management |
 
-## Frontend (Customer) API Service Files [NEW]
+## Frontend (Customer) API Service Files
 
 | Service | Location | Methods |
 |---------|----------|---------|
-| apiClient | `src/services/apiClient.ts` | Base HTTP client (Axios or fetch) |
-| publicService | `src/services/publicService.ts` | getCategories, getItems, getItemById, getTables |
-| customerAuthService | `src/services/customerAuthService.ts` | register, login, logout, me, forgotPassword, verifyOtp, resetPassword |
-| cartService | `src/services/cartService.ts` | getCart, addItem, updateItem, removeItem, clearCart |
-| customerOrderService | `src/services/customerOrderService.ts` | placeOrder, getOrders, getOrderById, cancelOrder |
+| httpService | `src/services/httpService.ts` | Base Axios client (get, post, put, delete, patch) with interceptors |
+| authService | `src/services/httpServices/authService.ts` | register, login, logout, me, forgotPassword, verifyOtp, resetPassword |
+| publicService | `src/services/httpServices/publicService.ts` | getCategories, getItems, getItemById, getTables |
+| cartService | `src/services/httpServices/cartService.ts` | getCart, addItem, updateItem, removeItem, clearCart |
+| orderService | `src/services/httpServices/orderService.ts` | placeOrder, getOrders, getOrderById, cancelOrder |
+| profileService | `src/services/httpServices/profileService.ts` | getProfile, updateProfile |
+| blogService | `src/services/httpServices/blogService.ts` | getBlogPosts, getBlogPost |
+| reservationService | `src/services/httpServices/reservationService.ts` | createReservation, getMyReservations |
+| partnerService | `src/services/httpServices/partnerService.ts` | getPartners |
 
-## Frontend (Customer) Zustand Stores [NEW]
+**React Query Hooks (in `src/services/httpServices/queries/`):**
 
-| Store | Location | State |
+| Hook | Location | Purpose |
+|------|----------|---------|
+| useMenu | `queries/useMenu.ts` | Fetches menu categories and items (also re-exported as `src/hooks/useMenu.ts`) |
+| useTables | `queries/useTables.ts` | Fetches available tables |
+| useBlog / useBlogPosts | `queries/useBlog.ts` | Fetches blog posts list and single post |
+| usePartners | `queries/usePartners.ts` | Fetches partner logos |
+| useReservations / useCreateReservation | `queries/useReservations.ts` | Reservation creation and listing |
+
+**Custom Hooks (in `src/hooks/`):**
+
+| Hook | Location | Purpose |
+|------|----------|---------|
+| useAuth | `src/hooks/useAuth.ts` | Auth state, login, logout, customer profile |
+| useCart | `src/hooks/useCart.ts` | Cart state, addItem, removeItem, clearCart, openDrawer, total, itemCount |
+| useMenu | `src/hooks/useMenu.ts` | Menu items, categories, filters, loading state |
+| useInView | `src/hooks/useInView.ts` | Intersection Observer for scroll animations |
+| useCountUp | `src/hooks/useCountUp.ts` | Animated number counter |
+
+## Frontend (Customer) Redux Slices
+
+| Slice | Location | State |
 |-------|----------|-------|
-| authStore | `src/store/authStore.ts` | customer, isAuthenticated, login, logout, checkAuth |
-| cartStore | `src/store/cartStore.ts` | items, total, addItem, removeItem, updateQuantity, clearCart |
-| menuStore | `src/store/menuStore.ts` | categories, items, selectedCategory, filters |
+| authSlice | `src/redux/features/authSlice.ts` | customer, isAuthenticated, initialized, login, logout, checkAuth |
+| cartSlice | `src/redux/features/cartSlice.ts` | items, total, isDrawerOpen, addItem, removeItem, updateQuantity, clearCart |
+| orderSlice | `src/redux/features/orderSlice.ts` | orders, currentOrder, placeOrder (createOrderThunk), cancelOrder |
 
 ---
 
@@ -187,9 +219,11 @@ const httpService = axios.create({
 
 ### Frontend (Customer)
 ```typescript
-// frontend/src/services/apiClient.ts
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+// frontend/src/services/httpService.ts
+// API_URL resolved from frontend/src/lib/config.ts
+// Default: http://localhost:3000/api/v1 (supports runtime config override)
+const httpService = axios.create({
+  baseURL: API_URL,
   withCredentials: true,  // CRITICAL: sends httpOnly cookies
   headers: { 'Content-Type': 'application/json' }
 });
@@ -198,9 +232,12 @@ const apiClient = axios.create({
 ### Key Integration Notes
 - Both apps use `withCredentials: true` for httpOnly cookie auth
 - Dashboard uses Redux async thunks for auth state
-- Frontend uses Zustand stores for auth and cart state
+- Frontend uses Redux Toolkit slices for auth, cart, and order state + React Query (TanStack Query) for data fetching
+- Frontend runs on React Router 7 framework mode with SSR (`react-router-serve`)
+- Frontend API base URL resolved from `src/lib/config.ts`
 - File uploads use `Content-Type: multipart/form-data` (Axios auto-sets boundary)
 - All responses follow the standard wrapper format: `{ data, status, message, statusCode, timestamp }`
+- Frontend cart is client-side only (Redux cartSlice) -- no server-side cart API used in the new design
 
 ---
 
@@ -214,11 +251,17 @@ const apiClient = axios.create({
 - [ ] Token refresh interceptor (auto-retry on 401)
 
 ### Frontend (Customer)
-- [ ] API client configured with `withCredentials: true`
-- [ ] Zustand auth store with persist
-- [ ] Zustand cart store (synced with backend)
-- [ ] Public API services (categories, items)
-- [ ] Customer auth services (register, login, OTP)
-- [ ] Cart services (add, update, remove)
-- [ ] Order services (place, history, cancel)
-- [ ] Error handling interceptor
+- [x] Axios httpService configured with `withCredentials: true`
+- [x] Redux auth slice with async thunks + `initialized` flag
+- [x] Redux cart slice (client-side only, not synced with backend)
+- [x] Redux order slice with `createOrderThunk`
+- [x] React Query hooks for menu, blog, tables, partners, reservations
+- [x] Public API services (categories, items, tables, blog, partners)
+- [x] Customer auth services (register, login, forgot-password, reset-password)
+- [x] Order services (place, history, cancel)
+- [x] Profile services (get, update)
+- [x] Reservation services (create)
+- [x] Request/response interceptors (error handling)
+- [x] React Router 7 framework mode with SSR
+- [x] Form validation via React Hook Form + Zod
+- [x] Toast notifications via react-hot-toast

@@ -1,12 +1,18 @@
 import { Controller, Get, Post, Body, Query, Param, ParseUUIDPipe, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ActivityService } from '../providers/activity.service';
 import { CreateActivityDto } from '../dto/create-activity.dto';
 import { ActivityResponseDto } from '../dto/activity-response.dto';
 import { ActivityType } from '../entities/activity.entity';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Activities')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('activities')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
@@ -27,7 +33,7 @@ export class ActivityController {
   @ApiOperation({ summary: 'Get all activities with filtering and pagination' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 50)' })
-  @ApiQuery({ name: 'activity_type', required: false, enum: ActivityType, description: 'Filter by activity type' })
+  @ApiQuery({ name: 'activity_type', required: false, enum: ActivityType, enumName: 'ActivityType', description: 'Filter by activity type' })
   @ApiQuery({ name: 'entity_type', required: false, type: String, description: 'Filter by entity type' })
   @ApiQuery({ name: 'user_id', required: false, type: String, description: 'Filter by user ID' })
   @ApiQuery({ name: 'start_date', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })

@@ -27,10 +27,14 @@ import { KitchenOrder } from '../kitchen-orders/entities/kitchen-order.entity';
 import { KitchenOrderItem } from '../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../reports/entities/report.entity';
 import { Bank } from '../banks/entities/bank.entity';
+import { ItemVariation } from '../items/entities/item-variation.entity';
 import { Cart } from '../cart/entities/cart.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
 import { Activity } from '../reports/entities/activity.entity';
 import { DiscountApplication } from '../discount-application/entities/discount-application.entities';
+
+// --- Cache ---
+import { CacheModule } from '../cache/cache.module';
 
 // --- Services ---
 import { ExportService } from './providers/export.service';
@@ -71,12 +75,14 @@ import { BackupController } from './controllers/backup.controller';
       KitchenOrderItem,
       DailyReport,
       Bank,
+      ItemVariation,
       Cart,
       CartItem,
       Activity,
       DiscountApplication,
     ]),
     ScheduleModule.forRoot(),
+    CacheModule,
   ],
   controllers: [ExportController, ImportController, BackupController],
   providers: [

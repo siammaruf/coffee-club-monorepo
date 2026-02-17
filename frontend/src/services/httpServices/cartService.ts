@@ -14,5 +14,6 @@ export const cartService = {
   removeItem: (itemId: string) =>
     del<{ data: Cart }>(`/customer/cart/items/${itemId}`).then((res) => res.data),
 
-  clearCart: () => del<void>('/customer/cart'),
+  clearCart: () =>
+    del<{ data: Cart }>('/customer/cart').then((res) => res.data),
 }

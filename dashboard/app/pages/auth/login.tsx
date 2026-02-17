@@ -172,7 +172,7 @@ export default function Login() {
                   />
                   <div className="text-sm">
                     <Link
-                      to="/auth/forgot-password"
+                      to="/forgot-password"
                       className="font-medium text-primary hover:underline"
                     >
                       Forgot your password?

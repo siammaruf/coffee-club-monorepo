@@ -5,19 +5,20 @@ import type { LoginPayload, RegisterPayload, Customer } from '@/types/customer'
 
 export function useAuth() {
   const dispatch = useAppDispatch()
-  const { customer, isAuthenticated, loading: isLoading, error } = useAppSelector((state) => state.auth)
+  const { customer, isAuthenticated, loading: isLoading, error, initialized } = useAppSelector((state) => state.auth)
 
   useEffect(() => {
-    if (!isAuthenticated && isLoading) {
+    if (!initialized) {
       dispatch(checkAuthThunk())
     }
-  }, [dispatch, isAuthenticated, isLoading])
+  }, [dispatch, initialized])
 
   return {
     customer,
     isAuthenticated,
     isLoading,
     error,
+    initialized,
     login: (payload: LoginPayload) => dispatch(loginThunk(payload)).unwrap(),
     register: (payload: RegisterPayload) => dispatch(registerThunk(payload)).unwrap(),
     logout: () => dispatch(logoutThunk()).unwrap(),

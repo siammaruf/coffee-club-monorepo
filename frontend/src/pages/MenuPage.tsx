@@ -1,17 +1,33 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react'
-import { CategoryFilter } from '@/components/menu/CategoryFilter'
-import { SearchBar } from '@/components/menu/SearchBar'
-import { MenuGrid } from '@/components/menu/MenuGrid'
-import { ItemDetailModal } from '@/components/menu/ItemDetailModal'
+import type { MetaFunction } from 'react-router'
+import { useSearchParams, Link, useNavigate } from 'react-router'
+import { ShoppingCart } from 'lucide-react'
 import { useMenu } from '@/hooks/useMenu'
+import { ScrollableCategories } from '@/components/menu/ScrollableCategories'
+import { useCart } from '@/hooks/useCart'
+import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
+import { AdvantagesSection } from '@/components/home/AdvantagesSection'
+import { defaultAdvantages } from '@/lib/defaults'
+import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
 import type { Item } from '@/types/item'
+import toast from 'react-hot-toast'
+
+export const meta: MetaFunction = () => [
+  { title: 'Our Menu | CoffeeClub' },
+  { name: 'description', content: 'Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub.' },
+  { property: 'og:title', content: 'Our Menu | CoffeeClub' },
+  { property: 'og:description', content: 'Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub.' },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: 'CoffeeClub' },
+  { name: 'twitter:card', content: 'summary_large_image' },
+  { name: 'twitter:title', content: 'Our Menu | CoffeeClub' },
+  { name: 'twitter:description', content: 'Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub.' },
+  { name: 'robots', content: 'index, follow' },
+]
 
 export default function MenuPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>('all')
 
   const {
     items,
@@ -19,144 +35,182 @@ export default function MenuPage() {
     isLoading,
     error,
     filters,
-    totalPages,
-    total,
-    setSearch,
     setCategory,
-    setPage,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
   } = useMenu()
 
-  // Sync URL category param with filter
+  const { addItem } = useCart()
+  const navigate = useNavigate()
+  const { data: websiteContent } = useWebsiteContent()
+
+  // Sync URL category param with filter and active tab
   useEffect(() => {
     const urlCategory = searchParams.get('category')
-    if (urlCategory && urlCategory !== filters.category) {
+    if (urlCategory && urlCategory !== filters.categorySlug) {
       setCategory(urlCategory)
+      setActiveTab(urlCategory)
     }
-  }, [searchParams, filters.category, setCategory])
+  }, [searchParams, filters.categorySlug, setCategory])
 
-  const handleCategorySelect = (slug: string) => {
-    setCategory(slug)
-    if (slug) {
-      setSearchParams({ category: slug })
-    } else {
+  const handleTabClick = (slug: string) => {
+    setActiveTab(slug)
+    if (slug === 'all') {
+      setCategory('')
       setSearchParams({})
+    } else {
+      setCategory(slug)
+      setSearchParams({ category: slug })
     }
   }
 
-  const handleViewDetail = (item: Item) => {
-    setSelectedItem(item)
-    setIsModalOpen(true)
+  const handleQuickAdd = (e: React.MouseEvent, item: Item) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (item.has_variations) {
+      navigate(`/menu/${item.slug}`)
+      return
+    }
+    addItem(item, 1)
+    toast.success(`${item?.name ?? 'Item'} added to cart!`)
   }
-
-  const currentPage = filters.page ?? 1
 
   return (
     <>
-      <title>Our Menu | CoffeeClub</title>
-      <meta name="description" content="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes at CoffeeClub." />
-      <meta property="og:title" content="Our Menu | CoffeeClub" />
-      <meta property="og:description" content="Browse our carefully curated menu of premium coffees, refreshing beverages, and delicious dishes." />
-      <meta property="og:type" content="website" />
-      <meta name="robots" content="index, follow" />
-    <div className="bg-cream min-h-screen">
-      {/* Page Header */}
-      <div className="bg-gradient-to-br from-primary-950 via-primary-900 to-dark py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-400/30 bg-primary-500/10 px-4 py-2 text-sm text-primary-300">
-            <UtensilsCrossed className="h-4 w-4" />
-            <span>Fresh & Delicious</span>
-          </div>
-          <h1 className="text-4xl font-black text-white sm:text-5xl">
-            Our Menu
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-white/60">
-            Discover our carefully curated selection of premium coffees, refreshing beverages, and delicious dishes.
-          </p>
-        </div>
+      {/* Page Title Block */}
+      <div className="page-title-block">
+        <h1>Discover Our Menu</h1>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Filters Row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CategoryFilter
+      {/* Menu Content */}
+      <div className="bg-bg-primary">
+        <div className="vincent-container py-16">
+          {/* Category Pills */}
+          <ScrollableCategories
             categories={categories}
-            selected={filters.category}
-            onSelect={handleCategorySelect}
+            activeTab={activeTab}
+            onTabClick={handleTabClick}
           />
-          <SearchBar onSearch={setSearch} />
-        </div>
 
-        {/* Results Count */}
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-coffee-light">
-            {isLoading ? 'Loading...' : `Showing ${items.length} of ${total} items`}
-          </p>
-        </div>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-square rounded-full bg-bg-lighter" />
+                  <div className="mx-auto mt-4 h-4 w-3/4 rounded bg-bg-lighter" />
+                  <div className="mx-auto mt-2 h-3 w-full rounded bg-bg-lighter" />
+                  <div className="mx-auto mt-2 h-4 w-1/4 rounded bg-bg-lighter" />
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Error State */}
-        {error && (
-          <div className="mt-6 rounded-xl border border-error/20 bg-error/5 p-4 text-center text-sm text-error">
-            {error}
-          </div>
-        )}
+          {/* Error State */}
+          {error && (
+            <div className="py-20 text-center">
+              <p className="text-text-muted">{error}</p>
+            </div>
+          )}
 
-        {/* Grid */}
-        <div className="mt-6">
-          <MenuGrid
-            items={items}
-            isLoading={isLoading}
-            onViewDetail={handleViewDetail}
-          />
-        </div>
+          {/* Product Grid */}
+          {!isLoading && !error && (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {items?.map((item) => {
+                const price = item?.sale_price ?? item?.regular_price ?? 0
+                const imgSrc = item?.image || '/img/6-600x600.png'
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              onClick={() => setPage(currentPage - 1)}
-              disabled={currentPage <= 1}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-200 bg-white text-coffee transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
+                return (
+                  <div key={item.id} className="group">
+                    {/* Image Container */}
+                    <Link to={`/menu/${item.slug}`} className="relative block cursor-pointer overflow-hidden">
+                      <div className="aspect-square overflow-hidden rounded-full bg-bg-secondary">
+                        <img
+                          src={imgSrc}
+                          alt={item?.name ?? ''}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      </div>
+                      {/* Dark Overlay on Hover */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/50">
+                        <button
+                          onClick={(e) => handleQuickAdd(e, item)}
+                          className="flex h-12 w-12 translate-y-4 items-center justify-center rounded-full border-2 border-white text-white opacity-0 transition-all duration-300 hover:border-link-hover hover:text-link-hover group-hover:translate-y-0 group-hover:opacity-100"
+                          aria-label={`Add ${item?.name ?? ''} to cart`}
+                        >
+                          <ShoppingCart className="h-5 w-5" />
+                        </button>
+                      </div>
+                      {/* Sale Badge */}
+                      {item?.sale_price && (
+                        <div className="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">
+                          Sale
+                        </div>
+                      )}
+                    </Link>
+                    {/* Product Info */}
+                    <div className="mt-4 text-center">
+                      <h5 className="mb-[10px] transition-colors hover:text-link-hover">
+                        <Link to={`/menu/${item.slug}`}>{item?.name ?? ''}</Link>
+                      </h5>
+                      <p className="mb-[10px] text-sm text-text-muted">
+                        {truncate(item?.description ?? '', 70)}
+                      </p>
+                      <div className="mt-2.5 font-heading text-lg tracking-wider text-accent">
+                        {item.has_variations ? (
+                          item.sale_price ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="text-text-muted line-through">
+                                {formatPriceRange(item.regular_price, item.max_price)}
+                              </span>
+                              <span>{formatPriceRange(item.sale_price, item.max_sale_price)}</span>
+                            </span>
+                          ) : (
+                            formatPriceRange(item.regular_price, item.max_price)
+                          )
+                        ) : item.sale_price ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="text-text-muted line-through">{formatPrice(item.regular_price)}</span>
+                            <span>{formatPrice(item.sale_price)}</span>
+                          </span>
+                        ) : (
+                          formatPrice(item.regular_price)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {/* Load More Button */}
+          {!isLoading && !error && hasNextPage && (
+            <div className="mt-12 text-center">
               <button
-                key={page}
-                onClick={() => setPage(page)}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
-                  page === currentPage
-                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md'
-                    : 'border border-primary-200 bg-white text-coffee hover:bg-primary-50'
-                }`}
+                type="button"
+                onClick={() => loadMore()}
+                disabled={isFetchingNextPage}
+                className="btn-vincent inline-block disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {page}
+                {isFetchingNextPage ? 'Loading...' : 'Load More'}
               </button>
-            ))}
+            </div>
+          )}
 
-            <button
-              onClick={() => setPage(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary-200 bg-white text-coffee transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Next page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+          {/* Empty State */}
+          {!isLoading && !error && (!items || items.length === 0) && (
+            <div className="py-20 text-center">
+              <p className="text-text-muted">No items found in this category.</p>
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* Item Detail Modal */}
-      <ItemDetailModal
-        item={selectedItem}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSelectedItem(null)
-        }}
-      />
-    </div>
-  </>
+      {/* Advantages Section */}
+      <AdvantagesSection advantages={websiteContent?.advantages ?? defaultAdvantages} />
+    </>
   )
 }

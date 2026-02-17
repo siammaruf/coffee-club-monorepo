@@ -1,44 +1,39 @@
-import { Link } from 'react-router-dom'
-import { Coffee, Home, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import type { MetaFunction } from 'react-router'
+import { Link } from 'react-router'
+
+export const meta: MetaFunction = () => [
+  { title: 'Page Not Found | CoffeeClub' },
+  { name: 'description', content: 'The page you are looking for does not exist.' },
+  { property: 'og:title', content: 'Page Not Found | CoffeeClub' },
+  { property: 'og:description', content: 'The page you are looking for does not exist.' },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: 'CoffeeClub' },
+  { name: 'twitter:card', content: 'summary_large_image' },
+  { name: 'twitter:title', content: 'Page Not Found | CoffeeClub' },
+  { name: 'twitter:description', content: 'The page you are looking for does not exist.' },
+  { name: 'robots', content: 'noindex, nofollow' },
+]
 
 export default function NotFoundPage() {
   return (
-    <>
-      <title>Page Not Found | CoffeeClub</title>
-      <meta name="robots" content="noindex, nofollow" />
-    <div className="flex min-h-[70vh] items-center justify-center bg-cream px-4">
-      <div className="text-center">
-        {/* Illustration */}
-        <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-primary-100">
-          <Coffee className="h-16 w-16 text-primary-400" />
-        </div>
-
-        {/* 404 Text */}
-        <h1 className="mt-6 text-6xl font-black text-primary-500 sm:text-8xl">404</h1>
-        <h2 className="mt-2 text-2xl font-bold text-coffee">Page Not Found</h2>
-        <p className="mx-auto mt-3 max-w-md text-coffee-light">
-          Oops! The page you are looking for does not exist or may have been moved.
-          Let us get you back to something delicious.
-        </p>
-
-        {/* Actions */}
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/">
-            <Button size="lg">
-              <Home className="h-5 w-5" />
-              Go Home
-            </Button>
-          </Link>
-          <Link to="/menu">
-            <Button variant="outline" size="lg">
-              <ArrowLeft className="h-5 w-5" />
-              Browse Menu
-            </Button>
-          </Link>
-        </div>
+    <div className="flex min-h-[80vh] flex-col items-center justify-center bg-bg-primary px-4 text-center">
+      <h1
+        className="text-[120px] font-normal leading-none tracking-[20px] text-accent sm:text-[180px]"
+        style={{ letterSpacing: '20px' }}
+      >
+        404
+      </h1>
+      <p className="mt-4 text-lg uppercase tracking-[4px] text-text-muted">
+        Oops, Page Not Found!
+      </p>
+      <p className="mt-4 max-w-md text-sm text-text-muted">
+        The page you are looking for does not exist or may have been moved.
+      </p>
+      <div className="mt-10">
+        <Link to="/" className="btn-vincent-filled">
+          Back Home
+        </Link>
       </div>
     </div>
-    </>
   )
 }

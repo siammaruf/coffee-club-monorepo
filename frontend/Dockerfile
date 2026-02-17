@@ -1,53 +1,25 @@
-# ============================================================
 # Stage 1: Install dependencies
-# ============================================================
-FROM node:24-alpine AS deps
-
+FROM oven/bun:latest AS deps
 WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
-COPY package.json package-lock.json* ./
-
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
-
-# ============================================================
-# Stage 2: Build the SPA
-# ============================================================
-FROM node:24-alpine AS builder
-
+# Stage 2: Build
+FROM oven/bun:latest AS builder
 WORKDIR /app
-
-# Vite bakes VITE_ env vars at build time
-ARG VITE_API_URL
-ENV VITE_API_URL=${VITE_API_URL}
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN bun run build
 
-RUN npm run build
-
-# ============================================================
-# Stage 3: Serve with Node.js + serve
-# ============================================================
-FROM node:24-alpine AS production
-
-RUN npm install -g serve
-
+# Stage 3: Runtime - SSR server (Node required for renderToPipeableStream)
+FROM node:24-alpine
 WORKDIR /app
-
-COPY --from=builder /app/dist ./dist
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app
-
-USER appuser
-
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost:3000/ || exit 1
-
-CMD ["serve", "-s", "dist", "-l", "3000"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:3000/ || exit 1
+ENTRYPOINT ["./entrypoint.sh"]

@@ -1,16 +1,27 @@
-import type { Item } from './item'
+import type { Item, ItemVariation } from './item'
 
-export interface CartItem {
+/** Shape returned by backend CartItemResponseDto */
+export interface CartItemResponse {
   id: string
-  item: Item
+  item: {
+    id: string
+    name: string
+    name_bn: string
+    image: string
+    regular_price: number
+    sale_price: number
+  }
   quantity: number
-  special_notes?: string
+  special_notes: string | null
+  line_total: number
 }
 
+/** Shape returned by backend CartResponseDto */
 export interface Cart {
   id: string
-  items: CartItem[]
+  items: CartItemResponse[]
   total: number
+  item_count: number
 }
 
 export interface AddToCartPayload {
@@ -24,10 +35,11 @@ export interface UpdateCartItemPayload {
   special_notes?: string
 }
 
-// Local cart item (used in Redux store, not server-side cart)
+/** Local cart item (used in local store before syncing with server) */
 export interface LocalCartItem {
   id: string
   item: Item
   quantity: number
   special_notes?: string
+  selectedVariation?: ItemVariation
 }

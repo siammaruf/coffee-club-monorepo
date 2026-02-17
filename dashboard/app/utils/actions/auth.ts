@@ -5,15 +5,15 @@ import type { LoginResponse } from '~/types/auth';
 export async function loginAction(prevState: any, formData: FormData): Promise<LoginResponse> {
   'use server';
   try {
-    const data = loginSchema.parse(Object.fromEntries(formData));
-    return { message: 'Login successful', data };
+    loginSchema.parse(Object.fromEntries(formData));
+    return { message: 'Login successful' };
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        errors[err.path[0]] = err.message;
+      const fieldErrors: Record<string, string> = {};
+      error.issues.forEach((issue: z.ZodIssue) => {
+        fieldErrors[String(issue.path[0])] = issue.message;
       });
-      return { error: JSON.stringify(errors) };
+      return { error: JSON.stringify(fieldErrors) };
     }
     return { error: JSON.stringify({ form: 'Invalid credentials' }) };
   }

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 import { Exclude } from "class-transformer";
 
 @Entity('customers')
@@ -29,14 +29,14 @@ export class Customer {
     password: string;
 
     @Exclude()
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     refresh_token: string | null;
 
     @Column({ type: 'boolean', default: false })
     is_verified: boolean;
 
     @Exclude()
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     otp: string | null;
 
     @Column({ nullable: true, type: 'timestamp' })
@@ -50,6 +50,9 @@ export class Customer {
 
     @Column({ type: 'boolean', default: true })
     is_active: boolean;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

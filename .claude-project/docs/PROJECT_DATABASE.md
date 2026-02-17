@@ -120,6 +120,31 @@
                            │ FK item_id       │
                            │    quantity      │
                            └──────────────────┘
+
+┌──────────────────┐  [NEW]   ┌──────────────────┐  [NEW]
+│  cc_blog_posts   │          │ cc_reservations  │
+├──────────────────┤          ├──────────────────┤
+│ PK id (uuid)     │          │ PK id (uuid)     │
+│    title         │          │ FK customer_id   │──> cc_customers
+│    slug (unique) │          │    name          │
+│    excerpt       │          │    email         │
+│    content (text)│          │    phone         │
+│    image         │          │    date          │
+│    author        │          │    time          │
+│    is_published  │          │    party_size    │
+│    published_at  │          │    event_type    │
+└──────────────────┘          │    special_req   │
+                              │    status (enum) │
+┌──────────────────┐  [NEW]   └──────────────────┘
+│  cc_partners     │
+├──────────────────┤
+│ PK id (uuid)     │
+│    name          │
+│    logo          │
+│    website       │
+│    sort_order    │
+│    is_active     │
+└──────────────────┘
 ```
 
 ## Entities
@@ -411,6 +436,56 @@ Kitchen stock level management.
 
 Report snapshots (sales, expenses, profit summaries).
 
+### cc_blog_posts [NEW]
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | UUID | No | gen_random_uuid() | Primary key |
+| title | VARCHAR | No | - | Blog post title |
+| slug | VARCHAR | No | - | URL slug (unique) |
+| excerpt | VARCHAR | No | - | Short summary |
+| content | TEXT | No | - | Full blog post content |
+| image | VARCHAR | Yes | - | Featured image URL |
+| author | VARCHAR | No | - | Author name |
+| is_published | BOOLEAN | No | false | Publication status |
+| published_at | TIMESTAMP | Yes | - | Publication date |
+| created_at | TIMESTAMP | No | NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | No | NOW() | Update timestamp |
+
+### cc_reservations [NEW]
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | UUID | No | gen_random_uuid() | Primary key |
+| customer_id | UUID (FK) | Yes | - | FK to cc_customers (logged-in users) |
+| name | VARCHAR | No | - | Guest name |
+| email | VARCHAR | No | - | Contact email |
+| phone | VARCHAR | No | - | Contact phone |
+| date | DATE | No | - | Reservation date |
+| time | VARCHAR | No | - | Reservation time |
+| party_size | INTEGER | No | 2 | Number of guests |
+| event_type | ENUM | No | DINING | DINING, BIRTHDAY, MEETING, PRIVATE_EVENT, OTHER |
+| special_requests | TEXT | Yes | - | Special requests/notes |
+| status | ENUM | No | PENDING | PENDING, CONFIRMED, CANCELLED |
+| created_at | TIMESTAMP | No | NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | No | NOW() | Update timestamp |
+
+**Relations:**
+- ManyToOne with `cc_customers` (optional, for logged-in customers)
+
+### cc_partners [NEW]
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | UUID | No | gen_random_uuid() | Primary key |
+| name | VARCHAR | No | - | Partner/brand name |
+| logo | VARCHAR | No | - | Logo image URL |
+| website | VARCHAR | Yes | - | Partner website URL |
+| sort_order | INTEGER | No | 0 | Display order |
+| is_active | BOOLEAN | No | true | Active status |
+| created_at | TIMESTAMP | No | NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | No | NOW() | Update timestamp |
+
 ## Key Relationships Summary
 
 | Relationship | Type | Description |
@@ -432,6 +507,8 @@ Report snapshots (sales, expenses, profit summaries).
 | Expense -> ExpenseCategory | ManyToOne | Expense categorization |
 | DiscountApplication -> Order | ManyToOne | Discount usage on order |
 | DiscountApplication -> Discount | ManyToOne | Which discount was used |
+| Customer -> Reservations | OneToMany | Customer's reservations [NEW] |
+| Reservation -> Customer | ManyToOne | Optional customer link [NEW] |
 
 ## Migrations
 

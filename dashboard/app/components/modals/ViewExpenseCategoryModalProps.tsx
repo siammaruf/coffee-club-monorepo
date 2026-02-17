@@ -1,9 +1,8 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { IconSelector } from "~/components/ui/icon-selector";
+import { iconOptions } from "~/components/ui/icon-selector";
 import type { ExpenseCategory } from "~/types/expenseCategory";
-import * as IoIcons from "react-icons/io5";
 
 export interface ViewExpenseCategoryModalProps {
   open: boolean;
@@ -16,18 +15,8 @@ export default function ViewExpenseCategoryModal({
   onClose,
   category,
 }: ViewExpenseCategoryModalProps) {
-  let IconComp: React.ComponentType<{ className?: string }> | undefined;
-  if (category?.icon) {
-    const iconKey =
-      "Io" +
-      category.icon
-        .split("-")
-        .map((part) =>
-          part.length > 0 ? part[0].toUpperCase() + part.slice(1) : ""
-        )
-        .join("");
-    IconComp = (IoIcons as any)[iconKey];
-  }
+  const found = iconOptions.find(opt => opt.value === category?.icon);
+  const IconComp = found?.icon;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

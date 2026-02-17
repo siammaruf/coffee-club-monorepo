@@ -7,8 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Relation,
 } from 'typeorm';
-import { Cart } from './cart.entity';
+import type { Cart } from './cart.entity';
 import { Item } from '../../items/entities/item.entity';
 
 @Entity('cart_items')
@@ -17,9 +18,9 @@ export class CartItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
+  @ManyToOne("Cart", "items", { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cart_id' })
-  cart: Cart;
+  cart: Relation<Cart>;
 
   @ManyToOne(() => Item, { eager: true })
   @JoinColumn({ name: 'item_id' })

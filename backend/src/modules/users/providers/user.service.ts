@@ -456,4 +456,45 @@ export class UserService {
         const cacheKey = `user:${userId}`;
         await this.cacheService.delete(cacheKey);
     }
+
+    async remove(id: string): Promise<void> {
+        await this.userRepository.softDelete(id);
+    }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.userRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.userRepository.createQueryBuilder('user')
+            .withDeleted()
+            .where('user.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(user.first_name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('user.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.userRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.userRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.userRepository.delete(id);
+    }
 }

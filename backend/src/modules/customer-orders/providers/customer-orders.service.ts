@@ -17,6 +17,7 @@ import { CreateCustomerOrderDto } from '../dto/create-customer-order.dto';
 import { OrderStatus } from '../../orders/enum/order-status.enum';
 import { OrderType } from '../../orders/enum/order-type.enum';
 import { ItemStatus } from '../../items/enum/item-status.enum';
+import { ItemVariation } from '../../items/entities/item-variation.entity';
 import { TableStatus } from '../../table/enum/table-status.enum';
 
 @Injectable()
@@ -60,10 +61,11 @@ export class CustomerOrdersService {
       throw new NotFoundException('Customer not found');
     }
 
-    // 2. Look up each item and verify AVAILABLE status
+    // 2. Look up each item (with variations) and verify AVAILABLE status
     const itemIds = dto.items.map((i) => i.item_id);
     const items = await this.itemRepository.find({
       where: { id: In(itemIds) },
+      relations: ['variations'],
     });
 
     if (items.length !== itemIds.length) {
@@ -90,11 +92,38 @@ export class CustomerOrdersService {
     let subTotal = 0;
     const orderItemsData = dto.items.map((orderItemInput) => {
       const item = itemMap.get(orderItemInput.item_id)!;
-      const unitPrice = Number(item.sale_price) || Number(item.regular_price);
+      let unitPrice: number;
+      let variation: ItemVariation | null = null;
+
+      if (orderItemInput.variation_id) {
+        // Find and validate the variation
+        variation = item.variations?.find(
+          (v) => v.id === orderItemInput.variation_id,
+        ) ?? null;
+        if (!variation) {
+          throw new BadRequestException(
+            `Variation not found for item "${item.name}"`,
+          );
+        }
+        if (
+          variation.status !== ItemStatus.AVAILABLE &&
+          variation.status !== ItemStatus.ON_SALE &&
+          variation.status !== ItemStatus.ACTIVE
+        ) {
+          throw new BadRequestException(
+            `Variation "${variation.name}" is not available`,
+          );
+        }
+        unitPrice = Number(variation.sale_price) || Number(variation.regular_price);
+      } else {
+        unitPrice = Number(item.sale_price) || Number(item.regular_price);
+      }
+
       const totalPrice = unitPrice * orderItemInput.quantity;
       subTotal += totalPrice;
       return {
         item,
+        variation,
         quantity: orderItemInput.quantity,
         unit_price: unitPrice,
         total_price: totalPrice,
@@ -165,6 +194,7 @@ export class CustomerOrdersService {
         const orderItem = manager.create(OrderItem, {
           order: savedOrder,
           item: itemData.item,
+          variation: itemData.variation,
           quantity: itemData.quantity,
           unit_price: itemData.unit_price,
           total_price: itemData.total_price,
@@ -212,6 +242,7 @@ export class CustomerOrdersService {
       relations: [
         'orderItems',
         'orderItems.item',
+        'orderItems.variation',
         'tables',
         'customer',
         'discount',
@@ -240,7 +271,7 @@ export class CustomerOrdersService {
 
     const [data, total] = await this.orderRepository.findAndCount({
       where: { customer: { id: customerId } },
-      relations: ['orderItems', 'orderItems.item', 'tables'],
+      relations: ['orderItems', 'orderItems.item', 'orderItems.variation', 'tables'],
       order: { created_at: 'DESC' },
       skip: offset,
       take: limit,
@@ -263,6 +294,7 @@ export class CustomerOrdersService {
       relations: [
         'orderItems',
         'orderItems.item',
+        'orderItems.variation',
         'tables',
         'customer',
         'discount',

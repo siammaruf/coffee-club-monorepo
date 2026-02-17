@@ -1,16 +1,25 @@
 import { useState, useCallback } from 'react'
-import { useCategories, useMenuItems } from '@/services/httpServices/queries/useMenu'
+import { useCategories, useInfiniteMenuItems } from '@/services/httpServices/queries/useMenu'
 import type { ItemFilters } from '@/types/item'
 
 export function useMenu() {
-  const [filters, setFilters] = useState<ItemFilters>({ page: 1, limit: 12 })
+  const [filters, setFilters] = useState<Omit<ItemFilters, 'page'>>({ limit: 12 })
 
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories()
-  const { data: itemsData, isLoading: itemsLoading, error } = useMenuItems(filters)
+  const { data: categoriesRaw, isLoading: categoriesLoading } = useCategories()
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : ((categoriesRaw as any)?.data ?? [])
 
-  const items = itemsData?.data || []
-  const totalPages = itemsData?.meta?.totalPages || 1
-  const total = itemsData?.meta?.total || 0
+  const {
+    data,
+    isLoading: itemsLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteMenuItems(filters)
+
+  // Flatten all pages into a single items array
+  const items = data?.pages.flatMap((page) => page?.data ?? []) ?? []
+  const total = data?.pages[0]?.total ?? 0
 
   return {
     items,
@@ -18,10 +27,16 @@ export function useMenu() {
     isLoading: categoriesLoading || itemsLoading,
     error: error ? 'Failed to load menu items' : null,
     filters,
-    totalPages,
     total,
-    setSearch: useCallback((search: string) => setFilters((prev) => ({ ...prev, search, page: 1 })), []),
-    setCategory: useCallback((category: string) => setFilters((prev) => ({ ...prev, category, page: 1 })), []),
-    setPage: useCallback((page: number) => setFilters((prev) => ({ ...prev, page })), []),
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    loadMore: fetchNextPage,
+    setSearch: useCallback((search: string) => setFilters((prev) => ({ ...prev, search })), []),
+    setCategory: useCallback((categorySlug: string) => setFilters((prev) => {
+      const next = { ...prev }
+      if (categorySlug) next.categorySlug = categorySlug
+      else delete next.categorySlug
+      return next
+    }), []),
   }
 }

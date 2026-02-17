@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn } from "typeorm";
 import { KitchenItems } from "../../kitchen-items/entities/kitchen-item.entity";
 
 @Entity('kitchen_stock')
@@ -22,9 +22,12 @@ export class KitchenStock {
     @Column({nullable: true})
     description: string;
 
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @Column({ nullable: true })
     created_at: Date;
-    
-    @Column({ nullable: true }) 
+
+    @Column({ nullable: true })
     updated_at: Date;
 }

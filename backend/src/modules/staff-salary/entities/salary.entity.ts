@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from "typeorm";
 import { User } from "../../users/entities/user.entity";
 
 @Entity()
@@ -34,9 +34,12 @@ export class Salary {
     @Column({ nullable: true, type: 'text', comment: 'Additional notes or remarks about this salary record' })
     notes: string;
     
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @CreateDateColumn()
     created_at: Date;
-    
+
     @UpdateDateColumn()
     updated_at: Date;
 }

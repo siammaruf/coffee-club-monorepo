@@ -2,13 +2,18 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, HttpS
 import { CategoryService } from './providers/category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBasicAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Categories')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('categories')
-@ApiBasicAuth()
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 
@@ -24,6 +29,39 @@ export class CategoryController {
             status: 'success',
             message: 'Category has been created successfully.',
             statusCode: HttpStatus.CREATED
+        };
+    }
+
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete categories' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.categoryService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed categories' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.categoryService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
         };
     }
 
@@ -119,6 +157,28 @@ export class CategoryController {
         return {
             status: 'success',
             message: 'Category has been deleted successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore category from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.categoryService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete category' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.categoryService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
             statusCode: HttpStatus.OK
         };
     }

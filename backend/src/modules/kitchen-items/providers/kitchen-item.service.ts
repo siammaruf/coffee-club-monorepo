@@ -99,7 +99,7 @@ export class KitchenItemService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.kitchenRepository.delete(id);
+    const result = await this.kitchenRepository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Kitchen item with ID ${id} not found`);
     }
@@ -154,4 +154,41 @@ export class KitchenItemService {
   private async invalidateCache(): Promise<void> {
     await this.cacheService.delete('kitchen-items:*');
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.kitchenRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.kitchenRepository.createQueryBuilder('kitchenItem')
+            .withDeleted()
+            .where('kitchenItem.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(kitchenItem.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('kitchenItem.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.kitchenRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.kitchenRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.kitchenRepository.delete(id);
+    }
 }

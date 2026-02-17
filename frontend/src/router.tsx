@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { GuestRoute } from '@/components/auth/GuestRoute'
 import { Loading } from '@/components/ui/loading'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
@@ -13,6 +14,9 @@ const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
 const AboutPage = lazy(() => import('@/pages/AboutPage'))
 const ContactPage = lazy(() => import('@/pages/ContactPage'))
+const BlogPage = lazy(() => import('@/pages/BlogPage'))
+const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
+const ReservationPage = lazy(() => import('@/pages/ReservationPage'))
 const OrderHistoryPage = lazy(() => import('@/pages/OrderHistoryPage'))
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
@@ -38,11 +42,14 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      { path: 'login', element: <LazyPage><LoginPage /></LazyPage> },
-      { path: 'register', element: <LazyPage><RegisterPage /></LazyPage> },
-      { path: 'forgot-password', element: <LazyPage><ForgotPasswordPage /></LazyPage> },
+      { path: 'login', element: <GuestRoute><LazyPage><LoginPage /></LazyPage></GuestRoute> },
+      { path: 'register', element: <GuestRoute><LazyPage><RegisterPage /></LazyPage></GuestRoute> },
+      { path: 'forgot-password', element: <GuestRoute><LazyPage><ForgotPasswordPage /></LazyPage></GuestRoute> },
       { path: 'about', element: <LazyPage><AboutPage /></LazyPage> },
       { path: 'contact', element: <LazyPage><ContactPage /></LazyPage> },
+      { path: 'blog', element: <LazyPage><BlogPage /></LazyPage> },
+      { path: 'blog/:slug', element: <LazyPage><BlogPostPage /></LazyPage> },
+      { path: 'reservation', element: <LazyPage><ReservationPage /></LazyPage> },
       {
         path: 'orders',
         element: (

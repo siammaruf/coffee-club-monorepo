@@ -1,13 +1,19 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { TableService } from './providers/table.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { TableResponseDto } from './dto/table-response.dto';
 import { TableStatus } from './enum/table-status.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Tables')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('tables')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
@@ -29,10 +35,44 @@ export class TableController {
     };
   }
 
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.tableService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.tableService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+
   @Get()
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Get all tables with optional filtering' })
-  @ApiQuery({ name: 'status', required: false, enum: TableStatus, description: 'Filter by table status' })
+  @ApiQuery({ name: 'status', required: false, enum: TableStatus, enumName: 'TableStatus', description: 'Filter by table status' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by table number or description' })
   @ApiQuery({ name: 'location', required: false, description: 'Filter by table location' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
@@ -228,4 +268,26 @@ export class TableController {
       statusCode: HttpStatus.OK
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.tableService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.tableService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

@@ -1,14 +1,54 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, Patch, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpCode, HttpStatus, Patch, Query, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { KitchenStockService } from './providers/kitchen-stock.service';
 import { CreateKitchenStockDto } from './dto/kitchen-stock-create.dto';
 import { UpdateKitchenStockDto } from './dto/kitchen-stock-update.dto';
 import { KitchenStockResponseDto } from './dto/kitchen-stock-response.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Kitchen Stock')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('kitchen-stock')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
 export class KitchenStockController {
   constructor(private readonly kitchenStockService: KitchenStockService) {}
+
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk soft delete' })
+    async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
+        await this.kitchenStockService.bulkSoftDelete(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) moved to trash.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Get('trash/list')
+    @ApiOperation({ summary: 'List trashed records' })
+    async findTrashed(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+    ): Promise<any> {
+        const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+        const limitNumber = limit ? parseInt(limit, 10) : 10;
+        const { data, total } = await this.kitchenStockService.findTrashed({ page: pageNumber, limit: limitNumber, search });
+        return {
+            data,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
+            status: 'success',
+            message: 'Trashed records retrieved successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
 
   @Get()
   @ApiOperation({ summary: 'Get all kitchen stock with pagination' })
@@ -58,7 +98,7 @@ export class KitchenStockController {
   @ApiParam({ name: 'id', description: 'Kitchen stock ID' })
   @ApiResponse({ status: 200, description: 'Kitchen stock retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Kitchen stock not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const data = await this.kitchenStockService.findOne(id);
     
     return {
@@ -73,7 +113,7 @@ export class KitchenStockController {
   @ApiOperation({ summary: 'Get kitchen stock by item ID' })
   @ApiParam({ name: 'itemId', description: 'Kitchen item ID' })
   @ApiResponse({ status: 200, description: 'Kitchen stock retrieved successfully' })
-  async findByItemId(@Param('itemId') itemId: string) {
+  async findByItemId(@Param('itemId', ParseUUIDPipe) itemId: string) {
     const data = await this.kitchenStockService.findByItemId(itemId);
     
     return {
@@ -108,7 +148,7 @@ export class KitchenStockController {
   @ApiResponse({ status: 404, description: 'Kitchen stock not found' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateKitchenStockDto: UpdateKitchenStockDto,
   ) {
     const data = await this.kitchenStockService.update(id, updateKitchenStockDto);
@@ -127,7 +167,7 @@ export class KitchenStockController {
   @ApiResponse({ status: 200, description: 'Kitchen stock quantity updated successfully' })
   @ApiResponse({ status: 404, description: 'Kitchen stock not found' })
   async updateQuantity(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body('quantity') quantity: number,
   ) {
     const data = await this.kitchenStockService.updateQuantity(id, quantity);
@@ -146,7 +186,7 @@ export class KitchenStockController {
   @ApiParam({ name: 'id', description: 'Kitchen stock ID' })
   @ApiResponse({ status: 204, description: 'Kitchen stock deleted successfully' })
   @ApiResponse({ status: 404, description: 'Kitchen stock not found' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.kitchenStockService.remove(id);
     
     return {
@@ -156,4 +196,26 @@ export class KitchenStockController {
       statusCode: HttpStatus.NO_CONTENT
     };
   }
+
+    @Patch(':id/restore')
+    @ApiOperation({ summary: 'Restore from trash' })
+    async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.kitchenStockService.restore(id);
+        return {
+            status: 'success',
+            message: 'Record restored successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Delete(':id/permanent')
+    @ApiOperation({ summary: 'Permanently delete' })
+    async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        await this.kitchenStockService.permanentDelete(id);
+        return {
+            status: 'success',
+            message: 'Record permanently deleted.',
+            statusCode: HttpStatus.OK
+        };
+    }
 }

@@ -25,6 +25,11 @@ class OrderItemInput {
   @IsNumber()
   @Min(1)
   quantity: number;
+
+  @ApiProperty({ description: 'Variation ID (for variable items)', required: false })
+  @IsOptional()
+  @IsUUID()
+  variation_id?: string;
 }
 
 export class CreateCustomerOrderDto {

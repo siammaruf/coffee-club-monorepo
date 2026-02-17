@@ -246,4 +246,41 @@ export class ExpenseCategoriesService {
     
     await this.invalidateCache();
   }
+
+    async bulkSoftDelete(ids: string[]): Promise<void> {
+        await this.expenseCategoryRepository.softDelete(ids);
+    }
+
+    async findTrashed(options: { page: number, limit: number, search?: string }) {
+        const { page, limit, search } = options;
+        const query = this.expenseCategoryRepository.createQueryBuilder('expenseCategory')
+            .withDeleted()
+            .where('expenseCategory.deleted_at IS NOT NULL');
+
+        if (search) {
+            query.andWhere('LOWER(expenseCategory.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+        }
+
+        query.orderBy('expenseCategory.deleted_at', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await query.getManyAndCount();
+        return { data, total };
+    }
+
+    async restore(id: string): Promise<void> {
+        await this.expenseCategoryRepository.restore(id);
+    }
+
+    async permanentDelete(id: string): Promise<void> {
+        const entity = await this.expenseCategoryRepository.findOne({ where: { id }, withDeleted: true });
+        if (!entity) {
+            throw new NotFoundException(`Record with ID ${id} not found`);
+        }
+        if (!entity.deleted_at) {
+            throw new NotFoundException(`Record with ID ${id} is not in trash`);
+        }
+        await this.expenseCategoryRepository.delete(id);
+    }
 }

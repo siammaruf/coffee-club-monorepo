@@ -1,4 +1,6 @@
+import { randomUUID } from 'crypto';
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import * as ExcelJS from 'exceljs';
@@ -20,6 +22,7 @@ import { User } from '../../users/entities/user.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { Discount } from '../../discount/entities/discount.entity';
 import { Item } from '../../items/entities/item.entity';
+import { ItemVariation } from '../../items/entities/item-variation.entity';
 import { Bank } from '../../banks/entities/bank.entity';
 import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
 import { Order } from '../../orders/entities/order.entity';
@@ -32,6 +35,9 @@ import { Expenses } from '../../expenses/entities/expenses.entity';
 import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
 import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
+
+// Cache
+import { CacheService } from '../../cache/cache.service';
 
 // Enums for validation
 import { ItemType } from '../../items/enum/item-type.enum';
@@ -88,9 +94,27 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 @Injectable()
 export class ImportService {
   private readonly logger = new Logger(ImportService.name);
+  private readonly tablePrefix: string;
 
   /** Sheet name -> entity mapping with column definitions */
   private readonly sheetMappings: Record<string, SheetEntityMapping>;
+
+  /**
+   * Maps FK column names to the sheet whose ID mapping should be used
+   * to resolve non-UUID cross-references during import.
+   */
+  private readonly fkSheetMap: Record<string, string> = {
+    item_id: 'Items',
+    category_id: 'Categories',
+    user_id: 'Users',
+    customer_id: 'Customers',
+    order_id: 'Orders',
+    kitchen_item_id: 'Kitchen Items',
+    kitchen_stock_id: 'Kitchen Stock',
+    kitchen_order_id: 'Kitchen Orders',
+    expense_category_id: 'Expense Categories',
+    item_variation_id: 'Item Variations',
+  };
 
   constructor(
     @InjectRepository(Category) private categoryRepo: Repository<Category>,
@@ -113,8 +137,12 @@ export class ImportService {
     @InjectRepository(KitchenOrder) private kitchenOrderRepo: Repository<KitchenOrder>,
     @InjectRepository(KitchenOrderItem) private kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport) private dailyReportRepo: Repository<DailyReport>,
+    @InjectRepository(ItemVariation) private itemVariationRepo: Repository<ItemVariation>,
     private dataSource: DataSource,
+    private configService: ConfigService,
+    private cacheService: CacheService,
   ) {
+    this.tablePrefix = this.configService.get<string>('DB_TABLE_PREFIX', '');
     this.sheetMappings = this.buildSheetMappings();
   }
 
@@ -129,8 +157,15 @@ export class ImportService {
   async parseAndPreview(file: Express.Multer.File): Promise<ImportPreview> {
     this.validateFile(file);
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer);
+    let workbook: ExcelJS.Workbook;
+    try {
+      workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer as any);
+    } catch (err: any) {
+      throw new BadRequestException(
+        `Failed to parse Excel file: ${err?.message || 'Invalid or corrupted file'}`,
+      );
+    }
 
     const sheets: ImportPreviewSheet[] = [];
     let totalRows = 0;
@@ -191,64 +226,99 @@ export class ImportService {
   ): Promise<ImportResult> {
     this.validateFile(file);
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(file.buffer);
-
-    // Collect parsed data per sheet keyed by sheet name
-    const parsedSheets = new Map<
-      string,
-      { mapping: SheetEntityMapping; rows: Record<string, any>[] }
-    >();
-
-    workbook.eachSheet((worksheet) => {
-      const sheetName = worksheet.name;
-      const mapping = this.sheetMappings[sheetName];
-      if (!mapping) return;
-
-      const { headers, dataRows } = this.extractSheetData(worksheet);
-      const rows: Record<string, any>[] = [];
-
-      for (const { rowData } of dataRows) {
-        const converted = this.convertRow(rowData, headers, mapping);
-        if (converted) rows.push(converted);
-      }
-
-      parsedSheets.set(sheetName, { mapping, rows });
-    });
-
-    // Define import phases (dependency order)
-    const importPhases: string[][] = [
-      // Phase 1: no FK dependencies
-      ['Categories', 'Expense Categories', 'Tables', 'Kitchen Items'],
-      // Phase 2: depend on phase 1
-      ['Users', 'Customers', 'Discounts'],
-      // Phase 3: depend on phase 2
-      ['Items', 'Banks', 'Kitchen Stock'],
-      // Phase 3.5: junction table for Item <-> Category
-      ['Item-Categories'],
-      // Phase 4: depend on phase 3
-      ['Orders', 'Expenses', 'Daily Reports'],
-      // Phase 5: depend on phase 4
-      ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave', 'Kitchen Orders'],
-      // Phase 6: depend on phase 5
-      ['Kitchen Order Items'],
-    ];
-
-    const importedCounts: Record<string, number> = {};
-    const skippedCounts: Record<string, number> = {};
-    const errors: Array<{ entity: string; row: number; message: string }> = [];
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    let queryRunner: QueryRunner | null = null;
 
     try {
+      // Parse workbook (wrapped in try/catch to avoid unhandled 500)
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer as any);
+
+      // Collect raw sheet data -- conversion is deferred to phase processing
+      // so that cross-sheet ID mappings are available for FK resolution.
+      const rawSheets = new Map<
+        string,
+        {
+          mapping: SheetEntityMapping;
+          headers: string[];
+          dataRows: Array<{ rowNumber: number; rowData: (ExcelJS.CellValue | undefined)[] }>;
+        }
+      >();
+
+      workbook.eachSheet((worksheet) => {
+        const sheetName = worksheet.name;
+        const mapping = this.sheetMappings[sheetName];
+        if (!mapping) return;
+
+        const { headers, dataRows } = this.extractSheetData(worksheet);
+        rawSheets.set(sheetName, { mapping, headers, dataRows });
+      });
+
+      // Cross-sheet ID mapping: sheetName -> (originalId -> generatedUUID)
+      const allIdMappings = new Map<string, Map<string, string>>();
+
+      // Define import phases (dependency order)
+      const importPhases: string[][] = [
+        // Phase 1: no FK dependencies
+        ['Categories', 'Expense Categories', 'Tables', 'Kitchen Items'],
+        // Phase 2: depend on phase 1
+        ['Users', 'Customers', 'Discounts'],
+        // Phase 3: depend on phase 2
+        ['Items', 'Banks', 'Kitchen Stock'],
+        // Phase 3.5: junction table for Item <-> Category + Item Variations
+        ['Item-Categories', 'Item Variations'],
+        // Phase 4: depend on phase 3
+        ['Orders', 'Expenses', 'Daily Reports'],
+        // Phase 5: depend on phase 4
+        ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave', 'Kitchen Orders'],
+        // Phase 6: depend on phase 5
+        ['Kitchen Order Items'],
+      ];
+
+      const importedCounts: Record<string, number> = {};
+      const skippedCounts: Record<string, number> = {};
+      const errors: Array<{ entity: string; row: number; message: string }> = [];
+
+      queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       for (const phase of importPhases) {
         for (const sheetName of phase) {
-          const sheetData = parsedSheets.get(sheetName);
-          if (!sheetData) continue;
+          const rawData = rawSheets.get(sheetName);
+          if (!rawData) continue;
 
-          const { mapping, rows } = sheetData;
+          const { mapping, headers, dataRows } = rawData;
+
+          // Create an ID map for this sheet to track non-UUID id → generated UUID
+          const sheetIdMap = new Map<string, string>();
+
+          // Convert rows now (deferred), with access to accumulated ID mappings
+          const rows: Record<string, any>[] = [];
+          for (const { rowData } of dataRows) {
+            const converted = this.convertRow(
+              rowData,
+              headers,
+              mapping,
+              sheetIdMap,
+              allIdMappings,
+            );
+            if (converted) rows.push(converted);
+          }
+
+          // For Items: default regular_price to 0 for variable items (price lives on variations)
+          if (sheetName === 'Items') {
+            for (const row of rows) {
+              if (row.regular_price == null || row.regular_price === '') {
+                row.regular_price = 0;
+              }
+            }
+          }
+
+          // Store this sheet's ID mapping for downstream FK resolution
+          if (sheetIdMap.size > 0) {
+            allIdMappings.set(sheetName, sheetIdMap);
+          }
+
           let imported = 0;
           let skipped = 0;
 
@@ -273,14 +343,21 @@ export class ImportService {
 
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
+            const useSavepoint = dto.skip_errors || dto.mode === ImportMode.INSERT;
             try {
-              if (dto.mode === ImportMode.UPSERT) {
+              if (useSavepoint) {
+                await queryRunner.query('SAVEPOINT sp_row');
+              }
+              if (dto.mode === ImportMode.UPSERT && row.id) {
                 await queryRunner.manager.getRepository(repo.target).upsert(row, ['id']);
               } else {
                 // INSERT mode: save, but catch unique constraint errors
                 await queryRunner.manager.getRepository(repo.target).save(
                   queryRunner.manager.getRepository(repo.target).create(row),
                 );
+              }
+              if (useSavepoint) {
+                await queryRunner.query('RELEASE SAVEPOINT sp_row');
               }
               imported++;
             } catch (err: any) {
@@ -292,6 +369,10 @@ export class ImportService {
                 err?.code === '23505';
 
               if (dto.skip_errors || (dto.mode === ImportMode.INSERT && isConstraintError)) {
+                // Rollback to savepoint so the transaction stays usable
+                if (useSavepoint) {
+                  await queryRunner.query('ROLLBACK TO SAVEPOINT sp_row');
+                }
                 skipped++;
                 errors.push({
                   entity: mapping.entityName,
@@ -315,6 +396,9 @@ export class ImportService {
 
       await queryRunner.commitTransaction();
 
+      // Invalidate all cached data after successful import
+      await this.cacheService.clear();
+
       return {
         success: true,
         imported_counts: importedCounts,
@@ -322,8 +406,10 @@ export class ImportService {
         errors,
       };
     } catch (err: any) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error('Import transaction rolled back', err?.stack);
+      if (queryRunner?.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      this.logger.error('Import failed', err?.stack);
 
       if (err instanceof BadRequestException) throw err;
 
@@ -331,7 +417,9 @@ export class ImportService {
         `Import failed: ${err?.message || 'Unknown error'}`,
       );
     } finally {
-      await queryRunner.release();
+      if (queryRunner) {
+        await queryRunner.release();
+      }
     }
   }
 
@@ -449,6 +537,12 @@ export class ImportService {
 
       switch (colDef.type) {
         case 'uuid':
+          // Skip UUID validation for the 'id' field -- non-UUID values will be
+          // handled during import (pre-generate UUID + ID mapping).
+          if (fieldName === 'id') break;
+          // Skip validation for integer cross-references from other sheets
+          // (e.g., item_id: "1"). These will be resolved via ID mapping during execution.
+          if (/^\d+$/.test(strValue)) break;
           if (!UUID_REGEX.test(strValue)) {
             errors.push({ field: fieldName, message: `Invalid UUID format: "${strValue}"` });
           }
@@ -487,15 +581,23 @@ export class ImportService {
 
   /**
    * Convert a raw data row into a plain object suitable for TypeORM save/upsert.
-   * Handles type coercion, field remapping, and FK-to-relation conversion.
+   * Handles type coercion, field remapping, FK-to-relation conversion,
+   * and cross-sheet ID mapping for non-UUID references.
+   *
+   * @param sheetIdMap  Map of original non-UUID id -> generated UUID for this sheet.
+   *                    When an `id` field has a non-UUID value, a UUID is pre-generated
+   *                    and stored here so downstream FK sheets can reference it.
+   * @param allIdMappings  All ID mappings across sheets (sheetName -> (oldId -> newUUID)).
+   *                       Used to resolve FK fields like item_id, category_id, etc.
    */
   private convertRow(
     rowData: (ExcelJS.CellValue | undefined)[],
     headers: string[],
     mapping: SheetEntityMapping,
+    sheetIdMap?: Map<string, string>,
+    allIdMappings?: Map<string, Map<string, string>>,
   ): Record<string, any> | null {
     const obj: Record<string, any> = {};
-    let hasId = false;
 
     for (let i = 0; i < headers.length; i++) {
       const headerName = headers[i];
@@ -516,17 +618,45 @@ export class ImportService {
         continue;
       }
 
-      if (headerName === 'id') hasId = true;
-
       if (!colDef) {
         obj[propertyName] = this.cellValueToString(value);
         continue;
       }
 
+      // For the 'id' field: use valid UUIDs as-is, or pre-generate a UUID
+      // for non-UUID values and store the mapping for FK resolution.
+      if (headerName === 'id' && colDef.type === 'uuid') {
+        const strVal = this.cellValueToString(value);
+        if (UUID_REGEX.test(strVal)) {
+          obj[propertyName] = strVal;
+        } else if (strVal && sheetIdMap) {
+          const newUuid = randomUUID();
+          sheetIdMap.set(strVal, newUuid);
+          obj[propertyName] = newUuid;
+        }
+        continue;
+      }
+
+      // For FK UUID fields, resolve non-UUID values via cross-sheet ID mappings.
+      if (colDef.type === 'uuid' && allIdMappings) {
+        const strVal = this.cellValueToString(value);
+        if (!UUID_REGEX.test(strVal)) {
+          const sourceSheet = this.resolveFkSheet(headerName, mapping);
+          if (sourceSheet) {
+            const sheetMap = allIdMappings.get(sourceSheet);
+            const resolved = sheetMap?.get(strVal);
+            if (resolved) {
+              obj[propertyName] = resolved;
+              continue;
+            }
+          }
+          // If can't resolve, skip the value (will be null or cause FK error)
+          continue;
+        }
+      }
+
       obj[propertyName] = this.convertValue(value, colDef);
     }
-
-    if (!hasId && !obj['id']) return null;
 
     // Transform FK columns into relation objects for TypeORM:
     // e.g. { customer_id: 'uuid' } -> { customer: { id: 'uuid' } }
@@ -621,6 +751,7 @@ export class ImportService {
   ): Promise<{ imported: number; skipped: number }> {
     let imported = 0;
     let skipped = 0;
+    const tableName = `${this.tablePrefix}item_categories`;
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -638,20 +769,27 @@ export class ImportService {
       }
 
       try {
+        if (dto.skip_errors) {
+          await queryRunner.query('SAVEPOINT sp_junc');
+        }
         if (dto.mode === ImportMode.UPSERT) {
           await queryRunner.query(
-            `INSERT INTO item_categories (item_id, category_id) VALUES ($1, $2) ON CONFLICT (item_id, category_id) DO NOTHING`,
+            `INSERT INTO "${tableName}" (item_id, category_id) VALUES ($1, $2) ON CONFLICT (item_id, category_id) DO NOTHING`,
             [itemId, categoryId],
           );
         } else {
           await queryRunner.query(
-            `INSERT INTO item_categories (item_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            `INSERT INTO "${tableName}" (item_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
             [itemId, categoryId],
           );
+        }
+        if (dto.skip_errors) {
+          await queryRunner.query('RELEASE SAVEPOINT sp_junc');
         }
         imported++;
       } catch (err: any) {
         if (dto.skip_errors) {
+          await queryRunner.query('ROLLBACK TO SAVEPOINT sp_junc');
           skipped++;
           errors.push({
             entity: 'Item-Categories',
@@ -670,6 +808,21 @@ export class ImportService {
   /**
    * Get the TypeORM repository for a given entity name.
    */
+  /**
+   * Resolve which sheet to use for FK resolution, accounting for cases
+   * where the same FK column name refers to different entities depending
+   * on the current sheet (e.g. Expenses.category_id -> ExpenseCategory).
+   */
+  private resolveFkSheet(
+    fkField: string,
+    currentMapping: SheetEntityMapping,
+  ): string | undefined {
+    if (fkField === 'category_id' && currentMapping.entityName === 'Expenses') {
+      return 'Expense Categories';
+    }
+    return this.fkSheetMap[fkField];
+  }
+
   private getRepository(entityName: string): Repository<any> | null {
     const repoMap: Record<string, Repository<any>> = {
       Category: this.categoryRepo,
@@ -692,6 +845,7 @@ export class ImportService {
       KitchenOrder: this.kitchenOrderRepo,
       KitchenOrderItem: this.kitchenOrderItemRepo,
       DailyReport: this.dailyReportRepo,
+      ItemVariation: this.itemVariationRepo,
     };
     return repoMap[entityName] || null;
   }
@@ -715,7 +869,7 @@ export class ImportService {
       'Categories': {
         entityName: 'Category',
         tableName: 'categories',
-        requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        requiredFields: ['name', 'name_bn', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -734,7 +888,7 @@ export class ImportService {
       'Expense Categories': {
         entityName: 'ExpenseCategory',
         tableName: 'expense_categories',
-        requiredFields: ['id', 'name', 'slug'],
+        requiredFields: ['name', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -752,7 +906,7 @@ export class ImportService {
       'Tables': {
         entityName: 'Table',
         tableName: 'tables',
-        requiredFields: ['id', 'number', 'seat'],
+        requiredFields: ['number', 'seat'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -775,7 +929,7 @@ export class ImportService {
       'Kitchen Items': {
         entityName: 'KitchenItems',
         tableName: 'kitchen_items',
-        requiredFields: ['id', 'name', 'name_bn', 'slug'],
+        requiredFields: ['name', 'name_bn', 'slug'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -799,7 +953,7 @@ export class ImportService {
       'Users': {
         entityName: 'User',
         tableName: 'users',
-        requiredFields: ['id', 'first_name', 'last_name', 'phone'],
+        requiredFields: ['first_name', 'last_name', 'phone'],
         skipFields: ['password'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -835,7 +989,7 @@ export class ImportService {
       'Customers': {
         entityName: 'Customer',
         tableName: 'customers',
-        requiredFields: ['id', 'name', 'phone'],
+        requiredFields: ['name', 'phone'],
         skipFields: ['password', 'refresh_token', 'otp', 'otp_expires_at'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -863,7 +1017,7 @@ export class ImportService {
       'Discounts': {
         entityName: 'Discount',
         tableName: 'discount',
-        requiredFields: ['id', 'name', 'discount_type', 'discount_value', 'expiry_date'],
+        requiredFields: ['name', 'discount_type', 'discount_value', 'expiry_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -884,7 +1038,7 @@ export class ImportService {
       'Items': {
         entityName: 'Item',
         tableName: 'items',
-        requiredFields: ['id', 'name', 'name_bn', 'slug', 'description', 'regular_price', 'image'],
+        requiredFields: ['name', 'name_bn', 'slug', 'description'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
@@ -906,7 +1060,33 @@ export class ImportService {
           },
           regular_price: { type: 'decimal' },
           sale_price: { type: 'decimal', nullable: true },
-          image: { type: 'string' },
+          has_variations: { type: 'boolean', nullable: true },
+          image: { type: 'string', nullable: true },
+          created_at: { type: 'timestamp', nullable: true },
+          updated_at: { type: 'timestamp', nullable: true },
+        },
+      },
+
+      'Item Variations': {
+        entityName: 'ItemVariation',
+        tableName: 'item_variations',
+        requiredFields: ['item_id', 'name', 'name_bn', 'regular_price'],
+        skipFields: noSkip,
+        fieldRemap: noRemap,
+        relationMappings: { item_id: 'item' },
+        columns: {
+          id: { type: 'uuid' },
+          item_id: { type: 'uuid' },
+          name: { type: 'string' },
+          name_bn: { type: 'string' },
+          regular_price: { type: 'decimal' },
+          sale_price: { type: 'decimal', nullable: true },
+          status: {
+            type: 'enum',
+            enumValues: Object.values(ItemStatus),
+            nullable: true,
+          },
+          sort_order: { type: 'integer', nullable: true },
           created_at: { type: 'timestamp', nullable: true },
           updated_at: { type: 'timestamp', nullable: true },
         },
@@ -928,7 +1108,7 @@ export class ImportService {
       'Banks': {
         entityName: 'Bank',
         tableName: 'banks',
-        requiredFields: ['id', 'bank_name', 'branch_name', 'account_number', 'routing_number'],
+        requiredFields: ['bank_name', 'branch_name', 'account_number', 'routing_number'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -947,7 +1127,7 @@ export class ImportService {
       'Kitchen Stock': {
         entityName: 'KitchenStock',
         tableName: 'kitchen_stock',
-        requiredFields: ['id', 'quantity', 'price', 'total_price'],
+        requiredFields: ['quantity', 'price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { kitchen_item_id: 'kitchen_item' },
@@ -966,7 +1146,7 @@ export class ImportService {
       'Orders': {
         entityName: 'Order',
         tableName: 'orders',
-        requiredFields: ['id'],
+        requiredFields: [],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1011,7 +1191,7 @@ export class ImportService {
       'Order Items': {
         entityName: 'OrderItem',
         tableName: 'order_items',
-        requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        requiredFields: ['quantity', 'unit_price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1033,7 +1213,7 @@ export class ImportService {
       'Order Tokens': {
         entityName: 'OrderToken',
         tableName: 'order_tokens',
-        requiredFields: ['id', 'token', 'token_type'],
+        requiredFields: ['token', 'token_type'],
         skipFields: noSkip,
         // OrderToken entity uses camelCase for timestamps and auto-generated FK
         fieldRemap: {
@@ -1070,7 +1250,7 @@ export class ImportService {
       'Salary': {
         entityName: 'Salary',
         tableName: 'salary',
-        requiredFields: ['id', 'month', 'base_salary', 'total_payble'],
+        requiredFields: ['month', 'base_salary', 'total_payble'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1093,7 +1273,7 @@ export class ImportService {
       'Attendance': {
         entityName: 'StuffAttendance',
         tableName: 'stuff_attendance',
-        requiredFields: ['id', 'attendance_date'],
+        requiredFields: ['attendance_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1121,7 +1301,7 @@ export class ImportService {
       'Leave': {
         entityName: 'Leave',
         tableName: 'leave',
-        requiredFields: ['id', 'user_id', 'leave_type', 'leave_start_date', 'leave_end_date', 'reason'],
+        requiredFields: ['user_id', 'leave_type', 'leave_start_date', 'leave_end_date', 'reason'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         // Leave entity has an explicit user_id @Column, so no relation mapping needed
@@ -1144,7 +1324,7 @@ export class ImportService {
       'Kitchen Orders': {
         entityName: 'KitchenOrder',
         tableName: 'kitchen_orders',
-        requiredFields: ['id'],
+        requiredFields: [],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
@@ -1163,7 +1343,7 @@ export class ImportService {
       'Kitchen Order Items': {
         entityName: 'KitchenOrderItem',
         tableName: 'kitchen_order_items',
-        requiredFields: ['id', 'quantity', 'unit_price', 'total_price'],
+        requiredFields: ['quantity', 'unit_price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: {
@@ -1185,7 +1365,7 @@ export class ImportService {
       'Expenses': {
         entityName: 'Expenses',
         tableName: 'expenses',
-        requiredFields: ['id', 'title', 'amount'],
+        requiredFields: ['title', 'amount'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { category_id: 'category' },
@@ -1209,7 +1389,7 @@ export class ImportService {
       'Daily Reports': {
         entityName: 'DailyReport',
         tableName: 'daily_reports',
-        requiredFields: ['id', 'report_date'],
+        requiredFields: ['report_date'],
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,

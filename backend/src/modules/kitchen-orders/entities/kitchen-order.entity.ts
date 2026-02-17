@@ -1,5 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { KitchenOrderItem } from "./kitchen-order-item.entity";
+import { Column, Entity, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, UpdateDateColumn, Relation } from "typeorm";
+import type { KitchenOrderItem } from "./kitchen-order-item.entity";
 import { User } from "../../users/entities/user.entity";
 
 @Entity('kitchen_orders')
@@ -14,8 +14,8 @@ export class KitchenOrder {
     @JoinColumn({ name: 'user_id' })
     user?: User;
 
-    @OneToMany(() => KitchenOrderItem, orderItem => orderItem.kitchen_order, { cascade: true })
-    order_items: KitchenOrderItem[];
+    @OneToMany("KitchenOrderItem", "kitchen_order", { cascade: true })
+    order_items: Relation<KitchenOrderItem[]>;
 
     @Column({type:'decimal', precision: 10, scale: 2, nullable: true, default: 0})
     total_amount: number;
@@ -26,9 +26,12 @@ export class KitchenOrder {
     @Column({nullable: true})
     description: string;
     
+    @DeleteDateColumn()
+    deleted_at: Date | null;
+
     @CreateDateColumn()
     created_at: Date;
-    
+
     @UpdateDateColumn()
     updated_at: Date;
 }

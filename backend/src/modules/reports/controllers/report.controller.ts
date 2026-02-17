@@ -1,14 +1,20 @@
 import { Controller, Get, Post, Body, Param, Delete, Query, ParseUUIDPipe, HttpStatus, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportService } from '../providers/report.service';
 import { DailyReportResponseDto } from '../dto/report-response.dto';
 import { GenerateReportDto } from '../dto/generate-report.dto';
 import { FinancialSummaryResponseDto } from '../dto/financial-summary-response.dto';
 import { KitchenReportResponseDto } from '../dto/kitchen-report-response.dto';
 import { DashboardResponseDto } from '../dto/dashboard-response.dto';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/enum/user-role.enum';
+import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Sales Reports')
+@ApiBearerAuth('staff-auth')
+@ApiErrorResponses()
 @Controller('sales-reports')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 export class SalesReportController {
     constructor(private readonly reportService: ReportService) {}
 
@@ -141,7 +147,7 @@ export class SalesReportController {
         const data = await this.reportService.getKitchenReport(filterType, filterValue, startDate, endDate);
         return {
             data,
-            status: true,
+            status: 'success',
             message: 'Kitchen report retrieved successfully',
             statusCode: HttpStatus.OK,
         };
@@ -466,9 +472,10 @@ export class SalesReportController {
             );
             
             return {
-                success: true,
+                status: 'success',
                 message: 'Sales progress data retrieved successfully',
-                data
+                data,
+                statusCode: HttpStatus.OK,
             };
         } catch (error) {
             throw new BadRequestException({
@@ -582,9 +589,10 @@ export class SalesReportController {
             );
             
             return {
-                success: true,
+                status: 'success',
                 message: 'Expenses data retrieved successfully',
-                data
+                data,
+                statusCode: HttpStatus.OK,
             };
         } catch (error) {
             throw new BadRequestException({

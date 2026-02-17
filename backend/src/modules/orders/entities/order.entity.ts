@@ -1,12 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, ManyToMany, JoinTable, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, ManyToMany, JoinTable, OneToMany, PrimaryGeneratedColumn, Relation, UpdateDateColumn } from "typeorm";
 import { OrderType } from "../enum/order-type.enum";
 import { OrderStatus } from "../enum/order-status.enum";
 import { PaymentMethod } from "../enum/payment-method.enum";
 import { Table } from "../../table/entities/table.entity";
 import { Customer } from "../../customers/entities/customer.entity";
 import { User } from "src/modules/users/entities/user.entity";
-import { OrderItem } from "../../order-items/entities/order-item.entity";
-import { OrderToken } from "../../order-tokens/entities/order-token.entity";
+import type { OrderItem } from "../../order-items/entities/order-item.entity";
+import type { OrderToken } from "../../order-tokens/entities/order-token.entity";
 import { Discount } from "../../discount/entities/discount.entity";
 
 @Entity('orders')
@@ -83,11 +83,14 @@ export class Order {
     @Column({ nullable: true })
     customer_phone: string;
 
-    @OneToMany(() => OrderItem, orderItem => orderItem.order)
-    orderItems: OrderItem[];
+    @OneToMany("OrderItem", "order")
+    orderItems: Relation<OrderItem[]>;
 
-    @OneToMany(() => OrderToken, orderToken => orderToken.order)
-    orderTokens: OrderToken[];
+    @OneToMany("OrderToken", "order")
+    orderTokens: Relation<OrderToken[]>;
+
+    @DeleteDateColumn()
+    deleted_at: Date | null;
 
     @CreateDateColumn()
     created_at: Date;

@@ -66,7 +66,7 @@ export default function ForgotPassword() {
       if (response.status === 'success' || response.statusCode === 200) {
         setSuccess(response.message || 'OTP sent successfully!');
         setTimeout(() => {
-          navigate(`/auth/verify-otp?identity=${data.identity}`);
+          navigate(`/verify-otp?identity=${data.identity}`);
         }, 1500);
       } else {
         setError(response, "Failed to send OTP. Please try again.");

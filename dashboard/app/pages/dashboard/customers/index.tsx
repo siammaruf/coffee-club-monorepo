@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Plus, Search, Eye, Edit, Trash2, UserCheck, XCircle, UserX, Loader2 } from "lucide-react";
+import { Plus, Search, Eye, Edit, Trash2, UserCheck, XCircle, UserX, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
 import CreateCustomerModal from "~/components/modals/CreateCustomerModal";
 import ViewCustomerModal from "~/components/modals/ViewCustomerModal";
 import EditCustomerModal from "~/components/modals/EditCustomerModal";
@@ -11,6 +11,9 @@ import { customerService } from "~/services/httpServices/customerService";
 import type { Customer } from "~/types/customer";
 import CustomerSkeleton from "~/components/skeleton/CustomerSkeleton";
 import { toast } from "sonner";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -21,18 +24,36 @@ export default function CustomersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [isActiveFilter, setIsActiveFilter] = useState<"" | "true" | "false">("");
-  const selectedCustomer = selectedCustomerId 
+  const selectedCustomer = selectedCustomerId
     ? customers.find(c => c.id === selectedCustomerId) || null
     : null;
 
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
+  const [trashCount, setTrashCount] = useState(0);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   useEffect(() => {
     fetchCustomers();
-  }, [currentPage, searchTerm, isActiveFilter]);
+  }, [currentPage, searchTerm, isActiveFilter, viewMode]);
+
+  // Fetch trash count on initial load
+  useEffect(() => {
+    customerService.getTrash({ page: 1, limit: 1 }).then((res: any) => {
+      setTrashCount(res.total || 0);
+    }).catch(() => {});
+  }, []);
+
+  // Clear selection when viewMode changes
+  useEffect(() => {
+    clearSelection();
+  }, [viewMode]);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
@@ -43,9 +64,13 @@ export default function CustomersPage() {
       };
       if (searchTerm) params.search = searchTerm;
       if (isActiveFilter) params.is_active = isActiveFilter;
-      const response = await customerService.getAll(params);
-      setCustomers(response.data || []);
-      setTotal(response.total || 0);
+
+      const response = viewMode === 'trash'
+        ? await customerService.getTrash(params)
+        : await customerService.getAll(params);
+      const data = response as any;
+      setCustomers(data.data || []);
+      setTotal(data.total || 0);
     } catch (error) {
       setCustomers([]);
       setTotal(0);
@@ -60,14 +85,16 @@ export default function CustomersPage() {
 
   const handleDeleteConfirm = async () => {
     if (!deleteId) return;
-    
+
     try {
       await customerService.delete(deleteId);
       setCustomers(customers.filter(customer => customer.id !== deleteId));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev + 1);
       toast("Customer deleted!", {
         description: (
           <span style={{ color: "#000" }}>
-            The customer was removed successfully.
+            The customer was moved to trash.
           </span>
         ),
         duration: 3000,
@@ -86,7 +113,7 @@ export default function CustomersPage() {
       } else if ((error as any)?.message) {
         errorMessage = (error as any).message;
       }
-      
+
       toast('Failed to delete customer.', {
         description: (
           <span style={{ color: "#000" }}>
@@ -95,17 +122,90 @@ export default function CustomersPage() {
         ),
         duration: 3000,
         icon: <XCircle className="text-red-600" style={{ marginTop: 10, marginRight: 10 }} />,
-        style: { 
-          background: "#fee2e2", 
-          color: "#991b1b", 
+        style: {
+          background: "#fee2e2",
+          color: "#991b1b",
           alignItems: "flex-start",
-          border: "1.5px solid #ef4444", 
+          border: "1.5px solid #ef4444",
         },
       });
       console.error('Error deleting customer:', error);
     } finally {
       setDeleteId(null);
     }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await customerService.restore(id);
+      setCustomers(prev => prev.filter(c => c.id !== id));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Restore failed:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
+    try {
+      await customerService.permanentDelete(permanentDeleteId);
+      setCustomers(prev => prev.filter(c => c.id !== permanentDeleteId));
+      setTotal(prev => prev - 1);
+      setTrashCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Permanent delete failed:", error);
+    }
+    setPermanentDeleteId(null);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await customerService.bulkDelete(Array.from(selectedIds));
+      setCustomers(prev => prev.filter(c => !selectedIds.has(c.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev + selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => customerService.restore(id)));
+      setCustomers(prev => prev.filter(c => !selectedIds.has(c.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => customerService.permanentDelete(id)));
+      setCustomers(prev => prev.filter(c => !selectedIds.has(c.id)));
+      setTotal(prev => prev - selectedIds.size);
+      setTrashCount(prev => prev - selectedIds.size);
+      clearSelection();
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+    }
+    setBulkLoading(false);
   };
 
   const handleView = (customer: Customer) => {
@@ -121,13 +221,12 @@ export default function CustomersPage() {
   const handleCustomerUpdated = (updatedCustomer: any) => {
     const customerData = updatedCustomer.data || updatedCustomer;
     const customerId = updatedCustomer.data?.id || customerData.id;
-    
-    setCustomers(prev => 
+
+    setCustomers(prev =>
       prev.map(c => c.id === customerId ? customerData : c)
     );
   };
 
-  const filteredCustomers = customers;
   const totalPages = Math.ceil(total / itemsPerPage);
 
   const handleCreated = (customer: Customer) => {
@@ -222,11 +321,20 @@ export default function CustomersPage() {
       <ConfirmDialog
         open={!!deleteId}
         title="Delete Customer?"
-        description="Are you sure you want to delete this customer? This action cannot be undone."
+        description="Are you sure you want to delete this customer? It will be moved to trash."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete Customer?"
+        description="Are you sure you want to permanently delete this customer? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
       <div className="space-y-6 p-6">
         <div className="flex justify-between items-center">
@@ -246,9 +354,27 @@ export default function CustomersPage() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center gap-2">
-                <span>Customer List ({total})</span>
-              </CardTitle>
+              <div className="flex items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <span>Customer List ({total})</span>
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant={viewMode === 'active' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                  >
+                    Active
+                  </Button>
+                  <Button
+                    variant={viewMode === 'trash' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                  >
+                    Trash ({trashCount})
+                  </Button>
+                </div>
+              </div>
               <div className="flex gap-2 items-center">
                 <div className="relative w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -278,21 +404,40 @@ export default function CustomersPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <BulkActionBar
+              selectedCount={selectedCount}
+              onDelete={handleBulkDelete}
+              onClearSelection={clearSelection}
+              isTrashView={viewMode === 'trash'}
+              onRestore={handleBulkRestore}
+              onPermanentDelete={handleBulkPermanentDelete}
+              loading={bulkLoading}
+            />
             <div className="rounded-md border">
               <div className="p-4 bg-muted/50">
-                <div className="grid grid-cols-4 font-medium text-sm">
-                  <div className="text-left">Customer</div>
+                <div className="grid grid-cols-5 font-medium text-sm">
+                  <div className="text-left flex items-center gap-2">
+                    <Checkbox
+                      checked={isAllSelected(customers.map(c => c.id))}
+                      onChange={() => toggleSelectAll(customers.map(c => c.id))}
+                    />
+                    Customer
+                  </div>
                   <div className="text-center">Contact</div>
                   <div className="text-center">Address</div>
-                  <div className="text-right">Actions</div>
+                  <div className="text-right col-span-2">Actions</div>
                 </div>
               </div>
               <div className="divide-y">
                 {customers.length > 0 ? (
                   customers.map((customer) => (
                     <div key={customer.id} className="p-4 hover:bg-muted/50">
-                      <div className="grid grid-cols-4 text-sm items-center">
+                      <div className="grid grid-cols-5 text-sm items-center">
                         <div className="text-left flex items-center gap-3">
+                          <Checkbox
+                            checked={isSelected(customer.id)}
+                            onChange={() => toggleSelect(customer.id)}
+                          />
                           {customer.picture ? (
                             <img
                               src={customer.picture}
@@ -315,69 +460,99 @@ export default function CustomersPage() {
                         <div className="text-center">
                           <p className="text-sm">{customer.address || 'Not provided'}</p>
                         </div>
-                        <div className="flex justify-end gap-2">
-                          {/* Activate/Deactivate Button */}
-                          {customer.is_active ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-yellow-700 hover:bg-yellow-50 cursor-pointer"
-                              title="Deactivate"
-                              disabled={statusLoadingId === customer.id}
-                              onClick={() => handleStatusChange(customer, "deactivate")}
-                            >
-                              {statusLoadingId === customer.id
-                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                : <UserX className="h-4 w-4" />}
-                            </Button>
+                        <div className="flex justify-end gap-2 col-span-2">
+                          {viewMode === 'trash' ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title="Restore"
+                                onClick={() => handleRestore(customer.id)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                title="Delete Permanently"
+                                onClick={() => handlePermanentDelete(customer.id)}
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            </>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-green-700 hover:bg-green-50 cursor-pointer"
-                              title="Activate"
-                              disabled={statusLoadingId === customer.id}
-                              onClick={() => handleStatusChange(customer, "activate")}
-                            >
-                              {statusLoadingId === customer.id
-                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                : <UserCheck className="h-4 w-4" />}
-                            </Button>
+                            <>
+                              {/* Activate/Deactivate Button */}
+                              {customer.is_active ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-yellow-700 hover:bg-yellow-50 cursor-pointer"
+                                  title="Deactivate"
+                                  disabled={statusLoadingId === customer.id}
+                                  onClick={() => handleStatusChange(customer, "deactivate")}
+                                >
+                                  {statusLoadingId === customer.id
+                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                    : <UserX className="h-4 w-4" />}
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-green-700 hover:bg-green-50 cursor-pointer"
+                                  title="Activate"
+                                  disabled={statusLoadingId === customer.id}
+                                  onClick={() => handleStatusChange(customer, "activate")}
+                                >
+                                  {statusLoadingId === customer.id
+                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                    : <UserCheck className="h-4 w-4" />}
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title="View"
+                                onClick={() => handleView(customer)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title="Edit"
+                                onClick={() => handleEdit(customer)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                title="Delete"
+                                onClick={() => handleDelete(customer.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0 cursor-pointer"
-                            title="View"
-                            onClick={() => handleView(customer)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0 cursor-pointer"
-                            title="Edit"
-                            onClick={() => handleEdit(customer)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                            title="Delete"
-                            onClick={() => handleDelete(customer.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
-                    {searchTerm ? (
+                    {viewMode === 'trash' ? (
+                      <>
+                        <p>Trash is empty.</p>
+                        <p className="text-sm mt-1">No deleted customers found.</p>
+                      </>
+                    ) : searchTerm ? (
                       <>
                         <p>No customers found matching "{searchTerm}".</p>
                         <p className="text-sm mt-1">Try adjusting your search terms.</p>
@@ -391,7 +566,7 @@ export default function CustomersPage() {
                   </div>
                 )}
               </div>
-              {Math.ceil(total / itemsPerPage) > 1 && (
+              {totalPages > 1 && (
                 <div className="flex justify-end items-center gap-2 p-4">
                   <Button
                     variant="outline"
@@ -402,12 +577,12 @@ export default function CustomersPage() {
                     Prev
                   </Button>
                   <span className="text-sm">
-                    Page {currentPage} of {Math.ceil(total / itemsPerPage)}
+                    Page {currentPage} of {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={currentPage === Math.ceil(total / itemsPerPage)}
+                    disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(currentPage + 1)}
                   >
                     Next
