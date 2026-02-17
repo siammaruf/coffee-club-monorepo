@@ -157,14 +157,16 @@ export default function CreateProduct() {
       formData.append("has_variations", hasVariations ? "true" : "false");
 
       if (hasVariations && variations.length > 0) {
-        variations.forEach((variation, idx) => {
-          formData.append(`variations[${idx}][name]`, variation.name);
-          formData.append(`variations[${idx}][name_bn]`, variation.name_bn);
-          formData.append(`variations[${idx}][regular_price]`, Number(variation.regular_price || 0).toString());
-          formData.append(`variations[${idx}][sale_price]`, Number(variation.sale_price || 0).toString());
-          formData.append(`variations[${idx}][status]`, variation.status);
-          formData.append(`variations[${idx}][sort_order]`, Number(variation.sort_order).toString());
-        });
+        formData.append('variations', JSON.stringify(
+          variations.map((variation, idx) => ({
+            name: variation.name,
+            name_bn: variation.name_bn || '',
+            regular_price: Number(variation.regular_price || 0),
+            sale_price: Number(variation.sale_price || 0),
+            status: variation.status,
+            sort_order: idx + 1,
+          }))
+        ));
       }
 
       if (selectedCategories.length > 0) {

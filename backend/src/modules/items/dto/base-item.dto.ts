@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsUUID, IsString, IsEnum, IsNumber, IsArray, ValidateNested, IsOptional, IsPositive, IsBoolean } from "class-validator";
 import { ItemType } from "../enum/item-type.enum";
 import { Category } from "src/modules/categories/entities/category.entity";
-import { Type, Transform } from "class-transformer";
+import { Type, Transform, plainToInstance } from "class-transformer";
 import { ItemStatus } from "../enum/item-status.enum";
 import { VariationDto } from "./variation.dto";
 
@@ -89,10 +89,12 @@ export class BaseItemDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Transform(({ value }) => {
+    if (!value) return undefined;
     if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return value; }
+      try { value = JSON.parse(value); } catch { return value; }
     }
-    return Array.isArray(value) ? value : [value];
+    if (!Array.isArray(value)) value = [value];
+    return value.map(v => plainToInstance(VariationDto, v));
   })
   @Type(() => VariationDto)
   variations?: VariationDto[];

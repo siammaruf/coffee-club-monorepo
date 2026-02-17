@@ -209,17 +209,19 @@ export default function EditProduct() {
       // Categories as JSON string
       form.append('categories', JSON.stringify(selectedCategories));
 
-      // Variations as indexed FormData fields
+      // Variations as JSON string
       if (hasVariations && variations.length > 0) {
-        variations.forEach((v, idx) => {
-          if (v.id) form.append(`variations[${idx}][id]`, v.id);
-          form.append(`variations[${idx}][name]`, v.name);
-          form.append(`variations[${idx}][name_bn]`, v.name_bn);
-          form.append(`variations[${idx}][regular_price]`, Number(v.regular_price || 0).toString());
-          form.append(`variations[${idx}][sale_price]`, Number(v.sale_price || 0).toString());
-          form.append(`variations[${idx}][status]`, v.status);
-          form.append(`variations[${idx}][sort_order]`, (idx + 1).toString());
-        });
+        form.append('variations', JSON.stringify(
+          variations.map((v, idx) => ({
+            ...(v.id ? { id: v.id } : {}),
+            name: v.name,
+            name_bn: v.name_bn || '',
+            regular_price: Number(v.regular_price || 0),
+            sale_price: Number(v.sale_price || 0),
+            status: v.status,
+            sort_order: idx + 1,
+          }))
+        ));
       }
 
       // Optional image file
