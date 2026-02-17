@@ -149,6 +149,8 @@ export class UserService {
             }
         }
 
+        await this.invalidateCache();
+
         const userResponse = new UserResponseDto(Array.isArray(savedUser) ? savedUser[0] : savedUser);
         userResponse.banks = bankInfo;
 
@@ -293,7 +295,7 @@ export class UserService {
         status?: UserStatus,
         role?: UserRole
       ): Promise<{ users: UserResponseDto[], total: number, page: number, limit: number, totalPages: number }> {
-        const cacheKey = `users:findAll`;
+        const cacheKey = `users:findAll:${page}:${limit}:${search || ''}:${status || ''}:${role || ''}`;
 
         const cached = await this.cacheService.get<{
           users: UserResponseDto[];
