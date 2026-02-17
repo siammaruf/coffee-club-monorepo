@@ -163,14 +163,6 @@ export default function Sidebar() {
                   <Utensils className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Kitchen Items</span>
                 </Link>
-                <Link to="/dashboard/kitchen-stock" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                  <Package className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="text-sm">Kitchen Stock</span>
-                </Link>
-                <Link to="/dashboard/kitchen-orders" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                  <ClipboardCheck className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="text-sm">Kitchen Orders</span>
-                </Link>
               </div>
             )}
           </div>
@@ -216,10 +208,6 @@ export default function Sidebar() {
                 <Link to="/dashboard/reports/sales" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <BarChart3 className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Sales</span>
-                </Link>
-                <Link to="/dashboard/reports/inventory" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                  <FileSpreadsheet className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="text-sm">Inventory</span>
                 </Link>
                 <Link to="/dashboard/reports/financial-summary" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <PieChart className="w-4 h-4 mr-2 text-gray-500" />

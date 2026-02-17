@@ -217,31 +217,6 @@ export class ActivityService {
     });
   }
 
-  async logKitchenActivity(
-    activityType: ActivityType,
-    kitchenOrderId: string,
-    userId?: string,
-    metadata?: Record<string, any>,
-    ipAddress?: string,
-    userAgent?: string
-  ): Promise<void> {
-    const descriptions = {
-      [ActivityType.KITCHEN_ORDER_CREATED]: 'Kitchen order created',
-      [ActivityType.KITCHEN_ORDER_APPROVED]: 'Kitchen order approved'
-    };
-
-    await this.logActivity({
-      activity_type: activityType,
-      description: descriptions[activityType] || 'Kitchen activity',
-      entity_type: 'kitchen_order',
-      entity_id: kitchenOrderId,
-      user_id: userId,
-      metadata,
-      ip_address: ipAddress,
-      user_agent: userAgent
-    });
-  }
-
   private mapToResponseDto(activity: Activity): ActivityResponseDto {
     return {
       id: activity.id,

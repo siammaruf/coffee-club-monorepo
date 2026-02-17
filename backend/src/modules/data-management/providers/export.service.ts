@@ -17,9 +17,6 @@ import { Salary } from '../../staff-salary/entities/salary.entity';
 import { StuffAttendance } from '../../stuff-attendance/entities/stuff-attendance.entity';
 import { Leave } from '../../stuff-leave/entities/leave.entity';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
-import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
-import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
 import { Bank } from '../../banks/entities/bank.entity';
 import { ItemVariation } from '../../items/entities/item-variation.entity';
@@ -82,12 +79,6 @@ export class ExportService {
     private readonly leaveRepo: Repository<Leave>,
     @InjectRepository(KitchenItems)
     private readonly kitchenItemRepo: Repository<KitchenItems>,
-    @InjectRepository(KitchenStock)
-    private readonly kitchenStockRepo: Repository<KitchenStock>,
-    @InjectRepository(KitchenOrder)
-    private readonly kitchenOrderRepo: Repository<KitchenOrder>,
-    @InjectRepository(KitchenOrderItem)
-    private readonly kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport)
     private readonly dailyReportRepo: Repository<DailyReport>,
     @InjectRepository(Bank)
@@ -295,36 +286,16 @@ export class ExportService {
 
       [ExportGroup.KITCHEN]: {
         label: 'Kitchen',
-        description: 'Kitchen items, stock, orders, and order items',
-        entities: ['KitchenItems', 'KitchenStock', 'KitchenOrder', 'KitchenOrderItem'],
+        description: 'Kitchen items',
+        entities: ['KitchenItems'],
         sheets: [
           {
             name: 'Kitchen Items',
             columns: this.getKitchenItemColumns(),
             getData: () => this.fetchKitchenItems(),
           },
-          {
-            name: 'Kitchen Stock',
-            columns: this.getKitchenStockColumns(),
-            getData: () => this.fetchKitchenStock(),
-          },
-          {
-            name: 'Kitchen Orders',
-            columns: this.getKitchenOrderColumns(),
-            getData: (from, to) => this.fetchKitchenOrders(from, to),
-          },
-          {
-            name: 'Kitchen Order Items',
-            columns: this.getKitchenOrderItemColumns(),
-            getData: () => this.fetchKitchenOrderItems(),
-          },
         ],
-        getCount: async () => {
-          const ki = await this.kitchenItemRepo.count();
-          const ks = await this.kitchenStockRepo.count();
-          const ko = await this.kitchenOrderRepo.count();
-          return ki + ks + ko;
-        },
+        getCount: async () => this.kitchenItemRepo.count(),
       },
 
       [ExportGroup.FINANCIAL]: {
@@ -962,97 +933,6 @@ export class ExportService {
       type: ki.type,
       created_at: ki.created_at,
       updated_at: ki.updated_at,
-    }));
-  }
-
-  private getKitchenStockColumns(): ColumnDef[] {
-    return [
-      { header: 'ID', key: 'id', width: 38 },
-      { header: 'Kitchen Item ID', key: 'kitchen_item_id', width: 38 },
-      { header: 'Kitchen Item Name', key: 'kitchen_item_name', width: 25 },
-      { header: 'Quantity', key: 'quantity', width: 12 },
-      { header: 'Price', key: 'price', width: 14 },
-      { header: 'Total Price', key: 'total_price', width: 14 },
-      { header: 'Description', key: 'description', width: 40 },
-      { header: 'Created At', key: 'created_at', width: 22 },
-      { header: 'Updated At', key: 'updated_at', width: 22 },
-    ];
-  }
-
-  private async fetchKitchenStock(): Promise<Record<string, any>[]> {
-    const stocks = await this.kitchenStockRepo.find({ relations: ['kitchen_item'] });
-    return stocks.map((ks) => ({
-      id: ks.id,
-      kitchen_item_id: ks.kitchen_item?.id ?? '',
-      kitchen_item_name: ks.kitchen_item?.name ?? '',
-      quantity: ks.quantity,
-      price: ks.price,
-      total_price: ks.total_price,
-      description: ks.description,
-      created_at: ks.created_at,
-      updated_at: ks.updated_at,
-    }));
-  }
-
-  private getKitchenOrderColumns(): ColumnDef[] {
-    return [
-      { header: 'ID', key: 'id', width: 38 },
-      { header: 'Order ID', key: 'order_id', width: 20 },
-      { header: 'User ID', key: 'user_id', width: 38 },
-      { header: 'Total Amount', key: 'total_amount', width: 14 },
-      { header: 'Is Approved', key: 'is_approved', width: 12 },
-      { header: 'Description', key: 'description', width: 40 },
-      { header: 'Created At', key: 'created_at', width: 22 },
-      { header: 'Updated At', key: 'updated_at', width: 22 },
-    ];
-  }
-
-  private async fetchKitchenOrders(dateFrom?: string, dateTo?: string): Promise<Record<string, any>[]> {
-    const qb = this.kitchenOrderRepo
-      .createQueryBuilder('ko')
-      .leftJoinAndSelect('ko.user', 'user');
-    this.applyDateFilter(qb, 'ko', dateFrom, dateTo);
-    qb.orderBy('ko.created_at', 'ASC');
-    const orders = await qb.getMany();
-
-    return orders.map((ko) => ({
-      id: ko.id,
-      order_id: ko.order_id,
-      user_id: ko.user?.id ?? '',
-      total_amount: ko.total_amount,
-      is_approved: ko.is_approved,
-      description: ko.description,
-      created_at: ko.created_at,
-      updated_at: ko.updated_at,
-    }));
-  }
-
-  private getKitchenOrderItemColumns(): ColumnDef[] {
-    return [
-      { header: 'ID', key: 'id', width: 38 },
-      { header: 'Kitchen Order ID', key: 'kitchen_order_id', width: 38 },
-      { header: 'Kitchen Stock ID', key: 'kitchen_stock_id', width: 38 },
-      { header: 'Quantity', key: 'quantity', width: 12 },
-      { header: 'Unit Price', key: 'unit_price', width: 14 },
-      { header: 'Total Price', key: 'total_price', width: 14 },
-      { header: 'Created At', key: 'created_at', width: 22 },
-      { header: 'Updated At', key: 'updated_at', width: 22 },
-    ];
-  }
-
-  private async fetchKitchenOrderItems(): Promise<Record<string, any>[]> {
-    const items = await this.kitchenOrderItemRepo.find({
-      relations: ['kitchen_order', 'kitchen_stock'],
-    });
-    return items.map((koi) => ({
-      id: koi.id,
-      kitchen_order_id: koi.kitchen_order?.id ?? '',
-      kitchen_stock_id: koi.kitchen_stock?.id ?? '',
-      quantity: koi.quantity,
-      unit_price: koi.unit_price,
-      total_price: koi.total_price,
-      created_at: koi.created_at,
-      updated_at: koi.updated_at,
     }));
   }
 

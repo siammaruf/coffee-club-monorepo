@@ -23,13 +23,7 @@ export const protectedRoutes = [
   route("salary", "pages/dashboard/salary/index.tsx"),
   route("salary/create", "pages/dashboard/salary/create.tsx"),
 
-  route("kitchen-orders", "pages/dashboard/kitchen-order/index.tsx"),
-  route("kitchen-order/create", "pages/dashboard/kitchen-order/create.tsx"),
-  route("kitchen-order/edit/:id", "pages/dashboard/kitchen-order/edit.tsx"),
-  route("kitchen-order/:id", "pages/dashboard/kitchen-order/details.tsx"),
-
   route("reports/sales", "pages/dashboard/reports/sales.tsx"),
-  route("reports/inventory", "pages/dashboard/reports/inventory.tsx"),
   route("reports/financial-summary", "pages/dashboard/reports/financialSummary.tsx"),
 
   route("customers", "pages/dashboard/customers/index.tsx"),
@@ -37,7 +31,6 @@ export const protectedRoutes = [
   route("discounts", "pages/dashboard/discount/index.tsx"),
   route("expenses", "pages/dashboard/expenses/index.tsx"),
   route("kitchen-items", "pages/dashboard/kitchen-items/index.tsx"),
-  route("kitchen-stock", "pages/dashboard/kitchen-stock/index.tsx"),
   route("tokens", "pages/dashboard/tokens/index.tsx"),
   route("attendance", "pages/dashboard/attendance/index.tsx"),
   route("tables", "pages/dashboard/tables/index.tsx"),

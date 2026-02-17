@@ -8,8 +8,6 @@ import { CustomerModule } from 'src/modules/customers/customer.module';
 import { ExpensesModule } from 'src/modules/expenses/expenses.module';
 import { TableModule } from 'src/modules/table/table.module';
 import { KitchenItemModule } from 'src/modules/kitchen-items/kitchen-item.module';
-import { KitchenStockModule } from 'src/modules/kitchen-stock/kitchen-stock.module';
-import { KitchenOrderModule } from 'src/modules/kitchen-orders/kitchen-order.module';
 import { OrderModule } from 'src/modules/orders/order.module';
 import { OrderItemModule } from 'src/modules/order-items/order-item.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
@@ -43,8 +41,6 @@ export const featureModules = [
     ExpensesModule,
     TableModule,
     KitchenItemModule,
-    KitchenStockModule,
-    KitchenOrderModule,
     OrderModule,
     OrderItemModule,
     BankModule,

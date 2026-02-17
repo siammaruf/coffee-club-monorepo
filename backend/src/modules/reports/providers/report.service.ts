@@ -1,14 +1,12 @@
 import { Injectable, Logger, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThan, In } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import moment from 'moment-timezone';
 import { DailyReport } from '../entities/report.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { OrderToken } from '../../order-tokens/entities/order-token.entity';
 import { Expenses } from '../../expenses/entities/expenses.entity';
-import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { Table } from '../../table/entities/table.entity';
 import { Item } from '../../items/entities/item.entity';
@@ -29,10 +27,6 @@ export class ReportService {
         private readonly orderTokenRepository: Repository<OrderToken>,
         @InjectRepository(Expenses)
         private readonly expensesRepository: Repository<Expenses>,
-        @InjectRepository(KitchenOrder)
-        private readonly kitchenOrderRepository: Repository<KitchenOrder>,
-        @InjectRepository(KitchenStock)
-        private readonly kitchenStockRepository: Repository<KitchenStock>,
         @InjectRepository(Customer)
         private readonly customerRepository: Repository<Customer>,
         @InjectRepository(Table)
@@ -308,187 +302,6 @@ export class ReportService {
         };
         
         const cacheKey = 'financial-summary';
-        await this.cacheService.set(cacheKey, result, 3600);
-        return result;
-    }
-
-    async getKitchenReport(
-        filterType?: 'month' | 'year' | 'custom',
-        filterValue?: string,
-        startDate?: string,
-        endDate?: string
-    ): Promise<{
-        available_stock: {
-            id: string;
-            kitchen_item: {
-                id: string;
-                name: string;
-                name_bn: string;
-                type: string;
-            };
-            quantity: number;
-            price: number;
-            total_price: number;
-            description?: string;
-            created_at: Date;
-            updated_at: Date;
-        }[];
-        kitchen_orders_summary: {
-            period: string;
-            total_orders: number;
-            total_amount: number;
-            approved_orders: number;
-            pending_orders: number;
-            total_items_ordered: number;
-        };
-        kitchen_orders_breakdown: {
-            period: string;
-            total_orders: number;
-            total_amount: number;
-            approved_orders: number;
-            pending_orders: number;
-        }[];
-        filter_info: {
-            type: string;
-            value?: string;
-            start_date?: string;
-            end_date?: string;
-        };
-        report_date: Date;
-    }> {
-        const availableStock = await this.kitchenStockRepository.find({
-            where: {
-                quantity: MoreThan(0)
-            },
-            relations: ['kitchen_item'],
-            order: { created_at: 'DESC' }
-        });
-
-        let whereCondition: any = {};
-        let groupByFormat: string;
-        let periodLabel: string;
-
-        if (filterType === 'custom' && startDate && endDate) {
-            const start = moment(startDate).startOf('day').toDate();
-            const end = moment(endDate).endOf('day').toDate();
-            whereCondition = {
-                created_at: Between(start, end)
-            };
-            groupByFormat = 'YYYY-MM-DD';
-            periodLabel = `${startDate} to ${endDate}`;
-        } else if (filterType === 'year' && filterValue) {
-            const start = moment(filterValue, 'YYYY').startOf('year').toDate();
-            const end = moment(filterValue, 'YYYY').endOf('year').toDate();
-            whereCondition = {
-                created_at: Between(start, end)
-            };
-            groupByFormat = 'YYYY-MM';
-            periodLabel = filterValue;
-        } else if (filterType === 'month' && filterValue) {
-            const start = moment(filterValue, 'YYYY-MM').startOf('month').toDate();
-            const end = moment(filterValue, 'YYYY-MM').endOf('month').toDate();
-            whereCondition = {
-                created_at: Between(start, end)
-            };
-            groupByFormat = 'YYYY-MM-DD';
-            periodLabel = filterValue;
-        } else {
-            const start = moment().startOf('month').toDate();
-            const end = moment().endOf('month').toDate();
-            whereCondition = {
-                created_at: Between(start, end)
-            };
-            groupByFormat = 'YYYY-MM-DD';
-            periodLabel = moment().format('YYYY-MM');
-        }
-
-        const kitchenOrders = await this.kitchenOrderRepository.find({
-            where: whereCondition,
-            relations: ['order_items', 'order_items.kitchen_stock', 'order_items.kitchen_stock.kitchen_item'],
-            order: { created_at: 'DESC' }
-        });
-
-        const ordersByPeriod = new Map<string, {
-            orders: any[];
-            total_amount: number;
-            approved_orders: number;
-            pending_orders: number;
-        }>();
-
-        kitchenOrders.forEach(order => {
-            const periodKey = moment(order.created_at).format(groupByFormat);
-            
-            if (!ordersByPeriod.has(periodKey)) {
-                ordersByPeriod.set(periodKey, {
-                    orders: [],
-                    total_amount: 0,
-                    approved_orders: 0,
-                    pending_orders: 0
-                });
-            }
-
-            const periodData = ordersByPeriod.get(periodKey)!;
-            periodData.orders.push(order);
-            periodData.total_amount += Number(order.total_amount || 0);
-            
-            if (order.is_approved) {
-                periodData.approved_orders++;
-            } else {
-                periodData.pending_orders++;
-            }
-        });
-
-        const kitchenOrdersBreakdown = Array.from(ordersByPeriod.entries()).map(([periodKey, data]) => ({
-            period: periodKey,
-            total_orders: data.orders.length,
-            total_amount: data.total_amount,
-            approved_orders: data.approved_orders,
-            pending_orders: data.pending_orders
-        }));
-
-        const totalItemsOrdered = kitchenOrders.reduce((sum, order) => {
-            return sum + (order.order_items?.length || 0);
-        }, 0);
-
-        const totalAmount = kitchenOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-        const approvedOrders = kitchenOrders.filter(order => order.is_approved).length;
-        const pendingOrders = kitchenOrders.filter(order => !order.is_approved).length;
-
-        const result = {
-            available_stock: availableStock.map(stock => ({
-                id: stock.id,
-                kitchen_item: {
-                    id: stock.kitchen_item.id,
-                    name: stock.kitchen_item.name,
-                    name_bn: stock.kitchen_item.name_bn,
-                    type: stock.kitchen_item.type
-                },
-                quantity: stock.quantity,
-                price: stock.price,
-                total_price: stock.total_price,
-                description: stock.description,
-                created_at: stock.created_at,
-                updated_at: stock.updated_at
-            })),
-            kitchen_orders_summary: {
-                period: periodLabel,
-                total_orders: kitchenOrders.length,
-                total_amount: totalAmount,
-                approved_orders: approvedOrders,
-                pending_orders: pendingOrders,
-                total_items_ordered: totalItemsOrdered
-            },
-            kitchen_orders_breakdown: kitchenOrdersBreakdown,
-            filter_info: {
-                type: filterType || 'month',
-                value: filterValue,
-                start_date: startDate,
-                end_date: endDate
-            },
-            report_date: new Date()
-        };
-        
-        const cacheKey = `kitchen-report:${filterType}:${filterValue}:${startDate}:${endDate}`;
         await this.cacheService.set(cacheKey, result, 3600);
         return result;
     }
@@ -933,7 +746,6 @@ export class ReportService {
         const patterns = [
             'reports:*',
             'dashboard:*',
-            'kitchen-report:*',
             'financial-summary:*',
             'sales-progress:*',
             'expenses-charts:*'

@@ -4,7 +4,6 @@ import { ReportService } from '../providers/report.service';
 import { DailyReportResponseDto } from '../dto/report-response.dto';
 import { GenerateReportDto } from '../dto/generate-report.dto';
 import { FinancialSummaryResponseDto } from '../dto/financial-summary-response.dto';
-import { KitchenReportResponseDto } from '../dto/kitchen-report-response.dto';
 import { DashboardResponseDto } from '../dto/dashboard-response.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
@@ -103,53 +102,6 @@ export class SalesReportController {
             status: 'success',
             message: 'Financial summary retrieved successfully',
             statusCode: HttpStatus.OK
-        };
-    }
-
-    @Get('kitchen-report')
-    @ApiOperation({ summary: 'Get kitchen stock and orders report with flexible date filtering' })
-    @ApiQuery({ 
-        name: 'filterType', 
-        required: false, 
-        description: 'Filter type: month, year, or custom',
-        enum: ['month', 'year', 'custom'],
-        example: 'month'
-    })
-    @ApiQuery({ 
-        name: 'filterValue', 
-        required: false, 
-        description: 'Filter value: YYYY-MM for month, YYYY for year',
-        example: '2024-01'
-    })
-    @ApiQuery({ 
-        name: 'startDate', 
-        required: false, 
-        description: 'Start date for custom filter (YYYY-MM-DD)',
-        example: '2024-01-01'
-    })
-    @ApiQuery({ 
-        name: 'endDate', 
-        required: false, 
-        description: 'End date for custom filter (YYYY-MM-DD)',
-        example: '2024-01-31'
-    })
-    @ApiResponse({ 
-        status: 200, 
-        description: 'Kitchen report retrieved successfully',
-        type: KitchenReportResponseDto
-    })
-    async getKitchenReport(
-        @Query('filterType') filterType?: 'month' | 'year' | 'custom',
-        @Query('filterValue') filterValue?: string,
-        @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string
-    ) {
-        const data = await this.reportService.getKitchenReport(filterType, filterValue, startDate, endDate);
-        return {
-            data,
-            status: 'success',
-            message: 'Kitchen report retrieved successfully',
-            statusCode: HttpStatus.OK,
         };
     }
 
