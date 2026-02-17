@@ -31,7 +31,7 @@ export class EmailService {
       dashboard: this.configService.get('DASHBOARD_URL', 'http://localhost:4200'),
       frontend: this.configService.get('FRONTEND_URL', 'http://localhost:3000'),
     };
-    return `${urlConfig[appType]}/auth/reset-password?token=${token}`;
+    return `${urlConfig[appType]}/reset-password?token=${token}`;
   }
 
   private getTemplateHtml(template: string, data: any, appType: AppType = 'frontend'): string {
