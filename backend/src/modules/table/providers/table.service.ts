@@ -224,6 +224,7 @@ export class TableService {
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.tableRepository.softDelete(ids);
+        await this.invalidateTableCaches();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -246,6 +247,7 @@ export class TableService {
 
     async restore(id: string): Promise<void> {
         await this.tableRepository.restore(id);
+        await this.invalidateTableCaches();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -257,5 +259,6 @@ export class TableService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.tableRepository.delete(id);
+        await this.invalidateTableCaches();
     }
 }
