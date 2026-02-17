@@ -22,9 +22,6 @@ import { Salary } from '../staff-salary/entities/salary.entity';
 import { StuffAttendance } from '../stuff-attendance/entities/stuff-attendance.entity';
 import { Leave } from '../stuff-leave/entities/leave.entity';
 import { KitchenItems } from '../kitchen-items/entities/kitchen-item.entity';
-import { KitchenStock } from '../kitchen-stock/entities/kitchen-stock.entity';
-import { KitchenOrder } from '../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenOrderItem } from '../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../reports/entities/report.entity';
 import { Bank } from '../banks/entities/bank.entity';
 import { ItemVariation } from '../items/entities/item-variation.entity';
@@ -70,9 +67,6 @@ import { BackupController } from './controllers/backup.controller';
       StuffAttendance,
       Leave,
       KitchenItems,
-      KitchenStock,
-      KitchenOrder,
-      KitchenOrderItem,
       DailyReport,
       Bank,
       ItemVariation,

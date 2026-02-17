@@ -24,7 +24,6 @@ import { Discount } from '../../discount/entities/discount.entity';
 import { Item } from '../../items/entities/item.entity';
 import { ItemVariation } from '../../items/entities/item-variation.entity';
 import { Bank } from '../../banks/entities/bank.entity';
-import { KitchenStock } from '../../kitchen-stock/entities/kitchen-stock.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { OrderItem } from '../../order-items/entities/order-item.entity';
 import { OrderToken } from '../../order-tokens/entities/order-token.entity';
@@ -32,8 +31,6 @@ import { Salary } from '../../staff-salary/entities/salary.entity';
 import { StuffAttendance } from '../../stuff-attendance/entities/stuff-attendance.entity';
 import { Leave } from '../../stuff-leave/entities/leave.entity';
 import { Expenses } from '../../expenses/entities/expenses.entity';
-import { KitchenOrder } from '../../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenOrderItem } from '../../kitchen-orders/entities/kitchen-order-item.entity';
 import { DailyReport } from '../../reports/entities/report.entity';
 
 // Cache
@@ -110,8 +107,6 @@ export class ImportService {
     customer_id: 'Customers',
     order_id: 'Orders',
     kitchen_item_id: 'Kitchen Items',
-    kitchen_stock_id: 'Kitchen Stock',
-    kitchen_order_id: 'Kitchen Orders',
     expense_category_id: 'Expense Categories',
     item_variation_id: 'Item Variations',
   };
@@ -126,7 +121,6 @@ export class ImportService {
     @InjectRepository(Discount) private discountRepo: Repository<Discount>,
     @InjectRepository(Item) private itemRepo: Repository<Item>,
     @InjectRepository(Bank) private bankRepo: Repository<Bank>,
-    @InjectRepository(KitchenStock) private kitchenStockRepo: Repository<KitchenStock>,
     @InjectRepository(Order) private orderRepo: Repository<Order>,
     @InjectRepository(OrderItem) private orderItemRepo: Repository<OrderItem>,
     @InjectRepository(OrderToken) private orderTokenRepo: Repository<OrderToken>,
@@ -134,8 +128,6 @@ export class ImportService {
     @InjectRepository(StuffAttendance) private attendanceRepo: Repository<StuffAttendance>,
     @InjectRepository(Leave) private leaveRepo: Repository<Leave>,
     @InjectRepository(Expenses) private expensesRepo: Repository<Expenses>,
-    @InjectRepository(KitchenOrder) private kitchenOrderRepo: Repository<KitchenOrder>,
-    @InjectRepository(KitchenOrderItem) private kitchenOrderItemRepo: Repository<KitchenOrderItem>,
     @InjectRepository(DailyReport) private dailyReportRepo: Repository<DailyReport>,
     @InjectRepository(ItemVariation) private itemVariationRepo: Repository<ItemVariation>,
     private dataSource: DataSource,
@@ -263,15 +255,13 @@ export class ImportService {
         // Phase 2: depend on phase 1
         ['Users', 'Customers', 'Discounts'],
         // Phase 3: depend on phase 2
-        ['Items', 'Banks', 'Kitchen Stock'],
+        ['Items', 'Banks'],
         // Phase 3.5: junction table for Item <-> Category + Item Variations
         ['Item-Categories', 'Item Variations'],
         // Phase 4: depend on phase 3
         ['Orders', 'Expenses', 'Daily Reports'],
         // Phase 5: depend on phase 4
-        ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave', 'Kitchen Orders'],
-        // Phase 6: depend on phase 5
-        ['Kitchen Order Items'],
+        ['Order Items', 'Order Tokens', 'Salary', 'Attendance', 'Leave'],
       ];
 
       const importedCounts: Record<string, number> = {};
@@ -834,7 +824,6 @@ export class ImportService {
       Discount: this.discountRepo,
       Item: this.itemRepo,
       Bank: this.bankRepo,
-      KitchenStock: this.kitchenStockRepo,
       Order: this.orderRepo,
       OrderItem: this.orderItemRepo,
       OrderToken: this.orderTokenRepo,
@@ -842,8 +831,6 @@ export class ImportService {
       StuffAttendance: this.attendanceRepo,
       Leave: this.leaveRepo,
       Expenses: this.expensesRepo,
-      KitchenOrder: this.kitchenOrderRepo,
-      KitchenOrderItem: this.kitchenOrderItemRepo,
       DailyReport: this.dailyReportRepo,
       ItemVariation: this.itemVariationRepo,
     };
@@ -1124,25 +1111,6 @@ export class ImportService {
         },
       },
 
-      'Kitchen Stock': {
-        entityName: 'KitchenStock',
-        tableName: 'kitchen_stock',
-        requiredFields: ['quantity', 'price', 'total_price'],
-        skipFields: noSkip,
-        fieldRemap: noRemap,
-        relationMappings: { kitchen_item_id: 'kitchen_item' },
-        columns: {
-          id: { type: 'uuid' },
-          kitchen_item_id: { type: 'uuid', nullable: true },
-          quantity: { type: 'integer' },
-          price: { type: 'decimal' },
-          total_price: { type: 'decimal' },
-          description: { type: 'string', nullable: true },
-          created_at: { type: 'timestamp', nullable: true },
-          updated_at: { type: 'timestamp', nullable: true },
-        },
-      },
-
       'Orders': {
         entityName: 'Order',
         tableName: 'orders',
@@ -1318,47 +1286,6 @@ export class ImportService {
             enumValues: Object.values(LeaveStatus),
             nullable: true,
           },
-        },
-      },
-
-      'Kitchen Orders': {
-        entityName: 'KitchenOrder',
-        tableName: 'kitchen_orders',
-        requiredFields: [],
-        skipFields: noSkip,
-        fieldRemap: noRemap,
-        relationMappings: { user_id: 'user' },
-        columns: {
-          id: { type: 'uuid' },
-          order_id: { type: 'string', nullable: true },
-          user_id: { type: 'uuid', nullable: true },
-          total_amount: { type: 'decimal', nullable: true },
-          is_approved: { type: 'boolean', nullable: true },
-          description: { type: 'string', nullable: true },
-          created_at: { type: 'timestamp', nullable: true },
-          updated_at: { type: 'timestamp', nullable: true },
-        },
-      },
-
-      'Kitchen Order Items': {
-        entityName: 'KitchenOrderItem',
-        tableName: 'kitchen_order_items',
-        requiredFields: ['quantity', 'unit_price', 'total_price'],
-        skipFields: noSkip,
-        fieldRemap: noRemap,
-        relationMappings: {
-          kitchen_order_id: 'kitchen_order',
-          kitchen_stock_id: 'kitchen_stock',
-        },
-        columns: {
-          id: { type: 'uuid' },
-          kitchen_order_id: { type: 'uuid', nullable: true },
-          kitchen_stock_id: { type: 'uuid', nullable: true },
-          quantity: { type: 'decimal' },
-          unit_price: { type: 'decimal' },
-          total_price: { type: 'decimal' },
-          created_at: { type: 'timestamp', nullable: true },
-          updated_at: { type: 'timestamp', nullable: true },
         },
       },
 

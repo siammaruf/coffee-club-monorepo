@@ -9,8 +9,6 @@ import { Activity } from './entities/activity.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderToken } from '../order-tokens/entities/order-token.entity';
 import { Expenses } from '../expenses/entities/expenses.entity';
-import { KitchenOrder } from '../kitchen-orders/entities/kitchen-order.entity';
-import { KitchenStock } from '../kitchen-stock/entities/kitchen-stock.entity';
 import { User } from '../users/entities/user.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Table } from '../table/entities/table.entity';
@@ -25,8 +23,6 @@ import { CacheModule } from '../cache/cache.module';
       Order,
       OrderToken,
       Expenses,
-      KitchenOrder,
-      KitchenStock,
       User,
       Customer,
       Table,
