@@ -169,7 +169,7 @@ export default function EditProduct() {
   const addVariation = () => {
     setVariations(prev => [
       ...prev,
-      { name: "", name_bn: "", regular_price: 0, sale_price: 0, status: "available", sort_order: prev.length + 1 }
+      { name: "", name_bn: "", regular_price: "" as any, sale_price: "" as any, status: "available", sort_order: prev.length + 1 }
     ]);
   };
 
@@ -213,13 +213,13 @@ export default function EditProduct() {
       if (hasVariations && variations.length > 0) {
         form.append('variations', JSON.stringify(
           variations.map((v, idx) => ({
-            id: v.id || undefined,
+            ...(v.id ? { id: v.id } : {}),
             name: v.name,
-            name_bn: v.name_bn,
-            regular_price: Number(v.regular_price),
-            sale_price: Number(v.sale_price),
+            name_bn: v.name_bn || '',
+            regular_price: Number(v.regular_price || 0),
+            sale_price: Number(v.sale_price || 0),
             status: v.status,
-            sort_order: idx + 1
+            sort_order: idx + 1,
           }))
         ));
       }
@@ -566,18 +566,18 @@ export default function EditProduct() {
                                 <Input
                                   type="number"
                                   placeholder="Regular Price"
-                                  value={variation.regular_price}
+                                  value={variation.regular_price === 0 ? "" : variation.regular_price}
                                   step="0.01"
                                   min={0}
-                                  onChange={e => handleVariationChange(idx, "regular_price", parseFloat(Number(e.target.value).toFixed(2)))}
+                                  onChange={e => handleVariationChange(idx, "regular_price", e.target.value === "" ? "" : parseFloat(Number(e.target.value).toFixed(2)))}
                                 />
                                 <Input
                                   type="number"
                                   placeholder="Sale Price"
-                                  value={variation.sale_price}
+                                  value={variation.sale_price === 0 ? "" : variation.sale_price}
                                   step="0.01"
                                   min={0}
-                                  onChange={e => handleVariationChange(idx, "sale_price", parseFloat(Number(e.target.value).toFixed(2)))}
+                                  onChange={e => handleVariationChange(idx, "sale_price", e.target.value === "" ? "" : parseFloat(Number(e.target.value).toFixed(2)))}
                                 />
                                 <Select
                                   value={variation.status}

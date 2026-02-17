@@ -51,7 +51,7 @@ export default function CreateProduct() {
     isError: false,
   });
   const [variations, setVariations] = useState([
-    { name: "", name_bn: "", regular_price: 0, sale_price: 0, status: "available", sort_order: 1 }
+    { name: "", name_bn: "", regular_price: "" as any, sale_price: "" as any, status: "available", sort_order: 1 }
   ]);
   const [hasVariations, setHasVariations] = useState(false);
   
@@ -121,7 +121,7 @@ export default function CreateProduct() {
   const addVariation = () => {
     setVariations(prev => [
       ...prev,
-      { name: "", name_bn: "", regular_price: 0, sale_price: 0, status: "available", sort_order: prev.length + 1 }
+      { name: "", name_bn: "", regular_price: "" as any, sale_price: "" as any, status: "available", sort_order: prev.length + 1 }
     ]);
   };
 
@@ -157,14 +157,16 @@ export default function CreateProduct() {
       formData.append("has_variations", hasVariations ? "true" : "false");
 
       if (hasVariations && variations.length > 0) {
-        variations.forEach((variation, idx) => {
-          formData.append(`variations[${idx}][name]`, variation.name);
-          formData.append(`variations[${idx}][name_bn]`, variation.name_bn);
-          formData.append(`variations[${idx}][regular_price]`, Number(variation.regular_price).toString());
-          formData.append(`variations[${idx}][sale_price]`, Number(variation.sale_price).toString());
-          formData.append(`variations[${idx}][status]`, variation.status);
-          formData.append(`variations[${idx}][sort_order]`, Number(variation.sort_order).toString());
-        });
+        formData.append('variations', JSON.stringify(
+          variations.map((variation, idx) => ({
+            name: variation.name,
+            name_bn: variation.name_bn || '',
+            regular_price: Number(variation.regular_price || 0),
+            sale_price: Number(variation.sale_price || 0),
+            status: variation.status,
+            sort_order: idx + 1,
+          }))
+        ));
       }
 
       if (selectedCategories.length > 0) {
@@ -569,20 +571,20 @@ export default function CreateProduct() {
                                   <Input
                                     type="number"
                                     placeholder="Regular Price"
-                                    value={variation.regular_price}
+                                    value={variation.regular_price === 0 ? "" : variation.regular_price}
                                     className="w-1/3"
                                     step="0.01"
                                     min={0}
-                                    onChange={e => handleVariationChange(idx, "regular_price", parseFloat(Number(e.target.value).toFixed(2)))}
+                                    onChange={e => handleVariationChange(idx, "regular_price", e.target.value === "" ? "" : parseFloat(Number(e.target.value).toFixed(2)))}
                                   />
                                   <Input
                                     type="number"
                                     placeholder="Sale Price"
-                                    value={variation.sale_price}
+                                    value={variation.sale_price === 0 ? "" : variation.sale_price}
                                     className="w-1/3"
                                     step="0.01"
                                     min={0}
-                                    onChange={e => handleVariationChange(idx, "sale_price", parseFloat(Number(e.target.value).toFixed(2)))}
+                                    onChange={e => handleVariationChange(idx, "sale_price", e.target.value === "" ? "" : parseFloat(Number(e.target.value).toFixed(2)))}
                                   />
                                   <Select
                                     value={variation.status}
