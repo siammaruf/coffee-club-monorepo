@@ -14,6 +14,7 @@ import { Customer } from '../customers/entities/customer.entity';
 import { Table } from '../table/entities/table.entity';
 import { Item } from '../items/entities/item.entity';
 import { CacheModule } from '../cache/cache.module';
+import { KitchenReportsModule } from '../kitchen-reports/kitchen-reports.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { CacheModule } from '../cache/cache.module';
       Table,
       Item,
     ]),
-    CacheModule
+    CacheModule,
+    KitchenReportsModule,
   ],
   controllers: [SalesReportController, ActivityController],
   providers: [ReportService, ActivityService],
