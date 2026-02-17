@@ -424,6 +424,7 @@ export class StuffAttendanceService {
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.stuffAttendanceRepository.softDelete(ids);
+        await this.invalidateAttendanceCaches();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -442,6 +443,7 @@ export class StuffAttendanceService {
 
     async restore(id: string): Promise<void> {
         await this.stuffAttendanceRepository.restore(id);
+        await this.invalidateAttendanceCaches();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -453,5 +455,6 @@ export class StuffAttendanceService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.stuffAttendanceRepository.delete(id);
+        await this.invalidateAttendanceCaches();
     }
 }

@@ -161,6 +161,7 @@ export class DiscountService {
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.discountRepository.softDelete(ids);
+        await this.invalidateCache();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -183,6 +184,7 @@ export class DiscountService {
 
     async restore(id: string): Promise<void> {
         await this.discountRepository.restore(id);
+        await this.invalidateCache();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -194,5 +196,6 @@ export class DiscountService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.discountRepository.delete(id);
+        await this.invalidateCache();
     }
 }
