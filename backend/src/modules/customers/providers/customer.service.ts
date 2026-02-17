@@ -69,17 +69,17 @@ export class CustomerService {
   async findOne(id: string): Promise<CustomerResponseDto> {
     const cacheKey = `customer:${id}`;
     
-    let customer = await this.cacheService.get<Customer>(cacheKey);
-    
+    let customer: Customer | null = await this.cacheService.get<Customer>(cacheKey) ?? null;
+
     if (!customer) {
-      customer = await this.customerRepository.findOneOrFail({
+      customer = await this.customerRepository.findOne({
         where: { id },
       });
 
       if (!customer) {
         throw new NotFoundException(`Customer with ID ${id} not found`);
       }
-      
+
       await this.cacheService.set(cacheKey, customer, 3600 * 1000);
     }
 
@@ -88,18 +88,18 @@ export class CustomerService {
 
   async findByEmail(email: string): Promise<CustomerResponseDto> {
     const cacheKey = `customer:email:${email}`;
-    
-    let customer = await this.cacheService.get<Customer>(cacheKey);
-    
+
+    let customer: Customer | null = await this.cacheService.get<Customer>(cacheKey) ?? null;
+
     if (!customer) {
-      customer = await this.customerRepository.findOneOrFail({
+      customer = await this.customerRepository.findOne({
         where: { email },
       });
 
       if (!customer) {
         throw new NotFoundException(`Customer with email ${email} not found`);
       }
-      
+
       await this.cacheService.set(cacheKey, customer, 3600 * 1000);
     }
 
@@ -229,8 +229,9 @@ export class CustomerService {
   }
 
   async canRedeem(customerId: string, amount: number): Promise<{ canRedeem: boolean; message?: string }> {
+    const customer = await this.findOne(customerId);
     const validAmount = Number(amount) || 0;
-    
+
     if (validAmount < this.MINIMUM_REDEEM_AMOUNT) {
       return {
         canRedeem: false,
@@ -238,7 +239,6 @@ export class CustomerService {
       };
     }
 
-    const customer = await this.findOne(customerId);
     const requiredPoints = Math.ceil((validAmount / this.TAKA_PER_100_POINTS) * this.POINTS_FOR_BALANCE);
     const currentPoints = Number(customer.points) || 0;
     
