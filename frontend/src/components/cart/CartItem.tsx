@@ -45,29 +45,25 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
   }
 
   return (
-    <tr className="border-b border-border">
+    <div className="flex items-center gap-3 border-b border-border py-4">
       {/* Remove Button */}
-      <td className="py-4 pr-2">
-        <button
-          onClick={() => removeItem(cartItem.id)}
-          className="flex h-6 w-6 items-center justify-center text-text-muted transition-colors hover:text-error"
-          aria-label={`Remove ${item?.name ?? ''}`}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </td>
+      <button
+        onClick={() => removeItem(cartItem.id)}
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center text-text-muted transition-colors hover:text-error"
+        aria-label={`Remove ${item?.name ?? ''}`}
+      >
+        <X className="h-4 w-4" />
+      </button>
       {/* Thumbnail */}
-      <td className="py-4 pr-4">
-        <div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-bg-secondary">
-          <img
-            src={imgSrc}
-            alt={item?.name ?? ''}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      </td>
-      {/* Product Name */}
-      <td className="py-4 pr-4 whitespace-nowrap">
+      <div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-bg-secondary">
+        <img
+          src={imgSrc}
+          alt={item?.name ?? ''}
+          className="h-full w-full object-cover"
+        />
+      </div>
+      {/* Content */}
+      <div className="min-w-0 flex-1">
         <span className="font-heading text-sm uppercase tracking-[2px] text-text-primary">
           {item?.name ?? ''}
         </span>
@@ -76,37 +72,30 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
             {selectedVariation.name}
           </span>
         )}
-      </td>
-      {/* Price */}
-      <td className="py-4 pr-4">
-        <span className="text-sm text-text-muted">{formatPrice(price)}</span>
-      </td>
-      {/* Quantity */}
-      <td className="py-4 pr-4">
-        <div className="inline-flex items-center border-2 border-border">
-          <button
-            onClick={() => updateQuantity(cartItem.id, quantity - 1)}
-            className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <span className="flex h-8 w-10 items-center justify-center border-x-2 border-border text-sm text-text-primary">
-            {quantity}
-          </span>
-          <button
-            onClick={() => updateQuantity(cartItem.id, quantity + 1)}
-            className="flex h-8 w-8 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
-            aria-label="Increase quantity"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
+        {/* Price & Quantity */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-text-muted">{formatPrice(price)}</span>
+          <div className="inline-flex items-center border-2 border-border">
+            <button
+              onClick={() => updateQuantity(cartItem.id, quantity - 1)}
+              className="flex h-7 w-7 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="h-3 w-3" />
+            </button>
+            <span className="flex h-7 w-8 items-center justify-center border-x-2 border-border text-sm text-text-primary">
+              {quantity}
+            </span>
+            <button
+              onClick={() => updateQuantity(cartItem.id, quantity + 1)}
+              className="flex h-7 w-7 items-center justify-center text-text-muted transition-colors hover:text-text-primary"
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
         </div>
-      </td>
-      {/* Total */}
-      <td className="py-4">
-        <span className="text-sm text-accent">{formatPrice(itemTotal)}</span>
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }

@@ -20,14 +20,6 @@ const navLinks = [
   { label: 'Menu', href: '/menu' },
   { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
-  {
-    label: 'Shop',
-    href: '#',
-    children: [
-      { label: 'Cart', href: '/cart' },
-      { label: 'Checkout', href: '/checkout' },
-    ],
-  },
   { label: 'Contact', href: '/contact' },
 ]
 

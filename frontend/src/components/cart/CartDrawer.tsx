@@ -78,19 +78,17 @@ export function CartDrawer() {
                 </Link>
               </div>
             ) : (
-              <table className="w-full">
-                <tbody>
-                  {items.map((cartItem) => (
-                    <CartItem key={cartItem.id} cartItem={cartItem} />
-                  ))}
-                </tbody>
-              </table>
+              <div>
+                {items.map((cartItem) => (
+                  <CartItem key={cartItem.id} cartItem={cartItem} />
+                ))}
+              </div>
             )}
           </div>
 
           {/* Footer */}
           {items.length > 0 && (
-            <div className="border-t border-border px-6 py-4">
+            <div className="border-t-[2px] border-border px-6 py-4">
               <div className="mb-4 flex items-center justify-between">
                 <span className="text-sm font-bold uppercase tracking-[3px] text-text-primary">
                   Subtotal
