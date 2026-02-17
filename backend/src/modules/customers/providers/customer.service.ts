@@ -121,7 +121,7 @@ export class CustomerService {
     });
 
     const updatedCustomer = await this.customerRepository.save(customerToUpdate);
-    await this.invalidateCache(id);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
 
@@ -142,7 +142,7 @@ export class CustomerService {
     }
   
     await this.customerRepository.softDelete(id);
-    await this.invalidateCache(id);
+    await this.invalidateCache();
   }
 
   async addPointsFromOrder(customerId: string, orderAmount: number): Promise<Customer> {
@@ -158,7 +158,7 @@ export class CustomerService {
     customer.points = currentPoints + pointsToAdd;
     customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
-    await this.invalidateCache(customerId);
+    await this.invalidateCache();
     return result;
   }
 
@@ -185,7 +185,7 @@ export class CustomerService {
     customer.points = currentPoints - requiredPoints;
     customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
-    await this.invalidateCache(customerId);
+    await this.invalidateCache();
     return result;
   }
 
@@ -206,7 +206,7 @@ export class CustomerService {
     customer.points = currentPoints - validPointsToDeduct;
     customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
-    await this.invalidateCache(customerId);
+    await this.invalidateCache();
     return result;
   }
 
@@ -275,7 +275,7 @@ export class CustomerService {
 
     customer.picture = uploadResult.secure_url;
     const updatedCustomer = await this.customerRepository.save(customer);
-    await this.invalidateCache(customerId);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
 
@@ -295,7 +295,7 @@ export class CustomerService {
     await this.cloudinaryService.deleteFile(customer.picture);
     customer.picture = '';
     const updatedCustomer = await this.customerRepository.save(customer);
-    await this.invalidateCache(customerId);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
 
@@ -330,7 +330,7 @@ export class CustomerService {
     });
 
     const updatedCustomer = await this.customerRepository.save(customerToUpdate);
-    await this.invalidateCache(id);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
 
@@ -358,7 +358,7 @@ export class CustomerService {
   
     customer.is_active = true;
     const updatedCustomer = await this.customerRepository.save(customer);
-    await this.invalidateCache(id);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
   
@@ -370,32 +370,18 @@ export class CustomerService {
   
     customer.is_active = false;
     const updatedCustomer = await this.customerRepository.save(customer);
-    await this.invalidateCache(id);
+    await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
   }
   
-  private async invalidateCache(customerId?: string): Promise<void> {
-    if (customerId) {
-      await this.cacheService.delete(`customer:${customerId}`);
-      await this.cacheService.delete(`customer:balance:${customerId}`);
-    }
-    
-    const cacheKeys = [
-      'customers:findAll:1:10:all:all',
-      'customers:findAll:1:20:all:all',
-      'customers:findAll:1:50:all:all',
-      'customers:findAll:1:10:all:true',
-      'customers:findAll:1:10:all:false',
-      'customers:findAllActive:*',
-    ];
-    
-    for (const key of cacheKeys) {
-      await this.cacheService.delete(key);
-    }
+  private async invalidateCache(): Promise<void> {
+    await this.cacheService.delete('customer:*');
+    await this.cacheService.delete('customers:*');
   }
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.customerRepository.softDelete(ids);
+        await this.invalidateCache();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -418,6 +404,7 @@ export class CustomerService {
 
     async restore(id: string): Promise<void> {
         await this.customerRepository.restore(id);
+        await this.invalidateCache();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -429,5 +416,6 @@ export class CustomerService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.customerRepository.delete(id);
+        await this.invalidateCache();
     }
 }

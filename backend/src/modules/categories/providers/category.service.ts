@@ -151,6 +151,7 @@ export class CategoryService {
     }
 
     private async invalidateCache(): Promise<void> {
-        await this.cacheService.clear();
+        await this.cacheService.delete('categories:*');
+        await this.cacheService.delete('category:*');
     }
 }

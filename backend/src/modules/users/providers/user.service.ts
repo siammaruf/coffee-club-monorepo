@@ -30,6 +30,11 @@ export class UserService {
         private readonly cacheService: CacheService
     ) {}
 
+    private async invalidateCache(): Promise<void> {
+        await this.cacheService.delete('user:*');
+        await this.cacheService.delete('users:*');
+    }
+
     async createPasswordResetToken(userId: string): Promise<string> {
         const token = randomBytes(32).toString('hex');
         const expiresAt = new Date();
@@ -208,12 +213,8 @@ export class UserService {
             }
         }
         
-        const cacheKey = `user:${id}`;
-        await this.cacheService.delete(cacheKey);
-        
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
-        
+        await this.invalidateCache();
+
         const updated = await this.findUserOrFail({ id });
         return new UserResponseDto(updated);
     }
@@ -222,13 +223,7 @@ export class UserService {
         const user = await this.findUserOrFail({ id });
         user.status = UserStatus.INACTIVE;
         await this.userRepository.save(user);
-        
-        const cacheKey = `user:${id}`;
-        await this.cacheService.delete(cacheKey);
-        
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
-        
+        await this.invalidateCache();
         return new UserResponseDto(user);
     }
 
@@ -236,13 +231,7 @@ export class UserService {
         const user = await this.findUserOrFail({ id });
         user.status = UserStatus.ACTIVE;
         await this.userRepository.save(user);
-        
-         const cacheKey = `user:${id}`;
-         await this.cacheService.delete(cacheKey);
-        
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
-        
+        await this.invalidateCache();
         return new UserResponseDto(user);
     }
 
@@ -387,10 +376,7 @@ export class UserService {
 
         user.picture = picturePath;
         await this.userRepository.save(user);
-        const cacheKey = `user:${id}`;
-        await this.cacheService.delete(cacheKey);
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
+        await this.invalidateCache();
     }
 
     async updateNidFrontPicture(id: string, nidFrontPath: string): Promise<void> {
@@ -401,10 +387,7 @@ export class UserService {
 
         user.nid_front_picture = nidFrontPath;
         await this.userRepository.save(user);
-        const cacheKey = `user:${id}`;
-        await this.cacheService.delete(cacheKey);
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
+        await this.invalidateCache();
     }
 
     async updateNidBackPicture(id: string, nidBackPath: string): Promise<void> {
@@ -415,10 +398,7 @@ export class UserService {
 
         user.nid_back_picture = nidBackPath;
         await this.userRepository.save(user);
-        const cacheKey = `user:${id}`;
-        await this.cacheService.delete(cacheKey);
-        const findAllCacheKey = `users:findAll`;
-        await this.cacheService.delete(findAllCacheKey);
+        await this.invalidateCache();
     }
 
     async findByEmailOrPhone(emailOrPhone: string): Promise<User> {
@@ -438,6 +418,7 @@ export class UserService {
 
     async updatePassword(userId: string, hashedPassword: string): Promise<void> {
         await this.userRepository.update(userId, { password: hashedPassword });
+        await this.invalidateCache();
     }
 
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
@@ -452,17 +433,17 @@ export class UserService {
         
         const encryptedNewPassword = await this.encryptPassword(newPassword);
         await this.userRepository.update(userId, { password: encryptedNewPassword });
-        
-        const cacheKey = `user:${userId}`;
-        await this.cacheService.delete(cacheKey);
+        await this.invalidateCache();
     }
 
     async remove(id: string): Promise<void> {
         await this.userRepository.softDelete(id);
+        await this.invalidateCache();
     }
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.userRepository.softDelete(ids);
+        await this.invalidateCache();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -485,6 +466,7 @@ export class UserService {
 
     async restore(id: string): Promise<void> {
         await this.userRepository.restore(id);
+        await this.invalidateCache();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -496,5 +478,6 @@ export class UserService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.userRepository.delete(id);
+        await this.invalidateCache();
     }
 }

@@ -162,6 +162,7 @@ export class LeaveService {
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.leaveRepository.softDelete(ids);
+        await this.invalidateLeaveCaches();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -184,6 +185,7 @@ export class LeaveService {
 
     async restore(id: string): Promise<void> {
         await this.leaveRepository.restore(id);
+        await this.invalidateLeaveCaches();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -195,5 +197,6 @@ export class LeaveService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.leaveRepository.delete(id);
+        await this.invalidateLeaveCaches();
     }
 }
