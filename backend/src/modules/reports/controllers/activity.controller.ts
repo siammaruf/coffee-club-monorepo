@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, ParseUUIDPipe, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ActivityService } from '../providers/activity.service';
 import { CreateActivityDto } from '../dto/create-activity.dto';
@@ -52,21 +52,24 @@ export class ActivityController {
     }
   })
   async findAll(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('activity_type') activityType?: ActivityType,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('activity_type') activityType?: string,
     @Query('entity_type') entityType?: string,
     @Query('user_id') userId?: string,
     @Query('start_date') startDate?: string,
     @Query('end_date') endDate?: string
   ) {
+    const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNumber = limit ? Math.max(1, parseInt(limit, 10)) : 50;
     const startDateObj = startDate ? new Date(startDate) : undefined;
     const endDateObj = endDate ? new Date(endDate) : undefined;
+    const activityTypeEnum = activityType ? (activityType as ActivityType) : undefined;
 
     return await this.activityService.findAll(
-      page,
-      limit,
-      activityType,
+      pageNumber,
+      limitNumber,
+      activityTypeEnum,
       entityType,
       userId,
       startDateObj,

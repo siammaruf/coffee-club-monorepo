@@ -94,8 +94,8 @@ export class CustomerOrdersController {
   })
   async getOrders(
     @CurrentCustomer() customer: Customer,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<{
     data: CustomerOrderResponseDto[];
     total: number;
@@ -106,10 +106,13 @@ export class CustomerOrdersController {
     message: string;
     statusCode: HttpStatus;
   }> {
+    const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNumber = limit ? Math.max(1, parseInt(limit, 10)) : 10;
+
     const result = await this.customerOrdersService.getOrders(
       customer.id,
-      page,
-      limit,
+      pageNumber,
+      limitNumber,
     );
     return {
       data: result.data.map((order) => new CustomerOrderResponseDto(order)),
