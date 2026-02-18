@@ -53,6 +53,15 @@ export class OrderItemBaseDto {
   item_id?: string;
 
   @ApiProperty({
+    description: 'Item variation ID associated with this order item',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  item_variation_id?: string;
+
+  @ApiProperty({
     description: 'Order associated with this order item',
     type: () => Order,
     required: false,
