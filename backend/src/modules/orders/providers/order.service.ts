@@ -64,11 +64,14 @@ export class OrderService {
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     const { tables: tableData, order_items, discount, ...rest } = createOrderDto;
-    const tableIds = tableData.map(table => typeof table === 'string' ? table : table.id);
-    
-    const tables = await this.tableRepository.findBy({ id: In(tableIds) });
-    if (tables.length !== tableIds.length) {
-      throw new NotFoundException('One or more tables not found');
+    const tableIds = tableData?.map(table => typeof table === 'string' ? table : table.id) || [];
+
+    let tables: Table[] = [];
+    if (tableIds.length > 0) {
+      tables = await this.tableRepository.findBy({ id: In(tableIds) });
+      if (tables.length !== tableIds.length) {
+        throw new NotFoundException('One or more tables not found');
+      }
     }
     
     const totalAmount = order_items?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
@@ -108,11 +111,12 @@ export class OrderService {
           ...orderItemData,
           total_price: orderItemData.quantity * orderItemData.unit_price,
           item_id: orderItemDto.item_id,
+          item_variation_id: orderItemDto.item_variation_id,
         });
         createdOrderItems.push(createdItem);
       }
     }
-    
+
     if (createdOrderItems.length > 0) {
       await this.createTokensByItemType(savedOrder.id, createdOrderItems);
     }
@@ -166,6 +170,7 @@ export class OrderService {
             unit_price: orderItemDto.unit_price,
             item: orderItemDto.item,
             item_id: orderItemDto.item_id,
+            item_variation_id: orderItemDto.item_variation_id,
           });
           createdOrderItems.push(updatedItem);
         } else {
@@ -181,6 +186,7 @@ export class OrderService {
             ...orderItemData,
             total_price: orderItemData.quantity * orderItemData.unit_price,
             item_id: orderItemDto.item_id,
+            item_variation_id: orderItemDto.item_variation_id,
           });
           createdOrderItems.push(createdItem);
         }
@@ -314,7 +320,8 @@ export class OrderService {
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.discount', 'discount')
       .leftJoinAndSelect('order.orderItems', 'order_items')
-      .leftJoinAndSelect('order_items.item', 'item');
+      .leftJoinAndSelect('order_items.item', 'item')
+      .leftJoinAndSelect('order_items.variation', 'variation');
 
     if (search) {
       queryBuilder.where(
@@ -392,12 +399,13 @@ export class OrderService {
     const order = await this.orderRepository.findOne({ 
       where: { id }, 
       relations: [
-        'tables', 
-        'customer', 
-        'user', 
+        'tables',
+        'customer',
+        'user',
         'discount',
         'orderItems',
         'orderItems.item',
+        'orderItems.variation',
         'orderTokens',
         'orderTokens.order_items',
       ] 

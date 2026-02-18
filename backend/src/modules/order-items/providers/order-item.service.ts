@@ -6,6 +6,7 @@ import { CreateOrderItemDto } from '../dto/order-item-create.dto';
 import { UpdateOrderItemDto } from '../dto/order-item-update.dto';
 import { OrderItemResponseDto } from '../dto/order-item-response.dto';
 import { Item } from 'src/modules/items/entities/item.entity';
+import { ItemVariation } from 'src/modules/items/entities/item-variation.entity';
 
 @Injectable()
 export class OrderItemService {
@@ -14,15 +15,23 @@ export class OrderItemService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
+    @InjectRepository(ItemVariation)
+    private readonly itemVariationRepository: Repository<ItemVariation>,
   ) {}
 
   async create(dto: CreateOrderItemDto): Promise<OrderItemResponseDto> {
     const itemId = dto.item_id || dto.item?.id;
     const item = await this.findItem(itemId);
 
+    let variation: ItemVariation | null = null;
+    if (dto.item_variation_id) {
+      variation = await this.findVariation(dto.item_variation_id);
+    }
+
     const orderItem = this.orderItemRepository.create({
       ...dto,
       item,
+      variation,
       total_price: dto.unit_price * dto.quantity,
     });
 
@@ -57,6 +66,12 @@ export class OrderItemService {
       orderItem.item = await this.findItem(dto.item.id);
     }
 
+    if (dto.item_variation_id) {
+      orderItem.variation = await this.findVariation(dto.item_variation_id);
+    } else if (dto.item_variation_id === null) {
+      orderItem.variation = null;
+    }
+
     Object.assign(orderItem, dto);
 
     if (dto.unit_price || dto.quantity) {
@@ -86,6 +101,12 @@ export class OrderItemService {
     return item;
   }
 
+  private async findVariation(id: string): Promise<ItemVariation> {
+    const variation = await this.itemVariationRepository.findOne({ where: { id } });
+    if (!variation) throw new NotFoundException(`Item variation with ID ${id} not found`);
+    return variation;
+  }
+
   private mapToResponseDto(orderItem: OrderItem): OrderItemResponseDto {
     const dto = new OrderItemResponseDto({});
     dto.id = orderItem.id;
@@ -93,6 +114,7 @@ export class OrderItemService {
     dto.unit_price = orderItem.unit_price;
     dto.total_price = orderItem.total_price;
     dto.item = orderItem.item;
+    dto.item_variation_id = orderItem.variation?.id ?? undefined;
     dto.order = orderItem.order;
     dto.order_id = orderItem.order?.id;
     dto.created_at = orderItem.created_at;
