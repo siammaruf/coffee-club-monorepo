@@ -6,6 +6,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { OrderStatus } from './enum/order-status.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Orders')
@@ -98,6 +99,13 @@ export class OrderController {
     required: false,
     description: 'End date for custom date filter (YYYY-MM-DD format). Required when dateFilter is "custom"',
     example: '2024-01-31'
+  })
+  @ApiQuery({
+    name: 'status',
+    enum: ['PENDING', 'PREPARING', 'COMPLETED', 'CANCELLED'],
+    required: false,
+    description: 'Filter orders by status',
+    example: 'PENDING'
   })
   @ApiResponse({ 
     status: 200, 
@@ -194,14 +202,19 @@ export class OrderController {
     }
   })
   async findAll(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('dateFilter') dateFilter?: 'today' | 'custom' | 'all',
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
   ): Promise<{ data: OrderResponseDto[]; total: number; page: number; limit: number; totalPages: number; status: string; message: string; statusCode: HttpStatus }> {
-    const result = await this.orderService.findAll(page, limit, search, dateFilter, startDate, endDate);
+    const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
+    const limitNumber = limit ? Math.max(1, parseInt(limit, 10)) : 10;
+    const orderStatus = status ? (status as OrderStatus) : undefined;
+
+    const result = await this.orderService.findAll(pageNumber, limitNumber, search, dateFilter, startDate, endDate, orderStatus);
     return {
       data: result.data.map(order => new OrderResponseDto(order)),
       total: result.total,

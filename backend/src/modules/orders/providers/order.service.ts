@@ -288,12 +288,13 @@ export class OrderService {
   }
 
   async findAll(
-    page: number = 1, 
-    limit: number = 10, 
+    page: number = 1,
+    limit: number = 10,
     search?: string,
     dateFilter?: 'today' | 'custom' | 'all',
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    status?: OrderStatus
   ): Promise<{
     data: Order[];
     total: number;
@@ -301,7 +302,7 @@ export class OrderService {
     limit: number;
     totalPages: number;
   }> {
-    const cacheKey = `orders:all:${page}:${limit}:${search || ''}:${dateFilter || ''}:${startDate || ''}:${endDate || ''}`;
+    const cacheKey = `orders:all:${page}:${limit}:${search || ''}:${dateFilter || ''}:${startDate || ''}:${endDate || ''}:${status || ''}`;
     const cached = await this.cacheService.get<{
       data: Order[];
       total: number;
@@ -309,11 +310,11 @@ export class OrderService {
       limit: number;
       totalPages: number;
     }>(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
-    
+
     const queryBuilder = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.tables', 'tables')
       .leftJoinAndSelect('order.customer', 'customer')
@@ -323,58 +324,47 @@ export class OrderService {
       .leftJoinAndSelect('order_items.item', 'item')
       .leftJoinAndSelect('order_items.variation', 'variation');
 
+    // Status filter
+    if (status) {
+      queryBuilder.andWhere('order.status = :status', { status });
+    }
+
+    // Search filter
     if (search) {
-      queryBuilder.where(
-        'order.order_type ILIKE :search OR order.status ILIKE :search OR order.payment_method ILIKE :search OR customer.name ILIKE :search OR user.name ILIKE :search',
+      queryBuilder.andWhere(
+        '(order.order_type ILIKE :search OR order.status ILIKE :search OR order.payment_method ILIKE :search OR customer.name ILIKE :search OR user.name ILIKE :search)',
         { search: `%${search}%` }
       );
     }
 
+    // Date filter
     if (dateFilter && dateFilter !== 'all') {
       if (dateFilter === 'today') {
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-        
-        if (search) {
-          queryBuilder.andWhere('order.created_at BETWEEN :startOfDay AND :endOfDay', {
-            startOfDay,
-            endOfDay
-          });
-        } else {
-          queryBuilder.where('order.created_at BETWEEN :startOfDay AND :endOfDay', {
-            startOfDay,
-            endOfDay
-          });
-        }
+        queryBuilder.andWhere('order.created_at BETWEEN :startOfDay AND :endOfDay', {
+          startOfDay,
+          endOfDay
+        });
       } else if (dateFilter === 'custom' && startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); 
-        
-        if (search) {
-          queryBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
-            startDate: start,
-            endDate: end
-          });
-        } else {
-          queryBuilder.where('order.created_at BETWEEN :startDate AND :endDate', {
-            startDate: start,
-            endDate: end
-          });
-        }
+        end.setHours(23, 59, 59, 999);
+        queryBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+          startDate: start,
+          endDate: end
+        });
       }
     }
 
-    const total = await queryBuilder.getCount();
-    const totalPages = Math.ceil(total / limit);
-    const offset = (page - 1) * limit;
-
-    const data = await queryBuilder
+    const [data, total] = await queryBuilder
       .orderBy('order.created_at', 'DESC')
-      .skip(offset)
+      .skip((page - 1) * limit)
       .take(limit)
-      .getMany();
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
 
     const result = {
       data,
@@ -383,7 +373,7 @@ export class OrderService {
       limit,
       totalPages,
     };
-    
+
     await this.cacheService.set(cacheKey, result, 3600);
     return result;
   }
