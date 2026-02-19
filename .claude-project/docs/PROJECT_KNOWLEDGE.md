@@ -2,10 +2,11 @@
 
 ## Overview
 
-CoffeeClub is a **restaurant/cafe management system** with three applications:
+CoffeeClub is a **restaurant/cafe management system** with four applications:
 1. **Backend** - NestJS API server (POS, admin, and customer-facing APIs)
 2. **Dashboard** - React admin panel for staff/management (POS, inventory, HR, reporting)
 3. **Frontend** - Customer-facing website (menu browsing, ordering, account management)
+4. **Mobile** - React Native (Expo) POS app for managers (order management, expenses, reports, receipt printing)
 
 ## Tech Stack
 
@@ -51,6 +52,22 @@ CoffeeClub is a **restaurant/cafe management system** with three applications:
 - **Design**: Dark charcoal backgrounds (`#121618`), gold accents (`#c8a97e`), light text (`#dce4e8`), uppercase sans-serif headings
 - **Source**: HTML template adapted from `.claude-project/resources/HTML/`
 - **All old components removed**: HeroSlider, AboutSection, SpecialMenuSection, WhyChooseUs, etc. were rebuilt from scratch
+
+### Mobile (`mobile/`)
+- **Framework**: React Native 0.84.0 + Expo 56
+- **Language**: TypeScript 5.9.3
+- **Routing**: Expo Router (file-based with typed routes)
+- **Styling**: NativeWind (TailwindCSS for React Native) v4.2.1
+- **State**: Redux Toolkit + Redux Persist (MMKV backend)
+- **Auth Context**: React Context API (AuthContext)
+- **HTTP Client**: Axios (Bearer token auth, NOT httpOnly cookies)
+- **Forms**: React Hook Form
+- **Storage**: react-native-mmkv
+- **Printing**: react-native-thermal-pos-printer + Sunmi printer library
+- **Icons**: @expo/vector-icons (Ionicons)
+- **Network**: @react-native-community/netinfo (offline detection)
+- **Access**: Manager-role only (enforced at login)
+- **Currency**: BDT (Bangladeshi Taka)
 
 ## Architecture
 
@@ -146,6 +163,25 @@ coffeeclub/
 │       ├── types/                  # TypeScript types (customer, item, order, blog, reservation, partner)
 │       ├── utils/                  # Validation schemas (auth, etc.)
 │       └── lib/                    # Config, queryClient, utilities (cn, formatPrice, truncate, etc.)
+├── mobile/                        # React Native (Expo) POS app for managers
+│   └── src/
+│       ├── app/                   # Expo Router file-based routing
+│       │   ├── (auth)/            # Login screen
+│       │   └── (app)/             # Protected app stack
+│       │       └── (tabs)/        # Bottom tabs: Dashboard, Orders, Expenses, Reports
+│       ├── components/
+│       │   ├── common/            # Button, Header, InputField, TitleBar
+│       │   ├── modals/            # ProductSelection, CustomerSelection, PaymentMethod, etc.
+│       │   └── skeletons/         # Loading placeholders
+│       ├── services/
+│       │   ├── httpService.ts     # Axios wrapper with Bearer token interceptor
+│       │   ├── storageService.ts  # MMKV storage wrapper
+│       │   └── httpServices/      # Per-domain API services (10 files)
+│       ├── redux/                 # Store, slices (auth, user) with MMKV persist
+│       ├── context/               # AuthContext, ThemeContext
+│       ├── hooks/                 # useAuth, useFetch
+│       ├── types/                 # TypeScript definitions (18 files)
+│       └── utils/                 # Helpers, printer utils, error handler
 └── .claude-project/                # Project documentation
 ```
 
@@ -186,7 +222,8 @@ coffeeclub/
 | UUID primary keys | Distributed-safe, non-sequential IDs |
 | Cloudinary for uploads | Cloud-hosted images, automatic optimization |
 | Separate dashboard/frontend | Different UX needs: admin POS vs customer ordering |
-| Redux Toolkit for both apps | Consistent state management pattern across dashboard and frontend |
+| Redux Toolkit for all apps | Consistent state management pattern across dashboard, frontend, and mobile |
+| Bearer token for mobile | httpOnly cookies don't work in React Native; Bearer token with MMKV storage is the standard mobile pattern |
 
 ## Development Setup
 
@@ -199,6 +236,15 @@ cd dashboard && npm run dev
 
 # Start frontend
 cd frontend && npm run dev
+
+# Start mobile (Expo)
+cd mobile && npx expo start
+
+# Run on Android
+cd mobile && npx expo run:android
+
+# Run on iOS
+cd mobile && npx expo run:ios
 
 # Run migrations
 cd backend && npm run migration:run
@@ -246,6 +292,12 @@ cd backend && npm run seed:run
 |----------|-------------|----------|---------|
 | `VITE_API_URL` | Backend API base URL | Yes | `http://localhost:5000/api/v1` |
 
+### Mobile
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `EXPO_PUBLIC_API_URL` | Backend API base URL | Yes | `https://api.coffee2eat.com/api/v1/` |
+
 ## Security Architecture
 
 ### Staff Authentication (Auth Module)
@@ -260,6 +312,14 @@ cd backend && npm run seed:run
 2. OTP verification via SMS/email
 3. Login sets httpOnly cookies (same mechanism as staff)
 4. Customer-specific endpoints protected by customer JWT context
+
+### Mobile Authentication (Auth Module — Staff/Manager Only)
+1. Manager enters username + password on login screen
+2. `POST /auth/login` returns user + token
+3. Client validates role is "manager" (rejects otherwise)
+4. Token stored in MMKV via `StorageService`
+5. Token attached to all requests as `Authorization: Bearer <token>`
+6. On startup: `GET /auth/me` checks auth, falls back to cached MMKV session
 
 ### Security Features
 - httpOnly cookies (XSS protection)
