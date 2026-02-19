@@ -6,6 +6,7 @@ export interface Customer {
   address: string;
   note: string;
   picture: string;
+  customer_type: 'regular' | 'member';
   points: number;
   balance: number;
   created_at?: string;

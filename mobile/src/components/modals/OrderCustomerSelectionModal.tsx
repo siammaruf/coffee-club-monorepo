@@ -95,17 +95,26 @@ export default function OrderCustomerSelectionModal({
                       {item.email && (
                         <Text className="text-xs text-gray-500">{item.email}</Text>
                       )}
-                      <View className="flex-row items-center mt-2">
-                        <View className="bg-purple-100 px-2 py-1 rounded-full mr-2">
-                          <Text className="text-xs font-medium text-purple-800">
-                            {item.points} Points
+                      <View className="flex-row items-center mt-2 flex-wrap gap-1">
+                        <View className={`px-2 py-1 rounded-full ${item.customer_type === 'member' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                          <Text className={`text-xs font-medium ${item.customer_type === 'member' ? 'text-blue-700' : 'text-gray-600'}`}>
+                            {item.customer_type === 'member' ? 'Member' : 'Regular'}
                           </Text>
                         </View>
-                        <View className="bg-green-100 px-2 py-1 rounded-full">
-                          <Text className="text-xs font-medium text-green-800">
-                            {'\u09F3'}{item.balance} Balance
-                          </Text>
-                        </View>
+                        {item.customer_type === 'member' && (
+                          <>
+                            <View className="bg-purple-100 px-2 py-1 rounded-full">
+                              <Text className="text-xs font-medium text-purple-800">
+                                {item.points} Points
+                              </Text>
+                            </View>
+                            <View className="bg-green-100 px-2 py-1 rounded-full">
+                              <Text className="text-xs font-medium text-green-800">
+                                {'\u09F3'}{item.balance} Balance
+                              </Text>
+                            </View>
+                          </>
+                        )}
                       </View>
                     </View>
                     {selectedCustomerId === item.id && (

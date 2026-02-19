@@ -14,6 +14,7 @@ export interface OrderCustomer {
   id: string;
   name?: string;
   phone?: string;
+  customer_type?: 'regular' | 'member';
   points?: number;
   balance?: number;
 }

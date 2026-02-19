@@ -84,23 +84,32 @@ export default function CustomerListScreen() {
             activeOpacity={0.85}
         >
             <View className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3 flex-row items-center justify-between">
-                <View>
-                    <Text className="text-base font-bold text-gray-800">{item.name}</Text>
+                <View className="flex-1">
+                    <View className="flex-row items-center gap-2">
+                        <Text className="text-base font-bold text-gray-800">{item.name}</Text>
+                        <View className={`px-2 py-0.5 rounded-full ${item.customer_type === 'member' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                            <Text className={`text-xs font-medium ${item.customer_type === 'member' ? 'text-blue-700' : 'text-gray-600'}`}>
+                                {item.customer_type === 'member' ? 'Member' : 'Regular'}
+                            </Text>
+                        </View>
+                    </View>
                     <Text className="text-gray-500 text-xs mt-1">{item.phone}</Text>
                     {item.note ? (
                         <Text className="text-pink-500 text-xs mt-1">{item.note}</Text>
                     ) : null}
                 </View>
-                <View className="items-end">
-                    <View className="flex-row items-center mb-1">
-                        <Ionicons name="star" size={16} color="#F59E0B" />
-                        <Text className="ml-1 text-base font-bold text-yellow-600">{item.points}</Text>
+                {item.customer_type === 'member' && (
+                    <View className="items-end">
+                        <View className="flex-row items-center mb-1">
+                            <Ionicons name="star" size={16} color="#F59E0B" />
+                            <Text className="ml-1 text-base font-bold text-yellow-600">{item.points}</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <Ionicons name="wallet-outline" size={16} color="#10B981" />
+                            <Text className="ml-1 text-base font-bold text-green-600">{'\u09F3'}{item.balance}</Text>
+                        </View>
                     </View>
-                    <View className="flex-row items-center">
-                        <Ionicons name="wallet-outline" size={16} color="#10B981" />
-                        <Text className="ml-1 text-base font-bold text-green-600">{'\u09F3'}{item.balance}</Text>
-                    </View>
-                </View>
+                )}
             </View>
         </TouchableOpacity>
     );

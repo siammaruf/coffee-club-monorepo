@@ -101,6 +101,11 @@ export default function CustomerDetailsScreen() {
                             )}
                         </View>
                         <Text className="text-xl font-bold text-gray-800">{customer.name}</Text>
+                        <View className={`px-3 py-0.5 rounded-full mt-1 ${customer.customer_type === 'member' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                            <Text className={`text-xs font-medium ${customer.customer_type === 'member' ? 'text-blue-700' : 'text-gray-600'}`}>
+                                {customer.customer_type === 'member' ? 'Member' : 'Regular'}
+                            </Text>
+                        </View>
                         <TouchableOpacity
                             onPress={() => Linking.openURL(`tel:${customer.phone}`)}
                             className="flex-row items-center mt-1"
@@ -110,23 +115,25 @@ export default function CustomerDetailsScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Points & Balance stat boxes */}
-                    <View className="flex-row justify-center gap-4">
-                        <View className="bg-amber-50 px-4 py-2.5 rounded-xl items-center min-w-[100px]">
-                            <View className="flex-row items-center mb-1">
-                                <Ionicons name="star" size={16} color="#F59E0B" />
-                                <Text className="ml-1 text-lg font-bold text-amber-600">{customer.points}</Text>
+                    {/* Points & Balance stat boxes - only for members */}
+                    {customer.customer_type === 'member' && (
+                        <View className="flex-row justify-center gap-4">
+                            <View className="bg-amber-50 px-4 py-2.5 rounded-xl items-center min-w-[100px]">
+                                <View className="flex-row items-center mb-1">
+                                    <Ionicons name="star" size={16} color="#F59E0B" />
+                                    <Text className="ml-1 text-lg font-bold text-amber-600">{customer.points}</Text>
+                                </View>
+                                <Text className="text-xs text-amber-500">Points</Text>
                             </View>
-                            <Text className="text-xs text-amber-500">Points</Text>
-                        </View>
-                        <View className="bg-emerald-50 px-4 py-2.5 rounded-xl items-center min-w-[100px]">
-                            <View className="flex-row items-center mb-1">
-                                <Ionicons name="wallet" size={16} color="#10B981" />
-                                <Text className="ml-1 text-lg font-bold text-emerald-600">{'\u09F3'}{customer.balance}</Text>
+                            <View className="bg-emerald-50 px-4 py-2.5 rounded-xl items-center min-w-[100px]">
+                                <View className="flex-row items-center mb-1">
+                                    <Ionicons name="wallet" size={16} color="#10B981" />
+                                    <Text className="ml-1 text-lg font-bold text-emerald-600">{'\u09F3'}{customer.balance}</Text>
+                                </View>
+                                <Text className="text-xs text-emerald-500">Balance</Text>
                             </View>
-                            <Text className="text-xs text-emerald-500">Balance</Text>
                         </View>
-                    </View>
+                    )}
                 </View>
 
                 {/* Contact Information Card */}
