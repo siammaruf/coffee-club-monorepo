@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Plus, Search, Eye, Edit, Trash2, UserCheck, XCircle, UserX, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Search, Eye, Edit, Trash2, UserCheck, XCircle, UserX, Loader2, RotateCcw, AlertTriangle, KeyRound } from "lucide-react";
 import CreateCustomerModal from "~/components/modals/CreateCustomerModal";
 import ViewCustomerModal from "~/components/modals/ViewCustomerModal";
 import EditCustomerModal from "~/components/modals/EditCustomerModal";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
 import { customerService } from "~/services/httpServices/customerService";
 import type { Customer } from "~/types/customer";
 import CustomerSkeleton from "~/components/skeleton/CustomerSkeleton";
@@ -39,6 +41,10 @@ export default function CustomersPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -210,6 +216,48 @@ export default function CustomersPage() {
     setBulkLoading(false);
   };
 
+  const handleResetPassword = async () => {
+    if (!resetPasswordId) return;
+    if (resetNewPassword.length < 6) {
+      toast("Password too short", {
+        description: <span style={{ color: "#000" }}>Password must be at least 6 characters.</span>,
+        duration: 3000,
+        style: { background: "#fef3c7", color: "#92400e", border: "1.5px solid #f59e0b" },
+      });
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      toast("Passwords don't match", {
+        description: <span style={{ color: "#000" }}>Please make sure both passwords match.</span>,
+        duration: 3000,
+        style: { background: "#fef3c7", color: "#92400e", border: "1.5px solid #f59e0b" },
+      });
+      return;
+    }
+    setResetPasswordLoading(true);
+    try {
+      await customerService.resetPassword(resetPasswordId, resetNewPassword);
+      toast("Password reset!", {
+        description: <span style={{ color: "#000" }}>Customer password has been reset successfully.</span>,
+        duration: 3000,
+        icon: <KeyRound className="text-green-600 mr-2" />,
+        style: { background: "#dcfce7", color: "#166534", border: "1.5px solid #22c55e" },
+      });
+      setResetPasswordId(null);
+      setResetNewPassword("");
+      setResetConfirmPassword("");
+    } catch (error) {
+      toast("Failed to reset password", {
+        description: <span style={{ color: "#000" }}>{(error as any)?.response?.data?.message || "Something went wrong."}</span>,
+        duration: 3000,
+        icon: <XCircle className="text-red-600 mr-2" />,
+        style: { background: "#fee2e2", color: "#991b1b", border: "1.5px solid #ef4444" },
+      });
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
   const handleView = (customer: Customer) => {
     setSelectedCustomerId(customer.id);
     setShowViewModal(true);
@@ -338,6 +386,57 @@ export default function CustomersPage() {
         onConfirm={handlePermanentDeleteConfirm}
         onCancel={() => setPermanentDeleteId(null)}
       />
+      <Dialog open={!!resetPasswordId} onOpenChange={(open) => {
+        if (!open) {
+          setResetPasswordId(null);
+          setResetNewPassword("");
+          setResetConfirmPassword("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Customer Password</DialogTitle>
+            <DialogDescription>
+              Enter a new password for this customer. They will need to use this password to log in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Enter new password"
+                value={resetNewPassword}
+                onChange={(e) => setResetNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={resetConfirmPassword}
+                onChange={(e) => setResetConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setResetPasswordId(null);
+              setResetNewPassword("");
+              setResetConfirmPassword("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={resetPasswordLoading}>
+              {resetPasswordLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-6 p-6">
         <div className="flex justify-between items-center">
           <div>
@@ -553,6 +652,15 @@ export default function CustomersPage() {
                                 onClick={() => handleEdit(customer)}
                               >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 cursor-pointer"
+                                title="Reset Password"
+                                onClick={() => setResetPasswordId(customer.id)}
+                              >
+                                <KeyRound className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"

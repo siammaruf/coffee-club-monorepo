@@ -20,6 +20,7 @@ import { CustomerResponseDto } from './dto/customer-response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RedeemPointsDto } from './dto/redeem-points.dto';
 import { AddPointsDto } from './dto/add-points.dto';
+import { ResetCustomerPasswordDto } from './dto/reset-customer-password.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
@@ -218,6 +219,22 @@ export class CustomerController {
             data: response,
             status: 'success',
             message: 'Customer picture removed successfully.',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Patch(':id/reset-password')
+    @ApiOperation({ summary: 'Reset customer password (admin)' })
+    @ApiResponse({ status: 200, description: 'Password reset successfully' })
+    @ApiResponse({ status: 404, description: 'Customer not found' })
+    async resetPassword(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: ResetCustomerPasswordDto,
+    ): Promise<{ status: string; message: string; statusCode: HttpStatus }> {
+        await this.customerService.resetCustomerPassword(id, dto.newPassword);
+        return {
+            status: 'success',
+            message: 'Customer password has been reset successfully.',
             statusCode: HttpStatus.OK
         };
     }

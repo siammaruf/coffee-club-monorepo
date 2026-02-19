@@ -6,6 +6,7 @@ import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerResponseDto } from '../dto/customer-response.dto';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { EncryptionUtil } from '../../../common/utils/encryption.util';
 import { Order } from 'src/modules/orders/entities/order.entity';
 import { CacheService } from '../../cache/cache.service';
 import { SettingsService } from '../../settings/settings.service';
@@ -357,6 +358,20 @@ export class CustomerService {
     const updatedCustomer = await this.customerRepository.save(customer);
     await this.invalidateCache();
     return new CustomerResponseDto(updatedCustomer);
+  }
+
+  async resetCustomerPassword(customerId: string, newPassword: string): Promise<void> {
+    const customer = await this.customerRepository.findOne({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    const { encryptedPassword, iv } = await EncryptionUtil.encryptPassword(newPassword);
+    customer.password = `${encryptedPassword}:${iv}`;
+    await this.customerRepository.save(customer);
   }
 
   async updateCustomerWithPicture(id: string, updateCustomerDto: UpdateCustomerDto, file?: Express.Multer.File): Promise<CustomerResponseDto> {
