@@ -591,14 +591,26 @@ export default function OrderDetails() {
                     <Ionicons name="person" size={16} color="#3B82F6" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-sm font-bold text-gray-800">
-                      {selectedCustomer?.name || order?.customer?.name || 'Customer'}
-                    </Text>
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-sm font-bold text-gray-800">
+                        {selectedCustomer?.name || order?.customer?.name || 'Customer'}
+                      </Text>
+                      {(() => {
+                        const ct = (selectedCustomer as Customer)?.customer_type || order?.customer?.customer_type;
+                        return ct ? (
+                          <View className={`px-1.5 py-0.5 rounded-full ${ct === 'member' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                            <Text className={`text-xs font-medium ${ct === 'member' ? 'text-blue-700' : 'text-gray-600'}`}>
+                              {ct === 'member' ? 'Member' : 'Regular'}
+                            </Text>
+                          </View>
+                        ) : null;
+                      })()}
+                    </View>
                     <Text className="text-xs text-gray-600">
                       {selectedCustomer?.phone || order?.customer?.phone || 'No phone'}
                     </Text>
                   </View>
-                  {selectedCustomer && (
+                  {selectedCustomer && (selectedCustomer as Customer).customer_type === 'member' && (
                     <View className="flex-row gap-1">
                       <View className="bg-purple-100 px-1.5 py-0.5 rounded">
                         <Text className="text-xs text-purple-800">
@@ -728,7 +740,7 @@ export default function OrderDetails() {
             </View>
 
             {/* Points Redemption */}
-            {selectedCustomer && 'balance' in selectedCustomer && (selectedCustomer as Customer).balance > 0 && order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+            {selectedCustomer && (selectedCustomer as Customer).customer_type === 'member' && (selectedCustomer as Customer).balance >= 100 && order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
               <View className="border-t border-gray-100 pt-3">
                 <View className="flex-row items-center justify-between mb-2">
                   <Text className="text-sm font-semibold text-gray-800">Points Redemption</Text>

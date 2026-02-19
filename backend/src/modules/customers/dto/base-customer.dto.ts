@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber, ValidateIf } from 'class-validator';
 import { CustomerType } from '../enum/customer-type.enum';
 
 export class BaseCustomerDto {
@@ -17,6 +17,7 @@ export class BaseCustomerDto {
     phone: string;
 
     @ApiPropertyOptional()
+    @ValidateIf((o) => o.email !== '' && o.email !== null)
     @IsEmail()
     @IsOptional()
     email?: string;
