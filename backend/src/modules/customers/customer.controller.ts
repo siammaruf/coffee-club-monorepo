@@ -23,6 +23,7 @@ import { AddPointsDto } from './dto/add-points.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
+import { CustomerType } from './enum/customer-type.enum';
 
 @ApiTags('Customers')
 @ApiBearerAuth('staff-auth')
@@ -99,7 +100,8 @@ export class CustomerController {
         @Query('page') page?: string,
         @Query('limit') limit?: string,
         @Query('search') search?: string,
-        @Query('is_active') is_active?: string
+        @Query('is_active') is_active?: string,
+        @Query('customer_type') customer_type?: string,
     ): Promise<{
         data: CustomerResponseDto[],
         total: number,
@@ -113,12 +115,16 @@ export class CustomerController {
         const pageNum = page ? parseInt(page) : 1;
         const limitNum = limit ? parseInt(limit) : 10;
         const isActiveFilter = is_active !== undefined ? is_active === 'true' : undefined;
-        
+        const customerTypeFilter = customer_type && Object.values(CustomerType).includes(customer_type as CustomerType)
+            ? customer_type as CustomerType
+            : undefined;
+
         const result = await this.customerService.findAll({
             page: pageNum,
             limit: limitNum,
             search,
-            is_active: isActiveFilter
+            is_active: isActiveFilter,
+            customer_type: customerTypeFilter,
         });
         
         return {
