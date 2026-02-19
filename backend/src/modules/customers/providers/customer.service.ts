@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
@@ -45,7 +45,7 @@ export class CustomerService {
       POINTS_PER_TAKA: parseInt(pointsPerTaka || '1', 10),
       POINTS_FOR_BALANCE: parseInt(pointsForBalance || '100', 10),
       TAKA_PER_100_POINTS: parseInt(takaPerPoints || '3', 10),
-      MINIMUM_REDEEM_AMOUNT: parseInt(minRedeem || '150', 10),
+      MINIMUM_REDEEM_AMOUNT: parseInt(minRedeem || '100', 10),
     };
 
     await this.cacheService.set(cacheKey, config, 300 * 1000);
@@ -372,6 +372,19 @@ export class CustomerService {
     const { encryptedPassword, iv } = await EncryptionUtil.encryptPassword(newPassword);
     customer.password = `${encryptedPassword}:${iv}`;
     await this.customerRepository.save(customer);
+    await this.invalidateCache();
+
+    // Verify the password was saved correctly by re-reading from DB
+    const savedCustomer = await this.customerRepository.findOne({
+      where: { id: customerId },
+    });
+    if (savedCustomer?.password) {
+      const [storedPw, storedIv] = savedCustomer.password.split(':');
+      const isValid = await EncryptionUtil.verifyPassword(newPassword, storedPw, storedIv);
+      if (!isValid) {
+        throw new InternalServerErrorException('Password verification failed after save. Please try again.');
+      }
+    }
   }
 
   async updateCustomerWithPicture(id: string, updateCustomerDto: UpdateCustomerDto, file?: Express.Multer.File): Promise<CustomerResponseDto> {
