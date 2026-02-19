@@ -26,6 +26,7 @@ export default function EditCustomerModal({
       email: "",
       address: "",
       note: "",
+      customer_type: "regular",
     }
   });
 
@@ -37,6 +38,7 @@ export default function EditCustomerModal({
         email: customer.email || "",
         address: customer.address || "",
         note: customer.note || "",
+        customer_type: customer.customer_type || "regular",
       });
       setPreview(customer.picture || "");
       setPicture(null);
@@ -66,6 +68,7 @@ export default function EditCustomerModal({
       data.append("email", formData.email);
       data.append("address", formData.address);
       data.append("note", formData.note);
+      data.append("customer_type", formData.customer_type);
       if (picture) {
         data.append("picture", picture);
       }
@@ -177,7 +180,30 @@ export default function EditCustomerModal({
                 </div>
               </div>
             </div>
-            
+
+            <div>
+              <Label htmlFor="customer_type" className="text-sm font-semibold text-gray-700">
+                Customer Type
+              </Label>
+              <Controller
+                name="customer_type"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    id="customer_type"
+                    className="w-full h-11 border rounded-md px-3 text-sm bg-white"
+                  >
+                    <option value="regular">Regular</option>
+                    <option value="member">Member</option>
+                  </select>
+                )}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Only member customers can earn and use loyalty points.
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
                 Full Name *

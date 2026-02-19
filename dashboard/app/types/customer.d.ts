@@ -8,6 +8,9 @@ export interface Customer {
   picture: string;
   status: "active" | "inactive";
   is_active?: boolean;
+  customer_type: "regular" | "member";
+  points?: number;
+  balance?: number;
 }
 
 export interface CreateCustomerModalProps {
@@ -20,6 +23,7 @@ export interface GetAllCustomersParams {
   page?: number;
   limit?: number;
   search?: string;
+  customer_type?: "regular" | "member";
 }
 
 export interface CustomerListResponse {
@@ -48,6 +52,7 @@ export interface CustomerFormValues {
   email: string;
   address: string;
   note: string;
+  customer_type: "regular" | "member";
 }
 
 export interface EditCustomerModalProps {

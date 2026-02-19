@@ -30,6 +30,7 @@ export default function CustomersPage() {
   const itemsPerPage = 10;
   const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [isActiveFilter, setIsActiveFilter] = useState<"" | "true" | "false">("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState<"" | "regular" | "member">("");
   const selectedCustomer = selectedCustomerId
     ? customers.find(c => c.id === selectedCustomerId) || null
     : null;
@@ -41,7 +42,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [currentPage, searchTerm, isActiveFilter, viewMode]);
+  }, [currentPage, searchTerm, isActiveFilter, customerTypeFilter, viewMode]);
 
   // Fetch trash count on initial load
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function CustomersPage() {
       };
       if (searchTerm) params.search = searchTerm;
       if (isActiveFilter) params.is_active = isActiveFilter;
+      if (customerTypeFilter) params.customer_type = customerTypeFilter;
 
       const response = viewMode === 'trash'
         ? await customerService.getTrash(params)
@@ -400,6 +402,18 @@ export default function CustomersPage() {
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
                 </select>
+                <select
+                  className="border rounded px-2 py-1 text-sm"
+                  value={customerTypeFilter}
+                  onChange={e => {
+                    setCurrentPage(1);
+                    setCustomerTypeFilter(e.target.value as "" | "regular" | "member");
+                  }}
+                >
+                  <option value="">All Types</option>
+                  <option value="regular">Regular</option>
+                  <option value="member">Member</option>
+                </select>
               </div>
             </div>
           </CardHeader>
@@ -415,7 +429,7 @@ export default function CustomersPage() {
             />
             <div className="rounded-md border">
               <div className="p-4 bg-muted/50">
-                <div className="grid grid-cols-5 font-medium text-sm">
+                <div className="grid grid-cols-6 font-medium text-sm">
                   <div className="text-left flex items-center gap-2">
                     <Checkbox
                       checked={isAllSelected(customers.map(c => c.id))}
@@ -424,6 +438,7 @@ export default function CustomersPage() {
                     Customer
                   </div>
                   <div className="text-center">Contact</div>
+                  <div className="text-center">Type</div>
                   <div className="text-center">Address</div>
                   <div className="text-right col-span-2">Actions</div>
                 </div>
@@ -432,7 +447,7 @@ export default function CustomersPage() {
                 {customers.length > 0 ? (
                   customers.map((customer) => (
                     <div key={customer.id} className="p-4 hover:bg-muted/50">
-                      <div className="grid grid-cols-5 text-sm items-center">
+                      <div className="grid grid-cols-6 text-sm items-center">
                         <div className="text-left flex items-center gap-3">
                           <Checkbox
                             checked={isSelected(customer.id)}
@@ -456,6 +471,15 @@ export default function CustomersPage() {
                             <p className="text-sm">{customer.email}</p>
                             <p className="text-xs text-gray-500">{customer.phone}</p>
                           </div>
+                        </div>
+                        <div className="text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            customer.customer_type === 'member'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {customer.customer_type === 'member' ? 'Member' : 'Regular'}
+                          </span>
                         </div>
                         <div className="text-center">
                           <p className="text-sm">{customer.address || 'Not provided'}</p>
