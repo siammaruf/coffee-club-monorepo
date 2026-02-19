@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 import { Exclude } from "class-transformer";
+import { CustomerType } from "../enum/customer-type.enum";
 
 @Entity('customers')
 export class Customer {
@@ -34,6 +35,9 @@ export class Customer {
 
     @Column({ type: 'boolean', default: false })
     is_verified: boolean;
+
+    @Column({ type: 'enum', enum: CustomerType, default: CustomerType.REGULAR })
+    customer_type: CustomerType;
 
     @Exclude()
     @Column({ type: 'varchar', nullable: true })

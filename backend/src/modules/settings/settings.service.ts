@@ -31,6 +31,26 @@ export class SettingsService implements OnModuleInit {
         value: 'true',
         description: 'Enable or disable the reservation system',
       },
+      {
+        key: 'points_per_taka',
+        value: '1',
+        description: 'How many points a member earns per 1 taka spent',
+      },
+      {
+        key: 'points_for_balance',
+        value: '100',
+        description: 'Number of points required for balance conversion',
+      },
+      {
+        key: 'taka_per_100_points',
+        value: '3',
+        description: 'How many taka the customer gets per 100 points redeemed',
+      },
+      {
+        key: 'minimum_redeem_amount',
+        value: '150',
+        description: 'Minimum taka amount required for redemption',
+      },
     ];
 
     for (const def of defaults) {

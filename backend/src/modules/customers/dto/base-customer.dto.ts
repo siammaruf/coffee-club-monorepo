@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, IsUUID, IsNumber } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber } from 'class-validator';
+import { CustomerType } from '../enum/customer-type.enum';
 
 export class BaseCustomerDto {
     @ApiPropertyOptional({ format: 'uuid' })
@@ -34,6 +35,15 @@ export class BaseCustomerDto {
     @IsString()
     @IsOptional()
     picture?: string;
+
+    @ApiPropertyOptional({
+        enum: CustomerType,
+        description: 'Customer type: regular or member',
+        default: CustomerType.REGULAR,
+    })
+    @IsEnum(CustomerType)
+    @IsOptional()
+    customer_type?: CustomerType;
 
     @ApiPropertyOptional({ 
         type: Number,

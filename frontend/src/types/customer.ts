@@ -6,6 +6,7 @@ export interface Customer {
   address?: string
   picture?: string
   note?: string
+  customer_type: 'regular' | 'member'
   points: number
   balance: number
   is_verified: boolean
