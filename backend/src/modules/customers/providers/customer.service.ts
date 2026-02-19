@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
@@ -8,14 +8,11 @@ import { CustomerResponseDto } from '../dto/customer-response.dto';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { Order } from 'src/modules/orders/entities/order.entity';
 import { CacheService } from '../../cache/cache.service';
+import { SettingsService } from '../../settings/settings.service';
+import { CustomerType } from '../enum/customer-type.enum';
 
 @Injectable()
 export class CustomerService {
-  private readonly MINIMUM_REDEEM_AMOUNT = 150; 
-  private readonly POINTS_PER_TAKA = 1;
-  private readonly TAKA_PER_100_POINTS = 3;
-  private readonly POINTS_FOR_BALANCE = 100;
-
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
@@ -23,7 +20,36 @@ export class CustomerService {
     private readonly orderRepository: Repository<Order>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly cacheService: CacheService,
+    private readonly settingsService: SettingsService,
   ) {}
+
+  private async getPointsConfig() {
+    const cacheKey = 'points:config';
+    const cached = await this.cacheService.get<{
+      POINTS_PER_TAKA: number;
+      POINTS_FOR_BALANCE: number;
+      TAKA_PER_100_POINTS: number;
+      MINIMUM_REDEEM_AMOUNT: number;
+    }>(cacheKey);
+    if (cached) return cached;
+
+    const [pointsPerTaka, pointsForBalance, takaPerPoints, minRedeem] = await Promise.all([
+      this.settingsService.getSetting('points_per_taka'),
+      this.settingsService.getSetting('points_for_balance'),
+      this.settingsService.getSetting('taka_per_100_points'),
+      this.settingsService.getSetting('minimum_redeem_amount'),
+    ]);
+
+    const config = {
+      POINTS_PER_TAKA: parseInt(pointsPerTaka || '1', 10),
+      POINTS_FOR_BALANCE: parseInt(pointsForBalance || '100', 10),
+      TAKA_PER_100_POINTS: parseInt(takaPerPoints || '3', 10),
+      MINIMUM_REDEEM_AMOUNT: parseInt(minRedeem || '150', 10),
+    };
+
+    await this.cacheService.set(cacheKey, config, 300 * 1000);
+    return config;
+  }
 
   async create(createCustomerDto: CreateCustomerDto): Promise<CustomerResponseDto> {
     const customer = this.customerRepository.create(createCustomerDto);
@@ -32,21 +58,21 @@ export class CustomerService {
     return new CustomerResponseDto(savedCustomer);
   }
 
-  async findAll(options?: { page?: number, limit?: number, search?: string, is_active?: boolean }): Promise<{ data: CustomerResponseDto[], total: number }> {
-    const { page = 1, limit = 10, search, is_active } = options || {};
-    const cacheKey = `customers:findAll:${page}:${limit}:${search || 'all'}:${is_active !== undefined ? is_active : 'all'}`;
+  async findAll(options?: { page?: number, limit?: number, search?: string, is_active?: boolean, customer_type?: CustomerType }): Promise<{ data: CustomerResponseDto[], total: number }> {
+    const { page = 1, limit = 10, search, is_active, customer_type } = options || {};
+    const cacheKey = `customers:findAll:${page}:${limit}:${search || 'all'}:${is_active !== undefined ? is_active : 'all'}:${customer_type || 'all'}`;
     const cached = await this.cacheService.get<{ data: CustomerResponseDto[], total: number }>(cacheKey);
 
     if (cached && cached.total > 0) {
       return cached;
     }
-    
+
     const query = this.customerRepository.createQueryBuilder('customer');
     if (search) {
       query.where('LOWER(customer.name) LIKE :search OR LOWER(customer.email) LIKE :search',
         { search: `%${search.toLowerCase()}%` });
     }
-  
+
     if (is_active !== undefined) {
       if (search) {
         query.andWhere('customer.is_active = :is_active', { is_active });
@@ -54,7 +80,15 @@ export class CustomerService {
         query.where('customer.is_active = :is_active', { is_active });
       }
     }
-  
+
+    if (customer_type) {
+      if (query.expressionMap.wheres.length > 0) {
+        query.andWhere('customer.customer_type = :customer_type', { customer_type });
+      } else {
+        query.where('customer.customer_type = :customer_type', { customer_type });
+      }
+    }
+
     query.skip((page - 1) * limit).take(limit);
     const [data, total] = await query.getManyAndCount();
     const result = {
@@ -147,16 +181,21 @@ export class CustomerService {
 
   async addPointsFromOrder(customerId: string, orderAmount: number): Promise<Customer> {
     const customer = await this.customerRepository.findOne({ where: { id: customerId } });
-    
+
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${customerId} not found`);
     }
-    
+
+    if (customer.customer_type !== CustomerType.MEMBER) {
+      return customer;
+    }
+
+    const config = await this.getPointsConfig();
     const validOrderAmount = Number(orderAmount) || 0;
-    const pointsToAdd = Math.floor(validOrderAmount * this.POINTS_PER_TAKA);
+    const pointsToAdd = Math.floor(validOrderAmount * config.POINTS_PER_TAKA);
     const currentPoints = Number(customer.points) || 0;
     customer.points = currentPoints + pointsToAdd;
-    customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
+    customer.balance = Math.floor(customer.points / config.POINTS_FOR_BALANCE) * config.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
     await this.invalidateCache();
     return result;
@@ -164,26 +203,31 @@ export class CustomerService {
 
   async redeemPoints(customerId: string, redeemAmount: number): Promise<Customer> {
     const customer = await this.customerRepository.findOne({ where: { id: customerId } });
-    
+
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${customerId} not found`);
     }
 
-    const validRedeemAmount = Number(redeemAmount) || 0;
-    
-    if (validRedeemAmount < this.MINIMUM_REDEEM_AMOUNT) {
-      throw new Error(`Minimum redeem amount is ${this.MINIMUM_REDEEM_AMOUNT} taka`);
+    if (customer.customer_type !== CustomerType.MEMBER) {
+      throw new BadRequestException('Only member customers can redeem points');
     }
 
-    const requiredPoints = Math.ceil((validRedeemAmount / this.TAKA_PER_100_POINTS) * this.POINTS_FOR_BALANCE);
-    const currentPoints = Number(customer.points) || 0;
-    
-    if (currentPoints < requiredPoints) {
-      throw new Error(`Insufficient points. Required: ${requiredPoints} points, Available: ${currentPoints} points`);
+    const config = await this.getPointsConfig();
+    const validRedeemAmount = Number(redeemAmount) || 0;
+
+    if (validRedeemAmount < config.MINIMUM_REDEEM_AMOUNT) {
+      throw new BadRequestException(`Minimum redeem amount is ${config.MINIMUM_REDEEM_AMOUNT} taka`);
     }
-    
+
+    const requiredPoints = Math.ceil((validRedeemAmount / config.TAKA_PER_100_POINTS) * config.POINTS_FOR_BALANCE);
+    const currentPoints = Number(customer.points) || 0;
+
+    if (currentPoints < requiredPoints) {
+      throw new BadRequestException(`Insufficient points. Required: ${requiredPoints} points, Available: ${currentPoints} points`);
+    }
+
     customer.points = currentPoints - requiredPoints;
-    customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
+    customer.balance = Math.floor(customer.points / config.POINTS_FOR_BALANCE) * config.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
     await this.invalidateCache();
     return result;
@@ -191,20 +235,25 @@ export class CustomerService {
 
   async deductPoints(customerId: string, pointsToDeduct: number): Promise<Customer> {
     const customer = await this.customerRepository.findOne({ where: { id: customerId } });
-    
+
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${customerId} not found`);
     }
-    
+
+    if (customer.customer_type !== CustomerType.MEMBER) {
+      throw new BadRequestException('Only member customers can have points deducted');
+    }
+
+    const config = await this.getPointsConfig();
     const validPointsToDeduct = Number(pointsToDeduct) || 0;
     const currentPoints = Number(customer.points) || 0;
-    
+
     if (currentPoints < validPointsToDeduct) {
-      throw new Error('Insufficient points balance');
+      throw new BadRequestException('Insufficient points balance');
     }
-    
+
     customer.points = currentPoints - validPointsToDeduct;
-    customer.balance = Math.floor(customer.points / this.POINTS_FOR_BALANCE) * this.TAKA_PER_100_POINTS;
+    customer.balance = Math.floor(customer.points / config.POINTS_FOR_BALANCE) * config.TAKA_PER_100_POINTS;
     const result = await this.customerRepository.save(customer);
     await this.invalidateCache();
     return result;
@@ -212,36 +261,47 @@ export class CustomerService {
 
   async getCustomerBalance(customerId: string): Promise<{ points: number; balance: number }> {
     const cacheKey = `customer:balance:${customerId}`;
-    
+
     const cached = await this.cacheService.get<{ points: number; balance: number }>(cacheKey);
     if (cached) {
       return cached;
     }
-    
+
     const customer = await this.findOne(customerId);
+
+    if (customer.customer_type !== CustomerType.MEMBER) {
+      return { points: 0, balance: 0 };
+    }
+
     const result = {
       points: Number(customer.points) || 0,
       balance: Number(customer.balance) || 0
     };
-    
+
     await this.cacheService.set(cacheKey, result, 1800 * 1000);
     return result;
   }
 
   async canRedeem(customerId: string, amount: number): Promise<{ canRedeem: boolean; message?: string }> {
     const customer = await this.findOne(customerId);
+
+    if (customer.customer_type !== CustomerType.MEMBER) {
+      return { canRedeem: false, message: 'Only member customers can redeem points' };
+    }
+
+    const config = await this.getPointsConfig();
     const validAmount = Number(amount) || 0;
 
-    if (validAmount < this.MINIMUM_REDEEM_AMOUNT) {
+    if (validAmount < config.MINIMUM_REDEEM_AMOUNT) {
       return {
         canRedeem: false,
-        message: `Minimum redeem amount is ${this.MINIMUM_REDEEM_AMOUNT} taka`
+        message: `Minimum redeem amount is ${config.MINIMUM_REDEEM_AMOUNT} taka`
       };
     }
 
-    const requiredPoints = Math.ceil((validAmount / this.TAKA_PER_100_POINTS) * this.POINTS_FOR_BALANCE);
+    const requiredPoints = Math.ceil((validAmount / config.TAKA_PER_100_POINTS) * config.POINTS_FOR_BALANCE);
     const currentPoints = Number(customer.points) || 0;
-    
+
     if (currentPoints < requiredPoints) {
       return {
         canRedeem: false,

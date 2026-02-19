@@ -70,6 +70,13 @@ export default function ViewCustomerModal({
               </div>
             )}
             <h2 className="text-xl font-bold text-gray-900">{customer.name}</h2>
+            <span className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              customer.customer_type === 'member'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {customer.customer_type === 'member' ? 'Member' : 'Regular'}
+            </span>
             <div className="mt-2 flex gap-2">
               {status === "active" ? (
                 <Button
@@ -116,6 +123,22 @@ export default function ViewCustomerModal({
               </div>
             )}
           </div>
+          {customer.customer_type === 'member' && (
+            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-600">
+                  {customer.points ?? 0}
+                </div>
+                <div className="text-xs text-gray-500">Points</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600">
+                  {customer.balance ?? 0} Tk
+                </div>
+                <div className="text-xs text-gray-500">Balance</div>
+              </div>
+            </div>
+          )}
           <div className="mt-6 flex justify-end">
             <Button onClick={onClose} variant="outline">
               Close

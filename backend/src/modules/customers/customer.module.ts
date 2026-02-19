@@ -6,12 +6,14 @@ import { Customer } from './entities/customer.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { Order } from '../orders/entities/order.entity';
 import { CacheModule } from '../cache/cache.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Customer, Order]), 
+        TypeOrmModule.forFeature([Customer, Order]),
         CloudinaryModule,
-        CacheModule
+        CacheModule,
+        SettingsModule,
     ],
     controllers: [CustomerController],
     providers: [CustomerService],

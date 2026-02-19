@@ -98,7 +98,7 @@ export default function ProfilePage() {
         <div className="vincent-container">
           <div className="mx-auto max-w-2xl">
             {/* Points & Balance */}
-            {customer && (
+            {customer && customer.customer_type === 'member' && (
               <div className="mb-8 grid grid-cols-2 gap-4">
                 <div className="border-2 border-border bg-bg-card p-5 text-center">
                   <p className="text-xs uppercase tracking-[2px] text-text-muted">

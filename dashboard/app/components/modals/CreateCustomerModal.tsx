@@ -25,6 +25,7 @@ export default function CreateCustomerModal({
       email: "",
       address: "",
       note: "",
+      customer_type: "regular",
     }
   });
 
@@ -64,6 +65,7 @@ export default function CreateCustomerModal({
       if (formData.note?.trim()) {
         data.append("note", formData.note.trim());
       }
+      data.append("customer_type", formData.customer_type);
       if (picture) {
         data.append("picture", picture);
       }
@@ -152,7 +154,30 @@ export default function CreateCustomerModal({
                 </div>
               </div>
             </div>
-            
+
+            <div>
+              <Label htmlFor="customer_type" className="text-sm font-semibold text-gray-700">
+                Customer Type
+              </Label>
+              <Controller
+                name="customer_type"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    id="customer_type"
+                    className="w-full h-11 border rounded-md px-3 text-sm bg-white"
+                  >
+                    <option value="regular">Regular</option>
+                    <option value="member">Member</option>
+                  </select>
+                )}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Only member customers can earn and use loyalty points.
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
                 Full Name *
