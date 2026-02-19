@@ -6,6 +6,7 @@ This document maps frontend routes to their corresponding API endpoints for both
 
 - **Dashboard** (`dashboard/`): Admin panel for staff, uses React Router v7 + Redux Toolkit + Axios
 - **Frontend** (`frontend/`): Customer-facing website, uses React Router + Redux Toolkit + Axios
+- **Mobile** (`mobile/`): Manager POS app, uses Expo Router + Redux Toolkit + Axios (Bearer token auth)
 - **API Base**: `http://localhost:5000/api/v1`
 
 ---
@@ -265,3 +266,83 @@ const httpService = axios.create({
 - [x] React Router 7 framework mode with SSR
 - [x] Form validation via React Hook Form + Zod
 - [x] Toast notifications via react-hot-toast
+
+### Mobile
+- [x] Axios httpService with Bearer token auth (not cookies)
+- [x] Request interceptor attaches token from MMKV storage
+- [x] Redux auth slice + Redux Persist with MMKV backend
+- [x] AuthContext for primary auth state management
+- [x] Role validation (manager only) at login
+- [x] Network detection via NetInfo
+- [x] Error handling via handleAxiosError utility
+- [x] All 10 API service modules implemented
+- [x] Expo Router file-based navigation with typed routes
+- [x] Thermal receipt printing (Bluetooth + Sunmi)
+
+---
+
+## Mobile App Routes -> API Mapping
+
+Routes use Expo Router file-based routing. Auth is Bearer token (JWT), manager-role only.
+
+### Auth Screens
+
+| Route | Screen | APIs Used | Status |
+|-------|--------|-----------|--------|
+| `/(auth)/login` | Login | `POST /auth/login` | Complete |
+
+### Protected Screens (Tab Navigation)
+
+| Route | Screen | APIs Used | Status |
+|-------|--------|-----------|--------|
+| `/(app)/(tabs)/` | Dashboard | `GET /sales-reports/dashboard` | Complete |
+| `/(app)/(tabs)/orders` | Orders List | `GET /orders` | Complete |
+| `/(app)/(tabs)/expenses` | Expenses List | `GET /expenses` | Complete |
+| `/(app)/(tabs)/reports` | Reports List | `GET /sales-reports` | Complete |
+
+### Protected Screens (Stack)
+
+| Route | Screen | APIs Used | Status |
+|-------|--------|-----------|--------|
+| `/(app)/orders/create` | Create Order | `POST /orders`, `GET /items`, `GET /categories`, `GET /tables`, `GET /customers`, `GET /discounts` | Complete |
+| `/(app)/orders/edit` | Edit Order | `GET /orders/:id`, `PUT /orders/:id` | Complete |
+| `/(app)/orders/[id]` | Order Details | `GET /orders/:id` | Complete |
+| `/(app)/customers/` | Customer List | `GET /customers` | Complete |
+| `/(app)/customers/[id]` | Customer Details | `GET /customers/:id`, `POST /customers/:id/redeem-points`, `POST /customers/:id/add-points` | Complete |
+| `/(app)/products/` | Product List | `GET /items` | Complete |
+| `/(app)/products/[id]` | Product Details | `GET /items/:id` | Complete |
+| `/(app)/tables/` | Table List | `GET /tables` | Complete |
+| `/(app)/expenses/create` | Create Expense | `POST /expenses`, `GET /expense-categories` | Complete |
+| `/(app)/expenses/edit` | Edit Expense | `GET /expenses/:id`, `PUT /expenses/:id` | Complete |
+| `/(app)/expenses/[id]` | Expense Details | `GET /expenses/:id` | Complete |
+| `/(app)/reports/[id]` | Report Details | `GET /sales-reports/:id` | Complete |
+| `/(app)/printer/` | Printer Config | None (Bluetooth local) | Complete |
+
+---
+
+## Mobile API Service Files
+
+| Service | Location | Methods |
+|---------|----------|---------|
+| HttpService | `src/services/httpService.ts` | Base Axios client with Bearer token interceptor |
+| authService | `src/services/httpServices/authService.ts` | login, checkAuthStatus, logout, forgotPassword, verifyOTP, resetPassword |
+| orderService | `src/services/httpServices/orderService.ts` | getAll, getById, create, update, delete |
+| productService | `src/services/httpServices/productService.ts` | getAll, getById, getBySlug, create |
+| categoryService | `src/services/httpServices/categoryService.ts` | getAll, getById, getBySlug |
+| customerService | `src/services/httpServices/customerService.ts` | getAll, get, redeemPoints, getBalance, canRedeem, addPoints |
+| tableService | `src/services/httpServices/tableService.ts` | getAll, getAvailable, getById, getByNumber, changeStatus |
+| discountService | `src/services/httpServices/discountService.ts` | getAll, getById, getNotExpired |
+| expenseService | `src/services/httpServices/expenseService.ts` | getAll, getById, create, update, getByCategory, updateStatus |
+| expenseCategoryService | `src/services/httpServices/expenseCategoryService.ts` | getAll, getById |
+| reportService | `src/services/httpServices/reportService.ts` | getDashboard, getFinancialSummary, getFilteredSummary, generate, getAll, getById, delete, charts |
+
+## Mobile Redux Slices
+
+| Slice | Location | State |
+|-------|----------|-------|
+| authSlice | `src/redux/slices/authSlice.ts` | isAuthenticated, user (persisted via MMKV) |
+| userSlice | `src/redux/slices/userSlice.ts` | User profile data (NOT persisted) |
+
+**Auth Context** (`src/context/AuthContext.tsx`): Primary auth state — `useAuth()` hook providing `user`, `login()`, `logout()`, `isAuthenticated`, `isLoading`.
+
+**Storage** (`src/services/storageService.ts`): MMKV wrapper for `authToken`, `refreshToken`, `userSession`.

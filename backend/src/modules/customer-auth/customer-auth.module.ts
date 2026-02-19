@@ -11,6 +11,7 @@ import { PasswordResetToken } from '../auth/entities/password-reset-token.entity
 import { EmailModule } from '../email/email.module';
 import { SmsModule } from '../sms/sms.module';
 import { CacheModule } from '../cache/cache.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CacheModule } from '../cache/cache.module';
     EmailModule,
     SmsModule,
     CacheModule,
+    CloudinaryModule,
   ],
   controllers: [CustomerAuthController],
   providers: [CustomerAuthService, CustomerJwtStrategy],

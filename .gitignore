@@ -32,7 +32,13 @@ Thumbs.db
 !.claude-project/status/temp/.gitkeep
 
 # Large binary assets
-.claude-project/resources/
+# .claude-project/resources/
 # frontend/public/img/
 
 menual-sc/
+
+# Mobile (React Native / Expo)
+mobile/node_modules/
+mobile/.expo/
+mobile/android/app/build/
+mobile/ios/Pods/
