@@ -15,11 +15,11 @@ export const profileService = {
   changePassword: (payload: ChangePasswordPayload) =>
     put<{ message: string }>('/customer-auth/profile/password', payload),
 
-  /** PUT /customer-auth/profile with multipart form data for picture upload */
+  /** PUT /customer-auth/profile/picture with multipart form data for picture upload */
   uploadPicture: async (file: File): Promise<Customer> => {
     const formData = new FormData()
     formData.append('picture', file)
-    const response = await httpService.put<{ data: Customer }>('/customer-auth/profile', formData, {
+    const response = await httpService.put<{ data: Customer }>('/customer-auth/profile/picture', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     return response.data.data
