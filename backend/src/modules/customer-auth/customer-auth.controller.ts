@@ -8,9 +8,13 @@ import {
   HttpStatus,
   Res,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { CustomerAuthService } from './providers/customer-auth.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -169,6 +173,30 @@ export class CustomerAuthController {
     return {
       status: 'success',
       message: 'Profile updated successfully',
+      statusCode: HttpStatus.OK,
+      data: profile,
+    };
+  }
+
+  @Put('profile/picture')
+  @UseGuards(CustomerJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Upload customer profile picture' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('picture'))
+  async uploadProfilePicture(
+    @CurrentCustomer() customer: Customer,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    const profile = await this.customerAuthService.uploadProfilePicture(customer.id, file);
+
+    return {
+      status: 'success',
+      message: 'Profile picture updated successfully',
       statusCode: HttpStatus.OK,
       data: profile,
     };

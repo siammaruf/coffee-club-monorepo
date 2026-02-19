@@ -656,6 +656,47 @@ Usage: `.animate-fade-in`, `.animate-fade-up`, `.animate-slide-in-right`, `.anim
 
 ---
 
-**Version:** 5.0
-**Last Updated:** 2026-02-15
+## 15. Mobile App (CoffeeClubGo)
+
+### Styling Framework
+- **NativeWind** (TailwindCSS for React Native) v4.2.1
+- `className` prop on all React Native components
+- Never use `StyleSheet.create` — all styling via NativeWind utilities
+
+### Color Palette
+- Background: white, gray-50 (screens)
+- Cards: white with gray-100 border, rounded-2xl, shadow-sm
+- Primary action: orange-500 (`#f97316`)
+- Text: gray-800 (primary), gray-500 (secondary)
+- Status: green (success), red (error/cancel), blue (info), purple (accent)
+
+### Typography
+- Headings: `font-bold text-gray-800`
+- Body: `text-gray-600` / `text-gray-500`
+- Stats/numbers: `text-3xl font-bold`
+
+### Component Patterns
+- Functional components with `default export`
+- Typed props interfaces
+- Skeleton components for loading states (`src/components/skeletons/`)
+- Modal components for selection flows (`src/components/modals/`)
+- `react-hook-form` for all forms
+
+### Navigation
+- Expo Router file-based routing
+- Bottom tab navigator (4 tabs: Dashboard, Orders, Expenses, Reports)
+- Auth/App conditional stacks
+- Haptic feedback on tab press
+
+### Touch Targets (Mobile-Specific)
+- Minimum 48x48dp for tap targets (Android guidelines)
+- Buttons: `py-3 px-6` minimum
+- List items: `py-4` for comfortable tapping
+- Icon buttons: `w-12 h-12`
+
+---
+
+**Version:** 6.0
+**Last Updated:** 2026-02-19
 **Theme Change:** Warm Light Coffee (Basilico) -> Vincent Dark Restaurant Theme
+**Added:** Mobile App (CoffeeClubGo) design guidelines

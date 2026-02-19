@@ -9,6 +9,7 @@ import { CustomerRegisterDto } from '../dto/customer-register.dto';
 import { UpdateCustomerProfileDto } from '../dto/update-customer-profile.dto';
 import { EmailService } from '../../email/email.service';
 import { SmsService } from '../../sms/sms.service';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class CustomerAuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly smsService: SmsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   private async encryptPassword(password: string): Promise<string> {
@@ -291,6 +293,34 @@ export class CustomerAuthService {
     if (dto.address !== undefined) customer.address = dto.address;
     if (dto.picture !== undefined) customer.picture = dto.picture;
 
+    const updatedCustomer = await this.customerRepository.save(customer);
+
+    const { password, refresh_token, otp, otp_expires_at, ...profile } = updatedCustomer;
+    return profile;
+  }
+
+  async uploadProfilePicture(customerId: string, file: Express.Multer.File): Promise<Partial<Customer>> {
+    const customer = await this.customerRepository.findOne({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    if (customer.picture) {
+      await this.cloudinaryService.deleteFile(customer.picture);
+    }
+
+    const uploadResult = await this.cloudinaryService.uploadImage(file, {
+      folder: 'customers',
+      publicId: `customer_${customerId}_${Date.now()}`,
+      width: 400,
+      height: 400,
+      crop: 'fill',
+    });
+
+    customer.picture = uploadResult.secure_url;
     const updatedCustomer = await this.customerRepository.save(customer);
 
     const { password, refresh_token, otp, otp_expires_at, ...profile } = updatedCustomer;

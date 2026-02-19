@@ -17,4 +17,5 @@ export const customerService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/customers/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/customers/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/customers/${id}/permanent`),
+  resetPassword: (id: string, newPassword: string) => httpService.patch(`/customers/${id}/reset-password`, { newPassword }),
 };
