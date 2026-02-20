@@ -9,13 +9,12 @@ import ProductSkeleton from '@/components/skeletons/ProductSkeleton';
 
 export default function ProductListScreen() {
     const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isPaginating, setIsPaginating] = useState(false);
     const [search, setSearch] = useState('');
-    const [searching, setSearching] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -34,27 +33,30 @@ export default function ProductListScreen() {
     };
 
     const fetchProducts = async (pageNumber = 1, replace = false, searchValue = '', categorySlug = '') => {
-        if (loading && !replace) return;
-        if (isPaginating && !replace) return;
-        if (!replace) setIsPaginating(true);
-        else setLoading(true);
-
         try {
+            if (replace) {
+                setLoading(true);
+            } else {
+                setIsPaginating(true);
+            }
+
             const response = await productService.getAll({
                 page: pageNumber,
                 limit: 20,
                 search: searchValue,
                 categorySlug: categorySlug || undefined,
             }) as { data?: any[], totalPages?: number };
+
             if (response && response.data) {
-                setProducts(prev =>
-                    replace ? (response.data ?? []) : [...prev, ...(response.data ?? [])]
-                );
+                setProducts(prev => {
+                    if (replace) return response.data ?? [];
+                    const existingIds = new Set(prev.map((p: any) => p.id));
+                    const newItems = (response.data ?? []).filter((p: any) => !existingIds.has(p.id));
+                    return [...prev, ...newItems];
+                });
                 setPage(pageNumber);
-                if (
-                    !response.data.length ||
-                    (response.totalPages && pageNumber >= response.totalPages)
-                ) {
+
+                if (!response.data.length || (response.totalPages && pageNumber >= response.totalPages)) {
                     setHasMore(false);
                 } else {
                     setHasMore(true);
@@ -64,12 +66,11 @@ export default function ProductListScreen() {
             }
         } catch (error) {
             setHasMore(false);
-            // handle error if needed
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+            setIsPaginating(false);
         }
-        setLoading(false);
-        setRefreshing(false);
-        setIsPaginating(false);
-        setSearching(false);
     };
 
     useEffect(() => {
@@ -77,6 +78,8 @@ export default function ProductListScreen() {
     }, []);
 
     useEffect(() => {
+        setPage(1);
+        setHasMore(true);
         fetchProducts(1, true, search, selectedCategory);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, selectedCategory]);
@@ -86,21 +89,19 @@ export default function ProductListScreen() {
         fetchProducts(1, true, search, selectedCategory);
     }, [search, selectedCategory]);
 
-    const handleLoadMore = () => {
-        if (!loading && !isPaginating && hasMore) {
+    const handleLoadMore = useCallback(() => {
+        if (!isPaginating && hasMore && products.length > 0) {
             fetchProducts(page + 1, false, search, selectedCategory);
         }
-    };
+    }, [isPaginating, hasMore, products.length, page, search, selectedCategory]);
 
     const handleSearchChange = (text: string) => {
         setSearch(text);
-        setSearching(true);
     };
 
     const handleCategorySelect = (slug: string) => {
         setSelectedCategory(slug);
         setShowCategoryModal(false);
-        setLoading(true); // Show skeleton while loading new category
     };
 
     const renderProduct = ({ item }: { item: any }) => {
@@ -151,7 +152,7 @@ export default function ProductListScreen() {
                             </>
                         )}
                         <Text className="text-xs text-gray-400">
-                            {item.type === 'bar' ? 'Bar' : 'Kitchen'} {'\u2022'} {item.status === 'available' ? 'Available' : 'Unavailable'}
+                            {item.type === 'bar' ? 'Bar' : 'Kitchen'} {'\u2022'} {['out_of_stock', 'discontinued'].includes(item.status) ? 'Unavailable' : 'Available'}
                         </Text>
                     </View>
                 </View>
@@ -205,7 +206,7 @@ export default function ProductListScreen() {
                     </TouchableOpacity>
                 </View>
             </View>
-            {loading && products.length === 0 || searching ? (
+            {loading && products.length === 0 ? (
                 <ProductSkeleton />
             ) : (
                 <FlatList

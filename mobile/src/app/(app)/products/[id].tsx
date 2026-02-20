@@ -120,8 +120,8 @@ export default function ProductDetailsScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name={product.type === 'bar' ? 'wine-outline' : 'restaurant-outline'} size={18} color="#6366F1" />
                         <Text className="ml-1 text-base text-gray-700">{product.type === 'bar' ? 'Bar' : 'Kitchen'}</Text>
-                        <Text className={`ml-3 text-xs font-semibold ${product.status === 'available' ? 'text-green-600' : 'text-red-500'}`}>
-                            {product.status === 'available' ? 'Available' : 'Unavailable'}
+                        <Text className={`ml-3 text-xs font-semibold ${['out_of_stock', 'discontinued'].includes(product.status) ? 'text-red-500' : 'text-green-600'}`}>
+                            {['out_of_stock', 'discontinued'].includes(product.status) ? 'Unavailable' : 'Available'}
                         </Text>
                     </View>
                     {priceSection}
