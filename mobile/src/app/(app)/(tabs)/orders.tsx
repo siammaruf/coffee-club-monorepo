@@ -10,6 +10,7 @@ import { orderService } from '@/services/httpServices/orderService';
 import { Order } from '@/types/order';
 import OrdersSkeleton from '@/components/skeletons/OrdersSkeleton';
 import { OrderStatus } from '@/enums/orderEnum';
+import { formatPrice } from '@/utils/currency';
 
 export default function OrderListScreen() {
   const router = useRouter();
@@ -296,7 +297,7 @@ export default function OrderListScreen() {
       {/* Compact Order Footer */}
       <View className="flex-row items-center justify-between border-t border-gray-100 pt-2">
         <View>
-          <Text className="font-bold text-base text-[#EF4444]">{'\u09F3'}{order.total_amount}</Text>
+          <Text className="font-bold text-base text-[#EF4444]">{formatPrice(order.total_amount)}</Text>
         </View>
 
         {/* Compact Quick Actions */}

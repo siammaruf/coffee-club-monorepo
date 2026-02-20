@@ -8,6 +8,7 @@ import { ExpenseCategory, ExpenseItem } from '@/types/expense';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { formatPrettyDate } from '@/utils/helpers';
+import { formatPrice } from '@/utils/currency';
 import FilterModal from '@/components/modals/FilterModal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ExpenseSkeleton from '@/components/skeletons/ExpenseSkeleton';
@@ -262,7 +263,7 @@ export default function ExpensesListScreen() {
                                     </View>
                                     <View className="items-end ml-2 pr-1">
                                         <Text className="text-lg font-bold text-orange-500">
-                                            {'\u09F3'}{item.amount}
+                                            {formatPrice(item.amount)}
                                         </Text>
                                         <Text className={`text-xs mt-1 ${
                                             item.status === 'approved'

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { customerService } from '@/services/httpServices/customerService';
 import CreateCustomerModal from '@/components/modals/CreateCustomerModal';
+import { formatPrice } from '@/utils/currency';
 
 export default function CustomerListScreen() {
     const [customers, setCustomers] = useState<any[]>([]);
@@ -106,7 +107,7 @@ export default function CustomerListScreen() {
                         </View>
                         <View className="flex-row items-center">
                             <Ionicons name="wallet-outline" size={16} color="#10B981" />
-                            <Text className="ml-1 text-base font-bold text-green-600">{'\u09F3'}{item.balance}</Text>
+                            <Text className="ml-1 text-base font-bold text-green-600">{formatPrice(item.balance)}</Text>
                         </View>
                     </View>
                 )}

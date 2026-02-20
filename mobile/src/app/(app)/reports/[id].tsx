@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import reportService from '@/services/httpServices/reportService';
+import { formatPriceCompact } from '@/utils/currency';
 import { printSalesReport } from '@/utils/printer';
 
 // Helper for pretty date
@@ -123,20 +124,20 @@ export default function SalesReportDetailsScreen() {
                     </View>
                 </View>
 
-                <StatRow icon="cash-outline" label="Total Sales" value={`\u09F3${report.total_sales}`} />
+                <StatRow icon="cash-outline" label="Total Sales" value={formatPriceCompact(report.total_sales)} />
                 <StatRow icon="cart-outline" label="Total Orders" value={report.total_orders} />
                 <View className="border-b border-gray-100 my-1" />
-                <StatRow icon="wine-outline" label="Bar Sales" value={`\u09F3${report.bar_sales}`} />
+                <StatRow icon="wine-outline" label="Bar Sales" value={formatPriceCompact(report.bar_sales)} />
                 <StatRow icon="wine-outline" label="Bar Orders" value={report.bar_orders} color="#6366F1" />
-                <StatRow icon="restaurant-outline" label="Kitchen Sales" value={`\u09F3${report.kitchen_sales}`} />
+                <StatRow icon="restaurant-outline" label="Kitchen Sales" value={formatPriceCompact(report.kitchen_sales)} />
                 <StatRow icon="restaurant-outline" label="Kitchen Orders" value={report.kitchen_orders} color="#10B981" />
                 <View className="border-b border-gray-100 my-1" />
-                <StatRow icon="card-outline" label="Total Expenses" value={`\u09F3${report.total_expenses}`} />
+                <StatRow icon="card-outline" label="Total Expenses" value={formatPriceCompact(report.total_expenses)} />
                 <StatRow icon="pricetag-outline" label="Expense Items" value={report.total_expense_items} color="#F59E0B" />
                 <StatRow
                     icon="wallet-outline"
                     label="Credit Amount"
-                    value={`\u09F3${report.credit_amount}`}
+                    value={formatPriceCompact(report.credit_amount)}
                     color="#EC4899"
                     highlight
                 />

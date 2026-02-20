@@ -3,6 +3,7 @@ import { StorageService } from "../services/storageService";
 import { Order } from "../types/order";
 import { base64 } from "./printerUtil";
 import { formatPrettyDateOnly } from "./helpers";
+import { CURRENCY_SYMBOL, formatAmount } from './currency';
 
 function getPrinter(): any | null {
     try {
@@ -134,7 +135,7 @@ export const printReceipt = async (order: Order, printerAddress?: string) => {
         for (let i = 0; i < order.order_items.length; i++) {
             const item = order.order_items[i];
             await ReactNativePosPrinter.printText(`>> ${item.quantity}x ${item.item?.name || 'Item'} ${item.item_variation ? `(${item.item_variation.name})` : ''}`);
-            await ReactNativePosPrinter.printText(`    ৳${item.unit_price} x ${item.quantity} = ৳${item.total_price}`);
+            await ReactNativePosPrinter.printText(`    ${CURRENCY_SYMBOL}${formatAmount(item.unit_price)} x ${item.quantity} = ${CURRENCY_SYMBOL}${formatAmount(item.total_price)}`);
             if (i !== order.order_items.length - 1) await ReactNativePosPrinter.newLine();
         }
 
@@ -144,20 +145,20 @@ export const printReceipt = async (order: Order, printerAddress?: string) => {
         const subtotal = order.order_items.reduce((sum, item) =>
             sum + (Number(item.total_price) || 0), 0
         );
-        await ReactNativePosPrinter.printText(`Subtotal: ৳${subtotal.toFixed(2)}`);
+        await ReactNativePosPrinter.printText(`Subtotal: ${CURRENCY_SYMBOL}${formatAmount(subtotal)}`);
         if (order.discount_amount > 0) {
-            await ReactNativePosPrinter.printText(`Discount: -৳${order.discount_amount.toFixed(2)}`);
+            await ReactNativePosPrinter.printText(`Discount: -${CURRENCY_SYMBOL}${formatAmount(order.discount_amount)}`);
         }
 
         // Points redemption (difference between subtotal-discount and total)
         const expectedTotal = subtotal - (order.discount_amount || 0);
         const pointsRedeemed = expectedTotal - order.total_amount;
         if (pointsRedeemed > 0) {
-            await ReactNativePosPrinter.printText(`Points Redeemed: -৳${pointsRedeemed.toFixed(2)}`);
+            await ReactNativePosPrinter.printText(`Points Redeemed: -${CURRENCY_SYMBOL}${formatAmount(pointsRedeemed)}`);
         }
 
         // Total with emphasis
-        await ReactNativePosPrinter.printText(`*** TOTAL: ৳${order.total_amount.toFixed(2)} ***`, { bold: true, fontType: 'C' });
+        await ReactNativePosPrinter.printText(`*** TOTAL: ${CURRENCY_SYMBOL}${formatAmount(order.total_amount)} ***`, { bold: true, fontType: 'C' });
         await ReactNativePosPrinter.printText(`Payment: ${order.payment_method || 'Not Set'}`);
 
         // Points summary section for customers (uses backend data directly)
@@ -165,7 +166,7 @@ export const printReceipt = async (order: Order, printerAddress?: string) => {
             await ReactNativePosPrinter.printText('-'.repeat(32));
             await ReactNativePosPrinter.printText('*** LOYALTY POINTS ***');
             await ReactNativePosPrinter.printText(`Total Points: ${Number(order.customer.points).toFixed(0)}`);
-            await ReactNativePosPrinter.printText(`Balance: ৳${Number(order.customer.balance || 0).toFixed(2)}`);
+            await ReactNativePosPrinter.printText(`Balance: ${CURRENCY_SYMBOL}${formatAmount(order.customer.balance)}`);
         }
 
         // Footer
@@ -212,15 +213,15 @@ export const printSalesReport = async (report: any, printerAddress?: string): Pr
         await ReactNativePosPrinter.printText('-'.repeat(32));
 
         // Main Stats
-        await ReactNativePosPrinter.printText(`Total Sales: ৳${report.total_sales}`);
+        await ReactNativePosPrinter.printText(`Total Sales: ${CURRENCY_SYMBOL}${formatAmount(report.total_sales)}`);
         await ReactNativePosPrinter.printText(`Total Orders: ${report.total_orders}`);
-        await ReactNativePosPrinter.printText(`Bar Sales: ৳${report.bar_sales}`);
+        await ReactNativePosPrinter.printText(`Bar Sales: ${CURRENCY_SYMBOL}${formatAmount(report.bar_sales)}`);
         await ReactNativePosPrinter.printText(`Bar Orders: ${report.bar_orders}`);
-        await ReactNativePosPrinter.printText(`Kitchen Sales: ৳${report.kitchen_sales}`);
+        await ReactNativePosPrinter.printText(`Kitchen Sales: ${CURRENCY_SYMBOL}${formatAmount(report.kitchen_sales)}`);
         await ReactNativePosPrinter.printText(`Kitchen Orders: ${report.kitchen_orders}`);
         await ReactNativePosPrinter.printText('-'.repeat(32));
-        await ReactNativePosPrinter.printText(`Total Expenses: ৳${report.total_expenses}`);
-        await ReactNativePosPrinter.printText(`Credit Amount: ৳${report.credit_amount}`, { bold: true });
+        await ReactNativePosPrinter.printText(`Total Expenses: ${CURRENCY_SYMBOL}${formatAmount(report.total_expenses)}`);
+        await ReactNativePosPrinter.printText(`Credit Amount: ${CURRENCY_SYMBOL}${formatAmount(report.credit_amount)}`, { bold: true });
         await ReactNativePosPrinter.printText('-'.repeat(32));
 
         // Footer
