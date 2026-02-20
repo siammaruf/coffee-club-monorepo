@@ -32,13 +32,8 @@ export class ItemService {
 
     const { page, limit, search, categoryId, categorySlug, type, status, statuses } = options;
     const query = this.itemRepository.createQueryBuilder('item')
-      .leftJoin('item.categories', 'category')
-      .addSelect([
-        'category.id',
-        'category.name',
-        'category.slug',
-        'category.name_bn'
-      ]);
+      .leftJoinAndSelect('item.categories', 'category')
+      .leftJoinAndSelect('item.variations', 'variation');
 
     if (categoryId) {
       query.andWhere('category.id = :categoryId', { categoryId });
@@ -63,17 +58,19 @@ export class ItemService {
         { search: `%${search.toLowerCase()}%` });
     }
 
-    query.leftJoinAndSelect('item.categories', 'categorySelect')
-      .leftJoinAndSelect('item.variations', 'variation')
-      .orderBy('item.created_at', 'DESC')
+    query.orderBy('item.created_at', 'DESC')
       .addOrderBy('item.id', 'ASC')
-      .addOrderBy('variation.sort_order', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
     const [data, total] = await query.getManyAndCount();
-    const filteredData = data.map(item => item);
-    const result = { data: filteredData, total };
+    // Sort variations by sort_order in JS (ordering by joined column in SQL breaks TypeORM pagination)
+    data.forEach(item => {
+      if (item.variations) {
+        item.variations.sort((a, b) => a.sort_order - b.sort_order);
+      }
+    });
+    const result = { data, total };
 
     await this.cacheService.set(cacheKey, result, 3600);
     return result;
