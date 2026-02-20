@@ -209,7 +209,7 @@ export class OrderController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('status') status?: string,
-  ): Promise<{ data: OrderResponseDto[]; total: number; page: number; limit: number; totalPages: number; status: string; message: string; statusCode: HttpStatus }> {
+  ): Promise<{ data: OrderResponseDto[]; total: number; page: number; limit: number; totalPages: number; statusCounts: Record<string, number>; status: string; message: string; statusCode: HttpStatus }> {
     const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNumber = limit ? Math.max(1, parseInt(limit, 10)) : 10;
     const orderStatus = status ? (status as OrderStatus) : undefined;
@@ -221,6 +221,7 @@ export class OrderController {
       page: result.page,
       limit: result.limit,
       totalPages: result.totalPages,
+      statusCounts: result.statusCounts,
       status: 'success',
       message: 'Orders retrieved successfully.',
       statusCode: HttpStatus.OK

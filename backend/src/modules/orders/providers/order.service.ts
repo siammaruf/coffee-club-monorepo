@@ -301,6 +301,7 @@ export class OrderService {
     page: number;
     limit: number;
     totalPages: number;
+    statusCounts: Record<string, number>;
   }> {
     const cacheKey = `orders:all:${page}:${limit}:${search || ''}:${dateFilter || ''}:${startDate || ''}:${endDate || ''}:${status || ''}`;
     const cached = await this.cacheService.get<{
@@ -309,6 +310,7 @@ export class OrderService {
       page: number;
       limit: number;
       totalPages: number;
+      statusCounts: Record<string, number>;
     }>(cacheKey);
 
     if (cached) {
@@ -366,12 +368,56 @@ export class OrderService {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Status counts query - applies same date/search filters but NOT status filter
+    const countsBuilder = this.orderRepository.createQueryBuilder('order')
+      .select('order.status', 'status')
+      .addSelect('COUNT(*)', 'count');
+
+    if (search) {
+      countsBuilder
+        .leftJoin('order.customer', 'customer')
+        .leftJoin('order.user', 'user')
+        .andWhere(
+          '(order.order_type ILIKE :search OR order.status ILIKE :search OR order.payment_method ILIKE :search OR customer.name ILIKE :search OR user.name ILIKE :search)',
+          { search: `%${search}%` }
+        );
+    }
+
+    if (dateFilter && dateFilter !== 'all') {
+      if (dateFilter === 'today') {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        countsBuilder.andWhere('order.created_at BETWEEN :startOfDay AND :endOfDay', {
+          startOfDay,
+          endOfDay
+        });
+      } else if (dateFilter === 'custom' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        countsBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+          startDate: start,
+          endDate: end
+        });
+      }
+    }
+
+    countsBuilder.groupBy('order.status');
+    const rawCounts = await countsBuilder.getRawMany();
+
+    const statusCounts: Record<string, number> = { PENDING: 0, PREPARING: 0, COMPLETED: 0, CANCELLED: 0 };
+    for (const row of rawCounts) {
+      statusCounts[row.status] = parseInt(row.count, 10);
+    }
+
     const result = {
       data,
       total,
       page,
       limit,
       totalPages,
+      statusCounts,
     };
 
     await this.cacheService.set(cacheKey, result, 3600);

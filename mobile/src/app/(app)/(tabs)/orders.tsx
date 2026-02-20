@@ -27,6 +27,7 @@ export default function OrderListScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const limit = 10;
 
   const statusColors: Record<string, { bg: string; text: string; border: string; bgLight: string }> = {
@@ -96,6 +97,9 @@ export default function OrderListScreen() {
         }
 
         setTotalOrders(total);
+        if (response.statusCounts) {
+          setStatusCounts(response.statusCounts);
+        }
         setCurrentPage(page);
 
         if (!newOrders.length || page >= (response.totalPages || 1)) {
@@ -137,22 +141,13 @@ export default function OrderListScreen() {
     }
   }, [isPaginating, hasMoreData, orders.length, currentPage]);
 
-  const getStatusCounts = () => {
-    return {
-      all: totalOrders,
-      pending: orders.filter(o => o.status === OrderStatus.PENDING).length,
-      completed: orders.filter(o => o.status === OrderStatus.COMPLETED).length,
-      cancelled: orders.filter(o => o.status === OrderStatus.CANCELLED).length,
-    };
-  };
-
-  const statusCounts = getStatusCounts();
+  const allCount = (statusCounts.PENDING ?? 0) + (statusCounts.PREPARING ?? 0) + (statusCounts.COMPLETED ?? 0) + (statusCounts.CANCELLED ?? 0);
 
   const statusFilters = [
-    { key: 'all', label: 'All', count: selectedStatus === 'all' ? totalOrders : statusCounts.all },
-    { key: OrderStatus.PENDING, label: 'Pending', count: statusCounts.pending },
-    { key: OrderStatus.COMPLETED, label: 'Completed', count: statusCounts.completed },
-    { key: OrderStatus.CANCELLED, label: 'Cancelled', count: statusCounts.cancelled ?? 0 },
+    { key: 'all', label: 'All', count: allCount },
+    { key: OrderStatus.PENDING, label: 'Pending', count: statusCounts.PENDING ?? 0 },
+    { key: OrderStatus.COMPLETED, label: 'Completed', count: statusCounts.COMPLETED ?? 0 },
+    { key: OrderStatus.CANCELLED, label: 'Cancelled', count: statusCounts.CANCELLED ?? 0 },
   ];
 
   const dateFilters = [
