@@ -188,7 +188,7 @@ export class ItemController {
 
     // Parse variations from FormData
     let variations: any[] = [];
-    const hasVariations = createItemDto.has_variations === 'true' || createItemDto.has_variations === true;
+    const hasVariations = createItemDto.has_variations === true;
     if (hasVariations) {
       const rawVariations = (createItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
@@ -287,7 +287,7 @@ export class ItemController {
 
     // Parse variations from FormData
     let variations: any[] = [];
-    const hasVariations = updateItemDto.has_variations === 'true' || updateItemDto.has_variations === true;
+    const hasVariations = updateItemDto.has_variations === true;
     if (hasVariations) {
       const rawVariations = (updateItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
