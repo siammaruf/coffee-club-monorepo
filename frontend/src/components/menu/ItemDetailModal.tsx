@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Minus, Plus, ShoppingCart, X } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, hasSalePrice, getEffectivePrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import type { Item } from '@/types/item'
 import toast from 'react-hot-toast'
@@ -44,7 +44,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
 
   if (!isOpen || !item) return null
 
-  const price = item.sale_price ?? item.regular_price ?? 0
+  const price = getEffectivePrice(item.regular_price ?? 0, item.sale_price)
   const totalPrice = price * quantity
   const imgSrc = item.image || '/img/6-600x600.png'
 
@@ -94,7 +94,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
             alt={item.name ?? ''}
             className="h-full w-full object-cover"
           />
-          {item.sale_price && (
+          {hasSalePrice(item.sale_price) && (
             <div className="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">
               Sale
             </div>
@@ -117,7 +117,7 @@ export function ItemDetailModal({ item, isOpen, onClose }: ItemDetailModalProps)
             <span className="font-heading text-2xl tracking-wider text-accent">
               {formatPrice(price)}
             </span>
-            {item.sale_price && (
+            {hasSalePrice(item.sale_price) && (
               <span className="text-base text-text-muted line-through">
                 {formatPrice(item.regular_price)}
               </span>

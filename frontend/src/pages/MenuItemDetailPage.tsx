@@ -4,7 +4,7 @@ import { Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react'
 import { useMenuItem, useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
 import { useCart } from '@/hooks/useCart'
-import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate, hasSalePrice, getEffectivePrice } from '@/lib/utils'
 import { defaultAdvantages } from '@/lib/defaults'
 import { AdvantagesSection } from '@/components/home/AdvantagesSection'
 import toast from 'react-hot-toast'
@@ -131,7 +131,7 @@ export default function MenuItemDetailPage() {
               {/* Price */}
               <div className="mt-4 font-heading text-2xl tracking-wider">
                 {item.has_variations && selectedVariation ? (
-                  selectedVariation.sale_price ? (
+                  hasSalePrice(selectedVariation.sale_price) ? (
                     <span className="flex items-center gap-3">
                       <span className="text-text-muted line-through">
                         {formatPrice(selectedVariation.regular_price)}
@@ -145,7 +145,7 @@ export default function MenuItemDetailPage() {
                   <span className="text-accent">
                     {formatPriceRange(item.regular_price, item.max_price)}
                   </span>
-                ) : item.sale_price ? (
+                ) : hasSalePrice(item.sale_price) ? (
                   <span className="flex items-center gap-3">
                     <span className="text-text-muted line-through">
                       {formatPrice(item.regular_price)}
@@ -190,7 +190,7 @@ export default function MenuItemDetailPage() {
                               isSelected ? 'text-accent' : 'text-text-muted'
                             }`}
                           >
-                            {variation.sale_price ? (
+                            {hasSalePrice(variation.sale_price) ? (
                               <>
                                 <span className="mr-2 text-xs line-through">
                                   {formatPrice(variation.regular_price)}
@@ -354,7 +354,7 @@ export default function MenuItemDetailPage() {
                               <tr key={v.id} className="border-b border-border">
                                 <td className="py-3 text-text-primary">{v.name}</td>
                                 <td className="py-3 text-accent">
-                                  {v.sale_price ? (
+                                  {hasSalePrice(v.sale_price) ? (
                                     <>
                                       <span className="mr-2 text-text-muted line-through">
                                         {formatPrice(v.regular_price)}
@@ -427,7 +427,7 @@ export default function MenuItemDetailPage() {
                       </p>
                       <div className="mt-2.5 font-heading text-lg tracking-wider text-accent">
                         {relItem.has_variations ? (
-                          relItem.sale_price ? (
+                          hasSalePrice(relItem.sale_price) ? (
                             <span className="flex items-center justify-center gap-2">
                               <span className="text-text-muted line-through">
                                 {formatPriceRange(relItem.regular_price, relItem.max_price)}
@@ -437,7 +437,7 @@ export default function MenuItemDetailPage() {
                           ) : (
                             formatPriceRange(relItem.regular_price, relItem.max_price)
                           )
-                        ) : relItem.sale_price ? (
+                        ) : hasSalePrice(relItem.sale_price) ? (
                           <span className="flex items-center justify-center gap-2">
                             <span className="text-text-muted line-through">{formatPrice(relItem.regular_price)}</span>
                             <span>{formatPrice(relItem.sale_price)}</span>

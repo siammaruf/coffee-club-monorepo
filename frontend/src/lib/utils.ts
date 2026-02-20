@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function hasSalePrice(price: number | string | null | undefined): boolean {
+  return price != null && Number(price) > 0
+}
+
+export function getEffectivePrice(regularPrice: number, salePrice: number | string | null | undefined): number {
+  return hasSalePrice(salePrice) ? Number(salePrice) : Number(regularPrice)
+}
+
 export function formatPrice(price: number | null | undefined): string {
   const safePrice = Number(price) || 0
   return `৳${safePrice.toFixed(2)}`

@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router'
 import { ShoppingCart } from 'lucide-react'
 import { useMenuItems } from '@/services/httpServices/queries/useMenu'
 import { useCart } from '@/hooks/useCart'
-import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate, hasSalePrice } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Item } from '@/types/item'
 
@@ -66,7 +66,7 @@ export function HotSalesSection() {
                     </button>
                   </div>
                   {/* Sale Badge */}
-                  {item?.sale_price && (
+                  {hasSalePrice(item?.sale_price) && (
                     <div className="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">
                       Sale
                     </div>
@@ -87,7 +87,7 @@ export function HotSalesSection() {
                   </p>
                   <div className="mt-2 font-heading text-lg tracking-wider text-accent">
                     {item.has_variations ? (
-                      item.sale_price ? (
+                      hasSalePrice(item.sale_price) ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="text-text-muted line-through">
                             {formatPriceRange(item.regular_price, item.max_price)}
@@ -97,7 +97,7 @@ export function HotSalesSection() {
                       ) : (
                         formatPriceRange(item.regular_price, item.max_price)
                       )
-                    ) : item.sale_price ? (
+                    ) : hasSalePrice(item.sale_price) ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="text-text-muted line-through">{formatPrice(item.regular_price)}</span>
                         <span>{formatPrice(item.sale_price)}</span>
