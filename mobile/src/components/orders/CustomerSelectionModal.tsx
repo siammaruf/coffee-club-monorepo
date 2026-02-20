@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, FlatList, TextInput, ActivityIndic
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Customer } from '@/types/customer';
+import { formatPrice } from '@/utils/currency';
 
 interface CustomerSelectionModalProps {
   visible: boolean;
@@ -103,7 +104,7 @@ export default function CustomerSelectionModal({
                         </View>
                         <View className="bg-green-100 px-2 py-1 rounded-full">
                           <Text className="text-xs font-medium text-green-800">
-                            ৳{item.balance} Balance
+                            {formatPrice(item.balance)} Balance
                           </Text>
                         </View>
                       </View>
