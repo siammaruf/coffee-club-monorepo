@@ -164,14 +164,20 @@ export class ReportService {
         };
     }
 
-    async findAll(page: number = 1, limit: number = 10): Promise<{
+    async findAll(
+        page: number = 1,
+        limit: number = 10,
+        dateFilter?: 'today' | 'week' | 'month' | 'custom' | 'all',
+        startDate?: string,
+        endDate?: string,
+    ): Promise<{
         data: DailyReportResponseDto[],
         total: number,
         page: number,
         limit: number,
         totalPages: number
     }> {
-        const cacheKey = `reports:findAll:${page}:${limit}`;
+        const cacheKey = `reports:findAll:${page}:${limit}:${dateFilter || 'all'}:${startDate || ''}:${endDate || ''}`;
         const cached = await this.cacheService.get(cacheKey);
         if (cached) {
             return cached as {
@@ -183,8 +189,39 @@ export class ReportService {
             };
         }
 
+        let whereCondition: any = {};
+
+        if (dateFilter && dateFilter !== 'all') {
+            switch (dateFilter) {
+                case 'today': {
+                    const todayStr = moment.tz('Asia/Dhaka').format('YYYY-MM-DD');
+                    whereCondition = { report_date: todayStr };
+                    break;
+                }
+                case 'week': {
+                    const startStr = moment.tz('Asia/Dhaka').startOf('isoWeek').format('YYYY-MM-DD');
+                    const endStr = moment.tz('Asia/Dhaka').endOf('isoWeek').format('YYYY-MM-DD');
+                    whereCondition = { report_date: Between(startStr, endStr) };
+                    break;
+                }
+                case 'month': {
+                    const startStr = moment.tz('Asia/Dhaka').startOf('month').format('YYYY-MM-DD');
+                    const endStr = moment.tz('Asia/Dhaka').endOf('month').format('YYYY-MM-DD');
+                    whereCondition = { report_date: Between(startStr, endStr) };
+                    break;
+                }
+                case 'custom': {
+                    if (startDate && endDate) {
+                        whereCondition = { report_date: Between(startDate, endDate) };
+                    }
+                    break;
+                }
+            }
+        }
+
         const skip = (page - 1) * limit;
         const [reports, total] = await this.dailyReportRepository.findAndCount({
+            where: whereCondition,
             order: { report_date: 'DESC' },
             skip,
             take: limit
@@ -308,7 +345,7 @@ export class ReportService {
             summary_date: new Date()
         };
         
-        const cacheKey = 'financial-summary';
+        const cacheKey = 'financial-summary:overall';
         await this.cacheService.set(cacheKey, result, 3600);
         return result;
     }
@@ -370,7 +407,7 @@ export class ReportService {
         const cancelledOrders = todaysOrders.filter(order => order.status === 'CANCELLED').length;
         const todaysProfit = todaysTotalSales - todaysExpensesTotal;
         const totalOrdersToday = todaysOrders.length;
-        const averageOrderValue = totalOrdersToday > 0 ? todaysTotalSales / completedOrders : 0;
+        const averageOrderValue = completedOrders > 0 ? todaysTotalSales / completedOrders : 0;
     
         return {
             todays_total_sales: todaysTotalSales,
@@ -409,31 +446,29 @@ export class ReportService {
         let periodLabel: string;
 
         if (filterType === 'custom' && startDate && endDate) {
-            const start = moment(startDate).startOf('day').toDate();
-            const end = moment(endDate).endOf('day').toDate();
             whereCondition = {
-                report_date: Between(start, end)
+                report_date: Between(startDate, endDate)
             };
             periodLabel = `${startDate} to ${endDate}`;
         } else if (filterType === 'year' && filterValue) {
-            const start = moment(filterValue, 'YYYY').startOf('year').toDate();
-            const end = moment(filterValue, 'YYYY').endOf('year').toDate();
+            const startStr = moment(filterValue, 'YYYY').startOf('year').format('YYYY-MM-DD');
+            const endStr = moment(filterValue, 'YYYY').endOf('year').format('YYYY-MM-DD');
             whereCondition = {
-                report_date: Between(start, end)
+                report_date: Between(startStr, endStr)
             };
             periodLabel = filterValue;
         } else if (filterType === 'month' && filterValue) {
-            const start = moment(filterValue, 'YYYY-MM').startOf('month').toDate();
-            const end = moment(filterValue, 'YYYY-MM').endOf('month').toDate();
+            const startStr = moment(filterValue, 'YYYY-MM').startOf('month').format('YYYY-MM-DD');
+            const endStr = moment(filterValue, 'YYYY-MM').endOf('month').format('YYYY-MM-DD');
             whereCondition = {
-                report_date: Between(start, end)
+                report_date: Between(startStr, endStr)
             };
             periodLabel = filterValue;
         } else {
-            const start = moment().startOf('month').toDate();
-            const end = moment().endOf('month').toDate();
+            const startStr = moment().startOf('month').format('YYYY-MM-DD');
+            const endStr = moment().endOf('month').format('YYYY-MM-DD');
             whereCondition = {
-                report_date: Between(start, end)
+                report_date: Between(startStr, endStr)
             };
             periodLabel = moment().format('YYYY-MM');
         }
@@ -451,15 +486,21 @@ export class ReportService {
         const averageDailySales = totalDays > 0 ? totalSales / totalDays : 0;
         const averageDailyOrders = totalDays > 0 ? totalOrders / totalDays : 0;
 
-        const bestSalesDay = reports.reduce((best, current) => 
-            Number(current.total_sales) > Number(best.total_sales) ? current : best, 
-            reports[0] || { total_sales: 0, report_date: new Date() }
-        );
+        const safeDefault = { total_sales: 0, report_date: new Date() };
 
-        const worstSalesDay = reports.reduce((worst, current) => 
-            Number(current.total_sales) < Number(worst.total_sales) ? current : worst, 
-            reports[0] || { total_sales: 0, report_date: new Date() }
-        );
+        const bestSalesDay = reports.length > 0
+            ? reports.reduce((best, current) =>
+                Number(current.total_sales) > Number(best.total_sales) ? current : best,
+                reports[0]
+            )
+            : safeDefault;
+
+        const worstSalesDay = reports.length > 0
+            ? reports.reduce((worst, current) =>
+                Number(current.total_sales) < Number(worst.total_sales) ? current : worst,
+                reports[0]
+            )
+            : safeDefault;
 
         let increasingDays = 0;
         let decreasingDays = 0;
@@ -536,41 +577,34 @@ export class ReportService {
         if (filterType === 'month' && filterValue) {
             const month = parseInt(filterValue);
             const currentYear = new Date().getFullYear();
+            const startStr = moment().year(currentYear).month(month - 1).startOf('month').format('YYYY-MM-DD');
+            const endStr = moment().year(currentYear).month(month - 1).endOf('month').format('YYYY-MM-DD');
             whereCondition = {
-                report_date: Between(
-                new Date(currentYear, month - 1, 1),
-                new Date(currentYear, month, 0, 23, 59, 59)
-                )
+                report_date: Between(startStr, endStr)
             };
         } else if (filterType === 'year' && filterValue) {
             const year = parseInt(filterValue);
             whereCondition = {
-                report_date: Between(
-                new Date(year, 0, 1),
-                new Date(year, 11, 31, 23, 59, 59)
-                )
+                report_date: Between(`${year}-01-01`, `${year}-12-31`)
             };
         } else if (filterType === 'custom' && startDate && endDate) {
             whereCondition = {
-                report_date: Between(
-                new Date(startDate + ' 00:00:00'),
-                new Date(endDate + ' 23:59:59')
-                )
+                report_date: Between(startDate, endDate)
             };
         }
 
         switch (period) {
         case 'daily':
-            groupByFormat = 'DATE(report.report_date)';
-            orderByField = 'DATE(report.report_date)';
+            groupByFormat = 'report.report_date::text';
+            orderByField = 'report.report_date::text';
             break;
         case 'monthly':
-            groupByFormat = 'DATE_FORMAT(report.report_date, "%Y-%m")';
-            orderByField = 'DATE_FORMAT(report.report_date, "%Y-%m")';
+            groupByFormat = "TO_CHAR(report.report_date, 'YYYY-MM')";
+            orderByField = "TO_CHAR(report.report_date, 'YYYY-MM')";
             break;
         case 'yearly':
-            groupByFormat = 'YEAR(report.report_date)';
-            orderByField = 'YEAR(report.report_date)';
+            groupByFormat = "TO_CHAR(report.report_date, 'YYYY')";
+            orderByField = "TO_CHAR(report.report_date, 'YYYY')";
             break;
         }
 

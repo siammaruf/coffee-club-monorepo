@@ -142,15 +142,21 @@ export class SalesReportController {
     @ApiOperation({ summary: 'Get all daily sales reports with pagination' })
     @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
     @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
+    @ApiQuery({ name: 'dateFilter', required: false, enum: ['today', 'week', 'month', 'custom', 'all'], description: 'Date filter option' })
+    @ApiQuery({ name: 'startDate', required: false, description: 'Start date for custom filter (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'endDate', required: false, description: 'End date for custom filter (YYYY-MM-DD)' })
     @ApiResponse({ status: 200, description: 'Daily sales reports retrieved successfully' })
     async findAll(
         @Query('page') page?: string,
-        @Query('limit') limit?: string
+        @Query('limit') limit?: string,
+        @Query('dateFilter') dateFilter?: 'today' | 'week' | 'month' | 'custom' | 'all',
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
     ) {
         const pageNumber = page ? parseInt(page) : 1;
         const limitNumber = limit ? parseInt(limit) : 10;
-        
-        const response = await this.reportService.findAll(pageNumber, limitNumber);
+
+        const response = await this.reportService.findAll(pageNumber, limitNumber, dateFilter, startDate, endDate);
         return {
             data: response.data,
             total: response.total,
@@ -439,11 +445,18 @@ export class SalesReportController {
     @Get('charts/expenses')
     @ApiOperation({ summary: 'Get expenses data for charts' })
     @ApiQuery({
+        name: 'chartType',
+        required: false,
+        enum: ['line', 'bar', 'pie', 'donut'],
+        description: 'Chart type for visualization',
+        example: 'bar'
+    })
+    @ApiQuery({
         name: 'period',
         required: false,
-        enum: ['daily', 'monthly', 'yearly'],
-        description: 'Time period for expenses data (daily, monthly, yearly)',
-        example: 'monthly'
+        enum: ['day', 'month', 'year'],
+        description: 'Time period for expenses data grouping',
+        example: 'month'
     })
     @ApiQuery({
         name: 'filterType',
@@ -454,7 +467,7 @@ export class SalesReportController {
     @ApiQuery({
         name: 'filterValue',
         required: false,
-        description: 'Value for month (1-12) or year (YYYY) filter'
+        description: 'Filter value: YYYY-MM for month, YYYY for year'
     })
     @ApiQuery({
         name: 'startDate',
@@ -465,11 +478,6 @@ export class SalesReportController {
         name: 'endDate',
         required: false,
         description: 'End date for custom range (YYYY-MM-DD)'
-    })
-    @ApiQuery({
-        name: 'categoryId',
-        required: false,
-        description: 'Filter by specific expense category ID'
     })
     @ApiResponse({
         status: 200,
@@ -521,21 +529,21 @@ export class SalesReportController {
         }
     })
     async getExpensesChart(
-        @Query('period') period: 'daily' | 'monthly' | 'yearly' = 'monthly',
+        @Query('chartType') chartType: 'line' | 'bar' | 'pie' | 'donut' = 'bar',
+        @Query('period') period: 'day' | 'month' | 'year' = 'month',
         @Query('filterType') filterType?: 'month' | 'year' | 'custom',
         @Query('filterValue') filterValue?: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
-        @Query('categoryId') categoryId?: string,
     ) {
         try {
             const data = await this.reportService.getExpensesForCharts(
-                period as 'line' | 'bar' | 'pie' | 'donut',
-                filterType as 'month' | 'year' | 'day',
-                filterValue as 'month' | 'year' | 'custom' | undefined,
+                chartType,
+                period,
+                filterType,
+                filterValue,
                 startDate,
                 endDate,
-                categoryId
             );
             
             return {

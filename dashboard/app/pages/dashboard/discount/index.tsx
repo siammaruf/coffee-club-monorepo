@@ -2,18 +2,13 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Percent, RotateCcw, AlertTriangle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+import { Plus, Search, Edit, Trash2, Percent, RotateCcw, AlertTriangle } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
 import AddDiscountModal from "~/components/modals/AddDiscountModal";
+import EditDiscountModal from "~/components/modals/EditDiscountModal";
 import AddDiscountApplicationModal from "~/components/modals/AddDiscountApplicationModal";
 import { discountService } from "~/services/httpServices/discountService";
 import { discountApplicationService } from "~/services/httpServices/discountApplicationService";
@@ -39,6 +34,8 @@ export default function DiscountsPage() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const [discountToDelete, setDiscountToDelete] = useState<Discount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
   const [discountApplications, setDiscountApplications] = useState<DiscountApplication[]>([]);
 
   const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
@@ -113,8 +110,20 @@ export default function DiscountsPage() {
     setNewDiscount({ name: "", discount_type: "", discount_value: 0, description: "", expiry_date: "" });
   };
 
-  const handleEdit = (id: string) => {
-    console.log("Edit discount:", id);
+  const handleEdit = (discount: Discount) => {
+    setSelectedDiscount(discount);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateDiscount = async (id: string, data: Omit<Discount, "id">) => {
+    try {
+      await discountService.update(id, data as any);
+      setShowEditModal(false);
+      setSelectedDiscount(null);
+      fetchDiscounts();
+    } catch (error) {
+      // Optionally handle error
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -381,26 +390,26 @@ export default function DiscountsPage() {
                           </div>
                           <div className="flex justify-end">
                             {viewMode === 'active' ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEdit(discount.id)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(discount.id)}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 cursor-pointer"
+                                  title="Edit"
+                                  onClick={() => handleEdit(discount)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 cursor-pointer text-red-600 hover:text-red-700"
+                                  title="Delete"
+                                  onClick={() => handleDelete(discount.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             ) : (
                               <div className="flex items-center gap-1">
                                 <Button
@@ -473,6 +482,13 @@ export default function DiscountsPage() {
         isOpen={showAddApplicationModal}
         onClose={() => setShowAddApplicationModal(false)}
         onAdd={handleAddDiscountApplication}
+      />
+
+      <EditDiscountModal
+        isOpen={showEditModal}
+        onClose={() => { setShowEditModal(false); setSelectedDiscount(null); }}
+        onUpdate={handleUpdateDiscount}
+        discount={selectedDiscount}
       />
 
       <ConfirmDialog

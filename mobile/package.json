@@ -52,6 +52,7 @@
   "devDependencies": {
     "@types/axios": "0.14.4",
     "@types/react": "~19.2.14",
+    "baseline-browser-mapping": "^2.10.0",
     "eslint": "^10.0.0",
     "eslint-config-expo": "56.0.0-canary-20260212-4f61309",
     "prettier": "^3.8.1",

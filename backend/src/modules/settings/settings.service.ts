@@ -48,7 +48,7 @@ export class SettingsService implements OnModuleInit {
       },
       {
         key: 'minimum_redeem_amount',
-        value: '150',
+        value: '100',
         description: 'Minimum taka amount required for redemption',
       },
     ];
