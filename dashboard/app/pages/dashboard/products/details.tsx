@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate } from "react-router";
+import { useBackToList } from "~/hooks/useBackToList";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
@@ -21,6 +22,7 @@ import type { Product } from "~/types/product";
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/products');
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
@@ -61,7 +63,7 @@ export default function ProductDetails() {
   const handleDeleteConfirm = async () => {
     try {
       await productService.delete(id!);
-      navigate('/dashboard/products');
+      goBack();
     } catch (error) {
       setErrorDialog({
         open: true,
@@ -122,7 +124,7 @@ export default function ProductDetails() {
           cancelText=""
           onConfirm={() => {
             setErrorDialog({ open: false, message: "" });
-            navigate('/dashboard/products');
+            goBack();
           }}
           onCancel={() => setErrorDialog({ open: false, message: "" })}
         />
@@ -138,7 +140,7 @@ export default function ProductDetails() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/dashboard/products')}
+            onClick={goBack}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -150,12 +152,10 @@ export default function ProductDetails() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Link to={`/dashboard/products/edit/${product.id}`}>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Edit className="w-4 h-4" />
-              Edit
-            </Button>
-          </Link>
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => navigateWithPage(`/dashboard/products/edit/${product.id}`)}>
+            <Edit className="w-4 h-4" />
+            Edit
+          </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}

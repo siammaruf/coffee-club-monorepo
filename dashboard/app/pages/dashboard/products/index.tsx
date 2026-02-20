@@ -563,13 +563,13 @@ export default function ProductsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
-                                  onClick={() => navigate(`/dashboard/products/${product.id}`)}
+                                  onClick={() => navigate(`/dashboard/products/${product.id}`, { state: { fromPage: currentPage } })}
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => navigate(`/dashboard/products/edit/${product.id}`)}
+                                  onClick={() => navigate(`/dashboard/products/edit/${product.id}`, { state: { fromPage: currentPage } })}
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit
