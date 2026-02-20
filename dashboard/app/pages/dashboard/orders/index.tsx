@@ -535,7 +535,7 @@ export default function OrdersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => navigate(`/dashboard/orders/${order.id}`)}
+                                onClick={() => navigate(`/dashboard/orders/${order.id}`, { state: { fromPage: currentPage } })}
                               >
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Order

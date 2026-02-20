@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useBackToList } from "~/hooks/useBackToList";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -43,6 +44,7 @@ import type { ApiOrder } from "~/types/order";
 export default function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/orders');
   const [order, setOrder] = useState<ApiOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function OrderDetailsPage() {
 
     try {
       await orderService.delete(deleteId);
-      navigate('/dashboard/orders');
+      goBack();
     } catch (error) {
       console.error('Error deleting order:', error);
       setError('Failed to delete order. Please try again.');
@@ -163,7 +165,7 @@ export default function OrderDetailsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/dashboard/orders')}
+            onClick={goBack}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -177,7 +179,7 @@ export default function OrderDetailsPage() {
             <p className="text-gray-500 mb-6">
               {error || "The order you're looking for doesn't exist or has been removed."}
             </p>
-            <Button onClick={() => navigate('/dashboard/orders')}>
+            <Button onClick={goBack}>
               Return to Orders
             </Button>
           </CardContent>
@@ -199,7 +201,7 @@ export default function OrderDetailsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/dashboard/orders')}
+            onClick={goBack}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -218,7 +220,7 @@ export default function OrderDetailsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/dashboard/orders/edit/${order.id}`)}
+              onClick={() => navigateWithPage(`/dashboard/orders/edit/${order.id}`)}
               className="flex items-center gap-2"
             >
               <Edit className="w-4 h-4" />
