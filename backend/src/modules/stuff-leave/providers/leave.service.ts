@@ -176,6 +176,7 @@ export class LeaveService {
         }
 
         query.orderBy('leave.deleted_at', 'DESC')
+            .addOrderBy('leave.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

@@ -332,7 +332,7 @@ export class UserService {
         }
 
         const queryOptions = {
-          order: { created_at: 'DESC' as const },
+          order: { created_at: 'DESC' as const, id: 'ASC' as const },
           skip: skip,
           take: limit
         };
@@ -459,6 +459,7 @@ export class UserService {
         }
 
         query.orderBy('user.deleted_at', 'DESC')
+            .addOrderBy('user.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

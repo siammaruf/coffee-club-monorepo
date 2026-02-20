@@ -46,7 +46,7 @@ export class KitchenItemService {
       where: whereCondition,
       skip,
       take: limit,
-      order: { created_at: 'DESC' }
+      order: { created_at: 'DESC', id: 'ASC' as const }
     });
     
     const data = kitchens.map(kitchen => new KitchenResponseDto(kitchen));
@@ -171,6 +171,7 @@ export class KitchenItemService {
         }
 
         query.orderBy('kitchenItem.deleted_at', 'DESC')
+            .addOrderBy('kitchenItem.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

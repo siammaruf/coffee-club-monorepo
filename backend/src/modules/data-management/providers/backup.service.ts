@@ -666,7 +666,7 @@ export class BackupService {
     totalPages: number;
   }> {
     const [items, total] = await this.historyRepo.findAndCount({
-      order: { created_at: 'DESC' },
+      order: { created_at: 'DESC', id: 'ASC' as const },
       skip: (page - 1) * limit,
       take: limit,
       relations: ['created_by'],

@@ -41,6 +41,7 @@ export class PartnersService {
 
     query.orderBy('partner.sort_order', 'ASC')
       .addOrderBy('partner.created_at', 'DESC')
+      .addOrderBy('partner.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -97,6 +98,7 @@ export class PartnersService {
         }
 
         query.orderBy('partner.deleted_at', 'DESC')
+            .addOrderBy('partner.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

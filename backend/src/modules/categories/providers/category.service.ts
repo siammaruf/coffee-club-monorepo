@@ -44,6 +44,7 @@ export class CategoryService {
         }
 
         query.orderBy('category.name', 'ASC');
+        query.addOrderBy('category.id', 'ASC');
         query.skip((page - 1) * limit).take(limit);
         const [data, total] = await query.getManyAndCount();
         const result = { data, total };
@@ -109,6 +110,7 @@ export class CategoryService {
         }
 
         query.orderBy('category.deleted_at', 'DESC')
+            .addOrderBy('category.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

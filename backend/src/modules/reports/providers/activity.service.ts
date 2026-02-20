@@ -41,7 +41,8 @@ export class ActivityService {
       .createQueryBuilder('activity')
       .leftJoinAndSelect('activity.user', 'user')
       .leftJoinAndSelect('activity.customer', 'customer')
-      .orderBy('activity.created_at', 'DESC');
+      .orderBy('activity.created_at', 'DESC')
+      .addOrderBy('activity.id', 'ASC');
 
     if (activityType) {
       queryBuilder.andWhere('activity.activity_type = :activityType', { activityType });
