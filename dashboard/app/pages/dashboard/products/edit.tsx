@@ -96,8 +96,8 @@ export default function EditProduct() {
           Array.isArray(product.variations)
             ? product.variations.map((v: any, idx: number) => ({
                 ...v,
-                regular_price: parseFloat(v.regular_price),
-                sale_price: parseFloat(v.sale_price),
+                regular_price: parseFloat(v.regular_price) || 0,
+                sale_price: parseFloat(v.sale_price) || 0,
                 sort_order: v.sort_order || idx + 1,
               }))
             : []
@@ -509,7 +509,7 @@ export default function EditProduct() {
                     type="number"
                     step="0.01"
                     min="0"
-                    {...register("regular_price", { required: "Price is required", min: { value: 0, message: "Price cannot be negative" } })}
+                    {...register("regular_price", { valueAsNumber: true, required: "Price is required", min: { value: 0, message: "Price cannot be negative" } })}
                     placeholder="0.00"
                     className="mt-1"
                   />
@@ -524,7 +524,7 @@ export default function EditProduct() {
                     type="number"
                     step="0.01"
                     min="0"
-                    {...register("sale_price", { min: { value: 0, message: "Price cannot be negative" } })}
+                    {...register("sale_price", { valueAsNumber: true, min: { value: 0, message: "Price cannot be negative" } })}
                     placeholder="0.00"
                     className="mt-1"
                   />

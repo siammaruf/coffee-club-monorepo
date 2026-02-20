@@ -457,9 +457,10 @@ export default function CreateProduct() {
                         min="0"
                         className={`pl-7 ${errors.regular_price ? "border-red-500" : ""}`}
                         placeholder="0.00"
-                        {...register("regular_price", { 
+                        {...register("regular_price", {
+                          valueAsNumber: true,
                           required: "Price is required",
-                          min: { value: 0, message: "Price cannot be negative" } 
+                          min: { value: 0, message: "Price cannot be negative" }
                         })}
                       />
                     </div>
@@ -482,8 +483,9 @@ export default function CreateProduct() {
                         min="0"
                         className="pl-7"
                         placeholder="0.00"
-                        {...register("sale_price", { 
-                          min: { value: 0, message: "Price cannot be negative" } 
+                        {...register("sale_price", {
+                          valueAsNumber: true,
+                          min: { value: 0, message: "Price cannot be negative" }
                         })}
                       />
                     </div>
