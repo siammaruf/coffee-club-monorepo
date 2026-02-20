@@ -193,6 +193,7 @@ export class ItemController {
       const rawVariations = (createItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
         variations = rawVariations.map((v: any, idx: number) => ({
+          id: v.id || undefined,
           name: v.name || '',
           name_bn: v.name_bn || '',
           regular_price: Number(v.regular_price) || 0,
@@ -205,6 +206,7 @@ export class ItemController {
           const parsed = JSON.parse(rawVariations);
           if (Array.isArray(parsed)) {
             variations = parsed.map((v: any, idx: number) => ({
+              id: v.id || undefined,
               name: v.name || '',
               name_bn: v.name_bn || '',
               regular_price: Number(v.regular_price) || 0,
@@ -292,6 +294,7 @@ export class ItemController {
       const rawVariations = (updateItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
         variations = rawVariations.map((v: any, idx: number) => ({
+          id: v.id || undefined,
           name: v.name || '',
           name_bn: v.name_bn || '',
           regular_price: Number(v.regular_price) || 0,
@@ -304,6 +307,7 @@ export class ItemController {
           const parsed = JSON.parse(rawVariations);
           if (Array.isArray(parsed)) {
             variations = parsed.map((v: any, idx: number) => ({
+              id: v.id || undefined,
               name: v.name || '',
               name_bn: v.name_bn || '',
               regular_price: Number(v.regular_price) || 0,
