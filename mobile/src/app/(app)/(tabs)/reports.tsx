@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, FlatList, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TitleBar from '@/components/common/TitleBar';
@@ -32,12 +31,6 @@ export default function ReportListScreen() {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('start');
     const router = useRouter();
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchSalesReports(1, true);
-        }, [])
-    );
 
     useEffect(() => {
         fetchSalesReports(1, true);
@@ -83,18 +76,16 @@ export default function ReportListScreen() {
         setIsPaginating(false);
     };
 
-    const handleRefresh = useCallback(() => {
+    const handleRefresh = () => {
         setRefreshing(true);
         fetchSalesReports(1, true);
-    }, []);
+    };
 
-    const handleLoadMore = useCallback(() => {
+    const handleLoadMore = () => {
         if (!loading && !isPaginating && hasMore) {
-            const nextPage = page + 1;
-            setPage(nextPage);
-            fetchSalesReports(nextPage);
+            fetchSalesReports(page + 1);
         }
-    }, [loading, isPaginating, hasMore, page]);
+    };
 
     const handleGenerate = async () => {
         setGenerating(true);
@@ -175,7 +166,11 @@ export default function ReportListScreen() {
                                 : dateFilter === 'month'
                                 ? 'This Month'
                                 : dateFilter === 'custom'
-                                ? (startDate ? startDate : 'Pick a date')
+                                ? (startDate && endDate
+                                    ? `${startDate} - ${endDate}`
+                                    : startDate
+                                    ? `${startDate} - ...`
+                                    : 'Pick a date')
                                 : ''}
                         </Text>
                         <Ionicons name="chevron-down" size={16} color="#6B7280" />
@@ -236,6 +231,7 @@ export default function ReportListScreen() {
                         setStartDate(undefined);
                         setEndDate(undefined);
                     } else {
+                        setDatePickerMode('start');
                         setTimeout(() => setShowDatePicker(true), 400);
                     }
                 }}
@@ -243,15 +239,29 @@ export default function ReportListScreen() {
             />
             {showDatePicker && (
                 <DateTimePicker
-                    value={startDate ? new Date(startDate) : new Date()}
+                    value={
+                        datePickerMode === 'start'
+                            ? (startDate ? new Date(startDate) : new Date())
+                            : (endDate ? new Date(endDate) : (startDate ? new Date(startDate) : new Date()))
+                    }
                     mode="date"
                     display="default"
                     onChange={(event, selectedDate) => {
                         setShowDatePicker(false);
                         if (selectedDate) {
                             const isoDate = selectedDate.toISOString().slice(0, 10);
-                            setStartDate(isoDate);
-                            setEndDate(isoDate);
+                            if (datePickerMode === 'start') {
+                                setStartDate(isoDate);
+                                setEndDate(undefined);
+                                setDatePickerMode('end');
+                                setTimeout(() => setShowDatePicker(true), 400);
+                            } else {
+                                if (startDate && isoDate < startDate) {
+                                    setEndDate(startDate);
+                                } else {
+                                    setEndDate(isoDate);
+                                }
+                            }
                         }
                     }}
                 />

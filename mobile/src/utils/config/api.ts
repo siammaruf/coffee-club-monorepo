@@ -1,7 +1,7 @@
 import { getEnvNumber, getEnvVar } from "../env";
 
 export const API_CONFIG = {
-    BASE_URL: getEnvVar('API_BASE_URL', 'https://api.coffee2eat.com/api/v1/'),
+    BASE_URL: getEnvVar('API_BASE_URL', 'https://api.coffee2eat.com/api/v1'),
     TIMEOUT: getEnvNumber('API_TIMEOUT', 10000),
     RETRY_ATTEMPTS: getEnvNumber('API_RETRY_ATTEMPTS', 3),
     RETRY_DELAY: getEnvNumber('API_RETRY_DELAY', 1000),
