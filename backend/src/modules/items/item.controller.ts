@@ -188,7 +188,8 @@ export class ItemController {
 
     // Parse variations from FormData
     let variations: any[] = [];
-    if (createItemDto.has_variations) {
+    const hasVariations = createItemDto.has_variations === 'true' || createItemDto.has_variations === true;
+    if (hasVariations) {
       const rawVariations = (createItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
         variations = rawVariations.map((v: any, idx: number) => ({
@@ -220,7 +221,7 @@ export class ItemController {
       ...createItemDto,
       regular_price: Number(createItemDto.regular_price) || 0,
       sale_price: Number(createItemDto.sale_price) || 0,
-      has_variations: !!createItemDto.has_variations,
+      has_variations: hasVariations,
       variations,
       categories: categories.map((cat) => ({ id: cat })),
     };
@@ -286,7 +287,8 @@ export class ItemController {
 
     // Parse variations from FormData
     let variations: any[] = [];
-    if (updateItemDto.has_variations) {
+    const hasVariations = updateItemDto.has_variations === 'true' || updateItemDto.has_variations === true;
+    if (hasVariations) {
       const rawVariations = (updateItemDto as any).variations;
       if (Array.isArray(rawVariations)) {
         variations = rawVariations.map((v: any, idx: number) => ({
@@ -318,7 +320,7 @@ export class ItemController {
       ...updateItemDto,
       regular_price: Number(updateItemDto.regular_price) || 0,
       sale_price: Number(updateItemDto.sale_price) || 0,
-      has_variations: !!updateItemDto.has_variations,
+      has_variations: hasVariations,
       variations,
       categories: categories.map((cat) => ({ id: cat })),
     };
