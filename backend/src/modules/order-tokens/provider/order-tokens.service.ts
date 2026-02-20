@@ -72,6 +72,8 @@ export class OrderTokensService {
     }
 
     const [orderTokens, total] = await queryBuilder
+      .orderBy('orderToken.created_at', 'DESC')
+      .addOrderBy('orderToken.id', 'ASC')
       .skip(skip)
       .take(limitNumber)
       .getManyAndCount();
@@ -176,6 +178,7 @@ export class OrderTokensService {
         }
 
         query.orderBy('orderToken.deleted_at', 'DESC')
+            .addOrderBy('orderToken.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

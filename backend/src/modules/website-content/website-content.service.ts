@@ -67,6 +67,7 @@ export class WebsiteContentService implements OnModuleInit {
 
     query.orderBy('slide.sort_order', 'ASC')
       .addOrderBy('slide.created_at', 'DESC')
+      .addOrderBy('slide.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -141,6 +142,7 @@ export class WebsiteContentService implements OnModuleInit {
 
     query.orderBy('advantage.sort_order', 'ASC')
       .addOrderBy('advantage.created_at', 'DESC')
+      .addOrderBy('advantage.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -210,6 +212,7 @@ export class WebsiteContentService implements OnModuleInit {
 
     query.orderBy('testimonial.sort_order', 'ASC')
       .addOrderBy('testimonial.created_at', 'DESC')
+      .addOrderBy('testimonial.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 

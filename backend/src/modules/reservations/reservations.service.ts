@@ -59,6 +59,7 @@ export class ReservationsService {
 
     query.orderBy('reservation.date', 'ASC')
       .addOrderBy('reservation.time', 'ASC')
+      .addOrderBy('reservation.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -120,6 +121,7 @@ export class ReservationsService {
       .where('reservation.customer_id = :customerId', { customerId })
       .orderBy('reservation.date', 'DESC')
       .addOrderBy('reservation.time', 'DESC')
+      .addOrderBy('reservation.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -142,6 +144,7 @@ export class ReservationsService {
         }
 
         query.orderBy('reservation.deleted_at', 'DESC')
+            .addOrderBy('reservation.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

@@ -362,6 +362,7 @@ export class OrderService {
 
     const [data, total] = await queryBuilder
       .orderBy('order.created_at', 'DESC')
+      .addOrderBy('order.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
@@ -598,6 +599,7 @@ export class OrderService {
         }
 
         query.orderBy('order.deleted_at', 'DESC')
+            .addOrderBy('order.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

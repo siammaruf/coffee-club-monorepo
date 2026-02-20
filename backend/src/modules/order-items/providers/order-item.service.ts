@@ -133,6 +133,7 @@ export class OrderItemService {
             .where('orderItem.deleted_at IS NOT NULL');
 
         query.orderBy('orderItem.deleted_at', 'DESC')
+            .addOrderBy('orderItem.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

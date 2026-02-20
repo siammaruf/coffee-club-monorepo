@@ -66,7 +66,9 @@ export class DiscountService {
             query.where('LOWER(discount.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
 
-        query.skip((page - 1) * limit).take(limit);
+        query.orderBy('discount.created_at', 'DESC')
+            .addOrderBy('discount.id', 'ASC')
+            .skip((page - 1) * limit).take(limit);
         const [discounts, total] = await query.getManyAndCount();
         const result = { discounts, total };
         
@@ -175,6 +177,7 @@ export class DiscountService {
         }
 
         query.orderBy('discount.deleted_at', 'DESC')
+            .addOrderBy('discount.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

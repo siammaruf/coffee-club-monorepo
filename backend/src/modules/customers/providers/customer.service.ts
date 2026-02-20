@@ -90,7 +90,10 @@ export class CustomerService {
       }
     }
 
-    query.skip((page - 1) * limit).take(limit);
+    query.orderBy('customer.created_at', 'DESC')
+      .addOrderBy('customer.id', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
     const [data, total] = await query.getManyAndCount();
     const result = {
       data: data.map(customer => new CustomerResponseDto(customer)),
@@ -483,6 +486,7 @@ export class CustomerService {
         }
 
         query.orderBy('customer.deleted_at', 'DESC')
+            .addOrderBy('customer.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

@@ -48,6 +48,7 @@ export class BlogService {
     }
 
     query.orderBy('post.created_at', 'DESC')
+      .addOrderBy('post.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -113,6 +114,7 @@ export class BlogService {
     }
 
     query.orderBy('post.published_at', 'DESC')
+      .addOrderBy('post.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -172,6 +174,7 @@ export class BlogService {
         }
 
         query.orderBy('post.deleted_at', 'DESC')
+            .addOrderBy('post.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

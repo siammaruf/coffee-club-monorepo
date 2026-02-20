@@ -73,6 +73,7 @@ export class TableService {
 
     queryBuilder
       .orderBy('table.number', 'ASC')
+      .addOrderBy('table.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
     
@@ -238,6 +239,7 @@ export class TableService {
         }
 
         query.orderBy('table.deleted_at', 'DESC')
+            .addOrderBy('table.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

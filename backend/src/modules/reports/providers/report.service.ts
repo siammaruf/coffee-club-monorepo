@@ -222,7 +222,7 @@ export class ReportService {
         const skip = (page - 1) * limit;
         const [reports, total] = await this.dailyReportRepository.findAndCount({
             where: whereCondition,
-            order: { report_date: 'DESC' },
+            order: { report_date: 'DESC', id: 'ASC' as const },
             skip,
             take: limit
         });

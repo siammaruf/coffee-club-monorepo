@@ -66,6 +66,7 @@ export class ItemService {
     query.leftJoinAndSelect('item.categories', 'categorySelect')
       .leftJoinAndSelect('item.variations', 'variation')
       .orderBy('item.created_at', 'DESC')
+      .addOrderBy('item.id', 'ASC')
       .addOrderBy('variation.sort_order', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -298,6 +299,7 @@ export class ItemService {
     }
 
     query.orderBy('item.deleted_at', 'DESC')
+      .addOrderBy('item.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 

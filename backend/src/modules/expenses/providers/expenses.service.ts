@@ -128,6 +128,7 @@ export class ExpensesService {
         
         queryBuilder
             .orderBy('expense.created_at', 'DESC')
+            .addOrderBy('expense.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
         
@@ -405,6 +406,7 @@ export class ExpensesService {
         }
 
         query.orderBy('expense.deleted_at', 'DESC')
+            .addOrderBy('expense.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

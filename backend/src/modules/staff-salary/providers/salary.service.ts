@@ -195,7 +195,8 @@ export class SalaryService {
         const limit = options?.limit || 10;
         query.skip((page - 1) * limit).take(limit);
 
-        query.orderBy('salary.month', 'DESC');
+        query.orderBy('salary.month', 'DESC')
+            .addOrderBy('salary.id', 'ASC');
 
         const [data, total] = await query.getManyAndCount();
         const totalPages = Math.ceil(total / limit);
@@ -325,6 +326,7 @@ export class SalaryService {
             .where('salary.deleted_at IS NOT NULL');
 
         query.orderBy('salary.deleted_at', 'DESC')
+            .addOrderBy('salary.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

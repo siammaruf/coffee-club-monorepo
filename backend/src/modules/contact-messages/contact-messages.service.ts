@@ -45,6 +45,7 @@ export class ContactMessagesService {
     }
 
     query.orderBy('msg.created_at', 'DESC')
+      .addOrderBy('msg.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -94,6 +95,7 @@ export class ContactMessagesService {
         }
 
         query.orderBy('contactMessage.deleted_at', 'DESC')
+            .addOrderBy('contactMessage.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

@@ -38,7 +38,7 @@ export function Pagination({
       }
       return pageNumbers;
     }
-    
+
     pageNumbers.push(1);
 
     let startPage = Math.max(2, currentPage - 2);
@@ -68,88 +68,88 @@ export function Pagination({
     if (totalPages > 1) {
       pageNumbers.push(totalPages);
     }
-    
+
     return pageNumbers;
   };
 
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between mt-4">
+    <div className="flex items-center justify-between mt-3">
       {showItemCount && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           Showing {indexOfFirstItem} to {indexOfLastItem} of {totalItems} items
         </div>
       )}
-      <div className="flex items-center space-x-1 ml-auto">
+      <div className="flex items-center space-x-0.5 ml-auto">
         {/* First page button */}
         {totalPages > 7 && (
           <Button
             variant="outline"
             size="sm"
-            className="w-8 h-8 p-0 cursor-pointer"
+            className="w-7 h-7 p-0 cursor-pointer text-xs"
             onClick={handleFirstPage}
             disabled={currentPage === 1}
             title="First Page"
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <ChevronsLeft className="h-3.5 w-3.5" />
           </Button>
         )}
-        
+
         {/* Previous page button */}
         <Button
           variant="outline"
           size="sm"
-          className="w-8 h-8 p-0 cursor-pointer"
+          className="w-7 h-7 p-0 cursor-pointer text-xs"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           title="Previous Page"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-3.5 w-3.5" />
         </Button>
-        
+
         {/* Numbered pagination */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-0.5">
           {getPageNumbers().map((page, index) => (
             typeof page === 'number' ? (
               <Button
                 key={index}
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
-                className="w-8 h-8 p-0 cursor-pointer"
+                className="w-7 h-7 p-0 cursor-pointer text-xs"
                 onClick={() => onPageChange(page)}
               >
                 {page}
               </Button>
             ) : (
-              <span key={index} className="px-1 text-muted-foreground">...</span>
+              <span key={index} className="px-0.5 text-xs text-muted-foreground">...</span>
             )
           ))}
         </div>
-        
+
         {/* Next page button */}
         <Button
           variant="outline"
           size="sm"
-          className="w-8 h-8 p-0 cursor-pointer"
+          className="w-7 h-7 p-0 cursor-pointer text-xs"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           title="Next Page"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3.5 w-3.5" />
         </Button>
-        
+
         {/* Last page button */}
         {totalPages > 7 && (
           <Button
             variant="outline"
             size="sm"
-            className="w-8 h-8 p-0 cursor-pointer"
+            className="w-7 h-7 p-0 cursor-pointer text-xs"
             onClick={handleLastPage}
             disabled={currentPage === totalPages}
             title="Last Page"
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
