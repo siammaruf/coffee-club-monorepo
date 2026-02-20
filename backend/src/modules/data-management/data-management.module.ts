@@ -33,6 +33,9 @@ import { DiscountApplication } from '../discount-application/entities/discount-a
 // --- Cache ---
 import { CacheModule } from '../cache/cache.module';
 
+// --- Cloudinary ---
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+
 // --- Services ---
 import { ExportService } from './providers/export.service';
 import { ImportService } from './providers/import.service';
@@ -77,6 +80,7 @@ import { BackupController } from './controllers/backup.controller';
     ]),
     ScheduleModule.forRoot(),
     CacheModule,
+    CloudinaryModule,
   ],
   controllers: [ExportController, ImportController, BackupController],
   providers: [

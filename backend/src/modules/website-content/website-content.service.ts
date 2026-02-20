@@ -10,6 +10,7 @@ import { HeroSlide } from './entities/hero-slide.entity';
 import { Advantage } from './entities/advantage.entity';
 import { Testimonial } from './entities/testimonial.entity';
 import { SettingsService } from '../settings/settings.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateHeroSlideDto } from './dto/create-hero-slide.dto';
 import { UpdateHeroSlideDto } from './dto/update-hero-slide.dto';
 import { CreateAdvantageDto } from './dto/create-advantage.dto';
@@ -29,6 +30,7 @@ export class WebsiteContentService implements OnModuleInit {
     @InjectRepository(Testimonial)
     private readonly testimonialRepository: Repository<Testimonial>,
     private readonly settingsService: SettingsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -40,9 +42,14 @@ export class WebsiteContentService implements OnModuleInit {
   // =====================
 
   async createHeroSlide(dto: CreateHeroSlideDto): Promise<HeroSlide> {
+    const image = await this.cloudinaryService.ensureCloudinaryUrl(
+      dto.image || null,
+      'coffee-club/website-content',
+    );
+
     const slide = this.heroSlideRepository.create({
       ...dto,
-      image: dto.image || null,
+      image,
       subtitle: dto.subtitle || null,
       heading: dto.heading || null,
     });
@@ -87,7 +94,12 @@ export class WebsiteContentService implements OnModuleInit {
     const slide = await this.findOneHeroSlide(id);
 
     if (dto.type !== undefined) slide.type = dto.type;
-    if (dto.image !== undefined) slide.image = dto.image || null;
+    if (dto.image !== undefined) {
+      slide.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        dto.image || null,
+        'coffee-club/website-content',
+      );
+    }
     if (dto.title !== undefined) slide.title = dto.title;
     if (dto.subtitle !== undefined) slide.subtitle = dto.subtitle || null;
     if (dto.heading !== undefined) slide.heading = dto.heading || null;
@@ -117,9 +129,14 @@ export class WebsiteContentService implements OnModuleInit {
   // =====================
 
   async createAdvantage(dto: CreateAdvantageDto): Promise<Advantage> {
+    const icon = await this.cloudinaryService.ensureCloudinaryUrl(
+      dto.icon || null,
+      'coffee-club/website-content',
+    );
+
     const advantage = this.advantageRepository.create({
       ...dto,
-      icon: dto.icon || null,
+      icon,
     });
     return this.advantageRepository.save(advantage);
   }
@@ -161,7 +178,12 @@ export class WebsiteContentService implements OnModuleInit {
   async updateAdvantage(id: string, dto: UpdateAdvantageDto): Promise<Advantage> {
     const advantage = await this.findOneAdvantage(id);
 
-    if (dto.icon !== undefined) advantage.icon = dto.icon || null;
+    if (dto.icon !== undefined) {
+      advantage.icon = await this.cloudinaryService.ensureCloudinaryUrl(
+        dto.icon || null,
+        'coffee-club/website-content',
+      );
+    }
     if (dto.title !== undefined) advantage.title = dto.title;
     if (dto.description !== undefined) advantage.description = dto.description;
     if (dto.sort_order !== undefined) advantage.sort_order = dto.sort_order;
@@ -187,9 +209,14 @@ export class WebsiteContentService implements OnModuleInit {
   // =====================
 
   async createTestimonial(dto: CreateTestimonialDto): Promise<Testimonial> {
+    const image = await this.cloudinaryService.ensureCloudinaryUrl(
+      dto.image || null,
+      'coffee-club/website-content',
+    );
+
     const testimonial = this.testimonialRepository.create({
       ...dto,
-      image: dto.image || null,
+      image,
     });
     return this.testimonialRepository.save(testimonial);
   }
@@ -232,7 +259,12 @@ export class WebsiteContentService implements OnModuleInit {
     const testimonial = await this.findOneTestimonial(id);
 
     if (dto.quote !== undefined) testimonial.quote = dto.quote;
-    if (dto.image !== undefined) testimonial.image = dto.image || null;
+    if (dto.image !== undefined) {
+      testimonial.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        dto.image || null,
+        'coffee-club/website-content',
+      );
+    }
     if (dto.name !== undefined) testimonial.name = dto.name;
     if (dto.position !== undefined) testimonial.position = dto.position;
     if (dto.sort_order !== undefined) testimonial.sort_order = dto.sort_order;

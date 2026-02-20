@@ -9,21 +9,27 @@ import { BlogPost } from './entities/blog-post.entity';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { generateSlug } from '../../common/utils/string-utils';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class BlogService {
   constructor(
     @InjectRepository(BlogPost)
     private readonly blogPostRepository: Repository<BlogPost>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(dto: CreateBlogPostDto): Promise<BlogPost> {
     const slug = await this.generateUniqueSlug(dto.title);
+    const image = await this.cloudinaryService.ensureCloudinaryUrl(
+      dto.image || null,
+      'coffee-club/blog',
+    );
 
     const post = this.blogPostRepository.create({
       ...dto,
       slug,
-      image: dto.image || null,
+      image,
       is_published: dto.is_published || false,
       published_at: dto.is_published ? new Date() : null,
     });
@@ -74,7 +80,12 @@ export class BlogService {
     if (dto.title !== undefined) post.title = dto.title;
     if (dto.excerpt !== undefined) post.excerpt = dto.excerpt;
     if (dto.content !== undefined) post.content = dto.content;
-    if (dto.image !== undefined) post.image = dto.image || null;
+    if (dto.image !== undefined) {
+      post.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        dto.image || null,
+        'coffee-club/blog',
+      );
+    }
     if (dto.author !== undefined) post.author = dto.author;
 
     if (dto.is_published !== undefined) {

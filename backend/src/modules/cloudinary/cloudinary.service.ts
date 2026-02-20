@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 
 @Injectable()
 export class CloudinaryService {
+  private readonly logger = new Logger(CloudinaryService.name);
+
   constructor(private configService: ConfigService) {
     cloudinary.config({
       cloud_name: this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
@@ -122,5 +124,76 @@ export class CloudinaryService {
 
   async getResourceInfo(publicId: string): Promise<any> {
     return cloudinary.api.resource(publicId);
+  }
+
+  /**
+   * Check if a URL is already hosted on Cloudinary.
+   */
+  isCloudinaryUrl(url: string): boolean {
+    return url.includes('res.cloudinary.com') || url.includes('cloudinary.com');
+  }
+
+  /**
+   * Upload an image from an external URL directly to Cloudinary.
+   * Cloudinary fetches the image server-side — no need to download first.
+   */
+  async uploadFromUrl(
+    url: string,
+    options?: {
+      folder?: string;
+      width?: number;
+      height?: number;
+      crop?: string;
+    },
+  ): Promise<UploadApiResponse> {
+    const { folder, width, height, crop } = options || {};
+
+    const uploadOptions: any = {
+      folder: folder || 'coffee-club',
+      resource_type: 'image',
+      transformation: [
+        { quality: 'auto:best' },
+        { fetch_format: 'webp' },
+      ],
+    };
+
+    if (width && height) {
+      uploadOptions.transformation.push({
+        width,
+        height,
+        crop: crop || 'fill',
+      });
+    }
+
+    return cloudinary.uploader.upload(url, uploadOptions);
+  }
+
+  /**
+   * Ensure an image URL is hosted on Cloudinary.
+   * - Returns null for empty/null values
+   * - Returns as-is if already a Cloudinary URL
+   * - Uploads to Cloudinary and returns the secure_url otherwise
+   * - On failure, logs a warning and returns the original URL
+   */
+  async ensureCloudinaryUrl(
+    url: string | null | undefined,
+    folder: string,
+  ): Promise<string | null> {
+    if (!url || url.trim() === '') return null;
+
+    if (this.isCloudinaryUrl(url)) return url;
+
+    // Skip relative paths (e.g. "/img/pizza.png") — these are local assets, not external URLs
+    if (url.startsWith('/') && !url.startsWith('//')) return url;
+
+    try {
+      const result = await this.uploadFromUrl(url, { folder });
+      return result.secure_url;
+    } catch (error: any) {
+      this.logger.warn(
+        `Failed to upload image from URL to Cloudinary: ${url} — ${error?.message || 'Unknown error'}`,
+      );
+      return url;
+    }
   }
 }
