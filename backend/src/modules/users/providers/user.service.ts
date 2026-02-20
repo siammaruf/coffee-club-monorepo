@@ -16,6 +16,7 @@ import { SmsService } from '../../sms/sms.service';
 import { randomBytes } from 'crypto';
 import { UserRole } from "../enum/user-role.enum";
 import { CacheService } from "src/modules/cache/cache.service";
+import { CloudinaryService } from "src/modules/cloudinary/cloudinary.service";
 
 @Injectable()
 export class UserService {
@@ -27,7 +28,8 @@ export class UserService {
         private readonly bankService: BankService,
         private readonly emailService: EmailService,
         private readonly smsService: SmsService,
-        private readonly cacheService: CacheService
+        private readonly cacheService: CacheService,
+        private readonly cloudinaryService: CloudinaryService,
     ) {}
 
     private async invalidateCache(): Promise<void> {
@@ -124,6 +126,17 @@ export class UserService {
           userStatus = UserStatus.INACTIVE;
         }
 
+        // Auto-upload external image URLs to Cloudinary
+        if (userData.picture) {
+          userData.picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.picture, 'coffee-club/users') ?? undefined;
+        }
+        if (userData.nid_front_picture) {
+          userData.nid_front_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_front_picture, 'coffee-club/users') ?? undefined;
+        }
+        if (userData.nid_back_picture) {
+          userData.nid_back_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_back_picture, 'coffee-club/users') ?? undefined;
+        }
+
         const user = this.userRepository.create({
           ...userData,
           password: encryptedPassword,
@@ -203,6 +216,17 @@ export class UserService {
 
         if (userData.password) {
             userData.password = await this.encryptPassword(userData.password);
+        }
+
+        // Auto-upload external image URLs to Cloudinary
+        if (userData.picture) {
+          userData.picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.picture, 'coffee-club/users') ?? undefined;
+        }
+        if (userData.nid_front_picture) {
+          userData.nid_front_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_front_picture, 'coffee-club/users') ?? undefined;
+        }
+        if (userData.nid_back_picture) {
+          userData.nid_back_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_back_picture, 'coffee-club/users') ?? undefined;
         }
 
         await this.userRepository.update(id, userData);

@@ -4,11 +4,13 @@ import { CategoryController } from './category.controller';
 import { CategoryService } from './providers/category.service';
 import { Category } from './entities/category.entity';
 import { CacheModule } from '../cache/cache.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Category]),
-        CacheModule
+        CacheModule,
+        CloudinaryModule,
     ],
     controllers: [CategoryController],
     providers: [CategoryService],
