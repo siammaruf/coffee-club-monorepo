@@ -8,6 +8,7 @@ import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
 
 const screenMap: Record<string, string> = {
   OrderCreate: '/(app)/orders/create',
+  OrderList: '/(app)/(tabs)/orders',
   CustomerList: '/(app)/customers',
   Reports: '/(app)/(tabs)/reports',
   TableList: '/(app)/tables',
@@ -45,7 +46,7 @@ export default function DashboardScreen() {
   };
 
   const menuItems = [
-    { icon: 'receipt-outline', label: 'Orders', count: dashboard?.total_orders_today ?? '-', color: '#EF4444', bgColor: '#FEF2F2', screen: 'OrderCreate' },
+    { icon: 'receipt-outline', label: 'Orders', count: dashboard?.total_orders_today ?? '-', color: '#EF4444', bgColor: '#FEF2F2', screen: 'OrderList' },
     { icon: 'people-outline', label: 'Customers', count: dashboard?.total_active_customers ?? '-', color: '#3B82F6', bgColor: '#EFF6FF', screen: 'CustomerList' },
     { icon: 'bar-chart-outline', label: 'Reports', count: dashboard?.total_sales_reports ?? '-', color: '#10B981', bgColor: '#F0FDF4', screen: 'Reports' },
     { icon: 'restaurant-outline', label: 'Tables', count: dashboard?.total_tables ?? '-', color: '#F59E0B', bgColor: '#FFFBEB', screen: 'TableList' },
@@ -124,11 +125,19 @@ export default function DashboardScreen() {
         {/* Main Menu */}
         <View className="mx-4 mt-6 mb-6">
           <Text className="text-lg font-semibold text-orange-400 mb-3">Quick Actions</Text>
-          <View className="flex-row flex-wrap justify-between gap-3">
+          <TouchableOpacity
+            className="w-full bg-orange-500 rounded-lg shadow-sm p-4 mb-3 flex-row items-center justify-center"
+            activeOpacity={0.8}
+            onPress={() => router.push(screenMap['OrderCreate'] as any)}
+          >
+            <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+            <Text className="text-white text-base ml-2">CREATE ORDER</Text>
+          </TouchableOpacity>
+          <View className="flex-row flex-wrap gap-3">
             {menuItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                className="w-[48%] bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+                className="grow basis-[48%] bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
                 activeOpacity={0.8}
                 onPress={() => {
                   const route = screenMap[item.screen];
