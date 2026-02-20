@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -17,7 +17,12 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 
 export default function Employees() {
-  const [currentPage, setCurrentPage] = useState(1);
+  const location = useLocation();
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('page');
+    return p && !isNaN(Number(p)) ? Number(p) : 1;
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -107,8 +112,19 @@ export default function Employees() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const p = params.get('page');
+    if (p && !isNaN(Number(p))) {
+      setCurrentPage(Number(p));
+    }
+  }, [location.search]);
+
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+    const params = new URLSearchParams(location.search);
+    params.set('page', pageNumber.toString());
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
   const handleFilterChange = () => {
@@ -121,7 +137,7 @@ export default function Employees() {
   const navigate = useNavigate();
 
   const handleViewEmployee = (userId: string) => {
-    navigate(`/dashboard/employees/${userId}`);
+    navigate(`/dashboard/employees/${userId}`, { state: { fromPage: currentPage } });
   };
 
   const handleInactiveEmployee = async (userId: string) => {

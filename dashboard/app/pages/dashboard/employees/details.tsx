@@ -1,5 +1,6 @@
 import  { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useBackToList } from '~/hooks/useBackToList';
 import { useSelector } from 'react-redux';
 import { ArrowLeft, Edit, UserX, UserCheck, Trash2, MapPin, Phone, Mail, CreditCard, Calendar, Building, MailIcon, RefreshCw, DollarSign } from 'lucide-react';
 import type { User } from '~/types/user';
@@ -15,6 +16,7 @@ import type { RootState } from '~/redux/store/rootReducer';
 export default function EmployeeDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/employees');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export default function EmployeeDetails() {
   };
 
   const handleEdit = () => {
-    navigate(`/dashboard/employees/edit/${id}`);
+    navigateWithPage(`/dashboard/employees/edit/${id}`);
   };
 
   const handleDeleteConfirm = () => {
@@ -117,9 +119,9 @@ export default function EmployeeDetails() {
     try {
       setActionLoading('delete');
       await userService.deleteUser(id);
-      showStatusDialog('Success', 'Employee deleted successfully', 'success', 2000); 
+      showStatusDialog('Success', 'Employee deleted successfully', 'success', 2000);
       setTimeout(() => {
-        navigate('/dashboard/employees');
+        goBack();
       }, 2500);
     } catch (error) {
       console.error('Error deleting employee:', error);
@@ -212,7 +214,7 @@ export default function EmployeeDetails() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="text-lg text-red-600 mb-4">{error || 'Employee not found'}</div>
-          <Button onClick={() => navigate('/dashboard/employees')}>
+          <Button onClick={goBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Employees
           </Button>
@@ -228,9 +230,9 @@ export default function EmployeeDetails() {
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/dashboard/employees')}
+            <Button
+              variant="outline"
+              onClick={goBack}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
+import { useBackToList } from "~/hooks/useBackToList";
 import { useSelector } from "react-redux";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -35,6 +36,7 @@ const selectCurrentUser = (state: any) => state.auth?.user;
 export default function EditOrderPage() {
   const { id: orderId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/orders');
   const user = useSelector(selectCurrentUser);
   const [order, setOrder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -223,7 +225,7 @@ export default function EditOrderPage() {
 
       await orderService.update(orderId, payload);
       toast.success("Order updated successfully!");
-      navigate(`/dashboard/orders/${orderId}`);
+      navigateWithPage(`/dashboard/orders/${orderId}`);
     } catch (error) {
       toast.error("Failed to update order. Please try again.");
       setError("Failed to update order. Please try again.");
@@ -287,7 +289,7 @@ export default function EditOrderPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/dashboard/orders")}
+              onClick={goBack}
               className="px-3 py-1"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -556,7 +558,7 @@ export default function EditOrderPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/dashboard/orders")}
+                onClick={goBack}
                 disabled={isSaving}
               >
                 Cancel

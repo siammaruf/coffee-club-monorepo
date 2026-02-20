@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useBackToList } from "~/hooks/useBackToList";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -23,6 +24,7 @@ import type { DropResult } from "@hello-pangea/dnd";
 export default function EditProduct() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/products');
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -117,7 +119,7 @@ export default function EditProduct() {
           message: "Product not found.",
           isError: true,
         });
-        navigate('/dashboard/products');
+        goBack();
       }
     } catch (error) {
       setStatusDialog({
@@ -126,7 +128,7 @@ export default function EditProduct() {
         message: "Error fetching product.",
         isError: true,
       });
-      navigate('/dashboard/products');
+      goBack();
     }
   };
 
@@ -240,7 +242,7 @@ export default function EditProduct() {
 
       // Optionally navigate after success
       setTimeout(() => {
-        navigate('/dashboard/products');
+        goBack();
       }, 1000);
 
     } catch (error: any) {
@@ -270,7 +272,7 @@ export default function EditProduct() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/dashboard/products/${id}`)}
+              onClick={() => navigateWithPage(`/dashboard/products/${id}`)}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -618,7 +620,7 @@ export default function EditProduct() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(`/dashboard/products/${id}`)}
+                onClick={() => navigateWithPage(`/dashboard/products/${id}`)}
               >
                 Cancel
               </Button>

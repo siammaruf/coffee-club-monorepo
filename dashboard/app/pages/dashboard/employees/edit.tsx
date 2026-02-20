@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
+import { useBackToList } from '~/hooks/useBackToList';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { ArrowLeft, User as UserIcon, Mail, Phone, CreditCard, Upload, MapPin, Calendar, Building2, DollarSign } from 'lucide-react';
 import type { User } from '~/types/user';
@@ -18,6 +19,7 @@ import { UserRole } from './enum/userRole';
 export default function EditEmployee() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { goBack, navigateWithPage } = useBackToList('/dashboard/employees');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,7 +125,7 @@ export default function EditEmployee() {
       (response) => {
         setSuccess(response, 'Employee updated successfully!');
         setTimeout(() => {
-          //navigate(`/dashboard/employees/${id}`);
+          navigateWithPage(`/dashboard/employees/${id}`);
         }, 1500);
       }
     );
@@ -186,12 +188,10 @@ export default function EditEmployee() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Link to="/dashboard/employees">
-            <Button variant="ghost" size="sm" className="gap-1">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </Link>
+          <Button variant="ghost" size="sm" className="gap-1" onClick={goBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Employee Not Found</h2>
             <p className="text-muted-foreground">
@@ -206,12 +206,10 @@ export default function EditEmployee() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Link to={`/dashboard/employees/${id}`}>
-          <Button variant="ghost" size="sm" className="gap-1">
-            <ArrowLeft className="h-4 w-4" />
-            Back
+        <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigateWithPage(`/dashboard/employees/${id}`)}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
           </Button>
-        </Link>
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Edit Employee</h2>
           <p className="text-muted-foreground">
@@ -529,7 +527,7 @@ export default function EditEmployee() {
                   type="button" 
                   variant="outline" 
                   size="sm"
-                  onClick={() => navigate(`/dashboard/employees/${id}`)}
+                  onClick={() => navigateWithPage(`/dashboard/employees/${id}`)}
                 >
                   Cancel
                 </Button>
