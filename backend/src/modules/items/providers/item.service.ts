@@ -254,21 +254,9 @@ export class ItemService {
 
     // Handle variations
     if (updateItemDto.has_variations && updateItemDto.variations && updateItemDto.variations.length > 0) {
-      // Delete existing variations, then re-create
-      await this.variationRepository.delete({ item_id: id });
-      const variations = updateItemDto.variations.map(v => this.variationRepository.create({
-        name: v.name,
-        name_bn: v.name_bn,
-        regular_price: v.regular_price,
-        sale_price: v.sale_price ?? null,
-        status: v.status,
-        sort_order: v.sort_order ?? 0,
-        item_id: id,
-      }));
-      updatedItem.variations = await this.variationRepository.save(variations);
+      updatedItem.variations = await this.syncVariations(id, updateItemDto.variations);
     } else if (!updateItemDto.has_variations) {
-      // If has_variations is false, remove all existing variations
-      await this.variationRepository.delete({ item_id: id });
+      await this.softDeleteAllVariations(id);
       updatedItem.variations = [];
     }
 
@@ -363,6 +351,54 @@ export class ItemService {
       }
     });
     return !!item;
+  }
+
+  private async syncVariations(itemId: string, incomingVariations: any[]): Promise<ItemVariation[]> {
+    const currentVariations = await this.variationRepository.find({ where: { item_id: itemId } });
+    const currentIds = new Set(currentVariations.map(v => v.id));
+
+    const toUpdate = incomingVariations.filter(v => v.id && currentIds.has(v.id));
+    const toCreate = incomingVariations.filter(v => !v.id);
+
+    const incomingIds = new Set(incomingVariations.filter(v => v.id).map(v => v.id));
+    const toRemoveIds = currentVariations.filter(v => !incomingIds.has(v.id)).map(v => v.id);
+
+    if (toRemoveIds.length > 0) {
+      await this.variationRepository.softDelete(toRemoveIds);
+    }
+
+    for (const v of toUpdate) {
+      await this.variationRepository.update(v.id, {
+        name: v.name,
+        name_bn: v.name_bn,
+        regular_price: v.regular_price,
+        sale_price: v.sale_price ?? null,
+        status: v.status,
+        sort_order: v.sort_order ?? 0,
+      });
+    }
+
+    if (toCreate.length > 0) {
+      const newVariations = toCreate.map(v => this.variationRepository.create({
+        name: v.name,
+        name_bn: v.name_bn,
+        regular_price: v.regular_price,
+        sale_price: v.sale_price ?? null,
+        status: v.status,
+        sort_order: v.sort_order ?? 0,
+        item_id: itemId,
+      }));
+      await this.variationRepository.save(newVariations);
+    }
+
+    return this.variationRepository.find({ where: { item_id: itemId } });
+  }
+
+  private async softDeleteAllVariations(itemId: string): Promise<void> {
+    const currentVariations = await this.variationRepository.find({ where: { item_id: itemId } });
+    if (currentVariations.length > 0) {
+      await this.variationRepository.softDelete(currentVariations.map(v => v.id));
+    }
   }
 
   async uploadItemImage(file: Express.Multer.File): Promise<string> {
@@ -529,21 +565,9 @@ export class ItemService {
 
     // Handle variations
     if (updateItemDto.has_variations && updateItemDto.variations && updateItemDto.variations.length > 0) {
-      // Delete existing variations, then re-create
-      await this.variationRepository.delete({ item_id: id });
-      const variations = updateItemDto.variations.map(v => this.variationRepository.create({
-        name: v.name,
-        name_bn: v.name_bn,
-        regular_price: v.regular_price,
-        sale_price: v.sale_price ?? null,
-        status: v.status,
-        sort_order: v.sort_order ?? 0,
-        item_id: id,
-      }));
-      updatedItem.variations = await this.variationRepository.save(variations);
+      updatedItem.variations = await this.syncVariations(id, updateItemDto.variations);
     } else if (!updateItemDto.has_variations) {
-      // If has_variations is false, remove all existing variations
-      await this.variationRepository.delete({ item_id: id });
+      await this.softDeleteAllVariations(id);
       updatedItem.variations = [];
     }
 
