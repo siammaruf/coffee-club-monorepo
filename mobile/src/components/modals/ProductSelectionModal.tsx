@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductSelectionModalProps } from '@/types/order';
+import { formatPrice, formatPriceRange } from '@/utils/currency';
 import CategoryModal from './CategoryModal';
 
 export default function ProductSelectionModal({
@@ -117,7 +118,7 @@ export default function ProductSelectionModal({
                 priceDisplay = (
                   <View className="flex-row items-center mt-1">
                     <Text className="text-base font-bold text-[#EF4444]">
-                      ৳{min === max ? min : `${min} ~ ${max}`}
+                      {formatPriceRange(min, max)}
                     </Text>
                     <Text className="ml-2 text-xs text-gray-500">
                       {item.variations.length} variation{item.variations.length > 1 ? 's' : ''}
@@ -128,14 +129,14 @@ export default function ProductSelectionModal({
                 priceDisplay = (
                   <View className="flex-row items-center mt-1">
                     <Text className="text-base font-bold text-[#EF4444]">
-                      ৳{Number(item.regular_price || item.sale_price || 0).toFixed(2)}
+                      {formatPrice(item.regular_price || item.sale_price)}
                     </Text>
                     {item.sale_price &&
                       item.sale_price !== '0.00' &&
                       item.sale_price !== '0' &&
                       item.sale_price < item.regular_price && (
                         <Text className="ml-2 text-sm text-gray-500 line-through">
-                          ৳{Number(item.regular_price).toFixed(2)}
+                          {formatPrice(item.regular_price)}
                         </Text>
                     )}
                   </View>

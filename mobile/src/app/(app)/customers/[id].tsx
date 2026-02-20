@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { customerService } from '@/services/httpServices/customerService';
 import { formatPrettyDateOnly } from '@/utils/helpers';
+import { formatPrice } from '@/utils/currency';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Customer } from '@/types/customer';
 
@@ -128,7 +129,7 @@ export default function CustomerDetailsScreen() {
                             <View className="bg-emerald-50 px-4 py-2.5 rounded-xl items-center min-w-[100px]">
                                 <View className="flex-row items-center mb-1">
                                     <Ionicons name="wallet" size={16} color="#10B981" />
-                                    <Text className="ml-1 text-lg font-bold text-emerald-600">{'\u09F3'}{customer.balance}</Text>
+                                    <Text className="ml-1 text-lg font-bold text-emerald-600">{formatPrice(customer.balance)}</Text>
                                 </View>
                                 <Text className="text-xs text-emerald-500">Balance</Text>
                             </View>

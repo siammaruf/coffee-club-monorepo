@@ -6,6 +6,7 @@ import { productService } from '@/services/httpServices/productService';
 import { categoryService } from '@/services/httpServices/categoryService';
 import CategoryModal from '@/components/modals/CategoryModal';
 import ProductSkeleton from '@/components/skeletons/ProductSkeleton';
+import { formatPrice, formatPriceRange } from '@/utils/currency';
 
 export default function ProductListScreen() {
     const [products, setProducts] = useState<any[]>([]);
@@ -138,16 +139,16 @@ export default function ProductListScreen() {
                                         const prices = item.variations.map((v: any) => parseFloat(v.regular_price));
                                         const min = Math.min(...prices);
                                         const max = Math.max(...prices);
-                                        return `${'\u09F3'}${min === max ? min : `${min} ~ ${max}`}`;
+                                        return formatPriceRange(min, max);
                                     })()}
                                 </Text>
                                 <Text className="text-xs text-gray-500">{item.variations.length} variation{item.variations.length > 1 ? 's' : ''}</Text>
                             </>
                         ) : (
                             <>
-                                <Text className="text-base font-bold text-green-600">{'\u09F3'}{item.regular_price}</Text>
+                                <Text className="text-base font-bold text-green-600">{formatPrice(item.regular_price)}</Text>
                                 {item.sale_price && item.sale_price !== '0.00' && (
-                                    <Text className="text-xs text-pink-500">Sale: {'\u09F3'}{item.sale_price}</Text>
+                                    <Text className="text-xs text-pink-500">Sale: {formatPrice(item.sale_price)}</Text>
                                 )}
                             </>
                         )}

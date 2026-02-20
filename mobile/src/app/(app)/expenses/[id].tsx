@@ -5,6 +5,7 @@ import expenseService from '@/services/httpServices/expenseService';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import type { ExpenseItem } from '@/types/expense';
 import { formatPrettyDate } from '@/utils/helpers';
+import { formatPrice } from '@/utils/currency';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ExpenseViewScreen() {
@@ -94,7 +95,7 @@ export default function ExpenseViewScreen() {
                 <View className="flex-row items-center justify-between mb-3">
                     <View>
                         <Text className="text-gray-500 text-xs mb-1">Amount</Text>
-                        <Text className="text-red-500 font-bold text-xl">{'\u09F3'}{Number(expense.amount).toFixed(2)}</Text>
+                        <Text className="text-red-500 font-bold text-xl">{formatPrice(expense.amount)}</Text>
                     </View>
                     <View
                         className="px-3 py-1 rounded-full"

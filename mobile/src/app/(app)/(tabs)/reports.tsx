@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import ReportSkeleton from '@/components/skeletons/ReportSkeleton';
 import FilterModal from '@/components/modals/FilterModal';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { formatPriceCompact } from '@/utils/currency';
 
 const formatPrettyDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -120,7 +121,7 @@ export default function ReportListScreen() {
                 </View>
                 <View className="items-end flex-row h-full flex-row items-center justify-end p-4 rounded-tr-2xl rounded-br-2xl">
                     <Text className="text-lg font-semibold text-orange-500">
-                        {'\u09F3'}{Number(report.total_sales).toLocaleString('en-US')}
+                        {formatPriceCompact(report.total_sales)}
                     </Text>
                 </View>
             </View>
