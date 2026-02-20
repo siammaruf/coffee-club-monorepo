@@ -5,6 +5,7 @@ import TitleBar from '@/components/common/TitleBar';
 import { useRouter } from 'expo-router';
 import reportService from '@/services/httpServices/reportService';
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
+import { formatPriceCompact } from '@/utils/currency';
 
 const screenMap: Record<string, string> = {
   OrderCreate: '/(app)/orders/create',
@@ -51,17 +52,17 @@ export default function DashboardScreen() {
     { icon: 'bar-chart-outline', label: 'Reports', count: dashboard?.total_sales_reports ?? '-', color: '#10B981', bgColor: '#F0FDF4', screen: 'Reports' },
     { icon: 'restaurant-outline', label: 'Tables', count: dashboard?.total_tables ?? '-', color: '#F59E0B', bgColor: '#FFFBEB', screen: 'TableList' },
     { icon: 'cube-outline', label: 'Products', count: dashboard?.total_items ?? '-', color: '#8B5CF6', bgColor: '#F3F4F6', screen: 'ProductList' },
-    { icon: 'wallet-outline', label: 'Expenses', count: dashboard?.todays_expenses ? `\u09F3${dashboard.todays_expenses}` : '-', color: '#EC4899', bgColor: '#FDF2F8', screen: 'Expenses' },
+    { icon: 'wallet-outline', label: 'Expenses', count: formatPriceCompact(dashboard?.todays_expenses), color: '#EC4899', bgColor: '#FDF2F8', screen: 'Expenses' },
   ];
 
   const stats = [
-    { title: "Today's Sales", value: dashboard?.todays_total_sales ? `\u09F3${dashboard.todays_total_sales}` : '-', icon: 'cash-outline', trend: '' },
+    { title: "Today's Sales", value: formatPriceCompact(dashboard?.todays_total_sales), icon: 'cash-outline', trend: '' },
     { title: 'Active Orders', value: dashboard?.active_orders ?? '-', icon: 'time-outline', trend: '' },
-    { title: "Today's Expenses", value: dashboard?.todays_expenses ? `\u09F3${dashboard.todays_expenses}` : '-', icon: 'card-outline', trend: '' },
+    { title: "Today's Expenses", value: formatPriceCompact(dashboard?.todays_expenses), icon: 'card-outline', trend: '' },
     { title: 'Orders Pending', value: dashboard?.pending_orders ?? '-', icon: 'hourglass-outline', trend: '' },
     { title: 'Order Completed', value: dashboard?.completed_orders ?? '-', icon: 'checkmark-circle-outline', trend: '' },
-    { title: 'Average Order Value', value: dashboard?.average_order_value ? `\u09F3${dashboard.average_order_value}` : '-', icon: 'stats-chart-outline', trend: '' },
-    { title: "Today's Profit", value: dashboard?.todays_profit ? `\u09F3${dashboard.todays_profit}` : '-', icon: 'trending-up-outline', trend: '' },
+    { title: 'Average Order Value', value: formatPriceCompact(dashboard?.average_order_value), icon: 'stats-chart-outline', trend: '' },
+    { title: "Today's Profit", value: formatPriceCompact(dashboard?.todays_profit), icon: 'trending-up-outline', trend: '' },
     { title: 'Takeaway Orders', value: dashboard?.takeaway_orders ?? '-', icon: 'fast-food-outline', trend: '' },
     { title: 'Dine-in Orders', value: dashboard?.dinein_orders ?? '-', icon: 'restaurant-outline', trend: '' },
     { title: 'Cancelled Orders', value: dashboard?.cancelled_orders ?? '-', icon: 'close-circle-outline', trend: '' },

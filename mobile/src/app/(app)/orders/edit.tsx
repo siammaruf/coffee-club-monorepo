@@ -21,6 +21,7 @@ import ProductSelectionModal from '@/components/modals/ProductSelectionModal';
 import VariationSelectModal from '@/components/modals/VariationSelectModal';
 import { categoryService } from '@/services/httpServices/categoryService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatPrice } from '@/utils/currency';
 
 export default function EditOrderScreen() {
   const router = useRouter();
@@ -432,7 +433,7 @@ export default function EditOrderScreen() {
                       )}
                     </Text>
                     <Text className="text-xs text-gray-600">
-                      {'\u09F3'}{Number(item.unit_price || 0).toFixed(2)} each
+                      {formatPrice(item.unit_price)} each
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-2">
@@ -459,7 +460,7 @@ export default function EditOrderScreen() {
                     </TouchableOpacity>
                   </View>
                   <Text className="text-sm font-bold text-gray-800 ml-2 min-w-[60px] text-right">
-                    {'\u09F3'}{Number(item.total_price || 0).toFixed(2)}
+                    {formatPrice(item.total_price)}
                   </Text>
                 </View>
               ))
@@ -473,7 +474,7 @@ export default function EditOrderScreen() {
             <View className="flex-row justify-between items-center">
               <Text className="text-lg font-bold text-gray-800">Total</Text>
               <Text className="text-xl font-bold text-[#EF4444]">
-                {'\u09F3'}{totalAmount.toFixed(2)}
+                {formatPrice(totalAmount)}
               </Text>
             </View>
           </View>

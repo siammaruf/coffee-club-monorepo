@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Discount } from '@/types/discount';
+import { formatPrice } from '@/utils/currency';
 
 interface DiscountSelectionModalProps {
   visible: boolean;
@@ -53,7 +54,7 @@ export default function DiscountSelectionModal({
               </TouchableOpacity>
             </View>
             <Text className="text-sm text-gray-600 mt-1">
-              Current subtotal: ৳{subtotal.toFixed(2)}
+              Current subtotal: {formatPrice(subtotal)}
             </Text>
           </View>
 
@@ -112,7 +113,7 @@ export default function DiscountSelectionModal({
                       }`}>
                         {discount.discount_type === 'percentage'
                           ? `${discount.discount_value}%`
-                          : `৳${discount.discount_value}`}
+                          : formatPrice(discount.discount_value)}
                       </Text>
                     </View>
                     {selectedDiscount?.id === discount.id && (

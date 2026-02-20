@@ -13,6 +13,7 @@ import { categoryService } from '@/services/httpServices/categoryService';
 import { productService } from '@/services/httpServices/productService';
 import { OrderStatus, OrderType } from '@/enums/orderEnum';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatPrice, formatPriceRange } from '@/utils/currency';
 
 export default function OrderForm() {
   const router = useRouter();
@@ -168,8 +169,6 @@ export default function OrderForm() {
     const itemTotal = Number(item.total_price) || 0;
     return sum + itemTotal;
   }, 0);
-
-  const totalAmountFormatted = Number(totalAmount).toFixed(2);
 
   const handleSubmit = async () => {
     try {
@@ -435,7 +434,7 @@ export default function OrderForm() {
                     priceDisplay = (
                       <View className="flex-row items-center">
                         <Text className="text-base font-bold text-[#EF4444]">
-                          {'\u09F3'}{min === max ? min : `${min} ~ ${max}`}
+                          {formatPriceRange(min, max)}
                         </Text>
                         <Text className="ml-2 text-xs text-gray-500">
                           {item.variations.length} variation{item.variations.length > 1 ? 's' : ''}
@@ -444,7 +443,7 @@ export default function OrderForm() {
                     );
                   } else {
                     priceDisplay = (
-                      <Text className="text-base font-bold text-[#EF4444]">{'\u09F3'}{item.regular_price}</Text>
+                      <Text className="text-base font-bold text-[#EF4444]">{formatPrice(item.regular_price)}</Text>
                     );
                   }
 
@@ -540,14 +539,14 @@ export default function OrderForm() {
                       </View>
                     </View>
                     <Text className="text-sm font-semibold text-gray-800">
-                      {'\u09F3'}{Number(item.total_price || 0).toFixed(2)}
+                      {formatPrice(item.total_price)}
                     </Text>
                   </View>
                 ))}
 
                 <View className="flex-row justify-between items-center pt-3 mt-2 border-t-2 border-gray-100">
                   <Text className="text-base font-bold text-gray-800">Subtotal</Text>
-                  <Text className="text-lg font-bold text-[#EF4444]">{'\u09F3'}{totalAmountFormatted}</Text>
+                  <Text className="text-lg font-bold text-[#EF4444]">{formatPrice(totalAmount)}</Text>
                 </View>
               </View>
             </View>
@@ -558,7 +557,7 @@ export default function OrderForm() {
       {/* Fixed Create Order Button at Bottom */}
       <View className="bg-white border-t border-gray-200 p-2" style={ insets.bottom ? { paddingBottom: insets.bottom + 10 } : {paddingBottom: 10} }>
         <Button
-          title={isLoading ? 'Creating Order...' : `CREATE ORDER ${orderItems.length > 0 ? `(\u09F3${totalAmountFormatted})` : ''}`}
+          title={isLoading ? 'Creating Order...' : `CREATE ORDER ${orderItems.length > 0 ? `(${formatPrice(totalAmount)})` : ''}`}
           onPress={handleSubmit}
           variant="primary"
           className={isLoading ? 'opacity-50' : ''}

@@ -15,6 +15,7 @@ import { discountService } from '@/services/httpServices/discountService';
 import type { Discount } from '@/types/discount';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { printBarToken, printKitchenToken, printReceipt } from '@/utils/printer';
+import { formatPrice } from '@/utils/currency';
 
 export default function OrderDetails() {
   const router = useRouter();
@@ -619,7 +620,7 @@ export default function OrderDetails() {
                       </View>
                       <View className="bg-green-100 px-1.5 py-0.5 rounded">
                         <Text className="text-xs text-green-800">
-                          {'\u09F3'}{'balance' in selectedCustomer ? (selectedCustomer as Customer).balance || 0 : 0}
+                          {formatPrice('balance' in selectedCustomer ? (selectedCustomer as Customer).balance : 0)}
                         </Text>
                       </View>
                     </View>
@@ -725,7 +726,7 @@ export default function OrderDetails() {
                       {selectedDiscount?.name || 'Discount Applied'}
                     </Text>
                     <Text className="text-xs text-green-600">
-                      Saving: {'\u09F3'}{(order.discount_amount || discountAmount).toFixed(2)}
+                      Saving: {formatPrice(order.discount_amount || discountAmount)}
                     </Text>
                   </View>
                 </View>
@@ -782,8 +783,8 @@ export default function OrderDetails() {
                       isPointsRedemptionApplied ? 'text-purple-600' : 'text-gray-500'
                     }`}>
                       {isPointsRedemptionApplied
-                        ? `Saving: ${'\u09F3'}${pointsDiscount.toFixed(2)}`
-                        : `Available: ${'\u09F3'}${(selectedCustomer as Customer).balance}`}
+                        ? `Saving: ${formatPrice(pointsDiscount)}`
+                        : `Available: ${formatPrice((selectedCustomer as Customer).balance)}`}
                     </Text>
                   </View>
                 </View>
@@ -801,7 +802,7 @@ export default function OrderDetails() {
                   <View className="flex-1">
                     <Text className="text-sm font-bold text-gray-800">Balance Discount Applied</Text>
                     <Text className="text-xs text-purple-600">
-                      Saved: {'\u09F3'}{pointsDiscount.toFixed(2)}
+                      Saved: {formatPrice(pointsDiscount)}
                     </Text>
                   </View>
                 </View>
@@ -830,10 +831,10 @@ export default function OrderDetails() {
                   </View>
                   <View className="items-end">
                     <Text className="text-xs text-gray-600">
-                      {item.quantity} x {'\u09F3'}{item.unit_price}
+                      {item.quantity} x {formatPrice(item.unit_price)}
                     </Text>
                     <Text className="text-sm font-semibold text-[#EF4444]">
-                      {'\u09F3'}{item.total_price}
+                      {formatPrice(item.total_price)}
                     </Text>
                   </View>
                 </View>
@@ -857,14 +858,14 @@ export default function OrderDetails() {
 
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-gray-600">Subtotal</Text>
-                  <Text className="text-xs text-gray-800">{'\u09F3'}{subtotal.toFixed(2)}</Text>
+                  <Text className="text-xs text-gray-800">{formatPrice(subtotal)}</Text>
                 </View>
 
                 {(selectedDiscount || order.discount_amount > 0) && (
                   <View className="flex-row justify-between">
                     <Text className="text-xs text-green-600">Discount</Text>
                     <Text className="text-xs text-green-600">
-                      -{'\u09F3'}{calculateDiscount().toFixed(2)}
+                      -{formatPrice(calculateDiscount())}
                     </Text>
                   </View>
                 )}
@@ -872,7 +873,7 @@ export default function OrderDetails() {
                 {isPointsRedemptionApplied && pointsDiscount > 0 && (
                   <View className="flex-row justify-between">
                     <Text className="text-xs text-purple-600">Points Redemption</Text>
-                    <Text className="text-xs text-purple-600">-{'\u09F3'}{pointsDiscount.toFixed(2)}</Text>
+                    <Text className="text-xs text-purple-600">-{formatPrice(pointsDiscount)}</Text>
                   </View>
                 )}
 
@@ -880,7 +881,7 @@ export default function OrderDetails() {
                   <View className="flex-row justify-between">
                     <Text className="text-lg font-semibold text-gray-800">Total</Text>
                     <Text className="text-lg font-bold text-[#EF4444]">
-                      {'\u09F3'}{(subtotal - calculateDiscount() - pointsDiscount).toFixed(2)}
+                      {formatPrice(subtotal - calculateDiscount() - pointsDiscount)}
                     </Text>
                   </View>
                 </View>
