@@ -7,6 +7,7 @@ import { UpdateExpenseCategoryDto } from '../dto/update-expense-category.dto';
 import { ExpenseCategoryResponseDto } from '../dto/expense-category-response.dto';
 import { generateSlug } from '../../../common/utils/string-utils';
 import { CacheService } from '../../cache/cache.service';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ExpenseCategoriesService {
@@ -14,6 +15,7 @@ export class ExpenseCategoriesService {
     @InjectRepository(ExpenseCategory)
     private readonly expenseCategoryRepository: Repository<ExpenseCategory>,
     private readonly cacheService: CacheService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   private async invalidateCache(): Promise<void> {
@@ -59,6 +61,13 @@ export class ExpenseCategoriesService {
       }
       
       createDto.slug = newSlug;
+    }
+
+    if (createDto.icon) {
+      createDto.icon = await this.cloudinaryService.ensureCloudinaryUrl(
+        createDto.icon,
+        'coffee-club/expense-categories',
+      ) ?? undefined;
     }
 
     const category = this.expenseCategoryRepository.create({
@@ -224,6 +233,13 @@ export class ExpenseCategoriesService {
         
         updateDto.slug = newSlug;
       }
+    }
+
+    if (updateDto.icon) {
+      updateDto.icon = await this.cloudinaryService.ensureCloudinaryUrl(
+        updateDto.icon,
+        'coffee-club/expense-categories',
+      ) ?? undefined;
     }
 
     Object.assign(category, updateDto);

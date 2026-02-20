@@ -19,6 +19,13 @@ export class KitchenItemService {
   ) {}
 
   async create(createKitchenItemDto: CreateKitchenItemDto): Promise<KitchenResponseDto> {
+    if (createKitchenItemDto.image) {
+      createKitchenItemDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        createKitchenItemDto.image,
+        'coffee-club/kitchen-items',
+      ) ?? undefined;
+    }
+
     const kitchen = this.kitchenRepository.create({
       ...createKitchenItemDto,
       created_at: new Date(),
@@ -88,6 +95,13 @@ export class KitchenItemService {
   }
 
   async update(id: string, updateKitchenDto: UpdateKitchenItemDto): Promise<KitchenResponseDto> {
+    if (updateKitchenDto.image) {
+      updateKitchenDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        updateKitchenDto.image,
+        'coffee-club/kitchen-items',
+      ) ?? undefined;
+    }
+
     const kitchen = await this.findOne(id);
     const updatedKitchen = await this.kitchenRepository.save({
       ...kitchen,

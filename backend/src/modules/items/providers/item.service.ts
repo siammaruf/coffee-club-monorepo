@@ -120,6 +120,14 @@ export class ItemService {
       throw new BadRequestException("createItemDto should not be an array");
     }
 
+    // Auto-upload external image URLs to Cloudinary
+    if (createItemDto.image) {
+      createItemDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        createItemDto.image,
+        'coffee-club/items',
+      ) ?? undefined;
+    }
+
     const existing = await this.itemRepository.findOne({ where: { name: createItemDto.name } });
     if (existing) {
       throw new ConflictException("Item with this name already exists");
@@ -190,6 +198,14 @@ export class ItemService {
 
   async update(id: string, updateItemDto: UpdateItemDto): Promise<Item> {
     const item = await this.findOne(id);
+
+    // Auto-upload external image URLs to Cloudinary
+    if (updateItemDto.image) {
+      updateItemDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        updateItemDto.image,
+        'coffee-club/items',
+      ) ?? undefined;
+    }
 
     if (updateItemDto.name && updateItemDto.name !== item.name) {
       const baseSlug = generateSlug(updateItemDto.name);
@@ -439,6 +455,11 @@ export class ItemService {
 
     if (file) {
       createItemDto.image = await this.uploadItemImage(file);
+    } else if (createItemDto.image) {
+      createItemDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        createItemDto.image,
+        'coffee-club/items',
+      ) ?? undefined;
     }
 
     let categories: Category[] = [];
@@ -518,6 +539,11 @@ export class ItemService {
         await this.removeItemImage(item.image);
       }
       updateItemDto.image = await this.uploadItemImage(file);
+    } else if (updateItemDto.image) {
+      updateItemDto.image = await this.cloudinaryService.ensureCloudinaryUrl(
+        updateItemDto.image,
+        'coffee-club/items',
+      ) ?? undefined;
     }
 
     if (updateItemDto.name) item.name = updateItemDto.name;

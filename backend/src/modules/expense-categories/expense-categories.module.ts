@@ -5,6 +5,7 @@ import { ExpenseCategoriesController } from './expense-categories.controller';
 import { ExpenseCategoriesService } from './providers/expense-categories.service';
 import { ExpenseCategory } from './entities/expense-categories.entity';
 import { CacheModule } from '../cache/cache.module';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CacheModule } from '../cache/cache.module';
       dest: './uploads',
     }),
     CacheModule,
+    CloudinaryModule,
   ],
   controllers: [ExpenseCategoriesController],
   providers: [ExpenseCategoriesService],

@@ -82,11 +82,25 @@ const importPreview = (file: FormData) =>
     file,
   );
 
-const executeImport = (file: FormData, mode: ImportMode = ImportMode.INSERT) => {
+const executeImport = (
+  file: FormData,
+  mode: ImportMode = ImportMode.INSERT,
+  onUploadProgress?: (percent: number) => void,
+) => {
   file.append('mode', mode);
   return httpService.post<DataManagementApiResponse<ImportResult>>(
     `${BASE}/import/execute`,
     file,
+    {
+      timeout: 120000,
+      ...(onUploadProgress && {
+        onUploadProgress: (evt) => {
+          if (evt.total) {
+            onUploadProgress(Math.round((evt.loaded * 100) / evt.total));
+          }
+        },
+      }),
+    },
   );
 };
 

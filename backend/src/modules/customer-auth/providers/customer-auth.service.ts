@@ -291,7 +291,11 @@ export class CustomerAuthService {
     if (dto.email) customer.email = dto.email;
     if (dto.phone) customer.phone = dto.phone;
     if (dto.address !== undefined) customer.address = dto.address;
-    if (dto.picture !== undefined) customer.picture = dto.picture;
+    if (dto.picture !== undefined) {
+      customer.picture = dto.picture
+        ? (await this.cloudinaryService.ensureCloudinaryUrl(dto.picture, 'coffee-club/customers')) ?? dto.picture
+        : dto.picture;
+    }
 
     const updatedCustomer = await this.customerRepository.save(customer);
 
