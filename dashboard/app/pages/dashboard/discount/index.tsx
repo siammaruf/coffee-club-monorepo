@@ -34,6 +34,7 @@ export default function DiscountsPage() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const [discountToDelete, setDiscountToDelete] = useState<Discount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
   const [discountApplications, setDiscountApplications] = useState<DiscountApplication[]>([]);
@@ -198,14 +199,20 @@ export default function DiscountsPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await discountService.permanentDelete(id);
-      setDiscounts(prev => prev.filter(item => item.id !== id));
+      await discountService.permanentDelete(permanentDeleteId);
+      setDiscounts(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const formatDiscountValue = (type: string, value: number) => {
@@ -499,6 +506,16 @@ export default function DiscountsPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDiscountToDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

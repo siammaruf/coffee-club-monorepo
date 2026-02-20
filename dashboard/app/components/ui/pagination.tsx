@@ -41,8 +41,17 @@ export function Pagination({
     
     pageNumbers.push(1);
 
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    let startPage = Math.max(2, currentPage - 2);
+    let endPage = Math.min(totalPages - 1, currentPage + 2);
+
+    // Ensure at least 5 middle pages when near edges
+    if (endPage - startPage < 4) {
+      if (startPage === 2) {
+        endPage = Math.min(totalPages - 1, startPage + 4);
+      } else {
+        startPage = Math.max(2, endPage - 4);
+      }
+    }
 
     if (startPage > 2) {
       pageNumbers.push('...');
