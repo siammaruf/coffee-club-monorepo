@@ -69,6 +69,7 @@ export class BankService {
         }
 
         query.orderBy('bank.deleted_at', 'DESC')
+            .addOrderBy('bank.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 

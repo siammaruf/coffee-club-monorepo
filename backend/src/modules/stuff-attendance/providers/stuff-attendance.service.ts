@@ -113,8 +113,9 @@ export class StuffAttendanceService {
       query.andWhere('attendance.attendance_date <= :endDate', { endDate: options.endDate });
     }
     
-    query.orderBy('attendance.attendance_date', 'DESC');
-    
+    query.orderBy('attendance.attendance_date', 'DESC')
+      .addOrderBy('attendance.id', 'ASC');
+
     const page = options?.page || 1;
     const limit = options?.limit || 10;
     query.skip((page - 1) * limit).take(limit);
@@ -434,6 +435,7 @@ export class StuffAttendanceService {
             .where('attendance.deleted_at IS NOT NULL');
 
         query.orderBy('attendance.deleted_at', 'DESC')
+            .addOrderBy('attendance.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
 
