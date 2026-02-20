@@ -105,6 +105,7 @@ export interface OrderListResponse {
   page: number;
   limit: number;
   totalPages: number;
+  statusCounts?: { PENDING: number; PREPARING: number; COMPLETED: number; CANCELLED: number };
   status: string;
   message: string;
   statusCode: number;
