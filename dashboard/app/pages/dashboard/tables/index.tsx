@@ -58,6 +58,7 @@ export default function TablesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tableToDelete, setTableToDelete] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [tableToChangeStatus, setTableToChangeStatus] = useState<{id: string, status: string} | null>(null);
   const [viewTable, setViewTable] = useState<RestaurantTable | null>(null);
   const [editTable, setEditTable] = useState<RestaurantTable | null>(null);
@@ -208,14 +209,20 @@ export default function TablesPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await tableService.permanentDelete(id);
-      setTables(prev => prev.filter(item => item.id !== id));
+      await tableService.permanentDelete(permanentDeleteId);
+      setTables(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const clearFilters = () => {
@@ -659,6 +666,17 @@ export default function TablesPage() {
         onClose={() => setEditTable(null)}
         table={editTable}
         onSave={handleEditTableSave}
+      />
+
+      {/* Confirm Permanent Delete Dialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

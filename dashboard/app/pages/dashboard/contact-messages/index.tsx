@@ -47,6 +47,7 @@ export default function ContactMessagesPage() {
   const [viewMessage, setViewMessage] = useState<ContactMessage | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
@@ -167,15 +168,21 @@ export default function ContactMessagesPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await contactMessageService.permanentDelete(id);
-      setMessages(prev => prev.filter(item => item.id !== id));
+      await contactMessageService.permanentDelete(permanentDeleteId);
+      setMessages(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTotal(prev => prev - 1);
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -426,6 +433,16 @@ export default function ContactMessagesPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
         loading={deleteLoading}
+      />
+
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

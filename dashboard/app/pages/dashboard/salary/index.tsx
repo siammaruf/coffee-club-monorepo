@@ -59,6 +59,7 @@ export default function SalaryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [paymentRecord, setPaymentRecord] = useState<string | null>(null);
   const [deleteRecord, setDeleteRecord] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [perPage] = useState(20);
@@ -223,14 +224,20 @@ export default function SalaryPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await salaryService.permanentDelete(id);
-      setSalaryRecords(prev => prev.filter(item => item.id !== id));
+      await salaryService.permanentDelete(permanentDeleteId);
+      setSalaryRecords(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const handleGenerateSlips = () => {
@@ -659,6 +666,17 @@ export default function SalaryPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteRecord(null)}
+      />
+
+      {/* Confirm Permanent Delete Dialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
 
       {/* Salary Details Modal */}
