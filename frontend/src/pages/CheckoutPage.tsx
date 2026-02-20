@@ -9,7 +9,7 @@ import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
 import { useAppDispatch } from '@/redux/store/hooks'
 import { createOrderThunk } from '@/redux/features/orderSlice'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getEffectivePrice } from '@/lib/utils'
 import type { PaymentMethod } from '@/types/order'
 import toast from 'react-hot-toast'
 
@@ -315,8 +315,8 @@ export default function CheckoutPage() {
                 <tbody>
                   {items?.map((cartItem) => {
                     const price = cartItem.selectedVariation
-                      ? (cartItem.selectedVariation.sale_price ?? cartItem.selectedVariation.regular_price ?? 0)
-                      : (cartItem?.item?.sale_price ?? cartItem?.item?.regular_price ?? 0)
+                      ? getEffectivePrice(cartItem.selectedVariation.regular_price ?? 0, cartItem.selectedVariation.sale_price)
+                      : getEffectivePrice(cartItem?.item?.regular_price ?? 0, cartItem?.item?.sale_price)
                     const lineTotal = price * (cartItem?.quantity ?? 0)
                     return (
                       <tr key={cartItem?.id} className="border-b border-border">

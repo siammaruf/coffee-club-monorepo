@@ -1,5 +1,5 @@
 import { Minus, Plus, X } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getEffectivePrice } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import type { LocalCartItem } from '@/types/cart'
 
@@ -12,8 +12,8 @@ export function CartItem({ cartItem, compact = false }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart()
   const { item, quantity, selectedVariation } = cartItem
   const price = selectedVariation
-    ? (selectedVariation.sale_price ?? selectedVariation.regular_price ?? 0)
-    : (item?.sale_price ?? item?.regular_price ?? 0)
+    ? getEffectivePrice(selectedVariation.regular_price ?? 0, selectedVariation.sale_price)
+    : getEffectivePrice(item?.regular_price ?? 0, item?.sale_price)
   const itemTotal = price * quantity
   const imgSrc = item?.image || '/img/6-600x600.png'
 

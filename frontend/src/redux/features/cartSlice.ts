@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import type { Item, ItemVariation } from '@/types/item'
 import type { RootState } from '../store/store'
+import { getEffectivePrice } from '@/lib/utils'
 
 export interface LocalCartItem {
   id: string
@@ -100,8 +101,8 @@ const cartSlice = createSlice({
 export const selectCartTotal = (state: RootState) =>
   (state.cart.items ?? []).reduce((total, ci) => {
     const price = ci.selectedVariation
-      ? (ci.selectedVariation.sale_price ?? ci.selectedVariation.regular_price ?? 0)
-      : (ci?.item?.sale_price ?? ci?.item?.regular_price ?? 0)
+      ? getEffectivePrice(ci.selectedVariation.regular_price ?? 0, ci.selectedVariation.sale_price)
+      : getEffectivePrice(ci?.item?.regular_price ?? 0, ci?.item?.sale_price)
     return total + price * (ci?.quantity ?? 0)
   }, 0)
 

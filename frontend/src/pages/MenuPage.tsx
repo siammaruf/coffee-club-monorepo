@@ -8,7 +8,7 @@ import { useCart } from '@/hooks/useCart'
 import { useWebsiteContent } from '@/services/httpServices/queries/useWebsiteContent'
 import { AdvantagesSection } from '@/components/home/AdvantagesSection'
 import { defaultAdvantages } from '@/lib/defaults'
-import { formatPrice, formatPriceRange, truncate } from '@/lib/utils'
+import { formatPrice, formatPriceRange, truncate, hasSalePrice, getEffectivePrice } from '@/lib/utils'
 import type { Item } from '@/types/item'
 import toast from 'react-hot-toast'
 
@@ -118,7 +118,7 @@ export default function MenuPage() {
           {!isLoading && !error && (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {items?.map((item) => {
-                const price = item?.sale_price ?? item?.regular_price ?? 0
+                const price = getEffectivePrice(item?.regular_price ?? 0, item?.sale_price)
                 const imgSrc = item?.image || '/img/6-600x600.png'
 
                 return (
@@ -143,7 +143,7 @@ export default function MenuPage() {
                         </button>
                       </div>
                       {/* Sale Badge */}
-                      {item?.sale_price && (
+                      {hasSalePrice(item?.sale_price) && (
                         <div className="absolute left-3 top-3 bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-bg-primary">
                           Sale
                         </div>
@@ -159,7 +159,7 @@ export default function MenuPage() {
                       </p>
                       <div className="mt-2.5 font-heading text-lg tracking-wider text-accent">
                         {item.has_variations ? (
-                          item.sale_price ? (
+                          hasSalePrice(item.sale_price) ? (
                             <span className="flex items-center justify-center gap-2">
                               <span className="text-text-muted line-through">
                                 {formatPriceRange(item.regular_price, item.max_price)}
@@ -169,7 +169,7 @@ export default function MenuPage() {
                           ) : (
                             formatPriceRange(item.regular_price, item.max_price)
                           )
-                        ) : item.sale_price ? (
+                        ) : hasSalePrice(item.sale_price) ? (
                           <span className="flex items-center justify-center gap-2">
                             <span className="text-text-muted line-through">{formatPrice(item.regular_price)}</span>
                             <span>{formatPrice(item.sale_price)}</span>
