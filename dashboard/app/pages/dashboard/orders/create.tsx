@@ -376,7 +376,7 @@ export default function CreateOrderPage() {
                               min={1}
                               placeholder="Qty"
                               value={item.quantity}
-                              onChange={e => handleItemChange(idx, "quantity", e.target.value)}
+                              onChange={e => handleItemChange(idx, "quantity", Number(e.target.value) || 1)}
                               className="w-20"
                               required
                             />
