@@ -219,7 +219,7 @@ export class ItemService {
     if (updateItemDto.regular_price) item.regular_price = updateItemDto.regular_price;
     if (updateItemDto.sale_price) item.sale_price = updateItemDto.sale_price;
     if (updateItemDto.image) item.image = updateItemDto.image;
-    item.has_variations = !!updateItemDto.has_variations;
+    item.has_variations = updateItemDto.has_variations === true;
 
     if (updateItemDto.categories) {
       let categories: Category[] = [];
@@ -494,7 +494,7 @@ export class ItemService {
     if (updateItemDto.regular_price) item.regular_price = updateItemDto.regular_price;
     if (updateItemDto.sale_price) item.sale_price = updateItemDto.sale_price;
     if (updateItemDto.image) item.image = updateItemDto.image;
-    item.has_variations = !!updateItemDto.has_variations;
+    item.has_variations = updateItemDto.has_variations === true;
 
     if (updateItemDto.categories) {
       let categories: Category[] = [];
