@@ -23,6 +23,7 @@ import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Badge } from "~/components/ui/badge";
 import { Loading } from "~/components/ui/loading";
+import { Progress } from "~/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ import { Separator } from "~/components/ui/separator";
 import { dataManagementService } from "~/services/httpServices/dataManagementService";
 import { ImportMode } from "~/types/dataManagement";
 import type { ImportPreview, ImportResult } from "~/types/dataManagement";
+import { cn } from "~/lib/utils";
 import { toast } from "sonner";
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -66,6 +68,7 @@ export default function ImportTab() {
   const [importMode, setImportMode] = useState<ImportMode>(ImportMode.INSERT);
   const [skipErrors, setSkipErrors] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [templateGroup, setTemplateGroup] = useState("");
@@ -144,6 +147,7 @@ export default function ImportTab() {
 
     setImporting(true);
     setResult(null);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
@@ -151,7 +155,8 @@ export default function ImportTab() {
       formData.append("skip_errors", String(skipErrors));
       const response = await dataManagementService.executeImport(
         formData,
-        importMode
+        importMode,
+        (percent) => setUploadProgress(percent),
       );
       setResult(response.data);
       if (response.data.success) {
@@ -165,6 +170,7 @@ export default function ImportTab() {
       toast.error(message);
     } finally {
       setImporting(false);
+      setUploadProgress(null);
     }
   };
 
@@ -316,6 +322,7 @@ export default function ImportTab() {
                 variant="ghost"
                 size="icon"
                 onClick={handleRemoveFile}
+                disabled={importing}
                 className="shrink-0"
               >
                 <Trash2 className="w-4 h-4 text-red-500" />
@@ -497,38 +504,67 @@ export default function ImportTab() {
               </div>
             </div>
 
+            {/* Import Progress */}
+            {importing && (
+              <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Loading size="sm" variant="default" />
+                  {uploadProgress !== null && uploadProgress < 100
+                    ? "Uploading file..."
+                    : "Processing import..."}
+                </div>
+                <Progress
+                  value={
+                    uploadProgress !== null && uploadProgress < 100
+                      ? uploadProgress
+                      : null
+                  }
+                  label={
+                    uploadProgress !== null && uploadProgress < 100
+                      ? "Uploading"
+                      : "Server processing — please wait"
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  {uploadProgress !== null && uploadProgress < 100
+                    ? `File upload ${uploadProgress}% complete. Do not close this page.`
+                    : "The server is processing your data. This may take a moment for large files."}
+                </p>
+              </div>
+            )}
+
             {/* Execute Import */}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleExecuteImport}
-                disabled={importing}
-                className="min-w-[160px]"
-              >
-                {importing ? (
-                  <>
-                    <Loading size="sm" variant="default" />
-                    Importing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Execute Import
-                  </>
-                )}
-              </Button>
-            </div>
+            {!importing && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleExecuteImport}
+                  className="min-w-[160px]"
+                >
+                  <Upload className="w-4 h-4" />
+                  Execute Import
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Import Results */}
       {result && (
-        <Card>
-          <CardHeader>
+        <Card
+          className={cn(
+            "border-l-4",
+            result.success ? "border-l-green-500" : "border-l-red-500"
+          )}
+        >
+          <CardHeader className="space-y-3">
             <CardTitle
-              className={`flex items-center gap-2 ${
-                result.success ? "text-green-700" : "text-red-700"
-              }`}
+              className={cn(
+                "flex items-center gap-2",
+                result.success
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              )}
             >
               {result.success ? (
                 <CheckCircle className="w-5 h-5" />
@@ -539,6 +575,32 @@ export default function ImportTab() {
                 ? "Import Completed Successfully"
                 : "Import Completed with Errors"}
             </CardTitle>
+            {/* Quick summary stats */}
+            <div className="flex flex-wrap gap-3 text-sm">
+              <span className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                <CheckCircle className="w-4 h-4" />
+                {Object.values(result.imported_counts)
+                  .reduce((a, b) => a + b, 0)
+                  .toLocaleString()}{" "}
+                imported
+              </span>
+              {Object.values(result.skipped_counts).reduce((a, b) => a + b, 0) >
+                0 && (
+                <span className="flex items-center gap-1.5 text-yellow-700 dark:text-yellow-400">
+                  <AlertTriangle className="w-4 h-4" />
+                  {Object.values(result.skipped_counts)
+                    .reduce((a, b) => a + b, 0)
+                    .toLocaleString()}{" "}
+                  skipped
+                </span>
+              )}
+              {result.errors.length > 0 && (
+                <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                  <XCircle className="w-4 h-4" />
+                  {result.errors.length.toLocaleString()} error(s)
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Imported Counts */}

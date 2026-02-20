@@ -7,6 +7,7 @@ import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { CategoryResponseDto } from '../dto/category-response.dto';
 import { generateSlug } from '../../../common/utils/string-utils';
 import { CacheService } from '../../cache/cache.service';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 
 @Injectable()
 export class CategoryService {
@@ -14,12 +15,18 @@ export class CategoryService {
         @InjectRepository(Category)
         private readonly categoryRepository: Repository<Category>,
         private readonly cacheService: CacheService,
+        private readonly cloudinaryService: CloudinaryService,
     ) {}
 
     async create(createCategoryDto: CreateCategoryDto): Promise<CategoryResponseDto> {
+        const icon = await this.cloudinaryService.ensureCloudinaryUrl(
+            createCategoryDto.icon || null,
+            'coffee-club/categories',
+        );
+
         const category = this.categoryRepository.create({
             ...createCategoryDto,
-            icon: createCategoryDto.icon === null ? undefined : createCategoryDto.icon,
+            icon: icon ?? undefined,
             slug: generateSlug(createCategoryDto.name),
         });
 
@@ -75,9 +82,16 @@ export class CategoryService {
         if (!category) {
             throw new NotFoundException(`Category with ID ${id} not found`);
         }
+        const icon = updateCategoryDto.icon !== undefined
+            ? await this.cloudinaryService.ensureCloudinaryUrl(
+                updateCategoryDto.icon || null,
+                'coffee-club/categories',
+              )
+            : undefined;
+
         Object.assign(category, {
             ...updateCategoryDto,
-            icon: updateCategoryDto.icon === null ? undefined : updateCategoryDto.icon,
+            icon: icon === null ? undefined : (icon ?? category.icon),
         });
 
         const savedCategory = await this.categoryRepository.save(category);

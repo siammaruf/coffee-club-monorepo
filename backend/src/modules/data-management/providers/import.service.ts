@@ -36,6 +36,9 @@ import { DailyReport } from '../../reports/entities/report.entity';
 // Cache
 import { CacheService } from '../../cache/cache.service';
 
+// Cloudinary
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+
 // Enums for validation
 import { ItemType } from '../../items/enum/item-type.enum';
 import { ItemStatus } from '../../items/enum/item-status.enum';
@@ -77,6 +80,10 @@ interface SheetEntityMapping {
    * Key = normalized snake_case FK column, Value = relation property name.
    */
   relationMappings: Record<string, string>;
+  /** Column names that contain image URLs to be uploaded to Cloudinary */
+  imageColumns: string[];
+  /** Cloudinary folder path for image uploads */
+  imageFolder: string;
 }
 
 interface ColumnDef {
@@ -133,6 +140,7 @@ export class ImportService {
     private dataSource: DataSource,
     private configService: ConfigService,
     private cacheService: CacheService,
+    private cloudinaryService: CloudinaryService,
   ) {
     this.tablePrefix = this.configService.get<string>('DB_TABLE_PREFIX', '');
     this.sheetMappings = this.buildSheetMappings();
@@ -307,6 +315,21 @@ export class ImportService {
           // Store this sheet's ID mapping for downstream FK resolution
           if (sheetIdMap.size > 0) {
             allIdMappings.set(sheetName, sheetIdMap);
+          }
+
+          // Upload external image URLs to Cloudinary
+          if (mapping.imageColumns.length > 0) {
+            for (const row of rows) {
+              for (const imgCol of mapping.imageColumns) {
+                const colValue = row[imgCol];
+                if (colValue && typeof colValue === 'string') {
+                  row[imgCol] = await this.cloudinaryService.ensureCloudinaryUrl(
+                    colValue,
+                    mapping.imageFolder,
+                  );
+                }
+              }
+            }
           }
 
           let imported = 0;
@@ -851,6 +874,7 @@ export class ImportService {
     const noRemap: Record<string, string> = {};
     const noRelations: Record<string, string> = {};
     const noSkip: string[] = [];
+    const noImages: string[] = [];
 
     return {
       'Categories': {
@@ -860,6 +884,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -879,6 +905,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -897,6 +925,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           number: { type: 'string' },
@@ -920,6 +950,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: ['image'],
+        imageFolder: 'coffee-club/kitchen-items',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -944,6 +976,8 @@ export class ImportService {
         skipFields: ['password'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: ['picture', 'nid_front_picture', 'nid_back_picture'],
+        imageFolder: 'coffee-club/users',
         columns: {
           id: { type: 'uuid' },
           first_name: { type: 'string' },
@@ -980,6 +1014,8 @@ export class ImportService {
         skipFields: ['password', 'refresh_token', 'otp', 'otp_expires_at'],
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: ['picture'],
+        imageFolder: 'coffee-club/customers',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -1008,6 +1044,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -1029,6 +1067,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: ['image'],
+        imageFolder: 'coffee-club/items',
         columns: {
           id: { type: 'uuid' },
           name: { type: 'string' },
@@ -1061,6 +1101,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { item_id: 'item' },
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           item_id: { type: 'uuid' },
@@ -1086,6 +1128,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           item_id: { type: 'uuid' },
           category_id: { type: 'uuid' },
@@ -1099,6 +1143,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           bank_name: { type: 'string' },
@@ -1117,6 +1163,8 @@ export class ImportService {
         requiredFields: [],
         skipFields: noSkip,
         fieldRemap: noRemap,
+        imageColumns: noImages,
+        imageFolder: '',
         relationMappings: {
           customer_id: 'customer',
           user_id: 'user',
@@ -1162,6 +1210,8 @@ export class ImportService {
         requiredFields: ['quantity', 'unit_price', 'total_price'],
         skipFields: noSkip,
         fieldRemap: noRemap,
+        imageColumns: noImages,
+        imageFolder: '',
         relationMappings: {
           order_id: 'order',
           item_id: 'item',
@@ -1183,6 +1233,8 @@ export class ImportService {
         tableName: 'order_tokens',
         requiredFields: ['token', 'token_type'],
         skipFields: noSkip,
+        imageColumns: noImages,
+        imageFolder: '',
         // OrderToken entity uses camelCase for timestamps and auto-generated FK
         fieldRemap: {
           ready_at: 'readyAt',
@@ -1222,6 +1274,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
+        imageColumns: ['receipt_image'],
+        imageFolder: 'coffee-club/salary',
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid', nullable: true },
@@ -1245,6 +1299,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { user_id: 'user' },
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid', nullable: true },
@@ -1274,6 +1330,8 @@ export class ImportService {
         fieldRemap: noRemap,
         // Leave entity has an explicit user_id @Column, so no relation mapping needed
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           user_id: { type: 'uuid' },
@@ -1296,6 +1354,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: { category_id: 'category' },
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           title: { type: 'string' },
@@ -1320,6 +1380,8 @@ export class ImportService {
         skipFields: noSkip,
         fieldRemap: noRemap,
         relationMappings: noRelations,
+        imageColumns: noImages,
+        imageFolder: '',
         columns: {
           id: { type: 'uuid' },
           report_date: { type: 'date' },

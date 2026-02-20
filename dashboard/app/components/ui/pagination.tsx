@@ -78,7 +78,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer"
+          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           title="First Page"
@@ -89,7 +89,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer"
+          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           title="Previous Page"
@@ -104,7 +104,7 @@ export function Pagination({
                 key={index}
                 variant={currentPage === page ? "default" : "ghost"}
                 size="icon"
-                className={`h-8 w-8 cursor-pointer text-sm ${
+                className={`h-8 w-8 cursor-pointer border border-[#d9d9d9] text-sm ${
                   currentPage === page ? "font-semibold" : ""
                 }`}
                 onClick={() => onPageChange(page)}
@@ -125,7 +125,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer"
+          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           title="Next Page"
@@ -136,7 +136,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer"
+          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           title="Last Page"

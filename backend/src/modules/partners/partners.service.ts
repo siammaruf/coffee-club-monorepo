@@ -7,17 +7,25 @@ import { Repository } from 'typeorm';
 import { Partner } from './entities/partner.entity';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class PartnersService {
   constructor(
     @InjectRepository(Partner)
     private readonly partnerRepository: Repository<Partner>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(dto: CreatePartnerDto): Promise<Partner> {
+    const logo = await this.cloudinaryService.ensureCloudinaryUrl(
+      dto.logo,
+      'coffee-club/partners',
+    );
+
     const partner = this.partnerRepository.create({
       ...dto,
+      logo: logo || dto.logo,
       website: dto.website || null,
     });
     return this.partnerRepository.save(partner);
@@ -61,7 +69,12 @@ export class PartnersService {
     const partner = await this.findOne(id);
 
     if (dto.name !== undefined) partner.name = dto.name;
-    if (dto.logo !== undefined) partner.logo = dto.logo;
+    if (dto.logo !== undefined) {
+      partner.logo = await this.cloudinaryService.ensureCloudinaryUrl(
+        dto.logo,
+        'coffee-club/partners',
+      ) || dto.logo;
+    }
     if (dto.website !== undefined) partner.website = dto.website || null;
     if (dto.sort_order !== undefined) partner.sort_order = dto.sort_order;
     if (dto.is_active !== undefined) partner.is_active = dto.is_active;

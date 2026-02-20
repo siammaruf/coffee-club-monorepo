@@ -53,6 +53,13 @@ export class CustomerService {
   }
 
   async create(createCustomerDto: CreateCustomerDto): Promise<CustomerResponseDto> {
+    if (createCustomerDto.picture) {
+      createCustomerDto.picture = await this.cloudinaryService.ensureCloudinaryUrl(
+        createCustomerDto.picture,
+        'coffee-club/customers',
+      ) ?? undefined;
+    }
+
     const customer = this.customerRepository.create(createCustomerDto);
     const savedCustomer = await this.customerRepository.save(customer);
     await this.invalidateCache();
@@ -151,6 +158,13 @@ export class CustomerService {
 
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${id} not found`);
+    }
+
+    if (updateCustomerDto.picture) {
+      updateCustomerDto.picture = await this.cloudinaryService.ensureCloudinaryUrl(
+        updateCustomerDto.picture,
+        'coffee-club/customers',
+      ) ?? undefined;
     }
 
     const customerToUpdate = this.customerRepository.create({
