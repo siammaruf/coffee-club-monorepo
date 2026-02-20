@@ -73,6 +73,7 @@ export default function AttendancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [approvalId, setApprovalId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -264,14 +265,20 @@ export default function AttendancePage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await attendanceService.permanentDelete(id);
-      setAttendanceRecords(prev => prev.filter(item => item.id !== id));
+      await attendanceService.permanentDelete(permanentDeleteId);
+      setAttendanceRecords(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const handleAddAttendance = () => {
@@ -894,6 +901,17 @@ export default function AttendancePage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+
+      {/* Confirm Permanent Delete Dialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

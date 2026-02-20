@@ -42,6 +42,7 @@ export default function ExpenseCategoriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<ExpenseCategory | null>(null);
@@ -203,15 +204,21 @@ export default function ExpenseCategoriesPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await expenseCategoryService.permanentDelete(id);
-      setCategories(prev => prev.filter(item => item.id !== id));
-      setFilteredCategories(prev => prev.filter(item => item.id !== id));
+      await expenseCategoryService.permanentDelete(permanentDeleteId);
+      setCategories(prev => prev.filter(item => item.id !== permanentDeleteId));
+      setFilteredCategories(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const hasCategories = categories.length > 0;
@@ -474,6 +481,17 @@ export default function ExpenseCategoriesPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setCategoryToDelete(null)}
+      />
+
+      {/* Confirm Permanent Delete Dialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );

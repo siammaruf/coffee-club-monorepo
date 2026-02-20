@@ -83,6 +83,7 @@ export default function KitchenItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
 
   const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
@@ -204,15 +205,21 @@ export default function KitchenItemsPage() {
     }
   };
 
-  const handlePermanentDelete = async (id: string) => {
+  const handlePermanentDelete = (id: string) => {
+    setPermanentDeleteId(id);
+  };
+
+  const handlePermanentDeleteConfirm = async () => {
+    if (!permanentDeleteId) return;
     try {
-      await kitchenItemsService.permanentDelete(id);
-      setKitchenItems(prev => prev.filter(item => item.id !== id));
-      setFilteredItems(prev => prev.filter(item => item.id !== id));
+      await kitchenItemsService.permanentDelete(permanentDeleteId);
+      setKitchenItems(prev => prev.filter(item => item.id !== permanentDeleteId));
+      setFilteredItems(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
+    setPermanentDeleteId(null);
   };
 
   const hasActiveFilters = !!searchTerm;
@@ -459,6 +466,17 @@ export default function KitchenItemsPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+
+      {/* Confirm Permanent Delete Dialog */}
+      <ConfirmDialog
+        open={!!permanentDeleteId}
+        title="Permanently Delete?"
+        description="Are you sure you want to permanently delete this item? This action cannot be undone."
+        confirmText="Delete Forever"
+        cancelText="Cancel"
+        onConfirm={handlePermanentDeleteConfirm}
+        onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
   );
