@@ -54,9 +54,6 @@ export default function EditOrderScreen() {
     try {
       setLoading(true);
       const response = await orderService.getById(orderId as string);
-
-      console.error('Order response:', response);
-
       if (response && response.data) {
         const orderData = response.data;
         setOrder(orderData);
