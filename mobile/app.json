@@ -2,7 +2,7 @@
   "expo": {
     "name": "CoffeeClubGo",
     "slug": "coffeeclubgo",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "coffeeclubgo",
@@ -46,8 +46,7 @@
       "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},

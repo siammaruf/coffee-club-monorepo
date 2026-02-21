@@ -3,7 +3,7 @@ import '../lib/font-setup';
 import React from 'react';
 import { View, Text, Animated, Easing } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -77,7 +77,6 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -89,27 +88,33 @@ function RootLayoutNav() {
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(app)/(tabs)');
     }
-
-    setIsNavigationReady(true);
   }, [isAuthenticated, isLoading, segments]);
 
-  if (isLoading || !isNavigationReady) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen />;
 
   return <Slot />;
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     NotoSansBengali: require('../../assets/fonts/NotoSansBengali-Regular.ttf'),
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
+  // Timeout fallback: force-hide splash after 5s if font loading hangs
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      SplashScreen.hideAsync();
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
