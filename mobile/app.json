@@ -41,7 +41,7 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-font",
+      ["expo-font", { "fonts": ["./assets/fonts/NotoSansBengali-Regular.ttf"] }],
       "expo-image",
       "expo-web-browser"
     ],

@@ -1,13 +1,18 @@
 import '../lib/suppress-warnings';
+import '../lib/font-setup';
 import React from 'react';
 import { View, Text, Animated, Easing } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ReduxProvider from '@/redux/store';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import '../lib/nativewind-setup';
 import '../../global.css';
+
+SplashScreen.preventAutoHideAsync();
 
 const LOADING_TEXT = 'COFFEE CLUB GO';
 
@@ -94,6 +99,20 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    NotoSansBengali: require('../../assets/fonts/NotoSansBengali-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ReduxProvider>
       <AuthProvider>
