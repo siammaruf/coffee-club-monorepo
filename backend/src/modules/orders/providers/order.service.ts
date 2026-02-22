@@ -599,13 +599,41 @@ export class OrderService {
     }
 
     async permanentDelete(id: string): Promise<void> {
-        const entity = await this.orderRepository.findOne({ where: { id }, withDeleted: true });
+        const entity = await this.orderRepository.findOne({
+            where: { id },
+            withDeleted: true,
+            relations: ['orderItems', 'orderTokens', 'tables'],
+        });
         if (!entity) {
             throw new NotFoundException(`Record with ID ${id} not found`);
         }
         if (!entity.deleted_at) {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
+
+        // Delete order tokens first (cleans up order_token_items junction)
+        if (entity.orderTokens?.length) {
+            for (const token of entity.orderTokens) {
+                await this.orderTokensService.permanentDelete(token.id);
+            }
+        }
+
+        // Delete order items
+        if (entity.orderItems?.length) {
+            for (const item of entity.orderItems) {
+                await this.orderItemService.permanentDelete(item.id);
+            }
+        }
+
+        // Clear order_tables join table
+        if (entity.tables?.length) {
+            await this.orderRepository
+                .createQueryBuilder()
+                .relation(Order, 'tables')
+                .of(id)
+                .remove(entity.tables.map(t => t.id));
+        }
+
         await this.orderRepository.delete(id);
         await this.invalidateCache();
     }
