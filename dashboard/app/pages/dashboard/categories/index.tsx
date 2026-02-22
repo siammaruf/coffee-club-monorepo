@@ -40,28 +40,29 @@ export default function CategoriesPage() {
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
+  const fetchCategories = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
 
-        const res = viewMode === 'trash'
-          ? await categoryService.getTrash(params)
-          : await categoryService.getAll(params);
-        const data = res as any;
-        setCategories(data.data || []);
-        setTotal(data.total || 0);
-      } catch (error) {
-        setCategories([]);
-        setTotal(0);
-      }
-      setIsLoading(false);
-    };
+      const res = viewMode === 'trash'
+        ? await categoryService.getTrash(params)
+        : await categoryService.getAll(params);
+      const data = res as any;
+      setCategories(data.data || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      setCategories([]);
+      setTotal(0);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     fetchCategories();
   }, [currentPage, searchTerm, viewMode]);
 
@@ -184,13 +185,13 @@ export default function CategoriesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => categoryService.restore(id)));
-      setCategories(prev => prev.filter(cat => !selectedIds.has(cat.id)));
-      setTotal(prev => prev - selectedIds.size);
+      await categoryService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchCategories();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchCategories();
     }
     setBulkLoading(false);
   };
@@ -199,13 +200,14 @@ export default function CategoriesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => categoryService.permanentDelete(id)));
-      setCategories(prev => prev.filter(cat => !selectedIds.has(cat.id)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await categoryService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchCategories();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchCategories();
     }
     setBulkLoading(false);
   };

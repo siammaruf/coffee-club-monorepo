@@ -19,4 +19,6 @@ export const reservationService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/reservations/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/reservations/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/reservations/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/reservations/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/reservations/bulk/permanent', { data: { ids } }),
 };

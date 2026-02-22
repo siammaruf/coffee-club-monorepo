@@ -211,12 +211,13 @@ export default function Employees() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => userService.restore(id)));
-      setUsers(prev => prev.filter(u => !selectedIds.has(u.id)));
+      await userService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchUsers();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchUsers();
     }
     setBulkLoading(false);
   };
@@ -225,12 +226,14 @@ export default function Employees() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => userService.permanentDelete(id)));
-      setUsers(prev => prev.filter(u => !selectedIds.has(u.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await userService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchUsers();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchUsers();
     }
     setBulkLoading(false);
   };

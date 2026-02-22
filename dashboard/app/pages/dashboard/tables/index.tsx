@@ -176,11 +176,12 @@ export default function TablesPage() {
     setBulkLoading(true);
     try {
       await tableService.bulkRestore(Array.from(selectedIds));
-      setTables(prev => prev.filter(item => !selectedIds.has(item.id)));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchTables();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchTables();
     }
     setBulkLoading(false);
   };
@@ -189,12 +190,14 @@ export default function TablesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await tableService.bulkPermanentDelete(Array.from(selectedIds));
-      setTables(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await tableService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchTables();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchTables();
     }
     setBulkLoading(false);
   };

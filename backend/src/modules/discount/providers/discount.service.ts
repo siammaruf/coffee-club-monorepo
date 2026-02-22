@@ -201,4 +201,38 @@ export class DiscountService {
         await this.discountRepository.delete(id);
         await this.invalidateCache();
     }
+
+    async bulkRestore(ids: string[]): Promise<void> {
+        await this.discountRepository.restore(ids);
+        await this.invalidateCache();
+    }
+
+    async bulkPermanentDelete(ids: string[]): Promise<{ deleted: string[]; failed: { id: string; reason: string }[] }> {
+        const deleted: string[] = [];
+        const failed: { id: string; reason: string }[] = [];
+
+        for (const id of ids) {
+            try {
+                const entity = await this.discountRepository.findOne({
+                    where: { id },
+                    withDeleted: true,
+                });
+                if (!entity) {
+                    failed.push({ id, reason: 'Record not found' });
+                    continue;
+                }
+                if (!entity.deleted_at) {
+                    failed.push({ id, reason: 'Record is not in trash' });
+                    continue;
+                }
+                await this.discountRepository.delete(id);
+                deleted.push(id);
+            } catch (error) {
+                failed.push({ id, reason: error?.message || 'Unknown error' });
+            }
+        }
+
+        await this.invalidateCache();
+        return { deleted, failed };
+    }
 }

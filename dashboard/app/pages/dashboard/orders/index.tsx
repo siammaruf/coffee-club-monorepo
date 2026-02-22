@@ -187,13 +187,13 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => orderService.restore(id)));
-      setOrders(prev => prev.filter(order => !selectedIds.has(order.id)));
-      setTotalOrders(prev => prev - selectedIds.size);
+      await orderService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchOrders();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchOrders();
     }
     setBulkLoading(false);
   };
@@ -202,13 +202,14 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => orderService.permanentDelete(id)));
-      setOrders(prev => prev.filter(order => !selectedIds.has(order.id)));
-      setTotalOrders(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await orderService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchOrders();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchOrders();
     }
     setBulkLoading(false);
   };

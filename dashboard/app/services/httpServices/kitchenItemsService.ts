@@ -12,4 +12,6 @@ export const kitchenItemsService = {
   getTrash: (params?: Record<string, any>) => httpService.get(`${BASE_URL}/trash/list`, params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`${BASE_URL}/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`${BASE_URL}/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch(`${BASE_URL}/bulk/restore`, { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete(`${BASE_URL}/bulk/permanent`, { data: { ids } }),
 };

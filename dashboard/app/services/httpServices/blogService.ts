@@ -14,4 +14,6 @@ export const blogService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/blog/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/blog/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/blog/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/blog/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/blog/bulk/permanent', { data: { ids } }),
 };

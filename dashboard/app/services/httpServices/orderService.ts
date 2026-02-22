@@ -14,4 +14,6 @@ export const orderService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/orders/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/orders/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/orders/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/orders/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/orders/bulk/permanent', { data: { ids } }),
 };

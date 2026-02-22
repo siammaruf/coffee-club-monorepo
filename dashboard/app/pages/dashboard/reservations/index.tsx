@@ -60,27 +60,28 @@ export default function ReservationsPage() {
     reservationService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
+  const fetchReservations = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter) params.status = statusFilter;
+      const res = viewMode === 'active'
+        ? await reservationService.getAll(params)
+        : await reservationService.getTrash(params) as any;
+      setReservations(res.data || []);
+      setTotal(res.total || 0);
+    } catch {
+      setReservations([]);
+      setTotal(0);
+    }
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchReservations = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
-        if (statusFilter) params.status = statusFilter;
-        const res = viewMode === 'active'
-          ? await reservationService.getAll(params)
-          : await reservationService.getTrash(params) as any;
-        setReservations(res.data || []);
-        setTotal(res.total || 0);
-      } catch {
-        setReservations([]);
-        setTotal(0);
-      }
-      setIsLoading(false);
-    };
     fetchReservations();
   }, [currentPage, searchTerm, statusFilter, viewMode]);
 
@@ -125,13 +126,13 @@ export default function ReservationsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => reservationService.restore(id)));
-      setReservations(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
+      await reservationService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchReservations();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchReservations();
     }
     setBulkLoading(false);
   };
@@ -140,13 +141,14 @@ export default function ReservationsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => reservationService.permanentDelete(id)));
-      setReservations(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await reservationService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchReservations();
     } catch (error) {
-      console.error("Permanent delete failed:", error);
+      console.error("Bulk permanent delete failed:", error);
+      fetchReservations();
     }
     setBulkLoading(false);
   };

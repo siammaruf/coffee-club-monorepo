@@ -196,13 +196,13 @@ export default function ExpensesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => expenseService.restore(id)));
-      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
-      setFilteredExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      await expenseService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchExpenses();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchExpenses();
     }
     setBulkLoading(false);
   };
@@ -211,13 +211,14 @@ export default function ExpensesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => expenseService.permanentDelete(id)));
-      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
-      setFilteredExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await expenseService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchExpenses();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchExpenses();
     }
     setBulkLoading(false);
   };

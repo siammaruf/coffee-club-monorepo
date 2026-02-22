@@ -191,11 +191,12 @@ export default function SalaryPage() {
     setBulkLoading(true);
     try {
       await salaryService.bulkRestore(Array.from(selectedIds));
-      setSalaryRecords(prev => prev.filter(item => !selectedIds.has(item.id ?? '')));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchSalaryRecords();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchSalaryRecords();
     }
     setBulkLoading(false);
   };
@@ -204,12 +205,14 @@ export default function SalaryPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await salaryService.bulkPermanentDelete(Array.from(selectedIds));
-      setSalaryRecords(prev => prev.filter(item => !selectedIds.has(item.id ?? '')));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await salaryService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchSalaryRecords();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchSalaryRecords();
     }
     setBulkLoading(false);
   };

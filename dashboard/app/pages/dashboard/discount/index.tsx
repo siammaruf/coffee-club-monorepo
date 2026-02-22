@@ -166,11 +166,12 @@ export default function DiscountsPage() {
     setBulkLoading(true);
     try {
       await discountService.bulkRestore(Array.from(selectedIds));
-      setDiscounts(prev => prev.filter(item => !selectedIds.has(item.id)));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchDiscounts();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchDiscounts();
     }
     setBulkLoading(false);
   };
@@ -179,12 +180,14 @@ export default function DiscountsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await discountService.bulkPermanentDelete(Array.from(selectedIds));
-      setDiscounts(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await discountService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchDiscounts();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchDiscounts();
     }
     setBulkLoading(false);
   };
