@@ -353,6 +353,55 @@ export class ItemService {
     await this.invalidateCache();
   }
 
+  async bulkRestore(ids: string[]): Promise<void> {
+    await this.itemRepository.restore(ids);
+    await this.invalidateCache();
+  }
+
+  async bulkPermanentDelete(ids: string[]): Promise<{ deleted: string[]; failed: { id: string; reason: string }[] }> {
+    const deleted: string[] = [];
+    const failed: { id: string; reason: string }[] = [];
+
+    for (const id of ids) {
+      try {
+        const item = await this.itemRepository.findOne({
+          where: { id },
+          withDeleted: true,
+        });
+        if (!item) {
+          failed.push({ id, reason: 'Record not found' });
+          continue;
+        }
+        if (!item.deleted_at) {
+          failed.push({ id, reason: 'Record is not in trash' });
+          continue;
+        }
+
+        const orderItemsCount = await this.itemRepository.manager.getRepository('OrderItem')
+          .createQueryBuilder('orderItem')
+          .where('orderItem.item_id = :itemId', { itemId: id })
+          .getCount();
+
+        if (orderItemsCount > 0) {
+          failed.push({ id, reason: 'Cannot delete: has associated order items' });
+          continue;
+        }
+
+        if (item.image) {
+          await this.removeItemImage(item.image);
+        }
+
+        await this.itemRepository.delete(id);
+        deleted.push(id);
+      } catch (error) {
+        failed.push({ id, reason: error?.message || 'Unknown error' });
+      }
+    }
+
+    await this.invalidateCache();
+    return { deleted, failed };
+  }
+
   private async slugExists(slug: string): Promise<boolean> {
     const item = await this.itemRepository.findOne({ where: { slug } });
     return !!item;

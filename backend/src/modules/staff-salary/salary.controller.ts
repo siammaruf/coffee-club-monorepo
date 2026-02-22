@@ -140,6 +140,31 @@ export class SalaryController {
         };
     }
 
+    @Patch('bulk/restore')
+    @ApiOperation({ summary: 'Bulk restore from trash' })
+    async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
+        await this.salaryService.bulkRestore(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) restored.`,
+            statusCode: HttpStatus.OK,
+        };
+    }
+
+    @Delete('bulk/permanent')
+    @ApiOperation({ summary: 'Bulk permanent delete' })
+    async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
+        const result = await this.salaryService.bulkPermanentDelete(body.ids);
+        return {
+            data: result,
+            status: result.failed.length === 0 ? 'success' : 'partial',
+            message: result.failed.length === 0
+                ? `${result.deleted.length} record(s) permanently deleted.`
+                : `${result.deleted.length} deleted, ${result.failed.length} failed.`,
+            statusCode: HttpStatus.OK,
+        };
+    }
+
     @Get('trash/list')
     @ApiOperation({ summary: 'List trashed records' })
     async findTrashed(
