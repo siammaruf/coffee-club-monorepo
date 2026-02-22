@@ -155,4 +155,8 @@ export class OrderItemService {
         }
         await this.orderItemRepository.delete(id);
     }
+
+    async forceDelete(id: string): Promise<void> {
+        await this.orderItemRepository.delete(id);
+    }
 }
