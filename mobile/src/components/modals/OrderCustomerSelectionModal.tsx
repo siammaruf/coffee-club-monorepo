@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Customer } from '@/types/customer';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 interface OrderCustomerSelectionModalProps {
   visible: boolean;
@@ -110,9 +111,9 @@ export default function OrderCustomerSelectionModal({
                               </Text>
                             </View>
                             <View className="bg-green-100 px-2 py-1 rounded-full">
-                              <Text className="text-xs font-medium text-green-800">
+                              <PriceText className="text-xs font-medium text-green-800">
                                 {formatPrice(item.balance)} Balance
-                              </Text>
+                              </PriceText>
                             </View>
                           </>
                         )}

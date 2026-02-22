@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Discount } from '@/types/discount';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 interface DiscountSelectionModalProps {
   visible: boolean;
@@ -53,9 +54,9 @@ export default function DiscountSelectionModal({
                 <Ionicons name="close" size={24} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-            <Text className="text-sm text-gray-600 mt-1">
+            <PriceText className="text-sm text-gray-600 mt-1">
               Current subtotal: {formatPrice(subtotal)}
-            </Text>
+            </PriceText>
           </View>
 
           <ScrollView className="p-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}>
@@ -108,13 +109,13 @@ export default function DiscountSelectionModal({
                     <View className={`px-2 py-1 rounded-full ${
                       discountColors[discount.discount_type === 'percentage' ? 'percentage' : 'fixed'].bg
                     }`}>
-                      <Text className={`text-xs font-medium ${
+                      <PriceText className={`text-xs font-medium ${
                         discountColors[discount.discount_type === 'percentage' ? 'percentage' : 'fixed'].text
                       }`}>
                         {discount.discount_type === 'percentage'
                           ? `${discount.discount_value}%`
                           : formatPrice(discount.discount_value)}
-                      </Text>
+                      </PriceText>
                     </View>
                     {selectedDiscount?.id === discount.id && (
                       <Ionicons name="checkmark-circle" size={24} color="#10B981" style={{ marginLeft: 8 }} />

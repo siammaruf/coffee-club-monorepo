@@ -89,8 +89,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const checkAuthStatus = async () => {
         setIsLoading(true);
         try {
-            const response = await authService.checkAuthStatus();
-            console.log('Auth status response:', response);
+            const response = await Promise.race([
+                authService.checkAuthStatus(),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Auth check timeout')), 8000)
+                ),
+            ]);
 
             const userRole = response.data?.role?.toLowerCase();
             if (userRole !== 'manager') {
@@ -107,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const cachedUser = await StorageService.getUserSession();
             if (cachedUser && cachedUser.role?.toLowerCase() === 'manager') {
                 setUser(cachedUser);
-                console.log('Using cached user session');
+                setIsAuthenticated(true);
             } else {
                 await StorageService.clearUserSession();
                 setUser(null);

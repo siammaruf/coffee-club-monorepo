@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import reportService from '@/services/httpServices/reportService';
 import { formatPriceCompact } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 import { printSalesReport } from '@/utils/printer';
 
 // Helper for pretty date
@@ -37,11 +38,11 @@ const StatRow = ({
             <Text className="text-gray-600 text-sm">{label}</Text>
         </View>
         {highlight ? (
-            <Text className="text-base font-bold text-white px-3 py-1 rounded-full bg-pink-500 shadow" style={{ overflow: 'hidden' }}>
+            <PriceText className="text-base font-bold text-white px-3 py-1 rounded-full bg-pink-500 shadow" style={{ overflow: 'hidden' }}>
                 {value}
-            </Text>
+            </PriceText>
         ) : (
-            <Text className="text-gray-900 font-semibold text-base">{value}</Text>
+            <PriceText className="text-gray-900 font-semibold text-base">{value}</PriceText>
         )}
     </View>
 );

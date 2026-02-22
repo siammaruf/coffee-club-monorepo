@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TitleBar from '@/components/common/TitleBar';
@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { formatPrettyDate } from '@/utils/helpers';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 import FilterModal from '@/components/modals/FilterModal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import ExpenseSkeleton from '@/components/skeletons/ExpenseSkeleton';
@@ -34,15 +35,11 @@ export default function ExpensesListScreen() {
 
     useFocusEffect(
         useCallback(() => {
+            setPage(1);
             fetchExpenses(1, true);
             fetchCategories();
-        }, [])
+        }, [statusFilter, dateFilter, startDate, endDate, activeFilter])
     );
-
-    useEffect(() => {
-        setPage(1);
-        fetchExpenses(1, true);
-    }, [statusFilter, dateFilter, startDate, endDate, activeFilter]);
 
     const fetchExpenses = async (pageNumber = 1, replace = false) => {
         if (loading && !replace) return;
@@ -262,9 +259,9 @@ export default function ExpensesListScreen() {
                                         <Text className="text-xs text-gray-400">{formatPrettyDate(item.created_at)}</Text>
                                     </View>
                                     <View className="items-end ml-2 pr-1">
-                                        <Text className="text-lg font-bold text-orange-500">
+                                        <PriceText className="text-lg font-bold text-orange-500">
                                             {formatPrice(item.amount)}
-                                        </Text>
+                                        </PriceText>
                                         <Text className={`text-xs mt-1 ${
                                             item.status === 'approved'
                                                 ? 'text-green-600'
