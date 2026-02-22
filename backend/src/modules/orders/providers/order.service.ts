@@ -614,14 +614,14 @@ export class OrderService {
         // Delete order tokens first (cleans up order_token_items junction)
         if (entity.orderTokens?.length) {
             for (const token of entity.orderTokens) {
-                await this.orderTokensService.permanentDelete(token.id);
+                await this.orderTokensService.forceDelete(token.id);
             }
         }
 
         // Delete order items
         if (entity.orderItems?.length) {
             for (const item of entity.orderItems) {
-                await this.orderItemService.permanentDelete(item.id);
+                await this.orderItemService.forceDelete(item.id);
             }
         }
 
@@ -666,14 +666,14 @@ export class OrderService {
                 // Delete order tokens first (cleans up order_token_items junction)
                 if (entity.orderTokens?.length) {
                     for (const token of entity.orderTokens) {
-                        await this.orderTokensService.permanentDelete(token.id);
+                        await this.orderTokensService.forceDelete(token.id);
                     }
                 }
 
                 // Delete order items
                 if (entity.orderItems?.length) {
                     for (const item of entity.orderItems) {
-                        await this.orderItemService.permanentDelete(item.id);
+                        await this.orderItemService.forceDelete(item.id);
                     }
                 }
 
