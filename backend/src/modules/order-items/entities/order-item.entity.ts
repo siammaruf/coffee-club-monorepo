@@ -17,7 +17,7 @@ export class OrderItem {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     total_price: number;
 
-    @ManyToOne("Order")
+    @ManyToOne("Order", { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'order_id' })
     order: Relation<Order>;
 
