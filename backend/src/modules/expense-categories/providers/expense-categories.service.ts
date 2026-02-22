@@ -259,8 +259,8 @@ export class ExpenseCategoriesService {
       throw new NotFoundException(`Expense category with ID "${id}" not found`);
     }
     
-    await this.expenseCategoryRepository.remove(category);
-    
+    await this.expenseCategoryRepository.softDelete(id);
+
     await this.invalidateCache();
   }
 
