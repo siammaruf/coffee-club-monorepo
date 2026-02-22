@@ -7,6 +7,7 @@ import { categoryService } from '@/services/httpServices/categoryService';
 import CategoryModal from '@/components/modals/CategoryModal';
 import ProductSkeleton from '@/components/skeletons/ProductSkeleton';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function ProductListScreen() {
     const [products, setProducts] = useState<any[]>([]);
@@ -134,21 +135,21 @@ export default function ProductListScreen() {
                     <View className="items-end ml-2">
                         {item.has_variations && item.variations?.length > 0 ? (
                             <>
-                                <Text className="text-base font-bold text-orange-500">
+                                <PriceText className="text-base font-bold text-orange-500">
                                     {(() => {
                                         const prices = item.variations.map((v: any) => parseFloat(v.regular_price));
                                         const min = Math.min(...prices);
                                         const max = Math.max(...prices);
                                         return formatPriceRange(min, max);
                                     })()}
-                                </Text>
+                                </PriceText>
                                 <Text className="text-xs text-gray-500">{item.variations.length} variation{item.variations.length > 1 ? 's' : ''}</Text>
                             </>
                         ) : (
                             <>
-                                <Text className="text-base font-bold text-green-600">{formatPrice(item.regular_price)}</Text>
+                                <PriceText className="text-base font-bold text-green-600">{formatPrice(item.regular_price)}</PriceText>
                                 {item.sale_price && item.sale_price !== '0.00' && (
-                                    <Text className="text-xs text-pink-500">Sale: {formatPrice(item.sale_price)}</Text>
+                                    <PriceText className="text-xs text-pink-500">Sale: {formatPrice(item.sale_price)}</PriceText>
                                 )}
                             </>
                         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import { Order } from '@/types/order';
 import OrdersSkeleton from '@/components/skeletons/OrdersSkeleton';
 import { OrderStatus } from '@/enums/orderEnum';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function OrderListScreen() {
   const router = useRouter();
@@ -121,12 +122,6 @@ export default function OrderListScreen() {
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    setCurrentPage(1);
-    setHasMoreData(true);
-    loadOrders(1, false);
-  }, [selectedStatus, selectedDateFilter, selectedDate]);
 
   useFocusEffect(
     useCallback(() => {
@@ -297,7 +292,7 @@ export default function OrderListScreen() {
       {/* Compact Order Footer */}
       <View className="flex-row items-center justify-between border-t border-gray-100 pt-2">
         <View>
-          <Text className="font-bold text-base text-[#EF4444]">{formatPrice(order.total_amount)}</Text>
+          <PriceText className="font-bold text-base text-[#EF4444]">{formatPrice(order.total_amount)}</PriceText>
         </View>
 
         {/* Compact Quick Actions */}

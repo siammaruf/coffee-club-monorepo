@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import reportService from '@/services/httpServices/reportService';
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
 import { formatPriceCompact } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 const screenMap: Record<string, string> = {
   OrderCreate: '/(app)/orders/create',
@@ -116,7 +117,7 @@ export default function DashboardScreen() {
                     </Text>
                   ) : null}
                 </View>
-                <Text className="text-2xl font-bold text-gray-800 mb-1">{stat.value}</Text>
+                <PriceText className="text-2xl font-bold text-gray-800 mb-1">{stat.value}</PriceText>
                 <Text className="text-gray-500 text-xs">{stat.title}</Text>
               </View>
             ))}
@@ -155,7 +156,7 @@ export default function DashboardScreen() {
                     <Ionicons name={item.icon as any} size={22} color={item.color} />
                   </View>
                   <View className="bg-gray-100 rounded-full px-2 py-1">
-                    <Text className="text-gray-600 text-xs font-medium">{item.count}</Text>
+                    <PriceText className="text-gray-600 text-xs font-medium">{item.count}</PriceText>
                   </View>
                 </View>
                 <Text className="text-gray-800 font-semibold text-base mb-1">{item.label}</Text>

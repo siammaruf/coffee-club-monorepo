@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { productService } from '@/services/httpServices/productService';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProductDetailsScreen() {
@@ -54,9 +55,9 @@ export default function ProductDetailsScreen() {
         const max = Math.max(...prices);
         priceSection = (
             <View className="mb-2">
-                <Text className="text-lg font-bold text-orange-500">
+                <PriceText className="text-lg font-bold text-orange-500">
                     {formatPriceRange(min, max)}
-                </Text>
+                </PriceText>
                 <Text className="text-xs text-gray-500 mt-1">
                     {product.variations.length} variation{product.variations.length > 1 ? 's' : ''}
                 </Text>
@@ -65,9 +66,9 @@ export default function ProductDetailsScreen() {
     } else {
         priceSection = (
             <View className="mb-2 flex-row items-center">
-                <Text className="text-lg font-bold text-green-600">{formatPrice(product.regular_price)}</Text>
+                <PriceText className="text-lg font-bold text-green-600">{formatPrice(product.regular_price)}</PriceText>
                 {product.sale_price && product.sale_price !== '0.00' && (
-                    <Text className="ml-3 text-base font-bold text-pink-500">Sale: {formatPrice(product.sale_price)}</Text>
+                    <PriceText className="ml-3 text-base font-bold text-pink-500">Sale: {formatPrice(product.sale_price)}</PriceText>
                 )}
             </View>
         );
@@ -142,7 +143,7 @@ export default function ProductDetailsScreen() {
                                     <Text className="text-sm text-gray-800 flex-1">
                                         {v.name} <Text className="text-xs text-gray-500">{v.name_bn}</Text>
                                     </Text>
-                                    <Text className="text-sm text-green-700">{formatPrice(v.regular_price)}</Text>
+                                    <PriceText className="text-sm text-green-700">{formatPrice(v.regular_price)}</PriceText>
                                 </View>
                                 {idx !== product.variations.length - 1 && (
                                     <View className="border-b border-gray-100" />

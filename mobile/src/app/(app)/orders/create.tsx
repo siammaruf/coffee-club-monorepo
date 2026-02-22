@@ -14,6 +14,7 @@ import { productService } from '@/services/httpServices/productService';
 import { OrderStatus, OrderType } from '@/enums/orderEnum';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function OrderForm() {
   const router = useRouter();
@@ -433,9 +434,9 @@ export default function OrderForm() {
                     const max = Math.max(...prices);
                     priceDisplay = (
                       <View className="flex-row items-center">
-                        <Text className="text-base font-bold text-[#EF4444]">
+                        <PriceText className="text-base font-bold text-[#EF4444]">
                           {formatPriceRange(min, max)}
-                        </Text>
+                        </PriceText>
                         <Text className="ml-2 text-xs text-gray-500">
                           {item.variations.length} variation{item.variations.length > 1 ? 's' : ''}
                         </Text>
@@ -443,7 +444,7 @@ export default function OrderForm() {
                     );
                   } else {
                     priceDisplay = (
-                      <Text className="text-base font-bold text-[#EF4444]">{formatPrice(item.regular_price)}</Text>
+                      <PriceText className="text-base font-bold text-[#EF4444]">{formatPrice(item.regular_price)}</PriceText>
                     );
                   }
 
@@ -538,15 +539,15 @@ export default function OrderForm() {
                         <Text className="text-xs text-gray-500">Qty: {item.quantity}</Text>
                       </View>
                     </View>
-                    <Text className="text-sm font-semibold text-gray-800">
+                    <PriceText className="text-sm font-semibold text-gray-800">
                       {formatPrice(item.total_price)}
-                    </Text>
+                    </PriceText>
                   </View>
                 ))}
 
                 <View className="flex-row justify-between items-center pt-3 mt-2 border-t-2 border-gray-100">
                   <Text className="text-base font-bold text-gray-800">Subtotal</Text>
-                  <Text className="text-lg font-bold text-[#EF4444]">{formatPrice(totalAmount)}</Text>
+                  <PriceText className="text-lg font-bold text-[#EF4444]">{formatPrice(totalAmount)}</PriceText>
                 </View>
               </View>
             </View>
