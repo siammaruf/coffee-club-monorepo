@@ -57,28 +57,29 @@ export default function ContactMessagesPage() {
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
-        if (statusFilter) params.status = statusFilter;
+  const fetchMessages = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter) params.status = statusFilter;
 
-        const res = viewMode === 'active'
-          ? await contactMessageService.getAll(params)
-          : await contactMessageService.getTrash(params);
-        setMessages((res as any).data || []);
-        setTotal((res as any).total || 0);
-      } catch {
-        setMessages([]);
-        setTotal(0);
-      }
-      setIsLoading(false);
-    };
+      const res = viewMode === 'active'
+        ? await contactMessageService.getAll(params)
+        : await contactMessageService.getTrash(params);
+      setMessages((res as any).data || []);
+      setTotal((res as any).total || 0);
+    } catch {
+      setMessages([]);
+      setTotal(0);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     fetchMessages();
   }, [currentPage, searchTerm, statusFilter, viewMode]);
 
@@ -132,12 +133,12 @@ export default function ContactMessagesPage() {
     setBulkLoading(true);
     try {
       await contactMessageService.bulkRestore(Array.from(selectedIds));
-      setMessages(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchMessages();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchMessages();
     }
     setBulkLoading(false);
   };
@@ -146,13 +147,14 @@ export default function ContactMessagesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await contactMessageService.bulkPermanentDelete(Array.from(selectedIds));
-      setMessages(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await contactMessageService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchMessages();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchMessages();
     }
     setBulkLoading(false);
   };

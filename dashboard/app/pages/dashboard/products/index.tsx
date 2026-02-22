@@ -85,34 +85,35 @@ export default function ProductsPage() {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
-        if (categoryFilter) params.categorySlug = categoryFilter;
-        if (typeFilter) params.type = typeFilter;
-        if (statusFilter) params.status = statusFilter;
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (categoryFilter) params.categorySlug = categoryFilter;
+      if (typeFilter) params.type = typeFilter;
+      if (statusFilter) params.status = statusFilter;
 
-        const response = viewMode === 'trash'
-          ? await productService.getTrash(params)
-          : await productService.getAll(params);
-        const data = response as any;
-        setProducts(Array.isArray(data.data) ? data.data : []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
-      } catch {
-        setProducts([]);
-        setTotal(0);
-        setTotalPages(1);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const response = viewMode === 'trash'
+        ? await productService.getTrash(params)
+        : await productService.getAll(params);
+      const data = response as any;
+      setProducts(Array.isArray(data.data) ? data.data : []);
+      setTotal(data.total || 0);
+      setTotalPages(data.totalPages || 1);
+    } catch {
+      setProducts([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProducts();
   }, [currentPage, searchTerm, categoryFilter, typeFilter, statusFilter, viewMode]);
 
@@ -205,13 +206,13 @@ export default function ProductsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => productService.restore(id)));
-      setProducts(prev => prev.filter(item => !selectedIds.has(item.id!)));
-      setTotal(prev => prev - selectedIds.size);
+      await productService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchProducts();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchProducts();
     }
     setBulkLoading(false);
   };
@@ -220,13 +221,14 @@ export default function ProductsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => productService.permanentDelete(id)));
-      setProducts(prev => prev.filter(item => !selectedIds.has(item.id!)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await productService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchProducts();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchProducts();
     }
     setBulkLoading(false);
   };

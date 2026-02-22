@@ -15,4 +15,6 @@ export const productService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/items/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/items/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/items/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/items/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/items/bulk/permanent', { data: { ids } }),
 };
