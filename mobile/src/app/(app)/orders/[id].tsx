@@ -16,6 +16,7 @@ import type { Discount } from '@/types/discount';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { printBarToken, printKitchenToken, printReceipt } from '@/utils/printer';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function OrderDetails() {
   const router = useRouter();
@@ -128,8 +129,6 @@ export default function OrderDetails() {
 
   useEffect(() => {
     loadOrder();
-    loadCustomers();
-    loadDiscounts();
   }, [orderId]);
 
   const handleSelectDiscount = async (discount: Discount) => {
@@ -619,9 +618,9 @@ export default function OrderDetails() {
                         </Text>
                       </View>
                       <View className="bg-green-100 px-1.5 py-0.5 rounded">
-                        <Text className="text-xs text-green-800">
+                        <PriceText className="text-xs text-green-800">
                           {formatPrice('balance' in selectedCustomer ? (selectedCustomer as Customer).balance : 0)}
-                        </Text>
+                        </PriceText>
                       </View>
                     </View>
                   )}
@@ -725,9 +724,9 @@ export default function OrderDetails() {
                     <Text className="text-sm font-bold text-gray-800">
                       {selectedDiscount?.name || 'Discount Applied'}
                     </Text>
-                    <Text className="text-xs text-green-600">
+                    <PriceText className="text-xs text-green-600">
                       Saving: {formatPrice(order.discount_amount || discountAmount)}
-                    </Text>
+                    </PriceText>
                   </View>
                 </View>
               ) : (
@@ -779,13 +778,13 @@ export default function OrderDetails() {
                     <Text className="text-sm font-bold text-gray-800">
                       {isPointsRedemptionApplied ? 'Balance Discount Applied' : 'Use Balance as Discount'}
                     </Text>
-                    <Text className={`text-xs ${
+                    <PriceText className={`text-xs ${
                       isPointsRedemptionApplied ? 'text-purple-600' : 'text-gray-500'
                     }`}>
                       {isPointsRedemptionApplied
                         ? `Saving: ${formatPrice(pointsDiscount)}`
                         : `Available: ${formatPrice((selectedCustomer as Customer).balance)}`}
-                    </Text>
+                    </PriceText>
                   </View>
                 </View>
               </View>
@@ -801,9 +800,9 @@ export default function OrderDetails() {
                   </View>
                   <View className="flex-1">
                     <Text className="text-sm font-bold text-gray-800">Balance Discount Applied</Text>
-                    <Text className="text-xs text-purple-600">
+                    <PriceText className="text-xs text-purple-600">
                       Saved: {formatPrice(pointsDiscount)}
-                    </Text>
+                    </PriceText>
                   </View>
                 </View>
               </View>
@@ -830,12 +829,12 @@ export default function OrderDetails() {
                     )}
                   </View>
                   <View className="items-end">
-                    <Text className="text-xs text-gray-600">
+                    <PriceText className="text-xs text-gray-600">
                       {item.quantity} x {formatPrice(item.unit_price)}
-                    </Text>
-                    <Text className="text-sm font-semibold text-[#EF4444]">
+                    </PriceText>
+                    <PriceText className="text-sm font-semibold text-[#EF4444]">
                       {formatPrice(item.total_price)}
-                    </Text>
+                    </PriceText>
                   </View>
                 </View>
               ))}
@@ -858,31 +857,31 @@ export default function OrderDetails() {
 
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-gray-600">Subtotal</Text>
-                  <Text className="text-xs text-gray-800">{formatPrice(subtotal)}</Text>
+                  <PriceText className="text-xs text-gray-800">{formatPrice(subtotal)}</PriceText>
                 </View>
 
                 {(selectedDiscount || order.discount_amount > 0) && (
                   <View className="flex-row justify-between">
                     <Text className="text-xs text-green-600">Discount</Text>
-                    <Text className="text-xs text-green-600">
+                    <PriceText className="text-xs text-green-600">
                       -{formatPrice(calculateDiscount())}
-                    </Text>
+                    </PriceText>
                   </View>
                 )}
 
                 {isPointsRedemptionApplied && pointsDiscount > 0 && (
                   <View className="flex-row justify-between">
                     <Text className="text-xs text-purple-600">Points Redemption</Text>
-                    <Text className="text-xs text-purple-600">-{formatPrice(pointsDiscount)}</Text>
+                    <PriceText className="text-xs text-purple-600">-{formatPrice(pointsDiscount)}</PriceText>
                   </View>
                 )}
 
                 <View className="border-t border-gray-200 pt-1 mt-1">
                   <View className="flex-row justify-between">
                     <Text className="text-lg font-semibold text-gray-800">Total</Text>
-                    <Text className="text-lg font-bold text-[#EF4444]">
+                    <PriceText className="text-lg font-bold text-[#EF4444]">
                       {formatPrice(subtotal - calculateDiscount() - pointsDiscount)}
-                    </Text>
+                    </PriceText>
                   </View>
                 </View>
               </View>

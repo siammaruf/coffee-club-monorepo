@@ -2,7 +2,8 @@
   "expo": {
     "name": "CoffeeClubGo",
     "slug": "coffeeclubgo",
-    "version": "1.0.7",
+    "sdkVersion": "56.0.0",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "coffeeclubgo",

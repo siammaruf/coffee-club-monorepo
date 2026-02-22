@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function VariationSelectModal({ visible, product, onSelect, onClose }: {
   visible: boolean;
@@ -24,7 +25,7 @@ export default function VariationSelectModal({ visible, product, onSelect, onClo
                 onPress={() => onSelect(v)}
               >
                 <Text className="text-base text-gray-800">{v.name} <Text className="text-xs text-gray-500">{v.name_bn}</Text></Text>
-                <Text className="text-sm text-green-700 mt-1">{formatPrice(v.regular_price)}</Text>
+                <PriceText className="text-sm text-green-700 mt-1">{formatPrice(v.regular_price)}</PriceText>
               </TouchableOpacity>
             ))}
           </ScrollView>

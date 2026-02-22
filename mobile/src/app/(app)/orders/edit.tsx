@@ -22,6 +22,7 @@ import VariationSelectModal from '@/components/modals/VariationSelectModal';
 import { categoryService } from '@/services/httpServices/categoryService';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatPrice } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 
 export default function EditOrderScreen() {
   const router = useRouter();
@@ -45,9 +46,6 @@ export default function EditOrderScreen() {
 
   useEffect(() => {
     loadOrder();
-    loadProducts();
-    loadTables();
-    loadCategories();
   }, [orderId]);
 
   const loadOrder = async () => {
@@ -384,7 +382,7 @@ export default function EditOrderScreen() {
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-sm font-semibold text-gray-800">Tables</Text>
                 <TouchableOpacity
-                  onPress={() => setShowTableModal(true)}
+                  onPress={() => { loadTables(); setShowTableModal(true); }}
                   className="bg-blue-500 px-2 py-1 rounded"
                 >
                   <Text className="text-white text-xs font-medium">Select</Text>
@@ -412,7 +410,7 @@ export default function EditOrderScreen() {
             <View className="flex-row items-center justify-between mb-2">
               <Text className="text-sm font-semibold text-gray-800">Items</Text>
               <TouchableOpacity
-                onPress={() => setShowProductModal(true)}
+                onPress={() => { loadProducts(); loadCategories(); setShowProductModal(true); }}
                 className="bg-green-500 px-4 py-2 rounded"
               >
                 <Text className="text-white text-xs font-medium">Add</Text>
@@ -429,9 +427,9 @@ export default function EditOrderScreen() {
                         <Text className="text-xs text-gray-500"> ({item.item_variation.name})</Text>
                       )}
                     </Text>
-                    <Text className="text-xs text-gray-600">
+                    <PriceText className="text-xs text-gray-600">
                       {formatPrice(item.unit_price)} each
-                    </Text>
+                    </PriceText>
                   </View>
                   <View className="flex-row items-center gap-2">
                     <TouchableOpacity
@@ -456,9 +454,9 @@ export default function EditOrderScreen() {
                       <Ionicons name="add" size={16} color="#10B981" />
                     </TouchableOpacity>
                   </View>
-                  <Text className="text-sm font-bold text-gray-800 ml-2 min-w-[60px] text-right">
+                  <PriceText className="text-sm font-bold text-gray-800 ml-2 min-w-[60px] text-right">
                     {formatPrice(item.total_price)}
-                  </Text>
+                  </PriceText>
                 </View>
               ))
             ) : (
@@ -470,9 +468,9 @@ export default function EditOrderScreen() {
           <View className="bg-white rounded-xl p-3 shadow-sm border border-gray-200">
             <View className="flex-row justify-between items-center">
               <Text className="text-lg font-bold text-gray-800">Total</Text>
-              <Text className="text-xl font-bold text-[#EF4444]">
+              <PriceText className="text-xl font-bold text-[#EF4444]">
                 {formatPrice(totalAmount)}
-              </Text>
+              </PriceText>
             </View>
           </View>
         </View>

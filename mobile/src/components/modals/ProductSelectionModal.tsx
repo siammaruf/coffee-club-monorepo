@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductSelectionModalProps } from '@/types/order';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
+import { PriceText } from '@/components/ui/PriceText';
 import CategoryModal from './CategoryModal';
 
 export default function ProductSelectionModal({
@@ -117,9 +118,9 @@ export default function ProductSelectionModal({
                 const max = Math.max(...prices);
                 priceDisplay = (
                   <View className="flex-row items-center mt-1">
-                    <Text className="text-base font-bold text-[#EF4444]">
+                    <PriceText className="text-base font-bold text-[#EF4444]">
                       {formatPriceRange(min, max)}
-                    </Text>
+                    </PriceText>
                     <Text className="ml-2 text-xs text-gray-500">
                       {item.variations.length} variation{item.variations.length > 1 ? 's' : ''}
                     </Text>
@@ -128,16 +129,16 @@ export default function ProductSelectionModal({
               } else {
                 priceDisplay = (
                   <View className="flex-row items-center mt-1">
-                    <Text className="text-base font-bold text-[#EF4444]">
+                    <PriceText className="text-base font-bold text-[#EF4444]">
                       {formatPrice(item.regular_price || item.sale_price)}
-                    </Text>
+                    </PriceText>
                     {item.sale_price &&
                       item.sale_price !== '0.00' &&
                       item.sale_price !== '0' &&
                       item.sale_price < item.regular_price && (
-                        <Text className="ml-2 text-sm text-gray-500 line-through">
+                        <PriceText className="ml-2 text-sm text-gray-500 line-through">
                           {formatPrice(item.regular_price)}
-                        </Text>
+                        </PriceText>
                     )}
                   </View>
                 );
