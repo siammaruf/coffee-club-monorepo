@@ -235,7 +235,7 @@ export class TableService {
             .where('table.deleted_at IS NOT NULL');
 
         if (search) {
-            query.andWhere('LOWER(table.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+            query.andWhere('LOWER(table.number) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
 
         query.orderBy('table.deleted_at', 'DESC')

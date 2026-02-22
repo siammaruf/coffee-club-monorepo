@@ -535,43 +535,26 @@ export class OrderService {
   }
 
   async remove(id: string): Promise<Order> {
-    const order = await this.orderRepository.findOne({ 
+    const order = await this.orderRepository.findOne({
         where: { id },
-        relations: ['orderItems', 'orderTokens']
+        relations: ['tables']
     });
     if (!order) {
         throw new NotFoundException('Order not found');
     }
 
-    if (order.orderItems && order.orderItems.length > 0) {
-        for (const orderItem of order.orderItems) {
-            await this.orderItemService.remove(orderItem.id);
-        }
-    }
-
-    if (order.orderTokens && order.orderTokens.length > 0) {
-        for (const orderToken of order.orderTokens) {
-            await this.orderTokensService.remove(orderToken.id);
-        }
-    }
-
+    // Release occupied tables
     if (order.tables && order.tables.length > 0) {
-        const orderWithTables = await this.orderRepository.findOne({
-            where: { id },
-            relations: ['tables']
-        });
-        
-        if (orderWithTables?.tables) {
-            for (const table of orderWithTables.tables) {
-                if (table.status === TableStatus.OCCUPIED) {
-                    table.status = TableStatus.AVAILABLE;
-                    await this.tableRepository.save(table);
-                }
+        for (const table of order.tables) {
+            if (table.status === TableStatus.OCCUPIED) {
+                table.status = TableStatus.AVAILABLE;
+                await this.tableRepository.save(table);
             }
         }
     }
 
-    await this.orderRepository.remove(order);
+    // Soft delete (sets deleted_at)
+    await this.orderRepository.softDelete(id);
     await this.invalidateCache();
     return order;
   }
@@ -592,10 +575,13 @@ export class OrderService {
         const { page, limit, search } = options;
         const query = this.orderRepository.createQueryBuilder('order')
             .withDeleted()
+            .leftJoinAndSelect('order.tables', 'tables')
+            .leftJoinAndSelect('order.customer', 'customer')
+            .leftJoinAndSelect('order.user', 'user')
             .where('order.deleted_at IS NOT NULL');
 
         if (search) {
-            query.andWhere('LOWER(order.order_number) LIKE :search', { search: `%${search.toLowerCase()}%` });
+            query.andWhere('LOWER(order.order_id) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
 
         query.orderBy('order.deleted_at', 'DESC')

@@ -140,7 +140,7 @@ export class ReservationsService {
             .where('reservation.deleted_at IS NOT NULL');
 
         if (search) {
-            query.andWhere('LOWER(reservation.guest_name) LIKE :search', { search: `%${search.toLowerCase()}%` });
+            query.andWhere('LOWER(reservation.name) LIKE :search', { search: `%${search.toLowerCase()}%` });
         }
 
         query.orderBy('reservation.deleted_at', 'DESC')
