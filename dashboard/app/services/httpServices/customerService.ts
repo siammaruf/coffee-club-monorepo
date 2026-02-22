@@ -18,4 +18,6 @@ export const customerService = {
   restore: (id: string) => httpService.patch(`/customers/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/customers/${id}/permanent`),
   resetPassword: (id: string, newPassword: string) => httpService.patch(`/customers/${id}/reset-password`, { newPassword }),
+  bulkRestore: (ids: string[]) => httpService.patch('/customers/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/customers/bulk/permanent', { data: { ids } }),
 };

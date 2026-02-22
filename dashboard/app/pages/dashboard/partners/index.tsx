@@ -30,27 +30,28 @@ export default function PartnersPage() {
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchPartners = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
+  const fetchPartners = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
 
-        const res = viewMode === 'active'
-          ? await partnerService.getAll(params)
-          : await partnerService.getTrash(params);
-        setPartners((res as any).data || []);
-        setTotal((res as any).total || 0);
-      } catch {
-        setPartners([]);
-        setTotal(0);
-      }
-      setIsLoading(false);
-    };
+      const res = viewMode === 'active'
+        ? await partnerService.getAll(params)
+        : await partnerService.getTrash(params);
+      setPartners((res as any).data || []);
+      setTotal((res as any).total || 0);
+    } catch {
+      setPartners([]);
+      setTotal(0);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     fetchPartners();
   }, [currentPage, searchTerm, viewMode]);
 
@@ -107,12 +108,12 @@ export default function PartnersPage() {
     setBulkLoading(true);
     try {
       await partnerService.bulkRestore(Array.from(selectedIds));
-      setPartners(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchPartners();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchPartners();
     }
     setBulkLoading(false);
   };
@@ -121,13 +122,14 @@ export default function PartnersPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await partnerService.bulkPermanentDelete(Array.from(selectedIds));
-      setPartners(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await partnerService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchPartners();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchPartners();
     }
     setBulkLoading(false);
   };

@@ -167,13 +167,13 @@ export default function ExpenseCategoriesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => expenseCategoryService.restore(id)));
-      setCategories(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setFilteredCategories(prev => prev.filter(item => !selectedIds.has(item.id)));
+      await expenseCategoryService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchCategories();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchCategories();
     }
     setBulkLoading(false);
   };
@@ -182,13 +182,14 @@ export default function ExpenseCategoriesPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => expenseCategoryService.permanentDelete(id)));
-      setCategories(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setFilteredCategories(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await expenseCategoryService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchCategories();
     } catch (error) {
-      console.error("Permanent delete failed:", error);
+      console.error("Bulk permanent delete failed:", error);
+      fetchCategories();
     }
     setBulkLoading(false);
   };

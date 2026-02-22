@@ -30,6 +30,8 @@ export const userService = {
   getTrash: (params?: Record<string, any>) => httpService.get('/users/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/users/${id}/restore`),
   permanentDelete: (id: string) => httpService.delete(`/users/${id}/permanent`),
+  bulkRestore: (ids: string[]) => httpService.patch('/users/bulk/restore', { ids }),
+  bulkPermanentDelete: (ids: string[]) => httpService.delete('/users/bulk/permanent', { data: { ids } }),
 };
 
 export const fetchUsers = createAsyncThunk(

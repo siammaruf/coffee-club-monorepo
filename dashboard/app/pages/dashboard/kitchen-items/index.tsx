@@ -168,13 +168,13 @@ export default function KitchenItemsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => kitchenItemsService.restore(id)));
-      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
+      await kitchenItemsService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchKitchenItems();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchKitchenItems();
     }
     setBulkLoading(false);
   };
@@ -183,13 +183,14 @@ export default function KitchenItemsPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => kitchenItemsService.permanentDelete(id)));
-      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await kitchenItemsService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchKitchenItems();
     } catch (error) {
-      console.error("Permanent delete failed:", error);
+      console.error("Bulk permanent delete failed:", error);
+      fetchKitchenItems();
     }
     setBulkLoading(false);
   };

@@ -232,11 +232,12 @@ export default function AttendancePage() {
     setBulkLoading(true);
     try {
       await attendanceService.bulkRestore(Array.from(selectedIds));
-      setAttendanceRecords(prev => prev.filter(item => !selectedIds.has(item.id)));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchAttendance();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchAttendance();
     }
     setBulkLoading(false);
   };
@@ -245,12 +246,14 @@ export default function AttendancePage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await attendanceService.bulkPermanentDelete(Array.from(selectedIds));
-      setAttendanceRecords(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await attendanceService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchAttendance();
     } catch (error) {
       console.error("Bulk permanent delete failed:", error);
+      fetchAttendance();
     }
     setBulkLoading(false);
   };

@@ -637,4 +637,63 @@ export class OrderService {
         await this.orderRepository.delete(id);
         await this.invalidateCache();
     }
+
+    async bulkRestore(ids: string[]): Promise<void> {
+        await this.orderRepository.restore(ids);
+        await this.invalidateCache();
+    }
+
+    async bulkPermanentDelete(ids: string[]): Promise<{ deleted: string[]; failed: { id: string; reason: string }[] }> {
+        const deleted: string[] = [];
+        const failed: { id: string; reason: string }[] = [];
+
+        for (const id of ids) {
+            try {
+                const entity = await this.orderRepository.findOne({
+                    where: { id },
+                    withDeleted: true,
+                    relations: ['orderItems', 'orderTokens', 'tables'],
+                });
+                if (!entity) {
+                    failed.push({ id, reason: 'Record not found' });
+                    continue;
+                }
+                if (!entity.deleted_at) {
+                    failed.push({ id, reason: 'Record is not in trash' });
+                    continue;
+                }
+
+                // Delete order tokens first (cleans up order_token_items junction)
+                if (entity.orderTokens?.length) {
+                    for (const token of entity.orderTokens) {
+                        await this.orderTokensService.permanentDelete(token.id);
+                    }
+                }
+
+                // Delete order items
+                if (entity.orderItems?.length) {
+                    for (const item of entity.orderItems) {
+                        await this.orderItemService.permanentDelete(item.id);
+                    }
+                }
+
+                // Clear order_tables join table
+                if (entity.tables?.length) {
+                    await this.orderRepository
+                        .createQueryBuilder()
+                        .relation(Order, 'tables')
+                        .of(id)
+                        .remove(entity.tables.map(t => t.id));
+                }
+
+                await this.orderRepository.delete(id);
+                deleted.push(id);
+            } catch (error) {
+                failed.push({ id, reason: error?.message || 'Unknown error' });
+            }
+        }
+
+        await this.invalidateCache();
+        return { deleted, failed };
+    }
 }

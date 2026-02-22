@@ -41,26 +41,27 @@ export default function BlogPage() {
     blogService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      const res = viewMode === 'active'
+        ? await blogService.getAll(params)
+        : await blogService.getTrash(params) as any;
+      setPosts(res.data || []);
+      setTotal(res.total || 0);
+    } catch {
+      setPosts([]);
+      setTotal(0);
+    }
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchPosts = async () => {
-      setIsLoading(true);
-      try {
-        const params: Record<string, any> = {
-          page: currentPage,
-          limit: itemsPerPage,
-        };
-        if (searchTerm) params.search = searchTerm;
-        const res = viewMode === 'active'
-          ? await blogService.getAll(params)
-          : await blogService.getTrash(params) as any;
-        setPosts(res.data || []);
-        setTotal(res.total || 0);
-      } catch {
-        setPosts([]);
-        setTotal(0);
-      }
-      setIsLoading(false);
-    };
     fetchPosts();
   }, [currentPage, searchTerm, viewMode]);
 
@@ -108,13 +109,13 @@ export default function BlogPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => blogService.restore(id)));
-      setPosts(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
+      await blogService.bulkRestore(Array.from(selectedIds));
       setTrashCount(prev => prev - selectedIds.size);
       clearSelection();
+      fetchPosts();
     } catch (error) {
       console.error("Bulk restore failed:", error);
+      fetchPosts();
     }
     setBulkLoading(false);
   };
@@ -123,13 +124,14 @@ export default function BlogPage() {
     if (selectedIds.size === 0) return;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => blogService.permanentDelete(id)));
-      setPosts(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setTotal(prev => prev - selectedIds.size);
-      setTrashCount(prev => prev - selectedIds.size);
+      const response: any = await blogService.bulkPermanentDelete(Array.from(selectedIds));
+      const deletedCount = response?.data?.deleted?.length ?? selectedIds.size;
+      setTrashCount(prev => prev - deletedCount);
       clearSelection();
+      fetchPosts();
     } catch (error) {
-      console.error("Permanent delete failed:", error);
+      console.error("Bulk permanent delete failed:", error);
+      fetchPosts();
     }
     setBulkLoading(false);
   };
