@@ -200,4 +200,8 @@ export class OrderTokensService {
         }
         await this.orderTokenRepository.delete(id);
     }
+
+    async forceDelete(id: string): Promise<void> {
+        await this.orderTokenRepository.delete(id);
+    }
 }
