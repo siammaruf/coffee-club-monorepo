@@ -92,8 +92,10 @@ export default function OrderDetailsPage() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return `৳${price.toFixed(2)}`;
+  const formatPrice = (price: number | string) => {
+    const num = Number(price);
+    if (isNaN(num)) return "৳0.00";
+    return `৳${num.toFixed(2)}`;
   };
 
   const formatDate = (dateString: string) => {

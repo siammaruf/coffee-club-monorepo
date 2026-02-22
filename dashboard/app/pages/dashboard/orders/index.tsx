@@ -233,8 +233,10 @@ export default function OrdersPage() {
     setCurrentPage(1);
   };
 
-  const formatPrice = (price: number) => {
-    return `৳${price.toFixed(2)}`;
+  const formatPrice = (price: number | string) => {
+    const num = Number(price);
+    if (isNaN(num)) return "৳0.00";
+    return `৳${num.toFixed(2)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -278,7 +280,7 @@ export default function OrdersPage() {
 
   // Safe calculations with null checks
   const totalSales = orders.reduce((sum, order) =>
-    order.status?.toLowerCase() !== 'cancelled' ? sum + (order.total_amount || 0) : sum, 0);
+    order.status?.toLowerCase() !== 'cancelled' ? sum + Number(order.total_amount || 0) : sum, 0);
 
   const completedOrders = orders.filter(order => order.status?.toLowerCase() === 'completed').length;
   const pendingOrders = orders.filter(order => order.status?.toLowerCase() === 'pending').length;
