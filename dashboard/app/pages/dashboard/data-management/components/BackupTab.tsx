@@ -249,7 +249,7 @@ function BackupSettingsDialog({
         google_oauth_client_secret: oauthClientSecret,
       });
     } catch {
-      toast.error("Failed to save credentials. Please try again.");
+      toast.error("Failed to generate refresh token. Please try again.");
       setGeneratingToken(false);
       return;
     }
