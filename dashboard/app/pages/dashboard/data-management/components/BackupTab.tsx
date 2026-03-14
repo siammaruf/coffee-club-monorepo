@@ -269,12 +269,8 @@ function BackupSettingsDialog({
     // Auto-save credentials so backend can read them
     try {
       await dataManagementService.updateBackupSettings({
-        google_drive_folder_id: driveFolderId || null,
-        google_drive_service_account_email: null,
-        google_drive_private_key: null,
         google_oauth_client_id: oauthClientId || null,
         google_oauth_client_secret: oauthClientSecret || null,
-        google_oauth_refresh_token: oauthRefreshToken || null,
       });
     } catch {
       toast.error("Failed to save credentials before authorizing.");
