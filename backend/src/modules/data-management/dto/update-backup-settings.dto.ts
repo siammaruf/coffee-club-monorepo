@@ -61,22 +61,6 @@ export class UpdateBackupSettingsDto {
   max_backups?: number;
 
   @ApiPropertyOptional({
-    description: 'Google Drive service account email',
-    example: 'backup-sa@project.iam.gserviceaccount.com',
-  })
-  @IsOptional()
-  @IsString()
-  google_drive_service_account_email?: string;
-
-  @ApiPropertyOptional({
-    description: 'Google Drive service account private key',
-    example: '-----BEGIN PRIVATE KEY-----\\n...',
-  })
-  @IsOptional()
-  @IsString()
-  google_drive_private_key?: string;
-
-  @ApiPropertyOptional({
     description: 'Google Drive folder ID where backups are stored',
     example: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms',
   })
