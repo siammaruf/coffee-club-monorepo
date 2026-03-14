@@ -172,10 +172,10 @@ export class BackupService {
       const users = await this.userRepo.find();
       data['users'] = users.map(({ password, ...rest }) => rest);
       entityCounts['users'] = data['users'].length;
-    } catch {
+    } catch (error) {
       data['users'] = [];
       entityCounts['users'] = 0;
-      this.logger.warn('Could not dump users table');
+      this.logger.warn('Could not dump users table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump customers (exclude password, refresh_token, otp)
@@ -185,10 +185,10 @@ export class BackupService {
         ({ password, refresh_token, otp, ...rest }) => rest,
       );
       entityCounts['customers'] = data['customers'].length;
-    } catch {
+    } catch (error) {
       data['customers'] = [];
       entityCounts['customers'] = 0;
-      this.logger.warn('Could not dump customers table');
+      this.logger.warn('Could not dump customers table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump categories
@@ -196,10 +196,10 @@ export class BackupService {
       const categories = await this.categoryRepo.find();
       data['categories'] = categories;
       entityCounts['categories'] = categories.length;
-    } catch {
+    } catch (error) {
       data['categories'] = [];
       entityCounts['categories'] = 0;
-      this.logger.warn('Could not dump categories table');
+      this.logger.warn('Could not dump categories table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump items
@@ -207,10 +207,10 @@ export class BackupService {
       const items = await this.itemRepo.find();
       data['items'] = items;
       entityCounts['items'] = items.length;
-    } catch {
+    } catch (error) {
       data['items'] = [];
       entityCounts['items'] = 0;
-      this.logger.warn('Could not dump items table');
+      this.logger.warn('Could not dump items table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump tables
@@ -218,10 +218,10 @@ export class BackupService {
       const tables = await this.tableRepo.find();
       data['tables'] = tables;
       entityCounts['tables'] = tables.length;
-    } catch {
+    } catch (error) {
       data['tables'] = [];
       entityCounts['tables'] = 0;
-      this.logger.warn('Could not dump tables table');
+      this.logger.warn('Could not dump tables table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump discounts
@@ -229,10 +229,10 @@ export class BackupService {
       const discounts = await this.discountRepo.find();
       data['discounts'] = discounts;
       entityCounts['discounts'] = discounts.length;
-    } catch {
+    } catch (error) {
       data['discounts'] = [];
       entityCounts['discounts'] = 0;
-      this.logger.warn('Could not dump discounts table');
+      this.logger.warn('Could not dump discounts table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump discount_applications
@@ -242,10 +242,10 @@ export class BackupService {
       });
       data['discount_applications'] = discountApplications;
       entityCounts['discount_applications'] = discountApplications.length;
-    } catch {
+    } catch (error) {
       data['discount_applications'] = [];
       entityCounts['discount_applications'] = 0;
-      this.logger.warn('Could not dump discount_applications table');
+      this.logger.warn('Could not dump discount_applications table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump expense_categories
@@ -253,10 +253,10 @@ export class BackupService {
       const expenseCategories = await this.expenseCategoryRepo.find();
       data['expense_categories'] = expenseCategories;
       entityCounts['expense_categories'] = expenseCategories.length;
-    } catch {
+    } catch (error) {
       data['expense_categories'] = [];
       entityCounts['expense_categories'] = 0;
-      this.logger.warn('Could not dump expense_categories table');
+      this.logger.warn('Could not dump expense_categories table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump expenses
@@ -264,10 +264,10 @@ export class BackupService {
       const expenses = await this.expensesRepo.find({ relations: ['category'] });
       data['expenses'] = expenses;
       entityCounts['expenses'] = expenses.length;
-    } catch {
+    } catch (error) {
       data['expenses'] = [];
       entityCounts['expenses'] = 0;
-      this.logger.warn('Could not dump expenses table');
+      this.logger.warn('Could not dump expenses table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump orders
@@ -277,10 +277,10 @@ export class BackupService {
       });
       data['orders'] = orders;
       entityCounts['orders'] = orders.length;
-    } catch {
+    } catch (error) {
       data['orders'] = [];
       entityCounts['orders'] = 0;
-      this.logger.warn('Could not dump orders table');
+      this.logger.warn('Could not dump orders table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump order_items
@@ -290,10 +290,10 @@ export class BackupService {
       });
       data['order_items'] = orderItems;
       entityCounts['order_items'] = orderItems.length;
-    } catch {
+    } catch (error) {
       data['order_items'] = [];
       entityCounts['order_items'] = 0;
-      this.logger.warn('Could not dump order_items table');
+      this.logger.warn('Could not dump order_items table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump order_tokens
@@ -303,10 +303,10 @@ export class BackupService {
       });
       data['order_tokens'] = orderTokens;
       entityCounts['order_tokens'] = orderTokens.length;
-    } catch {
+    } catch (error) {
       data['order_tokens'] = [];
       entityCounts['order_tokens'] = 0;
-      this.logger.warn('Could not dump order_tokens table');
+      this.logger.warn('Could not dump order_tokens table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump salaries
@@ -314,10 +314,10 @@ export class BackupService {
       const salaries = await this.salaryRepo.find({ relations: ['user'] });
       data['salaries'] = salaries;
       entityCounts['salaries'] = salaries.length;
-    } catch {
+    } catch (error) {
       data['salaries'] = [];
       entityCounts['salaries'] = 0;
-      this.logger.warn('Could not dump salaries table');
+      this.logger.warn('Could not dump salaries table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump stuff_attendance
@@ -327,10 +327,10 @@ export class BackupService {
       });
       data['stuff_attendance'] = attendance;
       entityCounts['stuff_attendance'] = attendance.length;
-    } catch {
+    } catch (error) {
       data['stuff_attendance'] = [];
       entityCounts['stuff_attendance'] = 0;
-      this.logger.warn('Could not dump stuff_attendance table');
+      this.logger.warn('Could not dump stuff_attendance table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump leaves
@@ -338,10 +338,10 @@ export class BackupService {
       const leaves = await this.leaveRepo.find({ relations: ['user'] });
       data['leaves'] = leaves;
       entityCounts['leaves'] = leaves.length;
-    } catch {
+    } catch (error) {
       data['leaves'] = [];
       entityCounts['leaves'] = 0;
-      this.logger.warn('Could not dump leaves table');
+      this.logger.warn('Could not dump leaves table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump kitchen_items
@@ -349,10 +349,10 @@ export class BackupService {
       const kitchenItems = await this.kitchenItemsRepo.find();
       data['kitchen_items'] = kitchenItems;
       entityCounts['kitchen_items'] = kitchenItems.length;
-    } catch {
+    } catch (error) {
       data['kitchen_items'] = [];
       entityCounts['kitchen_items'] = 0;
-      this.logger.warn('Could not dump kitchen_items table');
+      this.logger.warn('Could not dump kitchen_items table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump daily_reports
@@ -360,10 +360,10 @@ export class BackupService {
       const dailyReports = await this.dailyReportRepo.find();
       data['daily_reports'] = dailyReports;
       entityCounts['daily_reports'] = dailyReports.length;
-    } catch {
+    } catch (error) {
       data['daily_reports'] = [];
       entityCounts['daily_reports'] = 0;
-      this.logger.warn('Could not dump daily_reports table');
+      this.logger.warn('Could not dump daily_reports table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump banks
@@ -371,10 +371,10 @@ export class BackupService {
       const banks = await this.bankRepo.find({ relations: ['user'] });
       data['banks'] = banks;
       entityCounts['banks'] = banks.length;
-    } catch {
+    } catch (error) {
       data['banks'] = [];
       entityCounts['banks'] = 0;
-      this.logger.warn('Could not dump banks table');
+      this.logger.warn('Could not dump banks table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump carts
@@ -382,10 +382,10 @@ export class BackupService {
       const carts = await this.cartRepo.find({ relations: ['customer'] });
       data['carts'] = carts;
       entityCounts['carts'] = carts.length;
-    } catch {
+    } catch (error) {
       data['carts'] = [];
       entityCounts['carts'] = 0;
-      this.logger.warn('Could not dump carts table');
+      this.logger.warn('Could not dump carts table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump cart_items
@@ -395,10 +395,10 @@ export class BackupService {
       });
       data['cart_items'] = cartItems;
       entityCounts['cart_items'] = cartItems.length;
-    } catch {
+    } catch (error) {
       data['cart_items'] = [];
       entityCounts['cart_items'] = 0;
-      this.logger.warn('Could not dump cart_items table');
+      this.logger.warn('Could not dump cart_items table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump activities
@@ -408,10 +408,10 @@ export class BackupService {
       });
       data['activities'] = activities;
       entityCounts['activities'] = activities.length;
-    } catch {
+    } catch (error) {
       data['activities'] = [];
       entityCounts['activities'] = 0;
-      this.logger.warn('Could not dump activities table');
+      this.logger.warn('Could not dump activities table', error instanceof Error ? error.message : String(error));
     }
 
     // Dump junction tables via raw queries
