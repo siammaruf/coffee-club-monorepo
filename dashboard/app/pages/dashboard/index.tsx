@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import reportService from "~/services/httpServices/reportService";
+import DataManagementPage from "./data-management/index";
 
 export default function Dashboard() {
+  const location = useLocation();
+  const tab = new URLSearchParams(location.search).get("tab");
+
   const [dashboard, setDashboard] = useState<any>(null);
   const [salesChart, setSalesChart] = useState<any>(null);
   const [expensesChart, setExpensesChart] = useState<any>(null);
@@ -155,6 +160,10 @@ export default function Dashboard() {
       )}
     </div>
   );
+
+  if (tab === "data-management") {
+    return <DataManagementPage />;
+  }
 
   return (
     <div className="space-y-6">
