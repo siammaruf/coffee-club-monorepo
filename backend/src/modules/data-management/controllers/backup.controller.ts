@@ -8,7 +8,12 @@ import {
   Query,
   Body,
   ParseUUIDPipe,
+  Req,
+  Res,
+  Header,
+  BadRequestException,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -18,6 +23,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 
+import { Public } from '../../../common/decorators/public.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../../common/decorators/user.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
@@ -198,4 +204,82 @@ export class BackupController {
   async getDriveStatus() {
     return this.googleDriveService.checkConnection();
   }
+
+  @Get('drive/oauth/authorize')
+  @ApiOperation({
+    summary: 'Initiate Google OAuth2 flow for Drive access',
+  })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth consent screen' })
+  @ApiResponse({ status: 400, description: 'OAuth2 credentials not configured' })
+  async oauthAuthorize(@Req() req: Request, @Res() res: Response) {
+    const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/data-management/backup/drive/oauth/callback`;
+    const authUrl = await this.googleDriveService.getOAuthAuthorizationUrl(callbackUrl);
+    if (!authUrl) {
+      throw new BadRequestException(
+        'OAuth2 Client ID and Secret must be saved in backup settings before authorizing.',
+      );
+    }
+    res.redirect(authUrl);
+  }
+
+  @Public()
+  @Get('drive/oauth/callback')
+  @Header('Content-Type', 'text/html')
+  @ApiOperation({
+    summary: 'Google OAuth2 callback — exchanges code and saves refresh token',
+  })
+  async oauthCallback(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('code') code: string,
+    @Query('error') error: string,
+    @Query('state') state: string,
+  ) {
+    const dashboardOrigin = (process.env.CORS_ORIGINS ?? '').split(',')[0]?.trim() || '';
+
+    if (error) {
+      return res.send(oauthPopupHtml(null, `Google denied access: ${error}`, dashboardOrigin));
+    }
+    if (!code) {
+      return res.send(oauthPopupHtml(null, 'No authorization code received.', dashboardOrigin));
+    }
+    if (!state || !this.googleDriveService.validateOAuthState(state)) {
+      return res.send(oauthPopupHtml(null, 'Invalid or expired OAuth state. Please try again.', dashboardOrigin));
+    }
+    try {
+      const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/data-management/backup/drive/oauth/callback`;
+      const refreshToken = await this.googleDriveService.exchangeOAuthCode(code, callbackUrl);
+      return res.send(oauthPopupHtml(refreshToken, null, dashboardOrigin));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'OAuth2 token exchange failed';
+      return res.send(oauthPopupHtml(null, message, dashboardOrigin));
+    }
+  }
+}
+
+function oauthPopupHtml(
+  refreshToken: string | null,
+  error: string | null,
+  targetOrigin: string,
+): string {
+  const payload = refreshToken
+    ? JSON.stringify({ type: 'oauth_success', refreshToken })
+    : JSON.stringify({ type: 'oauth_error', error });
+
+  // targetOrigin restricts postMessage to the dashboard domain only (not '*')
+  const safeTarget = targetOrigin || '*';
+
+  return `<!DOCTYPE html>
+<html>
+<head><title>Google Drive Authorization</title></head>
+<body>
+  <p>${refreshToken ? 'Authorization successful! You can close this window.' : `Authorization failed: ${error}`}</p>
+  <script>
+    try {
+      window.opener && window.opener.postMessage(${payload}, ${JSON.stringify(safeTarget)});
+    } catch(e) {}
+    window.close();
+  </script>
+</body>
+</html>`;
 }
