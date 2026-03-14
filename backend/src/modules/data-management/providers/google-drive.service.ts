@@ -195,6 +195,41 @@ export class GoogleDriveService {
     }
   }
 
+  async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
+    const settings = await this.getSettings();
+    const clientId = settings?.google_oauth_client_id;
+    const clientSecret = settings?.google_oauth_client_secret;
+    if (!clientId || !clientSecret) {
+      return null;
+    }
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    return oauth2.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['https://www.googleapis.com/auth/drive'],
+      prompt: 'consent',
+    });
+  }
+
+  async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
+    const settings = await this.getSettings();
+    const clientId = settings?.google_oauth_client_id;
+    const clientSecret = settings?.google_oauth_client_secret;
+    if (!clientId || !clientSecret) {
+      throw new Error('OAuth2 Client ID and Secret must be saved in settings first.');
+    }
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    const { tokens } = await oauth2.getToken(code);
+    if (!tokens.refresh_token) {
+      throw new Error(
+        'No refresh token returned. Ensure "prompt: consent" is set and the app is not already authorized. ' +
+        'Revoke access at https://myaccount.google.com/permissions and try again.',
+      );
+    }
+    await this.settingsRepo.update({}, { google_oauth_refresh_token: tokens.refresh_token });
+    this.logger.log('Google OAuth2 refresh token saved successfully.');
+    return tokens.refresh_token;
+  }
+
   async checkConnection(): Promise<{
     connected: boolean;
     email: string;

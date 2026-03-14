@@ -1,7 +1,7 @@
 # API Implementation Status: CoffeeClub Backend
 
 > **Backend Framework:** NestJS 11 + TypeORM + PostgreSQL
-> **Last Updated:** 2026-02-15
+> **Last Updated:** 2026-03-14
 > **Total Endpoints:** ~210 across 35 controllers
 > **Swagger Coverage:** 100% (all endpoints have @ApiTags + @ApiOperation)
 
@@ -556,3 +556,19 @@ Auth: All @Public
 
 - 2026-02-15: Complete rewrite based on NestJS backend audit. Updated from 48 to ~210 endpoints across 35 controllers.
 - 2026-02-10: Initial status file created (outdated Express/Knex reference)
+
+## Data-management APIs
+
+| Endpoint                                        | Method | Status   | Auth   | Notes                                                           |
+|-------------------------------------------------|--------|----------|--------|-----------------------------------------------------------------|
+| `/data-management/backup/history`               | GET    | Complete | JWT    | Create a manual backup                                          |
+| `/data-management/backup/history/:id`           | DELETE | Complete | JWT    | Get backup detail by ID                                         |
+| `/data-management/backup/restore/:id/preview`   | GET    | Complete | JWT    | Preview backup metadata before restoring                        |
+| `/data-management/backup/settings`              | PUT    | Complete | JWT    | Get backup settings                                             |
+| `/data-management/backup/drive/status`          | GET    | Complete | JWT    | Update backup settings                                          |
+| `/data-management/backup/create`                | POST   | Complete | Admin  | Create a manual backup                                          |
+| `/data-management/backup/restore/:id`           | POST   | Complete | JWT    | Delete a backup                                                 |
+| `/data-management/backup/drive/oauth/authorize` | GET    | Complete | JWT    | Check Google Drive connection status                            |
+| `/data-management/backup/drive/oauth/callback`  | GET    | Complete | Public | Google OAuth2 callback — exchanges code and saves refresh token |
+
+

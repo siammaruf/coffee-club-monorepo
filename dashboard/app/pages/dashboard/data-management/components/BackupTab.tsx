@@ -14,7 +14,9 @@ import {
   XCircle,
   Loader2,
   CloudUpload,
+  ExternalLink,
 } from "lucide-react";
+import { API_URL } from "~/lib/config";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -180,6 +182,7 @@ function BackupSettingsDialog({
   const [authMethod, setAuthMethod] = useState<DriveAuthMethod>("service_account");
   const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
 
   // Populate form when settings load
   useEffect(() => {
@@ -256,6 +259,66 @@ function BackupSettingsDialog({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleGenerateToken = async () => {
+    if (!oauthClientId || !oauthClientSecret) {
+      toast.error("Enter and save your Client ID and Client Secret first.");
+      return;
+    }
+    // Auto-save credentials so backend can read them
+    try {
+      await dataManagementService.updateBackupSettings({
+        google_drive_folder_id: driveFolderId || null,
+        google_drive_service_account_email: null,
+        google_drive_private_key: null,
+        google_oauth_client_id: oauthClientId || null,
+        google_oauth_client_secret: oauthClientSecret || null,
+        google_oauth_refresh_token: oauthRefreshToken || null,
+      });
+    } catch {
+      toast.error("Failed to save credentials before authorizing.");
+      return;
+    }
+
+    const popup = window.open(
+      `${API_URL}/data-management/backup/drive/oauth/authorize`,
+      "oauth_popup",
+      "width=600,height=700,left=200,top=100"
+    );
+
+    if (!popup) {
+      toast.error("Popup was blocked. Allow popups for this site and try again.");
+      return;
+    }
+
+    setGeneratingToken(true);
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === "oauth_success") {
+        setOauthRefreshToken(event.data.refreshToken ?? "");
+        toast.success("Refresh token generated and saved!");
+        setGeneratingToken(false);
+        window.removeEventListener("message", onMessage);
+        clearInterval(pollInterval);
+      } else if (event.data?.type === "oauth_error") {
+        toast.error(event.data.error || "OAuth authorization failed.");
+        setGeneratingToken(false);
+        window.removeEventListener("message", onMessage);
+        clearInterval(pollInterval);
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+
+    // Fallback: detect popup closed without completing the flow
+    const pollInterval = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollInterval);
+        window.removeEventListener("message", onMessage);
+        setGeneratingToken(false);
+      }
+    }, 500);
   };
 
   return (
@@ -447,9 +510,28 @@ function BackupSettingsDialog({
                     placeholder="1//0e..."
                   />
                   <p className="text-xs text-muted-foreground">
-                    Works with personal My Drive folders. Generate via{" "}
-                    <code className="bg-muted px-1 rounded text-xs">backend/scripts/get-oauth-token.js</code>.
+                    Works with personal My Drive folders.
                   </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateToken}
+                    disabled={generatingToken || !oauthClientId || !oauthClientSecret}
+                    className="w-full"
+                  >
+                    {generatingToken ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Waiting for authorization...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-4 h-4" />
+                        Generate Refresh Token
+                      </>
+                    )}
+                  </Button>
                 </div>
               </>
             )}
