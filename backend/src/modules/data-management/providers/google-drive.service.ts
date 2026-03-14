@@ -24,43 +24,20 @@ export class GoogleDriveService {
       return null;
     }
 
-    // OAuth2 (personal My Drive) takes priority over service account
     if (
-      settings.google_oauth_client_id &&
-      settings.google_oauth_client_secret &&
-      settings.google_oauth_refresh_token
+      !settings.google_oauth_client_id ||
+      !settings.google_oauth_client_secret ||
+      !settings.google_oauth_refresh_token
     ) {
-      const oauth2 = new google.auth.OAuth2(
-        settings.google_oauth_client_id,
-        settings.google_oauth_client_secret,
-      );
-      oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
-      return google.drive({ version: 'v3', auth: oauth2 });
+      return null;
     }
 
-    // Fallback: service account (requires Shared Drive)
-    if (
-      settings.google_drive_service_account_email &&
-      settings.google_drive_private_key
-    ) {
-      const auth = new google.auth.JWT({
-        email: settings.google_drive_service_account_email,
-        key: settings.google_drive_private_key.replace(/\\n/g, '\n'),
-        scopes: ['https://www.googleapis.com/auth/drive'],
-      });
-      return google.drive({ version: 'v3', auth });
-    }
-
-    return null;
-  }
-
-  private async isOAuthConfigured(): Promise<boolean> {
-    const settings = await this.getSettings();
-    return !!(
-      settings?.google_oauth_client_id &&
-      settings?.google_oauth_client_secret &&
-      settings?.google_oauth_refresh_token
+    const oauth2 = new google.auth.OAuth2(
+      settings.google_oauth_client_id,
+      settings.google_oauth_client_secret,
     );
+    oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
+    return google.drive({ version: 'v3', auth: oauth2 });
   }
 
   private async getFolderId(): Promise<string | null> {
@@ -258,37 +235,21 @@ export class GoogleDriveService {
         return { connected: false, email: '', folder_id: folderId };
       }
 
-      const usingOAuth = await this.isOAuthConfigured();
-
       // Resolve the authenticated identity's email
-      let email = settings?.google_drive_service_account_email || '';
-      if (usingOAuth) {
-        try {
-          const about = await client.about.get({ fields: 'user' });
-          email = about.data.user?.emailAddress || 'OAuth2 User';
-        } catch {
-          email = 'OAuth2 User';
-        }
+      let email = '';
+      try {
+        const about = await client.about.get({ fields: 'user' });
+        email = about.data.user?.emailAddress || 'OAuth2 User';
+      } catch {
+        email = 'OAuth2 User';
       }
 
       // Verify the folder exists
-      const folderMeta = await client.files.get({
+      await client.files.get({
         fileId: folderId,
-        fields: 'id, driveId',
+        fields: 'id',
         supportsAllDrives: true,
       });
-
-      // Service accounts require Shared Drive; OAuth2 works with personal My Drive
-      if (!usingOAuth && !folderMeta.data.driveId) {
-        return {
-          connected: false,
-          email,
-          folder_id: folderId,
-          error:
-            'The configured folder is in a personal My Drive. Service accounts cannot store files there. ' +
-            'Please use a folder inside a Google Shared Drive (Team Drive), or configure OAuth2 credentials instead.',
-        };
-      }
 
       return { connected: true, email, folder_id: folderId };
     } catch (error) {
@@ -296,7 +257,7 @@ export class GoogleDriveService {
         'Google Drive connection check failed',
         error instanceof Error ? error.stack : String(error),
       );
-      return { connected: false, email: settings?.google_drive_service_account_email || '', folder_id: folderId };
+      return { connected: false, email: '', folder_id: folderId };
     }
   }
 }
