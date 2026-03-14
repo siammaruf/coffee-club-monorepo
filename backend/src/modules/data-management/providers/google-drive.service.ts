@@ -195,6 +195,10 @@ export class GoogleDriveService {
     }
   }
 
+  // Short-lived state store for CSRF protection: state → expiry timestamp (ms)
+  private readonly pendingOAuthStates = new Map<string, number>();
+  private readonly STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
   async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
     const settings = await this.getSettings();
     const clientId = settings?.google_oauth_client_id;
@@ -202,12 +206,21 @@ export class GoogleDriveService {
     if (!clientId || !clientSecret) {
       return null;
     }
+    const state = crypto.randomUUID();
+    this.pendingOAuthStates.set(state, Date.now() + this.STATE_TTL_MS);
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
     return oauth2.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/drive'],
       prompt: 'consent',
+      state,
     });
+  }
+
+  validateOAuthState(state: string): boolean {
+    const expiry = this.pendingOAuthStates.get(state);
+    this.pendingOAuthStates.delete(state);
+    return expiry !== undefined && Date.now() < expiry;
   }
 
   async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
