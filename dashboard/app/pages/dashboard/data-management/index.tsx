@@ -25,16 +25,16 @@ export default function DataManagementPage() {
       </div>
 
       {/* Tab navigation */}
-      <div className="flex border-b">
+      <div className="flex border-b overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer flex-shrink-0 ${
               activeTab === tab.id
                 ? "border-yellow-500 text-yellow-600 font-medium"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-gray-500 hover:text-gray-900"
             }`}
           >
             <tab.icon className="w-4 h-4" />

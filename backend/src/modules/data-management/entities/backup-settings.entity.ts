@@ -78,6 +78,27 @@ export class BackupSettings {
   google_drive_folder_id: string;
 
   @ApiProperty({
+    description: 'Google OAuth2 client ID for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ nullable: true })
+  google_oauth_client_id: string | null;
+
+  @ApiProperty({
+    description: 'Google OAuth2 client secret for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ type: 'text', nullable: true })
+  google_oauth_client_secret: string | null;
+
+  @ApiProperty({
+    description: 'Google OAuth2 refresh token for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ type: 'text', nullable: true })
+  google_oauth_refresh_token: string | null;
+
+  @ApiProperty({
     description: 'Date when the settings were last updated',
     example: '2024-01-15T12:00:00Z',
   })

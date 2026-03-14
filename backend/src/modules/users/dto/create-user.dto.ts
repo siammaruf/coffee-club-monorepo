@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, MinLength, IsOptional } from "class-validator";
 import { Transform, Type } from "class-transformer";

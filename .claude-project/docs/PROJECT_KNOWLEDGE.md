@@ -340,3 +340,26 @@ cd backend && npm run seed:run
 | Nodemailer | Transactional emails | `MAIL_*` env vars |
 | SMS Provider | OTP & notifications | `SMS_*` env vars |
 | Swagger UI | API documentation | `/api/v1/docs` |
+
+| Google Drive | Backup file uploads | `google_oauth_*` or `google_drive_service_account_*` in BackupSettings |
+
+## Google Drive Integration
+
+Used by the Data Management module to upload `.ccbak` backup files offsite.
+
+**Auth modes (priority order):**
+1. **OAuth2** (`google_oauth_client_id` + `google_oauth_client_secret` + `google_oauth_refresh_token`) — works with personal My Drive. Requires one-time browser authorization via `backend/scripts/get-google-oauth-token.ts`.
+2. **Service Account JWT** (`google_drive_service_account_email` + `google_drive_private_key`) — only works with Shared Drive (Google Workspace Team Drive). Service accounts have no quota on personal Drive.
+
+**Setup for personal Drive (OAuth2):**
+1. Create OAuth 2.0 Client ID in Google Cloud Console (Desktop app type)
+2. Add redirect URI: `http://localhost:3001/callback`
+3. Save credentials JSON as `backend/scripts/oauth-client.json`
+4. Run `npx ts-node scripts/get-google-oauth-token.ts` → authorize in browser → get refresh token
+5. Save tokens via `PUT /api/v1/data-management/backup/settings`
+
+**Key files:**
+- `backend/src/modules/data-management/providers/google-drive.service.ts` — dual-auth Drive client
+- `backend/src/modules/data-management/entities/backup-settings.entity.ts` — credential storage
+- `backend/scripts/get-google-oauth-token.ts` — one-time OAuth2 setup
+- `backend/scripts/test-google-drive.ts` — connectivity verification (`--oauth` flag for personal Drive)
