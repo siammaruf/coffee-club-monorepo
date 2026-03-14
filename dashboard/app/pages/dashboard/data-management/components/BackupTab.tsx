@@ -263,17 +263,15 @@ function BackupSettingsDialog({
 
   const handleGenerateToken = async () => {
     if (!oauthClientId || !oauthClientSecret) {
-      toast.error("Enter and save your Client ID and Client Secret first.");
+      toast.error("Enter your Client ID and Client Secret first.");
       return;
     }
-    // Auto-save credentials so backend can read them
-    try {
-      await dataManagementService.updateBackupSettings({
-        google_oauth_client_id: oauthClientId || null,
-        google_oauth_client_secret: oauthClientSecret || null,
-      });
-    } catch {
-      toast.error("Failed to save credentials before authorizing.");
+    // Credentials must be saved to DB before the backend can build the OAuth URL.
+    // Check that the current form values match what is already persisted.
+    const savedClientId = settings?.google_oauth_client_id ?? "";
+    const savedClientSecret = settings?.google_oauth_client_secret ?? "";
+    if (oauthClientId !== savedClientId || oauthClientSecret !== savedClientSecret) {
+      toast.error("Save your settings first, then click Generate Refresh Token.");
       return;
     }
 
