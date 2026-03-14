@@ -42,3 +42,8 @@ mobile/node_modules/
 mobile/.expo/
 mobile/android/app/build/
 mobile/ios/Pods/
+# Google Cloud service account key files
+*-service-account*.json
+*serviceaccount*.json
+*credentials*.json
+coffee-club-489916-f40f3f424e58.json
