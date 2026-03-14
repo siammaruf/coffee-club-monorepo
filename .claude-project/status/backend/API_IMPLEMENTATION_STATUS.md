@@ -565,10 +565,11 @@ Auth: All @Public
 | `/data-management/backup/history/:id`           | DELETE | Complete | JWT    | Get backup detail by ID                                         |
 | `/data-management/backup/restore/:id/preview`   | GET    | Complete | JWT    | Preview backup metadata before restoring                        |
 | `/data-management/backup/settings`              | PUT    | Complete | JWT    | Get backup settings                                             |
-| `/data-management/backup/drive/status`          | GET    | Complete | JWT    | Update backup settings                                          |
+| `/data-management/backup/drive/status`          | GET    | Complete | JWT    | Save Google OAuth2 credentials for Drive access                 |
 | `/data-management/backup/create`                | POST   | Complete | Admin  | Create a manual backup                                          |
 | `/data-management/backup/restore/:id`           | POST   | Complete | JWT    | Delete a backup                                                 |
 | `/data-management/backup/drive/oauth/authorize` | GET    | Complete | JWT    | Check Google Drive connection status                            |
 | `/data-management/backup/drive/oauth/callback`  | GET    | Complete | Public | Google OAuth2 callback — exchanges code and saves refresh token |
+| `/data-management/backup/settings/oauth`        | PATCH  | Complete | JWT    | Update backup settings                                          |
 
 
