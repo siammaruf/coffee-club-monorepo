@@ -184,28 +184,27 @@ function BackupSettingsDialog({
   const [saving, setSaving] = useState(false);
   const [generatingToken, setGeneratingToken] = useState(false);
 
-  // Populate form when settings load
+  // Populate form when dialog opens (or settings first load while open)
   useEffect(() => {
-    if (settings) {
-      setAutoBackup(settings.auto_backup_enabled);
-      setScheduleType(settings.schedule_type);
-      setCronExpression(settings.cron_expression);
-      setRetentionDays(settings.retention_days);
-      setMaxBackups(settings.max_backups);
-      setDriveEmail(settings.google_drive_service_account_email ?? "");
-      setDrivePrivateKey(settings.google_drive_private_key ?? "");
-      setDriveFolderId(settings.google_drive_folder_id ?? "");
-      setOauthClientId(settings.google_oauth_client_id ?? "");
-      setOauthClientSecret(settings.google_oauth_client_secret ?? "");
-      setOauthRefreshToken(settings.google_oauth_refresh_token ?? "");
-      // Default to OAuth2 tab if OAuth2 credentials are saved
-      if (settings.google_oauth_client_id || settings.google_oauth_refresh_token) {
-        setAuthMethod("oauth2");
-      } else {
-        setAuthMethod("service_account");
-      }
+    if (!open || !settings) return;
+    setAutoBackup(settings.auto_backup_enabled);
+    setScheduleType(settings.schedule_type);
+    setCronExpression(settings.cron_expression);
+    setRetentionDays(settings.retention_days);
+    setMaxBackups(settings.max_backups);
+    setDriveEmail(settings.google_drive_service_account_email ?? "");
+    setDrivePrivateKey(settings.google_drive_private_key ?? "");
+    setDriveFolderId(settings.google_drive_folder_id ?? "");
+    setOauthClientId(settings.google_oauth_client_id ?? "");
+    setOauthClientSecret(settings.google_oauth_client_secret ?? "");
+    setOauthRefreshToken(settings.google_oauth_refresh_token ?? "");
+    // Auto-select OAuth2 tab if OAuth2 credentials are saved
+    if (settings.google_oauth_client_id || settings.google_oauth_refresh_token) {
+      setAuthMethod("oauth2");
+    } else {
+      setAuthMethod("service_account");
     }
-  }, [settings]);
+  }, [open, settings]);
 
   // Update cron when schedule type changes
   useEffect(() => {
@@ -264,10 +263,9 @@ function BackupSettingsDialog({
       return;
     }
     // Credentials must be saved to DB before the backend can build the OAuth URL.
-    // Check that the current form values match what is already persisted.
+    // Only compare client_id — the secret is never returned from the backend (security).
     const savedClientId = settings?.google_oauth_client_id ?? "";
-    const savedClientSecret = settings?.google_oauth_client_secret ?? "";
-    if (oauthClientId !== savedClientId || oauthClientSecret !== savedClientSecret) {
+    if (oauthClientId !== savedClientId) {
       toast.error("Save your settings first, then click Generate Refresh Token.");
       return;
     }
@@ -946,6 +944,15 @@ export default function BackupTab() {
             {driveStatus && !driveStatus.connected && driveStatus.error && (
               <p className="text-xs text-red-500 mt-1 leading-snug">
                 {driveStatus.error}
+              </p>
+            )}
+            {settings && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {settings.google_oauth_client_id || settings.google_oauth_refresh_token
+                  ? "OAuth2 (Personal Drive)"
+                  : settings.google_drive_service_account_email
+                  ? "Service Account"
+                  : "Not configured"}
               </p>
             )}
           </CardContent>
