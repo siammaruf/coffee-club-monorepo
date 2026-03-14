@@ -28,7 +28,7 @@ import { ItemVariation } from '../items/entities/item-variation.entity';
 import { Cart } from '../cart/entities/cart.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
 import { Activity } from '../reports/entities/activity.entity';
-import { DiscountApplication } from '../discount-application/entities/discount-application.entities';
+import { DiscountApplication } from '../discount-application/entities/discount-application.entity';
 
 // --- Cache ---
 import { CacheModule } from '../cache/cache.module';

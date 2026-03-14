@@ -38,7 +38,7 @@ import { Bank } from '../../banks/entities/bank.entity';
 import { Cart } from '../../cart/entities/cart.entity';
 import { CartItem } from '../../cart/entities/cart-item.entity';
 import { Activity } from '../../reports/entities/activity.entity';
-import { DiscountApplication } from '../../discount-application/entities/discount-application.entities';
+import { DiscountApplication } from '../../discount-application/entities/discount-application.entity';
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);

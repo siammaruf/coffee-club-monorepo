@@ -7,7 +7,7 @@ import { Item } from '../../items/entities/item.entity';
 import { Category } from '../../categories/entities/category.entity';
 import { CreateDiscountApplicationDto } from '../dto/create-discount-application.dto';
 import { UpdateDiscountApplicationDto } from '../dto/update-discount-application.dto';
-import { DiscountApplication } from '../entities/discount-application.entities';
+import { DiscountApplication } from '../entities/discount-application.entity';
 
 @Injectable()
 export class DiscountApplicationService {
