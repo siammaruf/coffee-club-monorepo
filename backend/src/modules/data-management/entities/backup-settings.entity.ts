@@ -57,20 +57,6 @@ export class BackupSettings {
   max_backups: number;
 
   @ApiProperty({
-    description: 'Google Drive service account email for backup uploads',
-    nullable: true,
-  })
-  @Column({ nullable: true })
-  google_drive_service_account_email: string;
-
-  @ApiProperty({
-    description: 'Google Drive service account private key (encrypted at rest)',
-    nullable: true,
-  })
-  @Column({ type: 'text', nullable: true })
-  google_drive_private_key: string;
-
-  @ApiProperty({
     description: 'Google Drive folder ID where backups are stored',
     nullable: true,
   })
