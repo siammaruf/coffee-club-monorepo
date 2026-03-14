@@ -62,19 +62,32 @@ export class GoogleDriveService {
       return null;
     }
 
-    const response = await client.files.create({
-      supportsAllDrives: true,
-      requestBody: {
-        name: filename,
-        parents: [folderId],
-        mimeType: 'application/octet-stream',
-      },
-      media: {
-        mimeType: 'application/octet-stream',
-        body: Readable.from(buffer),
-      },
-      fields: 'id, webViewLink',
-    });
+    let response: Awaited<ReturnType<typeof client.files.create>>;
+    try {
+      response = await client.files.create({
+        supportsAllDrives: true,
+        requestBody: {
+          name: filename,
+          parents: [folderId],
+          mimeType: 'application/octet-stream',
+        },
+        media: {
+          mimeType: 'application/octet-stream',
+          body: Readable.from(buffer),
+        },
+        fields: 'id, webViewLink',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('storage quota') || msg.toLowerCase().includes('storagequota')) {
+        throw new Error(
+          'Backup failed: The configured Google Drive folder is in a personal My Drive. ' +
+            'Service accounts require a Shared Drive (Team Drive) folder. ' +
+            'Please update backup settings with a folder ID that is inside a Shared Drive.',
+        );
+      }
+      throw err;
+    }
 
     const fileId = response.data.id || '';
     const webViewLink = response.data.webViewLink || '';
@@ -160,6 +173,7 @@ export class GoogleDriveService {
     connected: boolean;
     email: string;
     folder_id: string;
+    error?: string;
   }> {
     const settings = await this.getSettings();
     const email = settings?.google_drive_service_account_email || '';
@@ -171,13 +185,23 @@ export class GoogleDriveService {
         return { connected: false, email, folder_id: folderId };
       }
 
-      await client.files.list({
+      // Verify the folder exists and is inside a Shared Drive
+      const folderMeta = await client.files.get({
+        fileId: folderId,
+        fields: 'id, driveId',
         supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        q: `'${folderId}' in parents and trashed = false`,
-        fields: 'files(id)',
-        pageSize: 1,
       });
+
+      if (!folderMeta.data.driveId) {
+        return {
+          connected: false,
+          email,
+          folder_id: folderId,
+          error:
+            'The configured folder is in a personal My Drive. Service accounts cannot store files there. ' +
+            'Please use a folder inside a Google Shared Drive (Team Drive).',
+        };
+      }
 
       return { connected: true, email, folder_id: folderId };
     } catch (error) {
