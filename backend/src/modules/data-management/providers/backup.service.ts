@@ -168,125 +168,251 @@ export class BackupService {
     const data: Record<string, any[]> = {};
 
     // Dump users (exclude password)
-    const users = await this.userRepo.find();
-    data['users'] = users.map(({ password, ...rest }) => rest);
-    entityCounts['users'] = data['users'].length;
+    try {
+      const users = await this.userRepo.find();
+      data['users'] = users.map(({ password, ...rest }) => rest);
+      entityCounts['users'] = data['users'].length;
+    } catch (error) {
+      data['users'] = [];
+      entityCounts['users'] = 0;
+      this.logger.warn('Could not dump users table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump customers (exclude password, refresh_token, otp)
-    const customers = await this.customerRepo.find();
-    data['customers'] = customers.map(
-      ({ password, refresh_token, otp, ...rest }) => rest,
-    );
-    entityCounts['customers'] = data['customers'].length;
+    try {
+      const customers = await this.customerRepo.find();
+      data['customers'] = customers.map(
+        ({ password, refresh_token, otp, ...rest }) => rest,
+      );
+      entityCounts['customers'] = data['customers'].length;
+    } catch (error) {
+      data['customers'] = [];
+      entityCounts['customers'] = 0;
+      this.logger.warn('Could not dump customers table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump categories
-    const categories = await this.categoryRepo.find();
-    data['categories'] = categories;
-    entityCounts['categories'] = categories.length;
+    try {
+      const categories = await this.categoryRepo.find();
+      data['categories'] = categories;
+      entityCounts['categories'] = categories.length;
+    } catch (error) {
+      data['categories'] = [];
+      entityCounts['categories'] = 0;
+      this.logger.warn('Could not dump categories table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump items
-    const items = await this.itemRepo.find();
-    data['items'] = items;
-    entityCounts['items'] = items.length;
+    try {
+      const items = await this.itemRepo.find();
+      data['items'] = items;
+      entityCounts['items'] = items.length;
+    } catch (error) {
+      data['items'] = [];
+      entityCounts['items'] = 0;
+      this.logger.warn('Could not dump items table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump tables
-    const tables = await this.tableRepo.find();
-    data['tables'] = tables;
-    entityCounts['tables'] = tables.length;
+    try {
+      const tables = await this.tableRepo.find();
+      data['tables'] = tables;
+      entityCounts['tables'] = tables.length;
+    } catch (error) {
+      data['tables'] = [];
+      entityCounts['tables'] = 0;
+      this.logger.warn('Could not dump tables table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump discounts
-    const discounts = await this.discountRepo.find();
-    data['discounts'] = discounts;
-    entityCounts['discounts'] = discounts.length;
+    try {
+      const discounts = await this.discountRepo.find();
+      data['discounts'] = discounts;
+      entityCounts['discounts'] = discounts.length;
+    } catch (error) {
+      data['discounts'] = [];
+      entityCounts['discounts'] = 0;
+      this.logger.warn('Could not dump discounts table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump discount_applications
-    const discountApplications = await this.discountApplicationRepo.find({
-      relations: ['discount', 'customers', 'products', 'categories'],
-    });
-    data['discount_applications'] = discountApplications;
-    entityCounts['discount_applications'] = discountApplications.length;
+    try {
+      const discountApplications = await this.discountApplicationRepo.find({
+        relations: ['discount', 'customers', 'products', 'categories'],
+      });
+      data['discount_applications'] = discountApplications;
+      entityCounts['discount_applications'] = discountApplications.length;
+    } catch (error) {
+      data['discount_applications'] = [];
+      entityCounts['discount_applications'] = 0;
+      this.logger.warn('Could not dump discount_applications table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump expense_categories
-    const expenseCategories = await this.expenseCategoryRepo.find();
-    data['expense_categories'] = expenseCategories;
-    entityCounts['expense_categories'] = expenseCategories.length;
+    try {
+      const expenseCategories = await this.expenseCategoryRepo.find();
+      data['expense_categories'] = expenseCategories;
+      entityCounts['expense_categories'] = expenseCategories.length;
+    } catch (error) {
+      data['expense_categories'] = [];
+      entityCounts['expense_categories'] = 0;
+      this.logger.warn('Could not dump expense_categories table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump expenses
-    const expenses = await this.expensesRepo.find({ relations: ['category'] });
-    data['expenses'] = expenses;
-    entityCounts['expenses'] = expenses.length;
+    try {
+      const expenses = await this.expensesRepo.find({ relations: ['category'] });
+      data['expenses'] = expenses;
+      entityCounts['expenses'] = expenses.length;
+    } catch (error) {
+      data['expenses'] = [];
+      entityCounts['expenses'] = 0;
+      this.logger.warn('Could not dump expenses table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump orders
-    const orders = await this.orderRepo.find({
-      relations: ['customer', 'user', 'discount'],
-    });
-    data['orders'] = orders;
-    entityCounts['orders'] = orders.length;
+    try {
+      const orders = await this.orderRepo.find({
+        relations: ['customer', 'user', 'discount'],
+      });
+      data['orders'] = orders;
+      entityCounts['orders'] = orders.length;
+    } catch (error) {
+      data['orders'] = [];
+      entityCounts['orders'] = 0;
+      this.logger.warn('Could not dump orders table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump order_items
-    const orderItems = await this.orderItemRepo.find({
-      relations: ['order', 'item'],
-    });
-    data['order_items'] = orderItems;
-    entityCounts['order_items'] = orderItems.length;
+    try {
+      const orderItems = await this.orderItemRepo.find({
+        relations: ['order', 'item'],
+      });
+      data['order_items'] = orderItems;
+      entityCounts['order_items'] = orderItems.length;
+    } catch (error) {
+      data['order_items'] = [];
+      entityCounts['order_items'] = 0;
+      this.logger.warn('Could not dump order_items table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump order_tokens
-    const orderTokens = await this.orderTokenRepo.find({
-      relations: ['order', 'order_items'],
-    });
-    data['order_tokens'] = orderTokens;
-    entityCounts['order_tokens'] = orderTokens.length;
+    try {
+      const orderTokens = await this.orderTokenRepo.find({
+        relations: ['order', 'order_items'],
+      });
+      data['order_tokens'] = orderTokens;
+      entityCounts['order_tokens'] = orderTokens.length;
+    } catch (error) {
+      data['order_tokens'] = [];
+      entityCounts['order_tokens'] = 0;
+      this.logger.warn('Could not dump order_tokens table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump salaries
-    const salaries = await this.salaryRepo.find({ relations: ['user'] });
-    data['salaries'] = salaries;
-    entityCounts['salaries'] = salaries.length;
+    try {
+      const salaries = await this.salaryRepo.find({ relations: ['user'] });
+      data['salaries'] = salaries;
+      entityCounts['salaries'] = salaries.length;
+    } catch (error) {
+      data['salaries'] = [];
+      entityCounts['salaries'] = 0;
+      this.logger.warn('Could not dump salaries table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump stuff_attendance
-    const attendance = await this.attendanceRepo.find({
-      relations: ['user'],
-    });
-    data['stuff_attendance'] = attendance;
-    entityCounts['stuff_attendance'] = attendance.length;
+    try {
+      const attendance = await this.attendanceRepo.find({
+        relations: ['user'],
+      });
+      data['stuff_attendance'] = attendance;
+      entityCounts['stuff_attendance'] = attendance.length;
+    } catch (error) {
+      data['stuff_attendance'] = [];
+      entityCounts['stuff_attendance'] = 0;
+      this.logger.warn('Could not dump stuff_attendance table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump leaves
-    const leaves = await this.leaveRepo.find({ relations: ['user'] });
-    data['leaves'] = leaves;
-    entityCounts['leaves'] = leaves.length;
+    try {
+      const leaves = await this.leaveRepo.find({ relations: ['user'] });
+      data['leaves'] = leaves;
+      entityCounts['leaves'] = leaves.length;
+    } catch (error) {
+      data['leaves'] = [];
+      entityCounts['leaves'] = 0;
+      this.logger.warn('Could not dump leaves table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump kitchen_items
-    const kitchenItems = await this.kitchenItemsRepo.find();
-    data['kitchen_items'] = kitchenItems;
-    entityCounts['kitchen_items'] = kitchenItems.length;
+    try {
+      const kitchenItems = await this.kitchenItemsRepo.find();
+      data['kitchen_items'] = kitchenItems;
+      entityCounts['kitchen_items'] = kitchenItems.length;
+    } catch (error) {
+      data['kitchen_items'] = [];
+      entityCounts['kitchen_items'] = 0;
+      this.logger.warn('Could not dump kitchen_items table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump daily_reports
-    const dailyReports = await this.dailyReportRepo.find();
-    data['daily_reports'] = dailyReports;
-    entityCounts['daily_reports'] = dailyReports.length;
+    try {
+      const dailyReports = await this.dailyReportRepo.find();
+      data['daily_reports'] = dailyReports;
+      entityCounts['daily_reports'] = dailyReports.length;
+    } catch (error) {
+      data['daily_reports'] = [];
+      entityCounts['daily_reports'] = 0;
+      this.logger.warn('Could not dump daily_reports table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump banks
-    const banks = await this.bankRepo.find({ relations: ['user'] });
-    data['banks'] = banks;
-    entityCounts['banks'] = banks.length;
+    try {
+      const banks = await this.bankRepo.find({ relations: ['user'] });
+      data['banks'] = banks;
+      entityCounts['banks'] = banks.length;
+    } catch (error) {
+      data['banks'] = [];
+      entityCounts['banks'] = 0;
+      this.logger.warn('Could not dump banks table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump carts
-    const carts = await this.cartRepo.find({ relations: ['customer'] });
-    data['carts'] = carts;
-    entityCounts['carts'] = carts.length;
+    try {
+      const carts = await this.cartRepo.find({ relations: ['customer'] });
+      data['carts'] = carts;
+      entityCounts['carts'] = carts.length;
+    } catch (error) {
+      data['carts'] = [];
+      entityCounts['carts'] = 0;
+      this.logger.warn('Could not dump carts table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump cart_items
-    const cartItems = await this.cartItemRepo.find({
-      relations: ['cart', 'item'],
-    });
-    data['cart_items'] = cartItems;
-    entityCounts['cart_items'] = cartItems.length;
+    try {
+      const cartItems = await this.cartItemRepo.find({
+        relations: ['cart', 'item'],
+      });
+      data['cart_items'] = cartItems;
+      entityCounts['cart_items'] = cartItems.length;
+    } catch (error) {
+      data['cart_items'] = [];
+      entityCounts['cart_items'] = 0;
+      this.logger.warn('Could not dump cart_items table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump activities
-    const activities = await this.activityRepo.find({
-      relations: ['user', 'customer'],
-    });
-    data['activities'] = activities;
-    entityCounts['activities'] = activities.length;
+    try {
+      const activities = await this.activityRepo.find({
+        relations: ['user', 'customer'],
+      });
+      data['activities'] = activities;
+      entityCounts['activities'] = activities.length;
+    } catch (error) {
+      data['activities'] = [];
+      entityCounts['activities'] = 0;
+      this.logger.warn('Could not dump activities table', error instanceof Error ? error.message : String(error));
+    }
 
     // Dump junction tables via raw queries
     try {
