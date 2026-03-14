@@ -10,4 +10,4 @@ else
 fi
 
 echo "Starting application..."
-exec node dist/src
+exec node dist/src/main
