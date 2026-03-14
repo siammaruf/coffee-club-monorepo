@@ -31,6 +31,7 @@ import { UserRole } from '../../users/enum/user-role.enum';
 import { User } from '../../users/entities/user.entity';
 import { BackupType } from '../enums/backup-type.enum';
 import { UpdateBackupSettingsDto } from '../dto/update-backup-settings.dto';
+import { UpdateOAuthSettingsDto } from '../dto/update-oauth-settings.dto';
 
 import { BackupService } from '../providers/backup.service';
 import { BackupSchedulerService } from '../providers/backup-scheduler.service';
@@ -197,8 +198,8 @@ export class BackupController {
   @Patch('settings/oauth')
   @ApiOperation({ summary: 'Save Google OAuth2 credentials for Drive access' })
   @ApiResponse({ status: 200, description: 'OAuth credentials saved successfully' })
-  async updateOAuthSettings(@Body() dto: UpdateBackupSettingsDto) {
-    return this.schedulerService.updateSettings(dto);
+  async updateOAuthSettings(@Body() dto: UpdateOAuthSettingsDto) {
+    return this.schedulerService.updateOAuthSettings(dto);
   }
 
   @Get('drive/status')
