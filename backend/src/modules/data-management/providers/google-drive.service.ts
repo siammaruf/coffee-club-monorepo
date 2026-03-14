@@ -202,16 +202,26 @@ export class GoogleDriveService {
     error?: string;
   }> {
     const settings = await this.getSettings();
-    const email = settings?.google_drive_service_account_email || '';
     const folderId = settings?.google_drive_folder_id || '';
 
     try {
       const client = await this.getClient();
       if (!client) {
-        return { connected: false, email, folder_id: folderId };
+        return { connected: false, email: '', folder_id: folderId };
       }
 
       const usingOAuth = await this.isOAuthConfigured();
+
+      // Resolve the authenticated identity's email
+      let email = settings?.google_drive_service_account_email || '';
+      if (usingOAuth) {
+        try {
+          const about = await client.about.get({ fields: 'user' });
+          email = about.data.user?.emailAddress || 'OAuth2 User';
+        } catch {
+          email = 'OAuth2 User';
+        }
+      }
 
       // Verify the folder exists
       const folderMeta = await client.files.get({
@@ -238,7 +248,7 @@ export class GoogleDriveService {
         'Google Drive connection check failed',
         error instanceof Error ? error.stack : String(error),
       );
-      return { connected: false, email, folder_id: folderId };
+      return { connected: false, email: settings?.google_drive_service_account_email || '', folder_id: folderId };
     }
   }
 }

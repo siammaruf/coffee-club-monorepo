@@ -128,6 +128,9 @@ export interface BackupSettings {
   google_drive_service_account_email: string | null;
   google_drive_private_key: string | null;
   google_drive_folder_id: string | null;
+  google_oauth_client_id: string | null;
+  google_oauth_client_secret: string | null;
+  google_oauth_refresh_token: string | null;
   updated_at: string;
 }
 
@@ -140,12 +143,16 @@ export interface BackupSettingsUpdatePayload {
   google_drive_service_account_email?: string | null;
   google_drive_private_key?: string | null;
   google_drive_folder_id?: string | null;
+  google_oauth_client_id?: string | null;
+  google_oauth_client_secret?: string | null;
+  google_oauth_refresh_token?: string | null;
 }
 
 export interface DriveStatus {
   connected: boolean;
   email: string;
   folder_id: string;
+  error?: string;
 }
 
 // ─── Restore ─────────────────────────────────────────────────────────────────
