@@ -1,13 +1,13 @@
-FROM node:24-slim AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json bun.lockb* package-lock.json* ./
+RUN bun install
 COPY . .
-RUN npm run build
+RUN bun run build
 
 
-FROM node:24-slim
+FROM node:24.14.0-slim
 
 RUN apt-get update && apt-get install -y \
     curl \
