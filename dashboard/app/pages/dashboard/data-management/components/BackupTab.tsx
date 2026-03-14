@@ -154,6 +154,8 @@ interface BackupSettingsDialogProps {
   onSaved: () => void;
 }
 
+type DriveAuthMethod = "service_account" | "oauth2";
+
 function BackupSettingsDialog({
   open,
   onOpenChange,
@@ -166,9 +168,17 @@ function BackupSettingsDialog({
   const [cronExpression, setCronExpression] = useState("0 2 * * *");
   const [retentionDays, setRetentionDays] = useState(30);
   const [maxBackups, setMaxBackups] = useState(50);
+  // Service account fields
   const [driveEmail, setDriveEmail] = useState("");
   const [drivePrivateKey, setDrivePrivateKey] = useState("");
+  // OAuth2 fields
+  const [oauthClientId, setOauthClientId] = useState("");
+  const [oauthClientSecret, setOauthClientSecret] = useState("");
+  const [oauthRefreshToken, setOauthRefreshToken] = useState("");
+  // Shared
   const [driveFolderId, setDriveFolderId] = useState("");
+  const [authMethod, setAuthMethod] = useState<DriveAuthMethod>("service_account");
+  const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Populate form when settings load
@@ -182,6 +192,15 @@ function BackupSettingsDialog({
       setDriveEmail(settings.google_drive_service_account_email ?? "");
       setDrivePrivateKey(settings.google_drive_private_key ?? "");
       setDriveFolderId(settings.google_drive_folder_id ?? "");
+      setOauthClientId(settings.google_oauth_client_id ?? "");
+      setOauthClientSecret(settings.google_oauth_client_secret ?? "");
+      setOauthRefreshToken(settings.google_oauth_refresh_token ?? "");
+      // Default to OAuth2 tab if OAuth2 credentials are saved
+      if (settings.google_oauth_client_id || settings.google_oauth_refresh_token) {
+        setAuthMethod("oauth2");
+      } else {
+        setAuthMethod("service_account");
+      }
     }
   }, [settings]);
 
@@ -209,9 +228,23 @@ function BackupSettingsDialog({
         cron_expression: cronExpression,
         retention_days: retentionDays,
         max_backups: maxBackups,
-        google_drive_service_account_email: driveEmail || null,
-        google_drive_private_key: drivePrivateKey || null,
         google_drive_folder_id: driveFolderId || null,
+        // Send only the active auth method's credentials; clear the other
+        ...(authMethod === "service_account"
+          ? {
+              google_drive_service_account_email: driveEmail || null,
+              google_drive_private_key: drivePrivateKey || null,
+              google_oauth_client_id: null,
+              google_oauth_client_secret: null,
+              google_oauth_refresh_token: null,
+            }
+          : {
+              google_drive_service_account_email: null,
+              google_drive_private_key: null,
+              google_oauth_client_id: oauthClientId || null,
+              google_oauth_client_secret: oauthClientSecret || null,
+              google_oauth_refresh_token: oauthRefreshToken || null,
+            }),
       });
       toast.success("Backup settings saved");
       onSaved();
@@ -331,27 +364,95 @@ function BackupSettingsDialog({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="drive-email">Service Account Email</Label>
-              <Input
-                id="drive-email"
-                type="email"
-                value={driveEmail}
-                onChange={(e) => setDriveEmail(e.target.value)}
-                placeholder="backup@project.iam.gserviceaccount.com"
-              />
+            {/* Auth method toggle */}
+            <div className="flex rounded-md border overflow-hidden text-sm">
+              <button
+                type="button"
+                onClick={() => setAuthMethod("service_account")}
+                className={`flex-1 px-3 py-1.5 transition-colors ${
+                  authMethod === "service_account"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Service Account
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMethod("oauth2")}
+                className={`flex-1 px-3 py-1.5 transition-colors border-l ${
+                  authMethod === "oauth2"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                OAuth2 (Personal Drive)
+              </button>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="drive-key">Private Key</Label>
-              <textarea
-                id="drive-key"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
-                value={drivePrivateKey}
-                onChange={(e) => setDrivePrivateKey(e.target.value)}
-                placeholder="-----BEGIN PRIVATE KEY-----\n..."
-              />
-            </div>
+            {authMethod === "service_account" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="drive-email">Service Account Email</Label>
+                  <Input
+                    id="drive-email"
+                    type="email"
+                    value={driveEmail}
+                    onChange={(e) => setDriveEmail(e.target.value)}
+                    placeholder="backup@project.iam.gserviceaccount.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="drive-key">Private Key</Label>
+                  <textarea
+                    id="drive-key"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    value={drivePrivateKey}
+                    onChange={(e) => setDrivePrivateKey(e.target.value)}
+                    placeholder="-----BEGIN PRIVATE KEY-----\n..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Requires a folder inside a Google Shared Drive (Team Drive).
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="oauth-client-id">OAuth2 Client ID</Label>
+                  <Input
+                    id="oauth-client-id"
+                    value={oauthClientId}
+                    onChange={(e) => setOauthClientId(e.target.value)}
+                    placeholder="123456789-abc.apps.googleusercontent.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="oauth-client-secret">OAuth2 Client Secret</Label>
+                  <Input
+                    id="oauth-client-secret"
+                    type="password"
+                    value={oauthClientSecret}
+                    onChange={(e) => setOauthClientSecret(e.target.value)}
+                    placeholder="GOCSPX-..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="oauth-refresh-token">Refresh Token</Label>
+                  <Input
+                    id="oauth-refresh-token"
+                    type="password"
+                    value={oauthRefreshToken}
+                    onChange={(e) => setOauthRefreshToken(e.target.value)}
+                    placeholder="1//0e..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Works with personal My Drive folders. Generate via{" "}
+                    <code className="bg-muted px-1 rounded text-xs">backend/scripts/get-oauth-token.js</code>.
+                  </p>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="drive-folder">Folder ID</Label>
@@ -361,6 +462,54 @@ function BackupSettingsDialog({
                 onChange={(e) => setDriveFolderId(e.target.value)}
                 placeholder="1a2b3c4d5e6f..."
               />
+              <p className="text-xs text-muted-foreground">
+                Copy from the folder URL:{" "}
+                <code className="bg-muted px-1 rounded text-xs">drive.google.com/drive/folders/&lt;FOLDER_ID&gt;</code>
+              </p>
+            </div>
+
+            {/* Help guide */}
+            <div className="rounded-md border">
+              <button
+                type="button"
+                onClick={() => setShowHelp(!showHelp)}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  How to configure Google Drive
+                </span>
+                <span className="text-xs">{showHelp ? "▲ Hide" : "▼ Show"}</span>
+              </button>
+              {showHelp && (
+                <div className="px-3 pb-3 space-y-4 text-xs text-muted-foreground border-t pt-3">
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Option A — Service Account (Shared Drive only)</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Go to <strong>Google Cloud Console</strong> → IAM &amp; Admin → Service Accounts</li>
+                      <li>Create a service account and download a JSON key</li>
+                      <li>Create a <strong>Shared Drive</strong> (Team Drive) folder in Google Drive</li>
+                      <li>Share that folder with the service account email (Editor role)</li>
+                      <li>Paste the service account email, private key, and folder ID above</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Option B — OAuth2 (Personal Drive)</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Go to <strong>Google Cloud Console</strong> → APIs &amp; Services → Credentials</li>
+                      <li>Create an <strong>OAuth 2.0 Client ID</strong> (Desktop app type)</li>
+                      <li>Enable the <strong>Google Drive API</strong> for your project</li>
+                      <li>
+                        Run{" "}
+                        <code className="bg-muted px-1 rounded">node backend/scripts/get-oauth-token.js</code>{" "}
+                        and follow the prompts to get a refresh token
+                      </li>
+                      <li>Create any folder in your personal Google Drive and copy its ID from the URL</li>
+                      <li>Paste client ID, client secret, refresh token, and folder ID above</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -719,6 +868,11 @@ export default function BackupTab() {
             {driveStatus?.connected && driveStatus.email && (
               <p className="text-xs text-muted-foreground mt-1 truncate">
                 {driveStatus.email}
+              </p>
+            )}
+            {driveStatus && !driveStatus.connected && driveStatus.error && (
+              <p className="text-xs text-red-500 mt-1 leading-snug">
+                {driveStatus.error}
               </p>
             )}
           </CardContent>
