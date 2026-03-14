@@ -240,11 +240,17 @@ function BackupSettingsDialog({
       toast.error("Enter your Client ID and Client Secret first.");
       return;
     }
-    // Credentials must be saved to DB before the backend can build the OAuth URL.
-    // Only compare client_id — the secret is never returned from the backend (security).
-    const savedClientId = settings?.google_oauth_client_id ?? "";
-    if (oauthClientId !== savedClientId) {
-      toast.error("Save your settings first, then click Generate Refresh Token.");
+
+    // Auto-save credentials to DB so the backend can build the OAuth URL
+    setGeneratingToken(true);
+    try {
+      await dataManagementService.updateOAuthSettings({
+        google_oauth_client_id: oauthClientId,
+        google_oauth_client_secret: oauthClientSecret,
+      });
+    } catch {
+      toast.error("Failed to save credentials. Please try again.");
+      setGeneratingToken(false);
       return;
     }
 
@@ -256,10 +262,9 @@ function BackupSettingsDialog({
 
     if (!popup) {
       toast.error("Popup was blocked. Allow popups for this site and try again.");
+      setGeneratingToken(false);
       return;
     }
-
-    setGeneratingToken(true);
 
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === "oauth_success") {

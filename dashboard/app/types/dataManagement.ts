@@ -125,8 +125,6 @@ export interface BackupSettings {
   cron_expression: string;
   retention_days: number;
   max_backups: number;
-  google_drive_service_account_email: string | null;
-  google_drive_private_key: string | null;
   google_drive_folder_id: string | null;
   google_oauth_client_id: string | null;
   google_oauth_client_secret: string | null;
@@ -140,12 +138,7 @@ export interface BackupSettingsUpdatePayload {
   cron_expression?: string;
   retention_days?: number;
   max_backups?: number;
-  google_drive_service_account_email?: string | null;
-  google_drive_private_key?: string | null;
   google_drive_folder_id?: string | null;
-  google_oauth_client_id?: string | null;
-  google_oauth_client_secret?: string | null;
-  google_oauth_refresh_token?: string | null;
 }
 
 export interface DriveStatus {

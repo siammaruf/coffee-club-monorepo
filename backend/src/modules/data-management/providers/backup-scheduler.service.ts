@@ -8,6 +8,7 @@ import { BackupSettings } from '../entities/backup-settings.entity';
 import { BackupType } from '../enums/backup-type.enum';
 import { BackupService } from './backup.service';
 import { UpdateBackupSettingsDto } from '../dto/update-backup-settings.dto';
+import { UpdateOAuthSettingsDto } from '../dto/update-oauth-settings.dto';
 
 @Injectable()
 export class BackupSchedulerService implements OnModuleInit {
@@ -111,5 +112,21 @@ export class BackupSchedulerService implements OnModuleInit {
     settings = await this.settingsRepo.save(settings);
     await this.updateSchedule(settings);
     return settings;
+  }
+
+  async updateOAuthSettings(
+    dto: UpdateOAuthSettingsDto,
+  ): Promise<BackupSettings> {
+    // Use update() directly to bypass entity change-tracking and avoid
+    // class-transformer null coercion issues with Object.assign + save().
+    await this.settingsRepo.update(
+      {},
+      {
+        google_oauth_client_id: dto.google_oauth_client_id ?? null,
+        google_oauth_client_secret: dto.google_oauth_client_secret ?? null,
+        google_oauth_refresh_token: dto.google_oauth_refresh_token ?? null,
+      },
+    );
+    return this.getSettings();
   }
 }
