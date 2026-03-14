@@ -31,7 +31,7 @@ export class GoogleDriveService {
     const auth = new google.auth.JWT({
       email: settings.google_drive_service_account_email,
       key: settings.google_drive_private_key.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
+      scopes: ['https://www.googleapis.com/auth/drive'],
     });
 
     return google.drive({ version: 'v3', auth });
@@ -63,6 +63,7 @@ export class GoogleDriveService {
     }
 
     const response = await client.files.create({
+      supportsAllDrives: true,
       requestBody: {
         name: filename,
         parents: [folderId],
@@ -92,7 +93,7 @@ export class GoogleDriveService {
     }
 
     const response = await client.files.get(
-      { fileId, alt: 'media' },
+      { fileId, alt: 'media', supportsAllDrives: true },
       { responseType: 'stream' },
     );
 
@@ -119,6 +120,8 @@ export class GoogleDriveService {
     }
 
     const response = await client.files.list({
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
       q: `'${folderId}' in parents and trashed = false and name contains '.ccbak'`,
       fields: 'files(id, name, size, createdTime)',
       orderBy: 'createdTime desc',
@@ -143,7 +146,7 @@ export class GoogleDriveService {
     }
 
     try {
-      await client.files.delete({ fileId });
+      await client.files.delete({ fileId, supportsAllDrives: true });
       this.logger.log(`Deleted file from Google Drive (ID: ${fileId})`);
     } catch (error) {
       this.logger.error(
@@ -169,6 +172,8 @@ export class GoogleDriveService {
       }
 
       await client.files.list({
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
         q: `'${folderId}' in parents and trashed = false`,
         fields: 'files(id)',
         pageSize: 1,
