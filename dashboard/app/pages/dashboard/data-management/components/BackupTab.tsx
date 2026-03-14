@@ -482,12 +482,23 @@ function BackupSettingsDialog({
               {showHelp && (
                 <div className="px-3 pb-3 space-y-4 text-xs text-muted-foreground border-t pt-3">
                   <div>
-                    <ol className="list-decimal list-inside space-y-1">
+                    <ol className="list-decimal list-inside space-y-1.5">
                       <li>Go to <strong>Google Cloud Console</strong> → APIs &amp; Services → Credentials</li>
-                      <li>Create an <strong>OAuth 2.0 Client ID</strong> (Desktop app type)</li>
                       <li>Enable the <strong>Google Drive API</strong> for your project</li>
-                      <li>Enter Client ID and Client Secret above, then click <strong>Save Settings</strong></li>
-                      <li>Click <strong>Generate Refresh Token</strong> and authorize in the popup</li>
+                      <li>
+                        Click <strong>+ Create Credentials → OAuth 2.0 Client ID</strong> and choose application type{" "}
+                        <strong className="text-foreground">Web application</strong>{" "}
+                        <span className="text-red-500">(not Desktop app — Desktop app will not return a refresh token)</span>
+                      </li>
+                      <li>
+                        Under <strong>Authorized redirect URIs</strong>, add:
+                        <br />
+                        <code className="bg-muted px-1 rounded mt-0.5 inline-block break-all">
+                          {API_URL}/data-management/backup/drive/oauth/callback
+                        </code>
+                      </li>
+                      <li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and enter them above</li>
+                      <li>Click <strong>Generate Refresh Token</strong> and complete the Google consent screen in the popup</li>
                       <li>Create any folder in your personal Google Drive and copy its ID from the URL</li>
                       <li>Paste the folder ID in the Folder ID field and save</li>
                     </ol>

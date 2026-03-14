@@ -18,6 +18,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
+  app.set('trust proxy', 1); // Trust X-Forwarded-Proto from reverse proxy (nginx) so req.protocol returns 'https' in production
   app.setGlobalPrefix('api/v1');
   app.use(cookieParser());
 
