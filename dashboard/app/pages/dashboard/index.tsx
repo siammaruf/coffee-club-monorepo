@@ -161,7 +161,7 @@ export default function Dashboard() {
     </div>
   );
 
-  if (tab === "data-management") {
+  if (tab === "data-management" || tab === "export" || tab === "import" || tab === "backup") {
     return <DataManagementPage />;
   }
 
