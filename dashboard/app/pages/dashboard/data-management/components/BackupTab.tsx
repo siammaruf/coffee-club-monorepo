@@ -225,6 +225,7 @@ function BackupSettingsDialog({
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Scheduler + folder — no OAuth fields (backward compat with old backend)
       await dataManagementService.updateBackupSettings({
         auto_backup_enabled: autoBackup,
         schedule_type: scheduleType,
@@ -232,18 +233,19 @@ function BackupSettingsDialog({
         retention_days: retentionDays,
         max_backups: maxBackups,
         google_drive_folder_id: driveFolderId || null,
-        // Only send fields for the active auth method
-        ...(authMethod === "service_account"
-          ? {
-              google_drive_service_account_email: driveEmail || null,
-              google_drive_private_key: drivePrivateKey || null,
-            }
-          : {
-              google_oauth_client_id: oauthClientId || null,
-              google_oauth_client_secret: oauthClientSecret || null,
-              google_oauth_refresh_token: oauthRefreshToken || null,
-            }),
+        ...(authMethod === "service_account" && {
+          google_drive_service_account_email: driveEmail || null,
+          google_drive_private_key: drivePrivateKey || null,
+        }),
       });
+      // OAuth credentials go to the dedicated endpoint
+      if (authMethod === "oauth2") {
+        await dataManagementService.updateOAuthSettings({
+          google_oauth_client_id: oauthClientId || null,
+          google_oauth_client_secret: oauthClientSecret || null,
+          google_oauth_refresh_token: oauthRefreshToken || null,
+        });
+      }
       toast.success("Backup settings saved");
       onSaved();
       onOpenChange(false);

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Query,
@@ -190,6 +191,13 @@ export class BackupController {
     description: 'Backup settings updated successfully',
   })
   async updateSettings(@Body() dto: UpdateBackupSettingsDto) {
+    return this.schedulerService.updateSettings(dto);
+  }
+
+  @Patch('settings/oauth')
+  @ApiOperation({ summary: 'Save Google OAuth2 credentials for Drive access' })
+  @ApiResponse({ status: 200, description: 'OAuth credentials saved successfully' })
+  async updateOAuthSettings(@Body() dto: UpdateBackupSettingsDto) {
     return this.schedulerService.updateSettings(dto);
   }
 

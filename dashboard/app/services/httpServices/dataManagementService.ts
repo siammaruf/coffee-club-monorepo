@@ -171,6 +171,16 @@ const updateBackupSettings = (data: BackupSettingsUpdatePayload) =>
     data,
   );
 
+const updateOAuthSettings = (data: {
+  google_oauth_client_id?: string | null;
+  google_oauth_client_secret?: string | null;
+  google_oauth_refresh_token?: string | null;
+}) =>
+  httpService.patch<DataManagementApiResponse<BackupSettings>>(
+    `${BASE}/backup/settings/oauth`,
+    data,
+  );
+
 // ─── Google Drive ────────────────────────────────────────────────────────────
 
 const getDriveStatus = () =>
@@ -204,6 +214,7 @@ export const dataManagementService = {
   // Settings
   getBackupSettings,
   updateBackupSettings,
+  updateOAuthSettings,
 
   // Google Drive
   getDriveStatus,
