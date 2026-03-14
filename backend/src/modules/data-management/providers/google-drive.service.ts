@@ -62,9 +62,9 @@ export class GoogleDriveService {
       return null;
     }
 
-    let response: Awaited<ReturnType<typeof client.files.create>>;
+    let fileCreateResponse: { data: { id?: string | null; webViewLink?: string | null } };
     try {
-      response = await client.files.create({
+      fileCreateResponse = await client.files.create({
         supportsAllDrives: true,
         requestBody: {
           name: filename,
@@ -79,7 +79,7 @@ export class GoogleDriveService {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('storage quota') || msg.toLowerCase().includes('storagequota')) {
+      if (msg.toLowerCase().includes('storage quota') || msg.toLowerCase().includes('storagequota')) {
         throw new Error(
           'Backup failed: The configured Google Drive folder is in a personal My Drive. ' +
             'Service accounts require a Shared Drive (Team Drive) folder. ' +
@@ -89,8 +89,8 @@ export class GoogleDriveService {
       throw err;
     }
 
-    const fileId = response.data.id || '';
-    const webViewLink = response.data.webViewLink || '';
+    const fileId = fileCreateResponse.data.id || '';
+    const webViewLink = fileCreateResponse.data.webViewLink || '';
 
     this.logger.log(
       `Uploaded file "${filename}" to Google Drive (ID: ${fileId})`,
