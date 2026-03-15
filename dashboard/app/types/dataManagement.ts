@@ -126,10 +126,13 @@ export interface BackupSettings {
   retention_days: number;
   max_backups: number;
   google_drive_folder_id: string | null;
-  google_oauth_client_id: string | null;
-  google_oauth_client_secret: string | null;
   google_oauth_refresh_token: string | null;
   updated_at: string;
+}
+
+export interface DriveFolder {
+  id: string;
+  name: string;
 }
 
 export interface BackupSettingsUpdatePayload {
