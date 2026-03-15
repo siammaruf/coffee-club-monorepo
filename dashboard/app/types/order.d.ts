@@ -91,6 +91,7 @@ export interface OrderListResponse {
   page: number;
   limit: number;
   totalPages: number;
+  statusCounts: Record<string, number>;
   status: string;
   message: string;
   statusCode: number;

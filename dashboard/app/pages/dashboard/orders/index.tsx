@@ -42,6 +42,7 @@ import { getPageFromUrl } from "~/utils/common";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export default function OrdersPage() {
   const location = useLocation();
@@ -49,6 +50,7 @@ export default function OrdersPage() {
 
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -68,7 +70,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, pageSize, searchTerm, statusFilter, paymentFilter, dateFilter, viewMode]);
+  }, [currentPage, pageSize, debouncedSearch, statusFilter, paymentFilter, dateFilter, viewMode]);
 
   useEffect(() => {
     const urlPage = getPageFromUrl();
@@ -96,7 +98,7 @@ export default function OrdersPage() {
       const params: GetAllOrdersParams = {
         page: currentPage,
         limit: pageSize,
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         paymentStatus: paymentFilter || undefined,
         dateFilter: dateFilter || undefined,

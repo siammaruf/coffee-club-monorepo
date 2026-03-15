@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 import { Edit, Plus, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { partnerService } from "~/services/httpServices/partnerService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
@@ -16,6 +17,7 @@ export default function PartnersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editPartner, setEditPartner] = useState<Partner | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function PartnersPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const res = viewMode === 'active'
         ? await partnerService.getAll(params)
@@ -53,7 +55,7 @@ export default function PartnersPage() {
 
   useEffect(() => {
     fetchPartners();
-  }, [currentPage, searchTerm, viewMode]);
+  }, [currentPage, debouncedSearch, viewMode]);
 
   useEffect(() => {
     partnerService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
