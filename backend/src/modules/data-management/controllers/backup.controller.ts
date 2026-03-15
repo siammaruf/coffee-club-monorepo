@@ -242,7 +242,7 @@ export class BackupController {
     const authUrl = await this.googleDriveService.getOAuthAuthorizationUrl(callbackUrl);
     if (!authUrl) {
       throw new BadRequestException(
-        'Google OAuth2 credentials (GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET) are not configured in the server environment.',
+        'Google OAuth2 credentials are not configured. Set them via the dashboard backup settings or server environment variables (GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET).',
       );
     }
     res.redirect(authUrl);

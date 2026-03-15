@@ -233,7 +233,7 @@ export class GoogleDriveService {
     return oauth2.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/drive'],
-      prompt: 'consent',
+      prompt: 'consent select_account',
       state,
     });
   }
