@@ -285,40 +285,121 @@ export class GoogleDriveService {
     connected: boolean;
     email: string;
     folder_id: string;
+    folder_configured: boolean;
     error?: string;
   }> {
     const settings = await this.getSettings();
     const folderId = settings?.google_drive_folder_id || '';
 
+    // Use getAuthenticatedClient — does NOT require folder_id, only token
+    const client = await this.getAuthenticatedClient();
+    if (!client) {
+      return {
+        connected: false,
+        email: '',
+        folder_id: folderId,
+        folder_configured: false,
+      };
+    }
+
+    // Verify token is valid by fetching account info
+    let email = '';
     try {
-      const client = await this.getClient();
-      if (!client) {
-        return { connected: false, email: '', folder_id: folderId };
-      }
-
-      // Resolve the authenticated identity's email
-      let email = '';
-      try {
-        const about = await client.about.get({ fields: 'user' });
-        email = about.data.user?.emailAddress || 'OAuth2 User';
-      } catch {
-        email = 'OAuth2 User';
-      }
-
-      // Verify the folder exists
-      await client.files.get({
-        fileId: folderId,
-        fields: 'id',
-        supportsAllDrives: true,
-      });
-
-      return { connected: true, email, folder_id: folderId };
+      const about = await client.about.get({ fields: 'user' });
+      email = about.data.user?.emailAddress || 'OAuth2 User';
     } catch (error) {
       this.logger.error(
         'Google Drive connection check failed',
         error instanceof Error ? error.stack : String(error),
       );
-      return { connected: false, email: '', folder_id: folderId };
+      return {
+        connected: false,
+        email: '',
+        folder_id: folderId,
+        folder_configured: false,
+        error: error instanceof Error ? error.message : 'Token validation failed',
+      };
     }
+
+    // Token is valid — connected. Now check if folder is configured and accessible.
+    let folderConfigured = false;
+    if (folderId) {
+      try {
+        await client.files.get({
+          fileId: folderId,
+          fields: 'id',
+          supportsAllDrives: true,
+        });
+        folderConfigured = true;
+      } catch {
+        // Folder not accessible — still connected, just folder not configured
+        folderConfigured = false;
+      }
+    }
+
+    return {
+      connected: true,
+      email,
+      folder_id: folderId,
+      folder_configured: folderConfigured,
+    };
+  }
+
+  async testUpload(): Promise<{ success: boolean; message: string }> {
+    const client = await this.getAuthenticatedClient();
+    if (!client) {
+      throw new Error('Google Drive is not connected. Please connect your Google account first.');
+    }
+
+    const folderId = await this.getFolderId();
+    if (!folderId) {
+      throw new Error('No backup folder configured. Please select a Google Drive folder in backup settings.');
+    }
+
+    const testContent = JSON.stringify({
+      test: true,
+      timestamp: Date.now(),
+      app: 'CoffeeClub',
+      message: 'This is a test file to verify Google Drive integration.',
+    });
+    const buffer = Buffer.from(testContent, 'utf-8');
+    const filename = `coffeeclub-test-${Date.now()}.json`;
+
+    const { Readable } = await import('stream');
+
+    let fileId: string;
+    try {
+      const response = await client.files.create({
+        supportsAllDrives: true,
+        requestBody: {
+          name: filename,
+          parents: [folderId],
+          mimeType: 'application/json',
+        },
+        media: {
+          mimeType: 'application/json',
+          body: Readable.from(buffer),
+        },
+        fields: 'id',
+      });
+      fileId = response.data.id || '';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`Test upload failed: ${msg}`);
+    }
+
+    // Clean up — delete the test file immediately
+    try {
+      await client.files.delete({ fileId, supportsAllDrives: true });
+    } catch {
+      // Non-fatal — log but don't fail the test
+      this.logger.warn(`Test file cleanup failed (ID: ${fileId}). Please delete it manually.`);
+    }
+
+    this.logger.log('Google Drive test upload succeeded.');
+    return {
+      success: true,
+      message: 'Test upload successful. Google Drive integration is working correctly.',
+    };
   }
 }

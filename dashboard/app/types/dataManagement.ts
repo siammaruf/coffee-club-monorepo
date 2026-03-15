@@ -148,7 +148,13 @@ export interface DriveStatus {
   connected: boolean;
   email: string;
   folder_id: string;
+  folder_configured: boolean;
   error?: string;
+}
+
+export interface TestBackupResult {
+  success: boolean;
+  message: string;
 }
 
 // ─── Restore ─────────────────────────────────────────────────────────────────
