@@ -17,11 +17,15 @@ export class GoogleDriveService {
   ) {}
 
   private getClientId(): string | undefined {
-    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID') || undefined;
+    return (
+      this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID') || undefined
+    );
   }
 
   private getClientSecret(): string | undefined {
-    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET') || undefined;
+    return (
+      this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET') || undefined
+    );
   }
 
   private async getSettings(): Promise<BackupSettings | null> {
@@ -41,7 +45,9 @@ export class GoogleDriveService {
     }
 
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
+    oauth2.setCredentials({
+      refresh_token: settings.google_oauth_refresh_token,
+    });
     return google.drive({ version: 'v3', auth: oauth2 });
   }
 
@@ -53,7 +59,9 @@ export class GoogleDriveService {
       return null;
     }
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
+    oauth2.setCredentials({
+      refresh_token: settings.google_oauth_refresh_token,
+    });
     return google.drive({ version: 'v3', auth: oauth2 });
   }
 
@@ -68,9 +76,7 @@ export class GoogleDriveService {
   ): Promise<{ fileId: string; webViewLink: string } | null> {
     const client = await this.getClient();
     if (!client) {
-      this.logger.warn(
-        'Google Drive not configured. Skipping upload.',
-      );
+      this.logger.warn('Google Drive not configured. Skipping upload.');
       return null;
     }
 
@@ -82,7 +88,9 @@ export class GoogleDriveService {
       return null;
     }
 
-    let fileCreateResponse: { data: { id?: string | null; webViewLink?: string | null } };
+    let fileCreateResponse: {
+      data: { id?: string | null; webViewLink?: string | null };
+    };
     try {
       fileCreateResponse = await client.files.create({
         supportsAllDrives: true,
@@ -99,7 +107,10 @@ export class GoogleDriveService {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes('storage quota') || msg.toLowerCase().includes('storagequota')) {
+      if (
+        msg.toLowerCase().includes('storage quota') ||
+        msg.toLowerCase().includes('storagequota')
+      ) {
         throw new Error(
           'Backup failed: The configured Google Drive folder is in a personal My Drive. ' +
             'Service accounts require a Shared Drive (Team Drive) folder. ' +
@@ -172,9 +183,7 @@ export class GoogleDriveService {
   async deleteFile(fileId: string): Promise<void> {
     const client = await this.getClient();
     if (!client) {
-      this.logger.warn(
-        'Google Drive not configured. Cannot delete file.',
-      );
+      this.logger.warn('Google Drive not configured. Cannot delete file.');
       return;
     }
 
@@ -230,7 +239,10 @@ export class GoogleDriveService {
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
     return oauth2.generateAuthUrl({
       access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/drive'],
+      scope: [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.readonly',
+      ],
       prompt: 'consent select_account',
       state,
     });
@@ -246,7 +258,9 @@ export class GoogleDriveService {
     const clientId = this.getClientId();
     const clientSecret = this.getClientSecret();
     if (!clientId || !clientSecret) {
-      throw new Error('Google OAuth2 Client ID and Secret are not configured. Set them via dashboard or environment variables.');
+      throw new Error(
+        'Google OAuth2 Client ID and Secret are not configured. Set them via dashboard or environment variables.',
+      );
     }
     const settings = await this.getSettings();
     if (!settings) {
@@ -257,10 +271,12 @@ export class GoogleDriveService {
     if (!tokens.refresh_token) {
       throw new Error(
         'No refresh token returned. Ensure "prompt: consent" is set and the app is not already authorized. ' +
-        'Revoke access at https://myaccount.google.com/permissions and try again.',
+          'Revoke access at https://myaccount.google.com/permissions and try again.',
       );
     }
-    await this.settingsRepo.update(settings.id, { google_oauth_refresh_token: tokens.refresh_token });
+    await this.settingsRepo.update(settings.id, {
+      google_oauth_refresh_token: tokens.refresh_token,
+    });
     this.logger.log('Google OAuth2 refresh token saved successfully.');
     return tokens.refresh_token;
   }
