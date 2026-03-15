@@ -422,6 +422,12 @@ function BackupSettingsDialog({
                     {driveStatus.email}
                   </p>
                 )}
+                {driveStatus && !driveStatus.folder_configured && (
+                  <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span>No backup folder selected — choose a folder below to enable cloud backups.</span>
+                  </div>
+                )}
               </div>
             ) : (
               /* ── Not connected state ── */
@@ -659,6 +665,7 @@ export default function BackupTab() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [testingDrive, setTestingDrive] = useState(false);
 
   // Restore state
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
@@ -731,6 +738,20 @@ export default function BackupTab() {
       toast.error(message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleTestDrive = async () => {
+    setTestingDrive(true);
+    try {
+      const response = await dataManagementService.testDriveConnection();
+      toast.success(response.data?.message ?? "Test upload successful");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Test upload failed";
+      toast.error(message);
+    } finally {
+      setTestingDrive(false);
     }
   };
 
@@ -830,32 +851,43 @@ export default function BackupTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  driveStatus?.connected ? "bg-green-500" : "bg-red-500"
-                }`}
-              />
-              <span className="text-lg font-semibold">
-                {driveStatus?.connected ? "Connected" : "Not Connected"}
-              </span>
-            </div>
-            {driveStatus?.connected && driveStatus.email && (
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {driveStatus.email}
-              </p>
-            )}
-            {driveStatus && !driveStatus.connected && driveStatus.error && (
-              <p className="text-xs text-red-500 mt-1 leading-snug">
-                {driveStatus.error}
-              </p>
-            )}
-            {settings && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {settings.google_oauth_refresh_token
-                  ? "OAuth2 (Personal Drive)"
-                  : "Not configured"}
-              </p>
+            {driveStatus?.connected ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      driveStatus.folder_configured
+                        ? "bg-green-500"
+                        : "bg-amber-500"
+                    }`}
+                  />
+                  <span className="text-lg font-semibold">
+                    {driveStatus.folder_configured ? "Connected" : "Token Active"}
+                  </span>
+                </div>
+                {driveStatus.email && (
+                  <p className="text-xs text-muted-foreground mt-1 truncate" title={driveStatus.email}>
+                    {driveStatus.email}
+                  </p>
+                )}
+                {!driveStatus.folder_configured && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No folder selected
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <span className="text-lg font-semibold">Not Connected</span>
+                </div>
+                {driveStatus?.error && (
+                  <p className="text-xs text-red-500 mt-1 leading-snug">
+                    {driveStatus.error}
+                  </p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -937,6 +969,26 @@ export default function BackupTab() {
             <Settings className="w-4 h-4" />
             Settings
           </Button>
+          {driveStatus?.connected && driveStatus?.folder_configured && (
+            <Button
+              variant="outline"
+              onClick={handleTestDrive}
+              disabled={testingDrive}
+              title="Upload a small test file to verify Google Drive integration"
+            >
+              {testingDrive ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Testing...
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-4 h-4" />
+                  Test Backup
+                </>
+              )}
+            </Button>
+          )}
           <Button
             onClick={handleCreateBackup}
             disabled={creating}
