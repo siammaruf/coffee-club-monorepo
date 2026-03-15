@@ -6,7 +6,7 @@ export class AddGoogleOAuthFields1741910000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     const tablePrefix = process.env.DB_TABLE_PREFIX || 'cc_';
     await queryRunner.query(
-      `ALTER TABLE "${tablePrefix}backup_settings" ADD COLUMN IF NOT EXISTS "google_oauth_client_id" character varying`,
+      `ALTER TABLE "${tablePrefix}backup_settings" ADD COLUMN IF NOT EXISTS "google_oauth_client_id" text`,
     );
     await queryRunner.query(
       `ALTER TABLE "${tablePrefix}backup_settings" ADD COLUMN IF NOT EXISTS "google_oauth_client_secret" text`,
