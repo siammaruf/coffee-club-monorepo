@@ -67,7 +67,7 @@ export class BackupSettings {
     description: 'Google OAuth2 client ID for personal Drive uploads',
     nullable: true,
   })
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   google_oauth_client_id: string | null;
 
   @ApiProperty({
