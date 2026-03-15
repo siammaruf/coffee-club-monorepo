@@ -16,12 +16,14 @@ export class GoogleDriveService {
     private readonly configService: ConfigService,
   ) {}
 
-  private get clientId(): string | undefined {
-    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID');
+  private async getClientId(): Promise<string | undefined> {
+    const settings = await this.getSettings();
+    return settings?.google_oauth_client_id || this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID') || undefined;
   }
 
-  private get clientSecret(): string | undefined {
-    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET');
+  private async getClientSecret(): Promise<string | undefined> {
+    const settings = await this.getSettings();
+    return settings?.google_oauth_client_secret || this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET') || undefined;
   }
 
   private async getSettings(): Promise<BackupSettings | null> {
@@ -34,21 +36,25 @@ export class GoogleDriveService {
       return null;
     }
 
-    if (!this.clientId || !this.clientSecret || !settings.google_oauth_refresh_token) {
+    const clientId = await this.getClientId();
+    const clientSecret = await this.getClientSecret();
+    if (!clientId || !clientSecret || !settings.google_oauth_refresh_token) {
       return null;
     }
 
-    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret);
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
     oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
     return google.drive({ version: 'v3', auth: oauth2 });
   }
 
   private async getAuthenticatedClient(): Promise<drive_v3.Drive | null> {
     const settings = await this.getSettings();
-    if (!this.clientId || !this.clientSecret || !settings?.google_oauth_refresh_token) {
+    const clientId = await this.getClientId();
+    const clientSecret = await this.getClientSecret();
+    if (!clientId || !clientSecret || !settings?.google_oauth_refresh_token) {
       return null;
     }
-    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret);
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
     oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
     return google.drive({ version: 'v3', auth: oauth2 });
   }
@@ -216,12 +222,14 @@ export class GoogleDriveService {
   private readonly STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
-    if (!this.clientId || !this.clientSecret) {
+    const clientId = await this.getClientId();
+    const clientSecret = await this.getClientSecret();
+    if (!clientId || !clientSecret) {
       return null;
     }
     const state = crypto.randomUUID();
     this.pendingOAuthStates.set(state, Date.now() + this.STATE_TTL_MS);
-    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret, callbackUrl);
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
     return oauth2.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/drive'],
@@ -237,14 +245,16 @@ export class GoogleDriveService {
   }
 
   async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error('Google OAuth2 Client ID and Secret are not configured in environment variables.');
+    const clientId = await this.getClientId();
+    const clientSecret = await this.getClientSecret();
+    if (!clientId || !clientSecret) {
+      throw new Error('Google OAuth2 Client ID and Secret are not configured. Set them via dashboard or environment variables.');
     }
     const settings = await this.getSettings();
     if (!settings) {
       throw new Error('Backup settings not found.');
     }
-    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret, callbackUrl);
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
     const { tokens } = await oauth2.getToken(code);
     if (!tokens.refresh_token) {
       throw new Error(

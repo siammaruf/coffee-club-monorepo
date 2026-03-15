@@ -118,10 +118,18 @@ export class BackupSchedulerService implements OnModuleInit {
     dto: UpdateOAuthSettingsDto,
   ): Promise<BackupSettings> {
     const settings = await this.getSettings();
+    const updatePayload: Partial<BackupSettings> = {};
+    if (dto.google_oauth_client_id !== undefined) {
+      updatePayload.google_oauth_client_id = dto.google_oauth_client_id ?? null;
+    }
+    if (dto.google_oauth_client_secret !== undefined) {
+      updatePayload.google_oauth_client_secret = dto.google_oauth_client_secret ?? null;
+    }
     if (dto.google_oauth_refresh_token !== undefined) {
-      await this.settingsRepo.update(settings.id, {
-        google_oauth_refresh_token: dto.google_oauth_refresh_token ?? null,
-      });
+      updatePayload.google_oauth_refresh_token = dto.google_oauth_refresh_token ?? null;
+    }
+    if (Object.keys(updatePayload).length > 0) {
+      await this.settingsRepo.update(settings.id, updatePayload);
     }
     return this.getSettings();
   }
