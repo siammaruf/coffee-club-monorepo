@@ -19,7 +19,7 @@ export class Discount {
     @Column({ type: 'decimal', precision: 5, scale: 2 })
     discount_value: number;
 
-    @Column()
+    @Column({ type: 'timestamp' })
     expiry_date: Date;
 
     @DeleteDateColumn()

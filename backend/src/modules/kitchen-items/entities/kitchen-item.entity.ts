@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, DeleteDateColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, DeleteDateColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { KitchenItemType } from "../enum/kitchen-item-type.enum";
 
 @Entity('kitchen_items')   
@@ -31,9 +31,9 @@ export class KitchenItems {
     @DeleteDateColumn()
     deleted_at: Date | null;
 
-    @Column({ nullable: true })
+    @CreateDateColumn({ nullable: true })
     created_at: Date;
 
-    @Column({ nullable: true })
+    @UpdateDateColumn({ nullable: true })
     updated_at: Date;
 }

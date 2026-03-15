@@ -14,7 +14,7 @@ export class PasswordResetToken {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column()
+  @Column({ type: 'timestamp' })
   expiresAt: Date;
 
   @Column({ default: false })
