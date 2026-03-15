@@ -13,6 +13,7 @@ import {
   Res,
   Header,
   BadRequestException,
+  HttpCode,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import {
@@ -196,10 +197,26 @@ export class BackupController {
   }
 
   @Patch('settings/oauth')
-  @ApiOperation({ summary: 'Save Google OAuth2 credentials for Drive access' })
+  @ApiOperation({ summary: 'Save Google OAuth2 refresh token for Drive access' })
   @ApiResponse({ status: 200, description: 'OAuth credentials saved successfully' })
   async updateOAuthSettings(@Body() dto: UpdateOAuthSettingsDto) {
     return this.schedulerService.updateOAuthSettings(dto);
+  }
+
+  @Delete('drive/oauth')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Disconnect Google Drive (clear refresh token)' })
+  @ApiResponse({ status: 200, description: 'Google Drive disconnected successfully' })
+  async disconnectDrive() {
+    await this.schedulerService.updateOAuthSettings({ google_oauth_refresh_token: null });
+    return { message: 'Google Drive disconnected successfully' };
+  }
+
+  @Get('drive/folders')
+  @ApiOperation({ summary: 'List Google Drive folders available to the connected account' })
+  @ApiResponse({ status: 200, description: 'Folder list retrieved successfully' })
+  async listDriveFolders() {
+    return this.googleDriveService.listFolders();
   }
 
   @Get('drive/status')
@@ -219,13 +236,13 @@ export class BackupController {
     summary: 'Initiate Google OAuth2 flow for Drive access',
   })
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth consent screen' })
-  @ApiResponse({ status: 400, description: 'OAuth2 credentials not configured' })
+  @ApiResponse({ status: 400, description: 'OAuth2 credentials not configured in environment' })
   async oauthAuthorize(@Req() req: Request, @Res() res: Response) {
     const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/data-management/backup/drive/oauth/callback`;
     const authUrl = await this.googleDriveService.getOAuthAuthorizationUrl(callbackUrl);
     if (!authUrl) {
       throw new BadRequestException(
-        'OAuth2 Client ID and Secret must be saved in backup settings before authorizing.',
+        'Google OAuth2 credentials (GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET) are not configured in the server environment.',
       );
     }
     res.redirect(authUrl);

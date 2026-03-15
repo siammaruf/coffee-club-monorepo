@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { google, drive_v3 } from 'googleapis';
@@ -12,7 +13,16 @@ export class GoogleDriveService {
   constructor(
     @InjectRepository(BackupSettings)
     private readonly settingsRepo: Repository<BackupSettings>,
+    private readonly configService: ConfigService,
   ) {}
+
+  private get clientId(): string | undefined {
+    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID');
+  }
+
+  private get clientSecret(): string | undefined {
+    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET');
+  }
 
   private async getSettings(): Promise<BackupSettings | null> {
     return this.settingsRepo.findOne({ where: {} });
@@ -24,18 +34,21 @@ export class GoogleDriveService {
       return null;
     }
 
-    if (
-      !settings.google_oauth_client_id ||
-      !settings.google_oauth_client_secret ||
-      !settings.google_oauth_refresh_token
-    ) {
+    if (!this.clientId || !this.clientSecret || !settings.google_oauth_refresh_token) {
       return null;
     }
 
-    const oauth2 = new google.auth.OAuth2(
-      settings.google_oauth_client_id,
-      settings.google_oauth_client_secret,
-    );
+    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret);
+    oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
+    return google.drive({ version: 'v3', auth: oauth2 });
+  }
+
+  private async getAuthenticatedClient(): Promise<drive_v3.Drive | null> {
+    const settings = await this.getSettings();
+    if (!this.clientId || !this.clientSecret || !settings?.google_oauth_refresh_token) {
+      return null;
+    }
+    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret);
     oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
     return google.drive({ version: 'v3', auth: oauth2 });
   }
@@ -172,20 +185,43 @@ export class GoogleDriveService {
     }
   }
 
+  async listFolders(): Promise<Array<{ id: string; name: string }>> {
+    const client = await this.getAuthenticatedClient();
+    if (!client) {
+      return [];
+    }
+
+    try {
+      const response = await client.files.list({
+        q: "mimeType = 'application/vnd.google-apps.folder' and 'root' in parents and trashed = false",
+        fields: 'files(id, name)',
+        orderBy: 'name',
+        pageSize: 100,
+      });
+      return (response.data.files || []).map((f) => ({
+        id: f.id || '',
+        name: f.name || '',
+      }));
+    } catch (error) {
+      this.logger.error(
+        'Failed to list Google Drive folders',
+        error instanceof Error ? error.stack : String(error),
+      );
+      return [];
+    }
+  }
+
   // Short-lived state store for CSRF protection: state → expiry timestamp (ms)
   private readonly pendingOAuthStates = new Map<string, number>();
   private readonly STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
-    const settings = await this.getSettings();
-    const clientId = settings?.google_oauth_client_id;
-    const clientSecret = settings?.google_oauth_client_secret;
-    if (!clientId || !clientSecret) {
+    if (!this.clientId || !this.clientSecret) {
       return null;
     }
     const state = crypto.randomUUID();
     this.pendingOAuthStates.set(state, Date.now() + this.STATE_TTL_MS);
-    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret, callbackUrl);
     return oauth2.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/drive'],
@@ -201,13 +237,14 @@ export class GoogleDriveService {
   }
 
   async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
-    const settings = await this.getSettings();
-    const clientId = settings?.google_oauth_client_id;
-    const clientSecret = settings?.google_oauth_client_secret;
-    if (!clientId || !clientSecret) {
-      throw new Error('OAuth2 Client ID and Secret must be saved in settings first.');
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error('Google OAuth2 Client ID and Secret are not configured in environment variables.');
     }
-    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    const settings = await this.getSettings();
+    if (!settings) {
+      throw new Error('Backup settings not found.');
+    }
+    const oauth2 = new google.auth.OAuth2(this.clientId, this.clientSecret, callbackUrl);
     const { tokens } = await oauth2.getToken(code);
     if (!tokens.refresh_token) {
       throw new Error(
