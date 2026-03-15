@@ -230,7 +230,7 @@ export class GoogleDriveService {
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
     return oauth2.generateAuthUrl({
       access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/drive'],
+      scope: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'],
       prompt: 'consent select_account',
       state,
     });
