@@ -230,4 +230,5 @@ export class AuthController {
       statusCode: HttpStatus.OK
     };
   }
+
 }
