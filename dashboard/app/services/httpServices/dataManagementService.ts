@@ -14,6 +14,7 @@ import type {
   DriveFolder,
   RestorePreview,
   RestoreResult,
+  TestBackupResult,
   DataManagementApiResponse,
 } from '~/types/dataManagement';
 import { API_URL } from '~/lib/config';
@@ -197,6 +198,12 @@ const disconnectDrive = () =>
     `${BASE}/backup/drive/oauth`,
   );
 
+const testDriveConnection = () =>
+  httpService.post<DataManagementApiResponse<TestBackupResult>>(
+    `${BASE}/backup/drive/test`,
+    {},
+  );
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export const dataManagementService = {
@@ -229,4 +236,5 @@ export const dataManagementService = {
   getDriveStatus,
   listDriveFolders,
   disconnectDrive,
+  testDriveConnection,
 };

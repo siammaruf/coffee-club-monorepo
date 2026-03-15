@@ -231,6 +231,14 @@ export class BackupController {
     return this.googleDriveService.checkConnection();
   }
 
+  @Post('drive/test')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Upload a test file to verify Google Drive integration' })
+  @ApiResponse({ status: 200, description: 'Test upload result' })
+  async testDriveConnection() {
+    return this.googleDriveService.testUpload();
+  }
+
   @Get('drive/oauth/authorize')
   @ApiOperation({
     summary: 'Initiate Google OAuth2 flow for Drive access',
