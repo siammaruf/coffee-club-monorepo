@@ -241,7 +241,7 @@ export class GoogleDriveService {
       access_type: 'offline',
       scope: [
         'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive.metadata.readonly',
+        'https://www.googleapis.com/auth/drive.readonly',
       ],
       prompt: 'consent select_account',
       state,
