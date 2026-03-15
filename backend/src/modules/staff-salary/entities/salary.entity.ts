@@ -10,19 +10,19 @@ export class Salary {
     @JoinColumn({ name: "user_id" })
     user: User;
 
-    @Column()
+    @Column({ type: 'timestamp' })
     month: Date;
-    
-    @Column()
+
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     base_salary: number;
 
-    @Column({nullable: true})
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     bonus: number;
 
-    @Column({nullable: true})
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     deductions: number;
 
-    @Column()
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     total_payble: number;
 
     @Column({nullable: true})

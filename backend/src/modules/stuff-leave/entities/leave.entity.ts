@@ -17,10 +17,10 @@ export class Leave {
     @Column()
     leave_type: string;
 
-    @Column()
+    @Column({ type: 'timestamp' })
     leave_start_date: Date;
 
-    @Column()   
+    @Column({ type: 'timestamp' })
     leave_end_date: Date;
 
     @Column()
