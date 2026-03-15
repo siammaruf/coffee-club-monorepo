@@ -14,7 +14,8 @@ import {
   XCircle,
   Loader2,
   CloudUpload,
-  ExternalLink,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { API_URL } from "~/lib/config";
 import { Button } from "~/components/ui/button";
@@ -56,6 +57,7 @@ import type {
   BackupHistory,
   BackupSettings,
   DriveStatus,
+  DriveFolder,
   RestorePreview,
 } from "~/types/dataManagement";
 import { toast } from "sonner";
@@ -168,17 +170,16 @@ function BackupSettingsDialog({
   const [cronExpression, setCronExpression] = useState("0 2 * * *");
   const [retentionDays, setRetentionDays] = useState(30);
   const [maxBackups, setMaxBackups] = useState(50);
-  // OAuth2 fields
-  const [oauthClientId, setOauthClientId] = useState("");
-  const [oauthClientSecret, setOauthClientSecret] = useState("");
-  const [oauthRefreshToken, setOauthRefreshToken] = useState("");
-  // Shared
   const [driveFolderId, setDriveFolderId] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
+  const [folders, setFolders] = useState<DriveFolder[]>([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [generatingToken, setGeneratingToken] = useState(false);
 
-  // Populate form when dialog opens (or settings first load while open)
+  const isConnected = driveStatus?.connected ?? false;
+
+  // Populate form when dialog opens
   useEffect(() => {
     if (!open || !settings) return;
     setAutoBackup(settings.auto_backup_enabled);
@@ -187,10 +188,20 @@ function BackupSettingsDialog({
     setRetentionDays(settings.retention_days);
     setMaxBackups(settings.max_backups);
     setDriveFolderId(settings.google_drive_folder_id ?? "");
-    setOauthClientId(settings.google_oauth_client_id ?? "");
-    setOauthClientSecret(settings.google_oauth_client_secret ?? "");
-    setOauthRefreshToken(settings.google_oauth_refresh_token ?? "");
   }, [open, settings]);
+
+  // Load folders when connected and dialog opens
+  useEffect(() => {
+    if (!open || !isConnected) return;
+    setLoadingFolders(true);
+    dataManagementService
+      .listDriveFolders()
+      .then((res) => {
+        setFolders(res.data ?? []);
+      })
+      .catch(() => setFolders([]))
+      .finally(() => setLoadingFolders(false));
+  }, [open, isConnected]);
 
   // Update cron when schedule type changes
   useEffect(() => {
@@ -218,11 +229,6 @@ function BackupSettingsDialog({
         max_backups: maxBackups,
         google_drive_folder_id: driveFolderId || null,
       });
-      await dataManagementService.updateOAuthSettings({
-        google_oauth_client_id: oauthClientId || null,
-        google_oauth_client_secret: oauthClientSecret || null,
-        google_oauth_refresh_token: oauthRefreshToken || null,
-      });
       toast.success("Backup settings saved");
       onSaved();
       onOpenChange(false);
@@ -235,24 +241,8 @@ function BackupSettingsDialog({
     }
   };
 
-  const handleGenerateToken = async () => {
-    if (!oauthClientId || !oauthClientSecret) {
-      toast.error("Enter your Client ID and Client Secret first.");
-      return;
-    }
-
-    // Auto-save credentials to DB so the backend can build the OAuth URL
-    setGeneratingToken(true);
-    try {
-      await dataManagementService.updateOAuthSettings({
-        google_oauth_client_id: oauthClientId,
-        google_oauth_client_secret: oauthClientSecret,
-      });
-    } catch {
-      toast.error("Failed to generate refresh token. Please try again.");
-      setGeneratingToken(false);
-      return;
-    }
+  const handleConnect = () => {
+    setConnecting(true);
 
     const popup = window.open(
       `${API_URL}/data-management/backup/drive/oauth/authorize`,
@@ -262,20 +252,20 @@ function BackupSettingsDialog({
 
     if (!popup) {
       toast.error("Popup was blocked. Allow popups for this site and try again.");
-      setGeneratingToken(false);
+      setConnecting(false);
       return;
     }
 
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === "oauth_success") {
-        setOauthRefreshToken(event.data.refreshToken ?? "");
-        toast.success("Refresh token generated and saved!");
-        setGeneratingToken(false);
+        toast.success("Google Drive connected!");
+        setConnecting(false);
         window.removeEventListener("message", onMessage);
         clearInterval(pollInterval);
+        onSaved(); // refresh driveStatus + settings in parent
       } else if (event.data?.type === "oauth_error") {
-        toast.error(event.data.error || "OAuth authorization failed.");
-        setGeneratingToken(false);
+        toast.error(event.data.error || "Google authorization failed.");
+        setConnecting(false);
         window.removeEventListener("message", onMessage);
         clearInterval(pollInterval);
       }
@@ -283,14 +273,30 @@ function BackupSettingsDialog({
 
     window.addEventListener("message", onMessage);
 
-    // Fallback: detect popup closed without completing the flow
     const pollInterval = setInterval(() => {
       if (popup.closed) {
         clearInterval(pollInterval);
         window.removeEventListener("message", onMessage);
-        setGeneratingToken(false);
+        setConnecting(false);
       }
     }, 500);
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await dataManagementService.disconnectDrive();
+      toast.success("Google Drive disconnected");
+      setFolders([]);
+      setDriveFolderId("");
+      onSaved();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to disconnect";
+      toast.error(message);
+    } finally {
+      setDisconnecting(false);
+    }
   };
 
   return (
@@ -382,130 +388,104 @@ function BackupSettingsDialog({
 
           {/* Google Drive Configuration */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Cloud className="w-4 h-4" />
-                Google Drive Configuration
-              </h4>
-              {driveStatus && (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      driveStatus.connected ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  />
-                  {driveStatus.connected ? "Connected" : "Not Connected"}
-                </div>
-              )}
-            </div>
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              Google Drive
+            </h4>
 
-            <div className="space-y-2">
-              <Label htmlFor="oauth-client-id">OAuth2 Client ID</Label>
-              <Input
-                id="oauth-client-id"
-                value={oauthClientId}
-                onChange={(e) => setOauthClientId(e.target.value)}
-                placeholder="123456789-abc.apps.googleusercontent.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="oauth-client-secret">OAuth2 Client Secret</Label>
-              <Input
-                id="oauth-client-secret"
-                type="password"
-                value={oauthClientSecret}
-                onChange={(e) => setOauthClientSecret(e.target.value)}
-                placeholder="GOCSPX-..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="oauth-refresh-token">Refresh Token</Label>
-              <Input
-                id="oauth-refresh-token"
-                type="password"
-                value={oauthRefreshToken}
-                onChange={(e) => setOauthRefreshToken(e.target.value)}
-                placeholder="1//0e..."
-              />
-              <p className="text-xs text-muted-foreground">
-                Works with personal My Drive folders.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateToken}
-                disabled={generatingToken || !oauthClientId || !oauthClientSecret}
-                className="w-full"
-              >
-                {generatingToken ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Waiting for authorization...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4" />
-                    Generate Refresh Token
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="drive-folder">Folder ID</Label>
-              <Input
-                id="drive-folder"
-                value={driveFolderId}
-                onChange={(e) => setDriveFolderId(e.target.value)}
-                placeholder="1a2b3c4d5e6f..."
-              />
-              <p className="text-xs text-muted-foreground">
-                Copy from the folder URL:{" "}
-                <code className="bg-muted px-1 rounded text-xs">drive.google.com/drive/folders/&lt;FOLDER_ID&gt;</code>
-              </p>
-            </div>
-
-            {/* Help guide */}
-            <div className="rounded-md border">
-              <button
-                type="button"
-                onClick={() => setShowHelp(!showHelp)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  OAuth2 Setup Guide
-                </span>
-                <span className="text-xs">{showHelp ? "▲ Hide" : "▼ Show"}</span>
-              </button>
-              {showHelp && (
-                <div className="px-3 pb-3 space-y-4 text-xs text-muted-foreground border-t pt-3">
-                  <div>
-                    <ol className="list-decimal list-inside space-y-1.5">
-                      <li>Go to <strong>Google Cloud Console</strong> → APIs &amp; Services → Credentials</li>
-                      <li>Enable the <strong>Google Drive API</strong> for your project</li>
-                      <li>
-                        Click <strong>+ Create Credentials → OAuth 2.0 Client ID</strong> and choose application type{" "}
-                        <strong className="text-foreground">Web application</strong>{" "}
-                        <span className="text-red-500">(not Desktop app — Desktop app will not return a refresh token)</span>
-                      </li>
-                      <li>
-                        Under <strong>Authorized redirect URIs</strong>, add:
-                        <br />
-                        <code className="bg-muted px-1 rounded mt-0.5 inline-block break-all">
-                          {API_URL}/data-management/backup/drive/oauth/callback
-                        </code>
-                      </li>
-                      <li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and enter them above</li>
-                      <li>Click <strong>Generate Refresh Token</strong> and complete the Google consent screen in the popup</li>
-                      <li>Create any folder in your personal Google Drive and copy its ID from the URL</li>
-                      <li>Paste the folder ID in the Folder ID field and save</li>
-                    </ol>
+            {isConnected ? (
+              /* ── Connected state ── */
+              <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Connected</span>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDisconnect}
+                    disabled={disconnecting}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50 h-7 px-2"
+                  >
+                    {disconnecting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <LogOut className="w-3.5 h-3.5" />
+                    )}
+                    <span className="ml-1 text-xs">Disconnect</span>
+                  </Button>
                 </div>
-              )}
-            </div>
+                {driveStatus?.email && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {driveStatus.email}
+                  </p>
+                )}
+              </div>
+            ) : (
+              /* ── Not connected state ── */
+              <div className="rounded-lg border border-dashed p-4 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Connect your Google account to enable cloud backup storage.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleConnect}
+                  disabled={connecting}
+                  className="w-full"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Waiting for authorization...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4" />
+                      Connect Google Drive
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Folder picker — shown only when connected */}
+            {isConnected && (
+              <div className="space-y-2">
+                <Label htmlFor="drive-folder">Backup Folder</Label>
+                {loadingFolders ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading folders...
+                  </div>
+                ) : folders.length > 0 ? (
+                  <Select
+                    id="drive-folder"
+                    value={driveFolderId}
+                    onChange={(e) => setDriveFolderId(e.target.value)}
+                  >
+                    <option value="">— Select a folder —</option>
+                    {folders.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    id="drive-folder"
+                    value={driveFolderId}
+                    onChange={(e) => setDriveFolderId(e.target.value)}
+                    placeholder="Folder ID from drive.google.com/drive/folders/..."
+                  />
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Backups will be uploaded to this folder in your Google Drive.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -513,18 +493,16 @@ function BackupSettingsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          {oauthRefreshToken && (
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loading size="sm" variant="default" />
-                  Saving...
-                </>
-              ) : (
-                "Save Settings"
-              )}
-            </Button>
-          )}
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loading size="sm" variant="default" />
+                Saving...
+              </>
+            ) : (
+              "Save Settings"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -874,7 +852,7 @@ export default function BackupTab() {
             )}
             {settings && (
               <p className="text-xs text-muted-foreground mt-1">
-                {settings.google_oauth_client_id || settings.google_oauth_refresh_token
+                {settings.google_oauth_refresh_token
                   ? "OAuth2 (Personal Drive)"
                   : "Not configured"}
               </p>

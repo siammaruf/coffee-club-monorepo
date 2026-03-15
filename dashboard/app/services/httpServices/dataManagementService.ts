@@ -11,6 +11,7 @@ import type {
   BackupSettings,
   BackupSettingsUpdatePayload,
   DriveStatus,
+  DriveFolder,
   RestorePreview,
   RestoreResult,
   DataManagementApiResponse,
@@ -172,8 +173,6 @@ const updateBackupSettings = (data: BackupSettingsUpdatePayload) =>
   );
 
 const updateOAuthSettings = (data: {
-  google_oauth_client_id?: string | null;
-  google_oauth_client_secret?: string | null;
   google_oauth_refresh_token?: string | null;
 }) =>
   httpService.patch<DataManagementApiResponse<BackupSettings>>(
@@ -186,6 +185,16 @@ const updateOAuthSettings = (data: {
 const getDriveStatus = () =>
   httpService.get<DataManagementApiResponse<DriveStatus>>(
     `${BASE}/backup/drive/status`,
+  );
+
+const listDriveFolders = () =>
+  httpService.get<DataManagementApiResponse<DriveFolder[]>>(
+    `${BASE}/backup/drive/folders`,
+  );
+
+const disconnectDrive = () =>
+  httpService.delete<DataManagementApiResponse<null>>(
+    `${BASE}/backup/drive/oauth`,
   );
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -218,4 +227,6 @@ export const dataManagementService = {
 
   // Google Drive
   getDriveStatus,
+  listDriveFolders,
+  disconnectDrive,
 };
