@@ -117,16 +117,12 @@ export class BackupSchedulerService implements OnModuleInit {
   async updateOAuthSettings(
     dto: UpdateOAuthSettingsDto,
   ): Promise<BackupSettings> {
-    // Use update() directly to bypass entity change-tracking and avoid
-    // class-transformer null coercion issues with Object.assign + save().
-    await this.settingsRepo.update(
-      {},
-      {
-        google_oauth_client_id: dto.google_oauth_client_id ?? null,
-        google_oauth_client_secret: dto.google_oauth_client_secret ?? null,
-        google_oauth_refresh_token: dto.google_oauth_refresh_token ?? null,
-      },
-    );
+    const settings = await this.getSettings();
+    await this.settingsRepo.update(settings.id, {
+      google_oauth_client_id: dto.google_oauth_client_id ?? null,
+      google_oauth_client_secret: dto.google_oauth_client_secret ?? null,
+      google_oauth_refresh_token: dto.google_oauth_refresh_token ?? null,
+    });
     return this.getSettings();
   }
 }
