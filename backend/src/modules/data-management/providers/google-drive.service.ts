@@ -215,7 +215,7 @@ export class GoogleDriveService {
         'Revoke access at https://myaccount.google.com/permissions and try again.',
       );
     }
-    await this.settingsRepo.update(settings!.id, { google_oauth_refresh_token: tokens.refresh_token });
+    await this.settingsRepo.update(settings.id, { google_oauth_refresh_token: tokens.refresh_token });
     this.logger.log('Google OAuth2 refresh token saved successfully.');
     return tokens.refresh_token;
   }
