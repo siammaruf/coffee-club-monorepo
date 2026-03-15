@@ -13,11 +13,13 @@ import { CategoryIcon } from "~/utils/categoryIcons";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export default function CategoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCategory, setNewCategory] = useState<Omit<Category, "id">>({
     name: "",
@@ -47,7 +49,7 @@ export default function CategoriesPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
 
       const res = viewMode === 'trash'
         ? await categoryService.getTrash(params)
@@ -64,7 +66,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     fetchCategories();
-  }, [currentPage, searchTerm, viewMode]);
+  }, [currentPage, debouncedSearch, viewMode]);
 
   // Fetch trash count on initial load
   useEffect(() => {

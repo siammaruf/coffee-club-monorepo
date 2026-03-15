@@ -8,6 +8,7 @@ import { Eye, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 import { reservationService } from "~/services/httpServices/reservationService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import ReservationModal from "./components/ReservationModal";
@@ -37,6 +38,7 @@ export default function ReservationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [viewReservation, setViewReservation] = useState<Reservation | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export default function ReservationsPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (statusFilter) params.status = statusFilter;
       const res = viewMode === 'active'
         ? await reservationService.getAll(params)
@@ -83,7 +85,7 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     fetchReservations();
-  }, [currentPage, searchTerm, statusFilter, viewMode]);
+  }, [currentPage, debouncedSearch, statusFilter, viewMode]);
 
   const handleReservationUpdate = (updated: Reservation) => {
     setReservations(prev =>

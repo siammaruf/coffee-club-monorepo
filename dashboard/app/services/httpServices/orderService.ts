@@ -16,4 +16,5 @@ export const orderService = {
   permanentDelete: (id: string) => httpService.delete(`/orders/${id}/permanent`),
   bulkRestore: (ids: string[]) => httpService.patch('/orders/bulk/restore', { ids }),
   bulkPermanentDelete: (ids: string[]) => httpService.delete('/orders/bulk/permanent', { data: { ids } }),
+  getStatusCounts: () => httpService.get<OrderListResponse>('/orders', { params: { page: 1, limit: 1 } }),
 };

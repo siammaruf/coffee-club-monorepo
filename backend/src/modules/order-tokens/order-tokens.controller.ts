@@ -43,6 +43,17 @@ export class OrderTokensController {
         };
     }
 
+    @Patch('bulk/restore')
+    @ApiOperation({ summary: 'Bulk restore from trash' })
+    async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
+        await this.orderTokensService.bulkRestore(body.ids);
+        return {
+            status: 'success',
+            message: `${body.ids.length} record(s) restored successfully.`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
     @Get('trash/list')
     @ApiOperation({ summary: 'List trashed records' })
     async findTrashed(

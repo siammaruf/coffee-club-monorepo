@@ -28,8 +28,10 @@ import {
   Handshake,
 } from "lucide-react";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
+import { usePendingOrderCount } from "../../hooks/usePendingOrderCount";
 
 export default function Sidebar() {
+  const pendingOrderCount = usePendingOrderCount();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     employee: true,
     customer: true,
@@ -129,6 +131,11 @@ export default function Sidebar() {
                 <Link to="/dashboard/orders" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <ShoppingCart className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Orders</span>
+                  {pendingOrderCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                      {pendingOrderCount}
+                    </span>
+                  )}
                 </Link>
                 <Link to="/dashboard/categories" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <Package className="w-4 h-4 mr-2 text-gray-500" />

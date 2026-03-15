@@ -14,227 +14,195 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import { 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  CheckCircle, 
+  Search,
+  Eye,
+  CheckCircle,
   XCircle,
   Clock,
   Coffee,
   Utensils,
   Bell,
   Filter,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import TokensSkeleton from "~/components/skeleton/TokensSkeleton";
-import {ConfirmDialog} from "~/components/common/ConfirmDialog";
-
-// Define Order Token interface
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  notes?: string;
-}
-
-interface OrderToken {
-  id: string;
-  token_number: string;
-  order_id: string;
-  items: OrderItem[];
-  area: 'BAR' | 'KITCHEN';
-  status: 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled';
-  priority: 'normal' | 'high' | 'urgent';
-  created_at: string;
-  updated_at: string;
-  prepared_by?: string;
-}
-
-// Dummy data for order tokens
-const dummyOrderTokens: OrderToken[] = [
-  {
-    id: "1",
-    token_number: "B-001",
-    order_id: "ORD-2023-001",
-    items: [
-      { id: "item-1", name: "Cappuccino", quantity: 2 },
-      { id: "item-2", name: "Espresso", quantity: 1, notes: "Extra hot" }
-    ],
-    area: "BAR",
-    status: "pending",
-    priority: "normal",
-    created_at: "2023-06-20T09:30:00",
-    updated_at: "2023-06-20T09:30:00"
-  },
-  {
-    id: "2",
-    token_number: "K-001",
-    order_id: "ORD-2023-001",
-    items: [
-      { id: "item-3", name: "Breakfast Sandwich", quantity: 1 },
-      { id: "item-4", name: "French Toast", quantity: 2, notes: "No syrup on one" }
-    ],
-    area: "KITCHEN",
-    status: "preparing",
-    priority: "normal",
-    created_at: "2023-06-20T09:30:00",
-    updated_at: "2023-06-20T09:35:00",
-    prepared_by: "Chef Alex"
-  },
-  {
-    id: "3",
-    token_number: "B-002",
-    order_id: "ORD-2023-002",
-    items: [
-      { id: "item-5", name: "Latte", quantity: 2 },
-      { id: "item-6", name: "Hot Chocolate", quantity: 1 }
-    ],
-    area: "BAR",
-    status: "ready",
-    priority: "normal",
-    created_at: "2023-06-20T09:40:00",
-    updated_at: "2023-06-20T09:47:00",
-    prepared_by: "Barista Sarah"
-  },
-  {
-    id: "4",
-    token_number: "K-002",
-    order_id: "ORD-2023-003",
-    items: [
-      { id: "item-7", name: "Club Sandwich", quantity: 1, notes: "No mayo" },
-      { id: "item-8", name: "French Fries", quantity: 1 }
-    ],
-    area: "KITCHEN",
-    status: "pending",
-    priority: "high",
-    created_at: "2023-06-20T10:05:00",
-    updated_at: "2023-06-20T10:05:00"
-  },
-  {
-    id: "5",
-    token_number: "B-003",
-    order_id: "ORD-2023-004",
-    items: [
-      { id: "item-9", name: "Iced Coffee", quantity: 3 }
-    ],
-    area: "BAR",
-    status: "preparing",
-    priority: "urgent",
-    created_at: "2023-06-20T10:10:00",
-    updated_at: "2023-06-20T10:12:00",
-    prepared_by: "Barista Mike"
-  },
-  {
-    id: "6",
-    token_number: "K-003",
-    order_id: "ORD-2023-005",
-    items: [
-      { id: "item-10", name: "Veggie Wrap", quantity: 2, notes: "Gluten-free wrap" },
-      { id: "item-11", name: "Caesar Salad", quantity: 1 }
-    ],
-    area: "KITCHEN",
-    status: "cancelled",
-    priority: "normal",
-    created_at: "2023-06-20T10:15:00",
-    updated_at: "2023-06-20T10:20:00"
-  }
-];
+import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { Checkbox } from "~/components/ui/checkbox";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
+import { orderTokensService } from "~/services/httpServices/orderTokensService";
+import type { OrderToken, OrderTokenStatus } from "~/types/orderToken";
+import { Pagination } from "~/components/ui/pagination";
+import { toast } from "sonner";
 
 export default function OrderTokensPage() {
   const navigate = useNavigate();
   const [orderTokens, setOrderTokens] = useState<OrderToken[]>([]);
   const [filteredTokens, setFilteredTokens] = useState<OrderToken[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [statusFilter, setStatusFilter] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [actionToken, setActionToken] = useState<{id: string, action: string} | null>(null);
+  const [actionToken, setActionToken] = useState<{ id: string; action: string } | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"active" | "trash">("active");
+  const [trashCount, setTrashCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 20;
+
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } =
+    useTableSelection();
 
   useEffect(() => {
     fetchOrderTokens();
+    clearSelection();
+  }, [viewMode, currentPage, debouncedSearch]);
 
-    // Set up auto-refresh every 30 seconds
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, viewMode]);
+
+  // Refresh trash count on load
+  useEffect(() => {
+    orderTokensService
+      .getTrash({ page: 1, limit: 1 })
+      .then((res: any) => setTrashCount(res.data?.total || res.total || 0))
+      .catch(() => {});
+  }, []);
+
+  // 30-second auto-refresh (active view only)
+  useEffect(() => {
+    if (viewMode !== "active") return;
     const interval = setInterval(() => {
       fetchOrderTokens();
     }, 30000);
-
     return () => clearInterval(interval);
-  }, []);
+  }, [viewMode, currentPage, debouncedSearch]);
 
+  // Client-side filter by status/area/priority on top of server data
   useEffect(() => {
-    let filtered = orderTokens.filter(token =>
-      token.token_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.items.some(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
+    let filtered = orderTokens;
 
-    // Apply status filter
     if (statusFilter) {
-      filtered = filtered.filter(token => token.status === statusFilter);
+      filtered = filtered.filter((t) => t.status.toLowerCase() === statusFilter.toLowerCase());
     }
-
-    // Apply area filter
     if (areaFilter) {
-      filtered = filtered.filter(token => token.area === areaFilter);
+      filtered = filtered.filter((t) => t.token_type === areaFilter);
     }
-
-    // Apply priority filter
     if (priorityFilter) {
-      filtered = filtered.filter(token => token.priority === priorityFilter);
+      filtered = filtered.filter((t) => t.priority.toLowerCase() === priorityFilter.toLowerCase());
     }
 
     setFilteredTokens(filtered);
-  }, [orderTokens, searchTerm, statusFilter, areaFilter, priorityFilter]);
+  }, [orderTokens, statusFilter, areaFilter, priorityFilter]);
 
   const fetchOrderTokens = async () => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setOrderTokens(dummyOrderTokens);
-      setFilteredTokens(dummyOrderTokens);
+      setIsLoading(true);
+      const params: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (debouncedSearch) params.search = debouncedSearch;
+
+      const res: any =
+        viewMode === "trash"
+          ? await orderTokensService.getTrash(params)
+          : await orderTokensService.getAll(params);
+
+      const data = res?.data?.data ?? res?.data ?? [];
+      const resTotal = res?.data?.total ?? res?.total ?? 0;
+      const resTotalPages = res?.data?.totalPages ?? res?.totalPages ?? 0;
+
+      setOrderTokens(Array.isArray(data) ? data : []);
+      setTotal(resTotal);
+      setTotalPages(resTotalPages);
     } catch (error) {
-      console.error('Error fetching order tokens:', error);
+      console.error("Error fetching order tokens:", error);
       setOrderTokens([]);
-      setFilteredTokens([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStatusUpdate = (id: string, newStatus: 'preparing' | 'ready' | 'served' | 'cancelled') => {
+  const handleStatusUpdate = (id: string, newStatus: string) => {
     setActionToken({ id, action: newStatus });
   };
 
   const handleActionConfirm = async () => {
     if (!actionToken) return;
-    
     try {
-      // Simulate API status update
-      setOrderTokens(orderTokens.map(token => 
-        token.id === actionToken.id 
-          ? { 
-              ...token, 
-              status: actionToken.action as any,
-              updated_at: new Date().toISOString(),
-              prepared_by: actionToken.action === 'preparing' ? 'Current User' : token.prepared_by
-            } 
-          : token
-      ));
+      await orderTokensService.update(actionToken.id, {
+        status: actionToken.action as OrderTokenStatus,
+      });
+      setOrderTokens((prev) =>
+        prev.map((t) =>
+          t.id === actionToken.id
+            ? { ...t, status: actionToken.action as OrderTokenStatus, updatedAt: new Date().toISOString() }
+            : t
+        )
+      );
       setActionToken(null);
+      toast.success("Token status updated.");
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error("Error updating order status:", error);
+      toast.error("Failed to update status.");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await orderTokensService.bulkDelete(Array.from(selectedIds));
+      setOrderTokens((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+      setTrashCount((prev) => prev + selectedIds.size);
+      clearSelection();
+      toast.success(`${selectedIds.size} token(s) moved to trash.`);
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+      toast.error("Bulk delete failed.");
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await orderTokensService.bulkRestore(Array.from(selectedIds));
+      setOrderTokens((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+      setTrashCount((prev) => prev - selectedIds.size);
+      clearSelection();
+      toast.success(`${selectedIds.size} token(s) restored.`);
+    } catch (error) {
+      console.error("Bulk restore failed:", error);
+      toast.error("Bulk restore failed.");
+    }
+    setBulkLoading(false);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await orderTokensService.bulkPermanentDelete(Array.from(selectedIds));
+      setOrderTokens((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+      setTrashCount((prev) => prev - selectedIds.size);
+      clearSelection();
+      toast.success(`${selectedIds.size} token(s) permanently deleted.`);
+    } catch (error) {
+      console.error("Bulk permanent delete failed:", error);
+      toast.error("Bulk permanent delete failed.");
+    }
+    setBulkLoading(false);
   };
 
   const clearFilters = () => {
@@ -245,7 +213,7 @@ export default function OrderTokensPage() {
   };
 
   const formatTime = (dateString: string) => {
-    return format(new Date(dateString), 'h:mm a');
+    return format(new Date(dateString), "h:mm a");
   };
 
   const getTimeFromNow = (dateString: string) => {
@@ -254,81 +222,69 @@ export default function OrderTokensPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'preparing':
-        return 'bg-blue-100 text-blue-800';
-      case 'ready':
-        return 'bg-green-100 text-green-800';
-      case 'served':
-        return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Preparing":
+        return "bg-blue-100 text-blue-800";
+      case "Ready":
+        return "bg-green-100 text-green-800";
+      case "Delivered":
+        return "bg-purple-100 text-purple-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'normal':
-        return 'bg-gray-100 text-gray-800';
-      case 'high':
-        return 'bg-orange-100 text-orange-800';
-      case 'urgent':
-        return 'bg-red-100 text-red-800';
+      case "Normal":
+        return "bg-gray-100 text-gray-800";
+      case "High":
+        return "bg-orange-100 text-orange-800";
+      case "Urgent":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getAreaIcon = (area: string) => {
-    return area === 'BAR' ? 
-      <Coffee className="w-4 h-4" /> : 
-      <Utensils className="w-4 h-4" />;
+  const getAreaIcon = (tokenType: string) => {
+    return tokenType === "BAR" ? <Coffee className="w-4 h-4" /> : <Utensils className="w-4 h-4" />;
   };
 
-  const getAreaLabel = (area: string) => {
-    return area === 'BAR' ? 'Bar' : 'Kitchen';
-  };
-
-  const getStatusLabel = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    return priority.charAt(0).toUpperCase() + priority.slice(1);
+  const getAreaLabel = (tokenType: string) => {
+    return tokenType === "BAR" ? "Bar" : "Kitchen";
   };
 
   const getActionDialogDetails = () => {
-    if (!actionToken) return { title: '', description: '' };
-    
-    const token = orderTokens.find(t => t.id === actionToken.id);
-    if (!token) return { title: '', description: '' };
-    
+    if (!actionToken) return { title: "", description: "" };
+    const token = orderTokens.find((t) => t.id === actionToken.id);
+    if (!token) return { title: "", description: "" };
     switch (actionToken.action) {
-      case 'preparing':
+      case "Preparing":
         return {
           title: "Start Preparing?",
-          description: `Are you sure you want to start preparing order ${token.token_number}?`
+          description: `Are you sure you want to start preparing order ${token.token}?`,
         };
-      case 'ready':
+      case "Ready":
         return {
           title: "Mark as Ready?",
-          description: `Confirm that order ${token.token_number} is ready for service.`
+          description: `Confirm that order ${token.token} is ready for service.`,
         };
-      case 'served':
+      case "Delivered":
         return {
-          title: "Mark as Served?",
-          description: `Confirm that order ${token.token_number} has been served to the customer.`
+          title: "Mark as Delivered?",
+          description: `Confirm that order ${token.token} has been delivered to the customer.`,
         };
-      case 'cancelled':
+      case "Cancelled":
         return {
           title: "Cancel Order?",
-          description: `Are you sure you want to cancel order ${token.token_number}? This action cannot be undone.`
+          description: `Are you sure you want to cancel order ${token.token}? This action cannot be undone.`,
         };
       default:
-        return { title: '', description: '' };
+        return { title: "", description: "" };
     }
   };
 
@@ -336,12 +292,11 @@ export default function OrderTokensPage() {
   const hasTokens = orderTokens.length > 0;
   const hasFilteredResults = filteredTokens.length > 0;
 
-  // Count tokens by status
-  const pendingTokens = orderTokens.filter(token => token.status === 'pending').length;
-  const preparingTokens = orderTokens.filter(token => token.status === 'preparing').length;
-  const readyTokens = orderTokens.filter(token => token.status === 'ready').length;
+  const pendingTokens = orderTokens.filter((t) => t.status === "Pending").length;
+  const preparingTokens = orderTokens.filter((t) => t.status === "Preparing").length;
+  const readyTokens = orderTokens.filter((t) => t.status === "Ready").length;
 
-  if (isLoading) {
+  if (isLoading && orderTokens.length === 0) {
     return <TokensSkeleton />;
   }
 
@@ -358,10 +313,31 @@ export default function OrderTokensPage() {
           </h1>
           <p className="text-gray-600">Manage kitchen and bar orders</p>
         </div>
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "active" ? "default" : "outline"}
+            onClick={() => setViewMode("active")}
+          >
+            Active
+          </Button>
+          <Button
+            variant={viewMode === "trash" ? "default" : "outline"}
+            onClick={() => setViewMode("trash")}
+            className="relative"
+          >
+            <AlertTriangle className="w-4 h-4 mr-1" />
+            Trash
+            {trashCount > 0 && (
+              <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                {trashCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards - Only show if we have tokens */}
-      {hasTokens && (
+      {/* Stats Cards — active view only */}
+      {viewMode === "active" && hasTokens && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card className={pendingTokens > 0 ? "border-yellow-300" : ""}>
             <CardHeader className="pb-2">
@@ -371,7 +347,7 @@ export default function OrderTokensPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${pendingTokens > 0 ? "text-yellow-600" : ""}`}>
+              <div className={`text-2xl font-bold ${pendingTokens > 0 ? "text-yellow-600" : "text-gray-900"}`}>
                 {pendingTokens}
               </div>
             </CardContent>
@@ -379,12 +355,12 @@ export default function OrderTokensPage() {
           <Card className={preparingTokens > 0 ? "border-blue-300" : ""}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Coffee className={`w-4 h-4 ${preparingTokens > 0 ? "text-blue-500" : ""}`} />
+                <CheckCircle className={`w-4 h-4 ${preparingTokens > 0 ? "text-blue-500" : ""}`} />
                 Preparing
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${preparingTokens > 0 ? "text-blue-600" : ""}`}>
+              <div className={`text-2xl font-bold ${preparingTokens > 0 ? "text-blue-600" : "text-gray-900"}`}>
                 {preparingTokens}
               </div>
             </CardContent>
@@ -392,12 +368,12 @@ export default function OrderTokensPage() {
           <Card className={readyTokens > 0 ? "border-green-300" : ""}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <CheckCircle className={`w-4 h-4 ${readyTokens > 0 ? "text-green-500" : ""}`} />
-                Ready for Service
+                <Bell className={`w-4 h-4 ${readyTokens > 0 ? "text-green-500" : ""}`} />
+                Ready to Serve
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${readyTokens > 0 ? "text-green-600" : ""}`}>
+              <div className={`text-2xl font-bold ${readyTokens > 0 ? "text-green-600" : "text-gray-900"}`}>
                 {readyTokens}
               </div>
             </CardContent>
@@ -405,27 +381,29 @@ export default function OrderTokensPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Utensils className="w-4 h-4" />
-                Total Active Orders
+                <XCircle className="w-4 h-4" />
+                Active Total
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {orderTokens.filter(token => 
-                  ['pending', 'preparing', 'ready'].includes(token.status)
-                ).length}
+                {orderTokens.filter((t) => ["Pending", "Preparing", "Ready"].includes(t.status)).length}
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Order Tokens Table or Empty State */}
+      {/* Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>
-              {hasTokens ? `Current Orders (${filteredTokens.length})` : 'Order Tokens'}
+              {viewMode === "trash"
+                ? `Trashed Tokens (${total})`
+                : hasTokens
+                ? `Current Orders (${total})`
+                : "Order Tokens"}
             </CardTitle>
             <div className="flex gap-4 items-center">
               <Select
@@ -438,18 +416,20 @@ export default function OrderTokensPage() {
                 <option value="KITCHEN">Kitchen</option>
               </Select>
 
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-40"
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="preparing">Preparing</option>
-                <option value="ready">Ready</option>
-                <option value="served">Served</option>
-                <option value="cancelled">Cancelled</option>
-              </Select>
+              {viewMode === "active" && (
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-40"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Preparing">Preparing</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </Select>
+              )}
 
               <Select
                 value={priorityFilter}
@@ -457,9 +437,9 @@ export default function OrderTokensPage() {
                 className="w-40"
               >
                 <option value="">All Priorities</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
               </Select>
 
               <div className="relative w-64">
@@ -475,133 +455,174 @@ export default function OrderTokensPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {hasTokens ? (
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            isTrashView={viewMode === "trash"}
+            onRestore={handleBulkRestore}
+            onPermanentDelete={handleBulkPermanentDelete}
+            loading={bulkLoading}
+          />
+          {isLoading ? (
+            <div className="py-8 text-center text-gray-500">Loading...</div>
+          ) : hasTokens ? (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(filteredTokens.map((t) => t.id))}
+                        onChange={() => toggleSelectAll(filteredTokens.map((t) => t.id))}
+                      />
+                    </TableHead>
                     <TableHead>Token</TableHead>
                     <TableHead className="text-center">Area</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Time</TableHead>
-                    <TableHead className="w-[150px]">Actions</TableHead>
+                    {viewMode === "active" && (
+                      <TableHead className="w-[150px]">Actions</TableHead>
+                    )}
+                    {viewMode === "trash" && (
+                      <TableHead className="w-[150px]">Restore</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTokens.map((token) => (
-                    <TableRow key={token.id} className={
-                      token.priority === 'urgent' ? 'bg-red-50' : 
-                      token.priority === 'high' ? 'bg-orange-50' : ''
-                    }>
+                    <TableRow
+                      key={token.id}
+                      className={
+                        token.priority === "Urgent"
+                          ? "bg-red-50"
+                          : token.priority === "High"
+                          ? "bg-orange-50"
+                          : ""
+                      }
+                    >
                       <TableCell>
-                        <div className="font-medium">{token.token_number}</div>
-                        <div className="text-xs text-gray-500">Order: {token.order_id}</div>
+                        <Checkbox
+                          checked={isSelected(token.id)}
+                          onChange={() => toggleSelect(token.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{token.token}</div>
+                        <div className="text-xs text-gray-500">Order: {token.orderId}</div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="flex items-center gap-1 justify-center max-w-[100px] mx-auto">
-                          {getAreaIcon(token.area)}
-                          {getAreaLabel(token.area)}
+                        <Badge
+                          variant="outline"
+                          className="flex items-center gap-1 justify-center max-w-[100px] mx-auto"
+                        >
+                          {getAreaIcon(token.token_type)}
+                          {getAreaLabel(token.token_type)}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {token.items.map((item, idx) => (
-                            <div key={item.id} className={idx !== 0 ? "mt-1" : ""}>
-                              <span className="font-medium">{item.quantity}x</span> {item.name}
-                              {item.notes && (
-                                <div className="text-xs text-gray-500 italic">
-                                  Note: {item.notes}
-                                </div>
-                              )}
+                          {token.order_items.map((orderItem, idx) => (
+                            <div key={orderItem.id ?? idx} className={idx !== 0 ? "mt-1" : ""}>
+                              <span className="font-medium">{orderItem.quantity}x</span>{" "}
+                              {orderItem.item?.name ?? "Item"}
                             </div>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getPriorityColor(token.priority)}>
-                          {getPriorityLabel(token.priority)}
-                        </Badge>
+                        <Badge className={getPriorityColor(token.priority)}>{token.priority}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(token.status)}>
-                          {getStatusLabel(token.status)}
-                        </Badge>
-                        {token.prepared_by && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            By: {token.prepared_by}
-                          </div>
-                        )}
+                        <Badge className={getStatusColor(token.status)}>{token.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm font-medium" title={format(new Date(token.created_at), 'MMM dd, yyyy h:mm a')}>
-                          {formatTime(token.created_at)}
+                        <div
+                          className="text-sm font-medium"
+                          title={format(new Date(token.createdAt), "MMM dd, yyyy h:mm a")}
+                        >
+                          {formatTime(token.createdAt)}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {getTimeFromNow(token.created_at)}
+                          {getTimeFromNow(token.createdAt)}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {/* Show different actions based on current status */}
-                        {token.status === 'pending' && (
-                          <Button 
-                            size="sm" 
-                            className="w-full mb-1"
-                            onClick={() => handleStatusUpdate(token.id, 'preparing')}
+                      {viewMode === "active" && (
+                        <TableCell>
+                          {token.status === "Pending" && (
+                            <Button
+                              size="sm"
+                              className="w-full mb-1"
+                              onClick={() => handleStatusUpdate(token.id, "Preparing")}
+                            >
+                              Start Preparing
+                            </Button>
+                          )}
+                          {token.status === "Preparing" && (
+                            <Button
+                              size="sm"
+                              className="w-full mb-1 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleStatusUpdate(token.id, "Ready")}
+                            >
+                              Mark Ready
+                            </Button>
+                          )}
+                          {token.status === "Ready" && (
+                            <Button
+                              size="sm"
+                              className="w-full mb-1 bg-purple-600 hover:bg-purple-700"
+                              onClick={() => handleStatusUpdate(token.id, "Delivered")}
+                            >
+                              Mark Delivered
+                            </Button>
+                          )}
+                          {["Pending", "Preparing"].includes(token.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleStatusUpdate(token.id, "Cancelled")}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                          {["Delivered", "Cancelled"].includes(token.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => navigate(`/dashboard/orders/${token.orderId}`)}
+                            >
+                              View Order
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                      {viewMode === "trash" && (
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              await orderTokensService.restore(token.id);
+                              setOrderTokens((prev) => prev.filter((t) => t.id !== token.id));
+                              setTrashCount((prev) => prev - 1);
+                              toast.success("Token restored.");
+                            }}
                           >
-                            Start Preparing
+                            <RotateCcw className="w-4 h-4 mr-1" />
+                            Restore
                           </Button>
-                        )}
-                        
-                        {token.status === 'preparing' && (
-                          <Button 
-                            size="sm" 
-                            className="w-full mb-1 bg-green-600 hover:bg-green-700"
-                            onClick={() => handleStatusUpdate(token.id, 'ready')}
-                          >
-                            Mark Ready
-                          </Button>
-                        )}
-                        
-                        {token.status === 'ready' && (
-                          <Button 
-                            size="sm" 
-                            className="w-full mb-1 bg-purple-600 hover:bg-purple-700"
-                            onClick={() => handleStatusUpdate(token.id, 'served')}
-                          >
-                            Mark Served
-                          </Button>
-                        )}
-                        
-                        {['pending', 'preparing'].includes(token.status) && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="w-full text-red-600 border-red-200 hover:bg-red-50"
-                            onClick={() => handleStatusUpdate(token.id, 'cancelled')}
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                        
-                        {['served', 'cancelled'].includes(token.status) && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={() => navigate(`/dashboard/orders/${token.order_id}`)}
-                          >
-                            View Order
-                          </Button>
-                        )}
-                      </TableCell>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
 
-              {/* No filtered results message */}
+              {/* No filtered results */}
               {!hasFilteredResults && hasActiveFilters && (
                 <div className="text-center py-8">
                   <Filter className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -614,14 +635,30 @@ export default function OrderTokensPage() {
                   </Button>
                 </div>
               )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-4">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={total}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
             </>
           ) : (
-            /* No tokens at all - Empty state */
             <div className="text-center py-12">
               <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No active orders</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {viewMode === "trash" ? "Trash is empty" : "No active orders"}
+              </h3>
               <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                New orders will appear here automatically when customers place them.
+                {viewMode === "trash"
+                  ? "No tokens in trash."
+                  : "New orders will appear here automatically when customers place them."}
               </p>
             </div>
           )}
@@ -634,9 +671,9 @@ export default function OrderTokensPage() {
         title={actionTitle}
         description={actionDescription}
         confirmText={
-          actionToken?.action === 'cancelled' ? 'Cancel Order' : 
-          `Mark as ${actionToken?.action === 'preparing' ? 'Preparing' : 
-                     actionToken?.action === 'ready' ? 'Ready' : 'Served'}`
+          actionToken?.action === "Cancelled"
+            ? "Cancel Order"
+            : `Mark as ${actionToken?.action}`
         }
         cancelText="Back"
         onConfirm={handleActionConfirm}
