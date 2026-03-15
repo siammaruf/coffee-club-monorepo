@@ -16,14 +16,12 @@ export class GoogleDriveService {
     private readonly configService: ConfigService,
   ) {}
 
-  private async getClientId(): Promise<string | undefined> {
-    const settings = await this.getSettings();
-    return settings?.google_oauth_client_id || this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID') || undefined;
+  private getClientId(): string | undefined {
+    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID') || undefined;
   }
 
-  private async getClientSecret(): Promise<string | undefined> {
-    const settings = await this.getSettings();
-    return settings?.google_oauth_client_secret || this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET') || undefined;
+  private getClientSecret(): string | undefined {
+    return this.configService.get<string>('GOOGLE_OAUTH_CLIENT_SECRET') || undefined;
   }
 
   private async getSettings(): Promise<BackupSettings | null> {
@@ -36,8 +34,8 @@ export class GoogleDriveService {
       return null;
     }
 
-    const clientId = await this.getClientId();
-    const clientSecret = await this.getClientSecret();
+    const clientId = this.getClientId();
+    const clientSecret = this.getClientSecret();
     if (!clientId || !clientSecret || !settings.google_oauth_refresh_token) {
       return null;
     }
@@ -49,8 +47,8 @@ export class GoogleDriveService {
 
   private async getAuthenticatedClient(): Promise<drive_v3.Drive | null> {
     const settings = await this.getSettings();
-    const clientId = await this.getClientId();
-    const clientSecret = await this.getClientSecret();
+    const clientId = this.getClientId();
+    const clientSecret = this.getClientSecret();
     if (!clientId || !clientSecret || !settings?.google_oauth_refresh_token) {
       return null;
     }
@@ -222,8 +220,8 @@ export class GoogleDriveService {
   private readonly STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
-    const clientId = await this.getClientId();
-    const clientSecret = await this.getClientSecret();
+    const clientId = this.getClientId();
+    const clientSecret = this.getClientSecret();
     if (!clientId || !clientSecret) {
       return null;
     }
@@ -245,8 +243,8 @@ export class GoogleDriveService {
   }
 
   async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
-    const clientId = await this.getClientId();
-    const clientSecret = await this.getClientSecret();
+    const clientId = this.getClientId();
+    const clientSecret = this.getClientSecret();
     if (!clientId || !clientSecret) {
       throw new Error('Google OAuth2 Client ID and Secret are not configured. Set them via dashboard or environment variables.');
     }
