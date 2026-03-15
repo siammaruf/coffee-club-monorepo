@@ -30,6 +30,7 @@ import { ConfirmDialog } from "../../../components/ui/confirm-dialog";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -92,7 +94,7 @@ export default function ProductsPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (categoryFilter) params.categorySlug = categoryFilter;
       if (typeFilter) params.type = typeFilter;
       if (statusFilter) params.status = statusFilter;
@@ -115,7 +117,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchTerm, categoryFilter, typeFilter, statusFilter, viewMode]);
+  }, [currentPage, debouncedSearch, categoryFilter, typeFilter, statusFilter, viewMode]);
 
   // Clear selection when viewMode changes
   useEffect(() => {

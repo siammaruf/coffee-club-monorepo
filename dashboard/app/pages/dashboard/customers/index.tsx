@@ -16,10 +16,12 @@ import { toast } from "sonner";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -48,7 +50,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [currentPage, searchTerm, isActiveFilter, customerTypeFilter, viewMode]);
+  }, [currentPage, debouncedSearch, isActiveFilter, customerTypeFilter, viewMode]);
 
   // Fetch trash count on initial load
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function CustomersPage() {
         page: currentPage,
         limit: itemsPerPage
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (isActiveFilter) params.is_active = isActiveFilter;
       if (customerTypeFilter) params.customer_type = customerTypeFilter;
 

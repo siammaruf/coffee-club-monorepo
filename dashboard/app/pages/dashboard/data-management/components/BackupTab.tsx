@@ -748,7 +748,8 @@ export default function BackupTab() {
       toast.success(response.data?.message ?? "Test upload successful");
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Test upload failed";
+        (err as any)?.response?.data?.message ??
+        (err instanceof Error ? err.message : "Test upload failed");
       toast.error(message);
     } finally {
       setTestingDrive(false);

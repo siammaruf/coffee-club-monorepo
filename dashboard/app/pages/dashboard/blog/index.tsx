@@ -7,6 +7,7 @@ import { Edit, Eye, Plus, Search, Trash2, RotateCcw, AlertTriangle } from "lucid
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 import { blogService } from "~/services/httpServices/blogService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import BlogPostModal from "./components/BlogPostModal";
@@ -17,6 +18,7 @@ export default function BlogPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editPost, setEditPost] = useState<BlogPost | null>(null);
   const [viewPost, setViewPost] = useState<BlogPost | null>(null);
@@ -48,7 +50,7 @@ export default function BlogPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       const res = viewMode === 'active'
         ? await blogService.getAll(params)
         : await blogService.getTrash(params) as any;
@@ -63,7 +65,7 @@ export default function BlogPage() {
 
   useEffect(() => {
     fetchPosts();
-  }, [currentPage, searchTerm, viewMode]);
+  }, [currentPage, debouncedSearch, viewMode]);
 
   const handleAddPost = (postData: BlogPost) => {
     setPosts(prev => [postData, ...prev]);

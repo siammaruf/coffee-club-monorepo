@@ -167,6 +167,10 @@ export class OrderTokensService {
         await this.orderTokenRepository.softDelete(ids);
     }
 
+    async bulkRestore(ids: string[]): Promise<void> {
+        await this.orderTokenRepository.restore(ids);
+    }
+
     async findTrashed(options: { page: number, limit: number, search?: string }) {
         const { page, limit, search } = options;
         const query = this.orderTokenRepository.createQueryBuilder('orderToken')

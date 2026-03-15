@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 import { Eye, Search, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { contactMessageService } from "~/services/httpServices/contactMessageService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
@@ -43,6 +44,7 @@ export default function ContactMessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [viewMessage, setViewMessage] = useState<ContactMessage | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function ContactMessagesPage() {
         page: currentPage,
         limit: itemsPerPage,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (statusFilter) params.status = statusFilter;
 
       const res = viewMode === 'active'
@@ -81,7 +83,7 @@ export default function ContactMessagesPage() {
 
   useEffect(() => {
     fetchMessages();
-  }, [currentPage, searchTerm, statusFilter, viewMode]);
+  }, [currentPage, debouncedSearch, statusFilter, viewMode]);
 
   useEffect(() => {
     contactMessageService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
