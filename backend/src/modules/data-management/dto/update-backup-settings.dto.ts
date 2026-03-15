@@ -61,26 +61,34 @@ export class UpdateBackupSettingsDto {
   max_backups?: number;
 
   @ApiPropertyOptional({
-    description: 'Google Drive service account email',
-    example: 'backup-sa@project.iam.gserviceaccount.com',
-  })
-  @IsOptional()
-  @IsString()
-  google_drive_service_account_email?: string;
-
-  @ApiPropertyOptional({
-    description: 'Google Drive service account private key',
-    example: '-----BEGIN PRIVATE KEY-----\\n...',
-  })
-  @IsOptional()
-  @IsString()
-  google_drive_private_key?: string;
-
-  @ApiPropertyOptional({
     description: 'Google Drive folder ID where backups are stored',
     example: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms',
   })
   @IsOptional()
   @IsString()
   google_drive_folder_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Google OAuth2 client ID (for personal Drive uploads)',
+    example: '123456789-abc.apps.googleusercontent.com',
+  })
+  @IsOptional()
+  @IsString()
+  google_oauth_client_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Google OAuth2 client secret (for personal Drive uploads)',
+    example: 'GOCSPX-...',
+  })
+  @IsOptional()
+  @IsString()
+  google_oauth_client_secret?: string;
+
+  @ApiPropertyOptional({
+    description: 'Google OAuth2 refresh token (for personal Drive uploads)',
+    example: '1//0e...',
+  })
+  @IsOptional()
+  @IsString()
+  google_oauth_refresh_token?: string;
 }

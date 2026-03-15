@@ -20,21 +20,24 @@ export class GoogleDriveService {
 
   private async getClient(): Promise<drive_v3.Drive | null> {
     const settings = await this.getSettings();
+    if (!settings?.google_drive_folder_id) {
+      return null;
+    }
+
     if (
-      !settings?.google_drive_service_account_email ||
-      !settings?.google_drive_private_key ||
-      !settings?.google_drive_folder_id
+      !settings.google_oauth_client_id ||
+      !settings.google_oauth_client_secret ||
+      !settings.google_oauth_refresh_token
     ) {
       return null;
     }
 
-    const auth = new google.auth.JWT({
-      email: settings.google_drive_service_account_email,
-      key: settings.google_drive_private_key.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
-    });
-
-    return google.drive({ version: 'v3', auth });
+    const oauth2 = new google.auth.OAuth2(
+      settings.google_oauth_client_id,
+      settings.google_oauth_client_secret,
+    );
+    oauth2.setCredentials({ refresh_token: settings.google_oauth_refresh_token });
+    return google.drive({ version: 'v3', auth: oauth2 });
   }
 
   private async getFolderId(): Promise<string | null> {
@@ -62,21 +65,35 @@ export class GoogleDriveService {
       return null;
     }
 
-    const response = await client.files.create({
-      requestBody: {
-        name: filename,
-        parents: [folderId],
-        mimeType: 'application/octet-stream',
-      },
-      media: {
-        mimeType: 'application/octet-stream',
-        body: Readable.from(buffer),
-      },
-      fields: 'id, webViewLink',
-    });
+    let fileCreateResponse: { data: { id?: string | null; webViewLink?: string | null } };
+    try {
+      fileCreateResponse = await client.files.create({
+        supportsAllDrives: true,
+        requestBody: {
+          name: filename,
+          parents: [folderId],
+          mimeType: 'application/octet-stream',
+        },
+        media: {
+          mimeType: 'application/octet-stream',
+          body: Readable.from(buffer),
+        },
+        fields: 'id, webViewLink',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes('storage quota') || msg.toLowerCase().includes('storagequota')) {
+        throw new Error(
+          'Backup failed: The configured Google Drive folder is in a personal My Drive. ' +
+            'Service accounts require a Shared Drive (Team Drive) folder. ' +
+            'Please update backup settings with a folder ID that is inside a Shared Drive.',
+        );
+      }
+      throw err;
+    }
 
-    const fileId = response.data.id || '';
-    const webViewLink = response.data.webViewLink || '';
+    const fileId = fileCreateResponse.data.id || '';
+    const webViewLink = fileCreateResponse.data.webViewLink || '';
 
     this.logger.log(
       `Uploaded file "${filename}" to Google Drive (ID: ${fileId})`,
@@ -92,7 +109,7 @@ export class GoogleDriveService {
     }
 
     const response = await client.files.get(
-      { fileId, alt: 'media' },
+      { fileId, alt: 'media', supportsAllDrives: true },
       { responseType: 'stream' },
     );
 
@@ -119,6 +136,8 @@ export class GoogleDriveService {
     }
 
     const response = await client.files.list({
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
       q: `'${folderId}' in parents and trashed = false and name contains '.ccbak'`,
       fields: 'files(id, name, size, createdTime)',
       orderBy: 'createdTime desc',
@@ -143,7 +162,7 @@ export class GoogleDriveService {
     }
 
     try {
-      await client.files.delete({ fileId });
+      await client.files.delete({ fileId, supportsAllDrives: true });
       this.logger.log(`Deleted file from Google Drive (ID: ${fileId})`);
     } catch (error) {
       this.logger.error(
@@ -153,25 +172,83 @@ export class GoogleDriveService {
     }
   }
 
+  // Short-lived state store for CSRF protection: state → expiry timestamp (ms)
+  private readonly pendingOAuthStates = new Map<string, number>();
+  private readonly STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  async getOAuthAuthorizationUrl(callbackUrl: string): Promise<string | null> {
+    const settings = await this.getSettings();
+    const clientId = settings?.google_oauth_client_id;
+    const clientSecret = settings?.google_oauth_client_secret;
+    if (!clientId || !clientSecret) {
+      return null;
+    }
+    const state = crypto.randomUUID();
+    this.pendingOAuthStates.set(state, Date.now() + this.STATE_TTL_MS);
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    return oauth2.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['https://www.googleapis.com/auth/drive'],
+      prompt: 'consent',
+      state,
+    });
+  }
+
+  validateOAuthState(state: string): boolean {
+    const expiry = this.pendingOAuthStates.get(state);
+    this.pendingOAuthStates.delete(state);
+    return expiry !== undefined && Date.now() < expiry;
+  }
+
+  async exchangeOAuthCode(code: string, callbackUrl: string): Promise<string> {
+    const settings = await this.getSettings();
+    const clientId = settings?.google_oauth_client_id;
+    const clientSecret = settings?.google_oauth_client_secret;
+    if (!clientId || !clientSecret) {
+      throw new Error('OAuth2 Client ID and Secret must be saved in settings first.');
+    }
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret, callbackUrl);
+    const { tokens } = await oauth2.getToken(code);
+    if (!tokens.refresh_token) {
+      throw new Error(
+        'No refresh token returned. Ensure "prompt: consent" is set and the app is not already authorized. ' +
+        'Revoke access at https://myaccount.google.com/permissions and try again.',
+      );
+    }
+    await this.settingsRepo.update({}, { google_oauth_refresh_token: tokens.refresh_token });
+    this.logger.log('Google OAuth2 refresh token saved successfully.');
+    return tokens.refresh_token;
+  }
+
   async checkConnection(): Promise<{
     connected: boolean;
     email: string;
     folder_id: string;
+    error?: string;
   }> {
     const settings = await this.getSettings();
-    const email = settings?.google_drive_service_account_email || '';
     const folderId = settings?.google_drive_folder_id || '';
 
     try {
       const client = await this.getClient();
       if (!client) {
-        return { connected: false, email, folder_id: folderId };
+        return { connected: false, email: '', folder_id: folderId };
       }
 
-      await client.files.list({
-        q: `'${folderId}' in parents and trashed = false`,
-        fields: 'files(id)',
-        pageSize: 1,
+      // Resolve the authenticated identity's email
+      let email = '';
+      try {
+        const about = await client.about.get({ fields: 'user' });
+        email = about.data.user?.emailAddress || 'OAuth2 User';
+      } catch {
+        email = 'OAuth2 User';
+      }
+
+      // Verify the folder exists
+      await client.files.get({
+        fileId: folderId,
+        fields: 'id',
+        supportsAllDrives: true,
       });
 
       return { connected: true, email, folder_id: folderId };
@@ -180,7 +257,7 @@ export class GoogleDriveService {
         'Google Drive connection check failed',
         error instanceof Error ? error.stack : String(error),
       );
-      return { connected: false, email, folder_id: folderId };
+      return { connected: false, email: '', folder_id: folderId };
     }
   }
 }

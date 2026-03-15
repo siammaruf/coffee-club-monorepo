@@ -57,25 +57,32 @@ export class BackupSettings {
   max_backups: number;
 
   @ApiProperty({
-    description: 'Google Drive service account email for backup uploads',
-    nullable: true,
-  })
-  @Column({ nullable: true })
-  google_drive_service_account_email: string;
-
-  @ApiProperty({
-    description: 'Google Drive service account private key (encrypted at rest)',
-    nullable: true,
-  })
-  @Column({ type: 'text', nullable: true })
-  google_drive_private_key: string;
-
-  @ApiProperty({
     description: 'Google Drive folder ID where backups are stored',
     nullable: true,
   })
   @Column({ nullable: true })
   google_drive_folder_id: string;
+
+  @ApiProperty({
+    description: 'Google OAuth2 client ID for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ nullable: true })
+  google_oauth_client_id: string | null;
+
+  @ApiProperty({
+    description: 'Google OAuth2 client secret for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ type: 'text', nullable: true })
+  google_oauth_client_secret: string | null;
+
+  @ApiProperty({
+    description: 'Google OAuth2 refresh token for personal Drive uploads',
+    nullable: true,
+  })
+  @Column({ type: 'text', nullable: true })
+  google_oauth_refresh_token: string | null;
 
   @ApiProperty({
     description: 'Date when the settings were last updated',

@@ -525,3 +525,40 @@ cd backend && npm run migration:generate -- src/migrations/MigrationName
 # Create empty migration
 cd backend && npm run migration:create -- src/migrations/MigrationName
 ```
+
+### cc_backup_settings
+
+Singleton table (one row) storing backup configuration and Google Drive credentials.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | uuid | NO | gen_random_uuid() | Primary key |
+| auto_backup_enabled | boolean | NO | false | Enable scheduled backups |
+| schedule_type | varchar | NO | 'daily' | 'daily' \| 'weekly' \| 'disabled' |
+| cron_expression | varchar | NO | '0 0 * * *' | Cron schedule |
+| retention_days | int | NO | 7 | Days to keep backups |
+| max_backups | int | NO | 10 | Max backups to retain |
+| google_drive_service_account_email | varchar | YES | null | Service account email (Shared Drive only) |
+| google_drive_private_key | text | YES | null | Service account private key (Shared Drive only) |
+| google_drive_folder_id | varchar | YES | null | Target Drive folder ID |
+| google_oauth_client_id | varchar | YES | null | OAuth2 client ID (personal Drive) |
+| google_oauth_client_secret | text | YES | null | OAuth2 client secret (personal Drive) |
+| google_oauth_refresh_token | text | YES | null | OAuth2 refresh token (personal Drive) |
+| updated_at | timestamptz | NO | now() | Last updated |
+
+**Auth priority:** If `google_oauth_refresh_token` is set, OAuth2 is used (personal Drive). Otherwise falls back to service account (requires Shared Drive).
+
+### cc_backup_history
+
+Records each backup operation.
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+| id | uuid | NO | Primary key |
+| filename | varchar | NO | Backup filename (.ccbak) |
+| file_size | bigint | NO | Size in bytes |
+| google_drive_file_id | varchar | YES | Drive file ID if uploaded |
+| google_drive_web_view_link | varchar | YES | Drive view URL |
+| status | varchar | NO | 'success' \| 'failed' |
+| error_message | text | YES | Error detail on failure |
+| created_at | timestamptz | NO | Backup timestamp |

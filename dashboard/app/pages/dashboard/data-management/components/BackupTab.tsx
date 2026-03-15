@@ -14,7 +14,9 @@ import {
   XCircle,
   Loader2,
   CloudUpload,
+  ExternalLink,
 } from "lucide-react";
+import { API_URL } from "~/lib/config";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -166,24 +168,29 @@ function BackupSettingsDialog({
   const [cronExpression, setCronExpression] = useState("0 2 * * *");
   const [retentionDays, setRetentionDays] = useState(30);
   const [maxBackups, setMaxBackups] = useState(50);
-  const [driveEmail, setDriveEmail] = useState("");
-  const [drivePrivateKey, setDrivePrivateKey] = useState("");
+  // OAuth2 fields
+  const [oauthClientId, setOauthClientId] = useState("");
+  const [oauthClientSecret, setOauthClientSecret] = useState("");
+  const [oauthRefreshToken, setOauthRefreshToken] = useState("");
+  // Shared
   const [driveFolderId, setDriveFolderId] = useState("");
+  const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
 
-  // Populate form when settings load
+  // Populate form when dialog opens (or settings first load while open)
   useEffect(() => {
-    if (settings) {
-      setAutoBackup(settings.auto_backup_enabled);
-      setScheduleType(settings.schedule_type);
-      setCronExpression(settings.cron_expression);
-      setRetentionDays(settings.retention_days);
-      setMaxBackups(settings.max_backups);
-      setDriveEmail(settings.google_drive_service_account_email ?? "");
-      setDrivePrivateKey(settings.google_drive_private_key ?? "");
-      setDriveFolderId(settings.google_drive_folder_id ?? "");
-    }
-  }, [settings]);
+    if (!open || !settings) return;
+    setAutoBackup(settings.auto_backup_enabled);
+    setScheduleType(settings.schedule_type);
+    setCronExpression(settings.cron_expression);
+    setRetentionDays(settings.retention_days);
+    setMaxBackups(settings.max_backups);
+    setDriveFolderId(settings.google_drive_folder_id ?? "");
+    setOauthClientId(settings.google_oauth_client_id ?? "");
+    setOauthClientSecret(settings.google_oauth_client_secret ?? "");
+    setOauthRefreshToken(settings.google_oauth_refresh_token ?? "");
+  }, [open, settings]);
 
   // Update cron when schedule type changes
   useEffect(() => {
@@ -209,9 +216,12 @@ function BackupSettingsDialog({
         cron_expression: cronExpression,
         retention_days: retentionDays,
         max_backups: maxBackups,
-        google_drive_service_account_email: driveEmail || null,
-        google_drive_private_key: drivePrivateKey || null,
         google_drive_folder_id: driveFolderId || null,
+      });
+      await dataManagementService.updateOAuthSettings({
+        google_oauth_client_id: oauthClientId || null,
+        google_oauth_client_secret: oauthClientSecret || null,
+        google_oauth_refresh_token: oauthRefreshToken || null,
       });
       toast.success("Backup settings saved");
       onSaved();
@@ -223,6 +233,64 @@ function BackupSettingsDialog({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleGenerateToken = async () => {
+    if (!oauthClientId || !oauthClientSecret) {
+      toast.error("Enter your Client ID and Client Secret first.");
+      return;
+    }
+
+    // Auto-save credentials to DB so the backend can build the OAuth URL
+    setGeneratingToken(true);
+    try {
+      await dataManagementService.updateOAuthSettings({
+        google_oauth_client_id: oauthClientId,
+        google_oauth_client_secret: oauthClientSecret,
+      });
+    } catch {
+      toast.error("Failed to generate refresh token. Please try again.");
+      setGeneratingToken(false);
+      return;
+    }
+
+    const popup = window.open(
+      `${API_URL}/data-management/backup/drive/oauth/authorize`,
+      "oauth_popup",
+      "width=600,height=700,left=200,top=100"
+    );
+
+    if (!popup) {
+      toast.error("Popup was blocked. Allow popups for this site and try again.");
+      setGeneratingToken(false);
+      return;
+    }
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === "oauth_success") {
+        setOauthRefreshToken(event.data.refreshToken ?? "");
+        toast.success("Refresh token generated and saved!");
+        setGeneratingToken(false);
+        window.removeEventListener("message", onMessage);
+        clearInterval(pollInterval);
+      } else if (event.data?.type === "oauth_error") {
+        toast.error(event.data.error || "OAuth authorization failed.");
+        setGeneratingToken(false);
+        window.removeEventListener("message", onMessage);
+        clearInterval(pollInterval);
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+
+    // Fallback: detect popup closed without completing the flow
+    const pollInterval = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollInterval);
+        window.removeEventListener("message", onMessage);
+        setGeneratingToken(false);
+      }
+    }, 500);
   };
 
   return (
@@ -332,25 +400,56 @@ function BackupSettingsDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="drive-email">Service Account Email</Label>
+              <Label htmlFor="oauth-client-id">OAuth2 Client ID</Label>
               <Input
-                id="drive-email"
-                type="email"
-                value={driveEmail}
-                onChange={(e) => setDriveEmail(e.target.value)}
-                placeholder="backup@project.iam.gserviceaccount.com"
+                id="oauth-client-id"
+                value={oauthClientId}
+                onChange={(e) => setOauthClientId(e.target.value)}
+                placeholder="123456789-abc.apps.googleusercontent.com"
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="drive-key">Private Key</Label>
-              <textarea
-                id="drive-key"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
-                value={drivePrivateKey}
-                onChange={(e) => setDrivePrivateKey(e.target.value)}
-                placeholder="-----BEGIN PRIVATE KEY-----\n..."
+              <Label htmlFor="oauth-client-secret">OAuth2 Client Secret</Label>
+              <Input
+                id="oauth-client-secret"
+                type="password"
+                value={oauthClientSecret}
+                onChange={(e) => setOauthClientSecret(e.target.value)}
+                placeholder="GOCSPX-..."
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="oauth-refresh-token">Refresh Token</Label>
+              <Input
+                id="oauth-refresh-token"
+                type="password"
+                value={oauthRefreshToken}
+                onChange={(e) => setOauthRefreshToken(e.target.value)}
+                placeholder="1//0e..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Works with personal My Drive folders.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateToken}
+                disabled={generatingToken || !oauthClientId || !oauthClientSecret}
+                className="w-full"
+              >
+                {generatingToken ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Waiting for authorization...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="w-4 h-4" />
+                    Generate Refresh Token
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -361,6 +460,51 @@ function BackupSettingsDialog({
                 onChange={(e) => setDriveFolderId(e.target.value)}
                 placeholder="1a2b3c4d5e6f..."
               />
+              <p className="text-xs text-muted-foreground">
+                Copy from the folder URL:{" "}
+                <code className="bg-muted px-1 rounded text-xs">drive.google.com/drive/folders/&lt;FOLDER_ID&gt;</code>
+              </p>
+            </div>
+
+            {/* Help guide */}
+            <div className="rounded-md border">
+              <button
+                type="button"
+                onClick={() => setShowHelp(!showHelp)}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  OAuth2 Setup Guide
+                </span>
+                <span className="text-xs">{showHelp ? "▲ Hide" : "▼ Show"}</span>
+              </button>
+              {showHelp && (
+                <div className="px-3 pb-3 space-y-4 text-xs text-muted-foreground border-t pt-3">
+                  <div>
+                    <ol className="list-decimal list-inside space-y-1.5">
+                      <li>Go to <strong>Google Cloud Console</strong> → APIs &amp; Services → Credentials</li>
+                      <li>Enable the <strong>Google Drive API</strong> for your project</li>
+                      <li>
+                        Click <strong>+ Create Credentials → OAuth 2.0 Client ID</strong> and choose application type{" "}
+                        <strong className="text-foreground">Web application</strong>{" "}
+                        <span className="text-red-500">(not Desktop app — Desktop app will not return a refresh token)</span>
+                      </li>
+                      <li>
+                        Under <strong>Authorized redirect URIs</strong>, add:
+                        <br />
+                        <code className="bg-muted px-1 rounded mt-0.5 inline-block break-all">
+                          {API_URL}/data-management/backup/drive/oauth/callback
+                        </code>
+                      </li>
+                      <li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> and enter them above</li>
+                      <li>Click <strong>Generate Refresh Token</strong> and complete the Google consent screen in the popup</li>
+                      <li>Create any folder in your personal Google Drive and copy its ID from the URL</li>
+                      <li>Paste the folder ID in the Folder ID field and save</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -369,16 +513,18 @@ function BackupSettingsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <Loading size="sm" variant="default" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </Button>
+          {oauthRefreshToken && (
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loading size="sm" variant="default" />
+                  Saving...
+                </>
+              ) : (
+                "Save Settings"
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -719,6 +865,18 @@ export default function BackupTab() {
             {driveStatus?.connected && driveStatus.email && (
               <p className="text-xs text-muted-foreground mt-1 truncate">
                 {driveStatus.email}
+              </p>
+            )}
+            {driveStatus && !driveStatus.connected && driveStatus.error && (
+              <p className="text-xs text-red-500 mt-1 leading-snug">
+                {driveStatus.error}
+              </p>
+            )}
+            {settings && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {settings.google_oauth_client_id || settings.google_oauth_refresh_token
+                  ? "OAuth2 (Personal Drive)"
+                  : "Not configured"}
               </p>
             )}
           </CardContent>

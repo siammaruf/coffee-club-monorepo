@@ -230,7 +230,7 @@ export default function Sidebar() {
             </div>
             {openSections.dataManagement && (
               <div className="space-y-1">
-                <Link to="/dashboard/data-management" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                <Link to="/dashboard?tab=export" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                   <HardDrive className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Data Management</span>
                 </Link>

@@ -6,7 +6,7 @@ import { Item } from '../items/entities/item.entity';
 import { Category } from '../categories/entities/category.entity';
 import { DiscountApplicationService } from './provider/discount-application.service';
 import { DiscountApplicationController } from './discount-application.controller';
-import { DiscountApplication } from './entities/discount-application.entities';
+import { DiscountApplication } from './entities/discount-application.entity';
 
 @Module({
   imports: [

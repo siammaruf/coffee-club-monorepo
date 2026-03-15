@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { Download, Upload, HardDrive } from "lucide-react";
 import ExportTab from "./components/ExportTab";
 import ImportTab from "./components/ImportTab";
@@ -13,7 +13,11 @@ const tabs: { id: TabId; label: string; icon: typeof Download }[] = [
 ];
 
 export default function DataManagementPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("export");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const rawTab = new URLSearchParams(location.search).get("tab");
+  const activeTab: TabId =
+    rawTab === "import" || rawTab === "backup" ? rawTab : "export";
 
   return (
     <div className="p-6 space-y-6">
@@ -25,16 +29,16 @@ export default function DataManagementPage() {
       </div>
 
       {/* Tab navigation */}
-      <div className="flex border-b">
+      <div className="flex border-b overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer ${
+            onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer flex-shrink-0 ${
               activeTab === tab.id
                 ? "border-yellow-500 text-yellow-600 font-medium"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-gray-500 hover:text-gray-900"
             }`}
           >
             <tab.icon className="w-4 h-4" />

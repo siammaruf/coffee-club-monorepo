@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
 import { PartialType } from "@nestjs/swagger";
 import { CreateUserDto } from "./create-user.dto";
 import { IsOptional, IsString, MinLength, Matches } from "class-validator";

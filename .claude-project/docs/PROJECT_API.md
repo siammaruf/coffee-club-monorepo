@@ -458,3 +458,58 @@ Error response format:
   "timestamp": "2026-02-11T12:00:00.000Z"
 }
 ```
+
+## Data Management — Backup
+
+All endpoints require `ADMIN` role + staff JWT cookie.
+
+Base path: `/api/v1/data-management/backup`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/create` | Create manual backup |
+| GET | `/history` | List backup history (paginated) |
+| GET | `/history/:id` | Get backup detail |
+| DELETE | `/history/:id` | Delete a backup record |
+| POST | `/restore/:id` | Restore from backup |
+| GET | `/restore/:id/preview` | Preview backup metadata |
+| GET | `/settings` | Get backup settings |
+| PUT | `/settings` | Update backup settings |
+| GET | `/drive/status` | Check Google Drive connection |
+
+### GET /drive/status
+
+Response:
+```json
+{
+  "data": {
+    "connected": true,
+    "email": "backup-sa@project.iam.gserviceaccount.com",
+    "folder_id": "1InbZXYig5zR4XzwAHQMsb1jeKYfYElTz"
+  },
+  "status": true,
+  "message": "Drive status retrieved",
+  "statusCode": 200
+}
+```
+
+### PUT /settings
+
+Accepts `UpdateBackupSettingsDto`. To configure OAuth2 (personal Drive):
+```json
+{
+  "google_drive_folder_id": "1InbZXYig5zR4XzwAHQMsb1jeKYfYElTz",
+  "google_oauth_client_id": "123456789-abc.apps.googleusercontent.com",
+  "google_oauth_client_secret": "GOCSPX-...",
+  "google_oauth_refresh_token": "1//0e..."
+}
+```
+
+To configure service account (Shared Drive only):
+```json
+{
+  "google_drive_folder_id": "<shared-drive-folder-id>",
+  "google_drive_service_account_email": "backup-sa@project.iam.gserviceaccount.com",
+  "google_drive_private_key": "-----BEGIN PRIVATE KEY-----\\n..."
+}
+```
