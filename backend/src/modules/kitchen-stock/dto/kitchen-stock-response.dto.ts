@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { KitchenStockEntryType } from '../enum/kitchen-stock-entry-type.enum';
 
 export class KitchenItemRefDto {
   @ApiProperty() id: string;
@@ -14,6 +15,8 @@ export class KitchenStockResponseDto {
   @ApiProperty() unit: string;
   @ApiProperty() purchase_price: number;
   @ApiProperty() purchase_date: string;
+  @ApiProperty({ enum: KitchenStockEntryType }) entry_type: KitchenStockEntryType;
+  @ApiProperty({ nullable: true }) created_by_id: string | null;
   @ApiProperty({ nullable: true }) note: string | null;
   @ApiProperty({ nullable: true }) deleted_at: Date | null;
   @ApiProperty() created_at: Date;

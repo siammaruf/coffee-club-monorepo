@@ -14,10 +14,12 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
+import { CurrentUser } from '../../common/decorators/user.decorator';
 import { KitchenStockService } from './providers/kitchen-stock.service';
 import { CreateKitchenStockDto } from './dto/create-kitchen-stock.dto';
 import { UpdateKitchenStockDto } from './dto/update-kitchen-stock.dto';
 import { KitchenItemType } from '../kitchen-items/enum/kitchen-item-type.enum';
+import { KitchenStockEntryType } from './enum/kitchen-stock-entry-type.enum';
 
 @ApiTags('Kitchen Stock')
 @ApiBearerAuth('staff-auth')
@@ -52,6 +54,7 @@ export class KitchenStockController {
   @ApiQuery({ name: 'kitchen_item_id', required: false })
   @ApiQuery({ name: 'start_date', required: false })
   @ApiQuery({ name: 'end_date', required: false })
+  @ApiQuery({ name: 'entry_type', enum: KitchenStockEntryType, required: false })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -59,6 +62,7 @@ export class KitchenStockController {
     @Query('kitchen_item_id') kitchen_item_id?: string,
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
+    @Query('entry_type') entry_type?: KitchenStockEntryType,
   ) {
     const result = await this.kitchenStockService.findAll({
       page: page ? Number(page) : 1,
@@ -67,6 +71,7 @@ export class KitchenStockController {
       kitchen_item_id,
       start_date,
       end_date,
+      entry_type,
     });
     return { ...result, status: 'success', message: 'Stock entries fetched.', statusCode: HttpStatus.OK };
   }
@@ -81,9 +86,9 @@ export class KitchenStockController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
-  @ApiOperation({ summary: 'Create a new stock entry' })
-  async create(@Body() dto: CreateKitchenStockDto) {
-    const data = await this.kitchenStockService.create(dto);
+  @ApiOperation({ summary: 'Create a new stock entry (purchase or usage)' })
+  async create(@Body() dto: CreateKitchenStockDto, @CurrentUser() user: any) {
+    const data = await this.kitchenStockService.create(dto, user?.id);
     return { data, status: 'success', message: 'Stock entry created.', statusCode: HttpStatus.CREATED };
   }
 

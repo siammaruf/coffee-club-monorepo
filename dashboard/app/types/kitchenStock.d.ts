@@ -1,3 +1,5 @@
+export type KitchenStockEntryType = 'PURCHASE' | 'USAGE';
+
 export interface KitchenStockEntry {
   id: string;
   kitchen_item_id: string;
@@ -10,6 +12,8 @@ export interface KitchenStockEntry {
   unit: string;
   purchase_price: number;
   purchase_date: string;
+  entry_type: KitchenStockEntryType;
+  created_by_id: string | null;
   note: string | null;
   created_at: string;
   updated_at: string;
@@ -39,6 +43,7 @@ export interface KitchenStockFilters {
   type?: string;
   start_date?: string;
   end_date?: string;
+  entry_type?: KitchenStockEntryType;
 }
 
 export interface CreateKitchenStockInput {
@@ -47,7 +52,17 @@ export interface CreateKitchenStockInput {
   unit?: string;
   purchase_price: number;
   purchase_date: string;
+  entry_type?: KitchenStockEntryType;
   note?: string;
+}
+
+export interface CreateUsageStockInput {
+  kitchen_item_id: string;
+  quantity: number;
+  unit?: string;
+  purchase_date: string;
+  note?: string;
+  entry_type: 'USAGE';
 }
 
 export interface UpdateKitchenStockInput {
