@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { KitchenStockUnit } from '../enum/kitchen-stock-unit.enum';
 
 export class CreateKitchenStockDto {
   @ApiProperty({ description: 'Kitchen item ID (UUID)' })
@@ -13,6 +14,11 @@ export class CreateKitchenStockDto {
   @IsNumber()
   @IsPositive()
   quantity: number;
+
+  @ApiProperty({ enum: KitchenStockUnit, default: KitchenStockUnit.QUANTITY, required: false })
+  @IsEnum(KitchenStockUnit)
+  @IsOptional()
+  unit?: KitchenStockUnit;
 
   @ApiProperty({ description: 'Purchase price per unit', example: 250.00 })
   @Type(() => Number)
