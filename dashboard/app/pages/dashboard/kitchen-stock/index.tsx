@@ -27,7 +27,6 @@ import { Select } from "../../../components/ui/select";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
-import UseStockCartModal from "~/components/modals/UseStockCartModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
 import type {
   KitchenStockEntry,
@@ -69,7 +68,6 @@ export default function KitchenStockPage() {
 
   // Modals
   const [showAdd, setShowAdd] = useState(false);
-  const [showUse, setShowUse] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editEntry, setEditEntry] = useState<KitchenStockEntry | null>(null);
 
@@ -199,7 +197,7 @@ export default function KitchenStockPage() {
             <>
               <Button
                 className="bg-amber-500 hover:bg-amber-600 text-white"
-                onClick={() => setShowUse(true)}
+                onClick={() => navigate("/dashboard/kitchen-stock/use-stock")}
               >
                 <Minus className="w-4 h-4 mr-2" />
                 Use Stock
@@ -357,8 +355,12 @@ export default function KitchenStockPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  setEditEntry(entry);
-                                  setShowEdit(true);
+                                  if (entry.entry_type === "USAGE") {
+                                    navigate(`/dashboard/kitchen-stock/edit-usage/${entry.id}`);
+                                  } else {
+                                    setEditEntry(entry);
+                                    setShowEdit(true);
+                                  }
                                 }}
                               >
                                 <Edit className="w-4 h-4" />
@@ -481,15 +483,6 @@ export default function KitchenStockPage() {
         onClose={() => setShowAdd(false)}
         onSuccess={() => setShowAdd(false)}
         onCreate={handleCreate}
-      />
-      <UseStockCartModal
-        open={showUse}
-        onClose={() => setShowUse(false)}
-        onSuccess={() => {
-          setShowUse(false);
-          fetchEntries();
-          if (activeTab === "alerts") fetchAlerts();
-        }}
       />
       <EditKitchenStockModal
         open={showEdit}
