@@ -45,6 +45,9 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
       formData.append("slug", generateSlug(data.name));
       formData.append("description", data.description);
       formData.append("type", data.type);
+      if (data.low_stock_threshold !== undefined && data.low_stock_threshold !== null && !isNaN(data.low_stock_threshold)) {
+        formData.append("low_stock_threshold", String(data.low_stock_threshold));
+      }
       if (imageFile) {
         formData.append("image", imageFile);
       } else {
@@ -135,6 +138,17 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
                   tabIndex={-1}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">Low Stock Threshold</label>
+              <input
+                type="number"
+                min={0}
+                placeholder="e.g. 10 (leave empty to disable)"
+                className="h-11 w-full px-3 py-2 text-sm border border-input bg-background rounded-md ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                {...register("low_stock_threshold", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-gray-400">Alert will trigger when total stock falls below this number</p>
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-700">Description</label>

@@ -4,6 +4,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~
 import { Select } from "~/components/ui/select";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { format } from "date-fns";
 import reportService from "~/services/httpServices/reportService";
 import { useNavigate } from "react-router";
@@ -12,17 +13,23 @@ import type { SalesReport } from "~/types/report";
 import ViewSalesReportModal from "~/components/modals/ViewSalesReportModal";
 import InfoDialog from "~/components/modals/InfoDialog";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import { useDebounce } from "~/hooks/useDebounce";
 
 export default function SalesReportPage() {
   const [reports, setReports] = useState<SalesReport[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 400);
   const [loading, setLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [regenerateDate, setRegenerateDate] = useState("");
   const [generateDate, setGenerateDate] = useState(""); // Add this state for report_date
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
 
   // Dialog state
   const [dialog, setDialog] = useState<{ open: boolean; type: "success" | "error"; message: string }>({
@@ -39,15 +46,16 @@ export default function SalesReportPage() {
 
   useEffect(() => {
     fetchReports();
-  }, [statusFilter, dateFilter, searchTerm]);
+  }, [statusFilter, dateFilter, debouncedSearch]);
 
   const fetchReports = async () => {
+    clearSelection();
     setLoading(true);
     try {
       const params: any = {};
       if (statusFilter) params.status = statusFilter;
       if (dateFilter) params.date = dateFilter;
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       const res = await reportService.getAll(params) as { data?: SalesReport[] };
       setReports(res.data || []);
     } catch (error) {
@@ -94,6 +102,20 @@ export default function SalesReportPage() {
       setDialog({ open: true, type: "error", message: "Failed to delete report." });
     } finally {
       setDeleteDialog({ open: false, reportId: null });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => reportService.delete(id)));
+      clearSelection();
+      fetchReports();
+    } catch {
+      setDialog({ open: true, type: "error", message: "Some reports could not be deleted." });
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -168,9 +190,21 @@ export default function SalesReportPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            loading={bulkLoading}
+          />
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={isAllSelected(reports.map(r => r.id))}
+                    onChange={() => toggleSelectAll(reports.map(r => r.id))}
+                  />
+                </TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-center">Total Sales</TableHead>
                 <TableHead className="text-center">Total Orders</TableHead>
@@ -181,13 +215,19 @@ export default function SalesReportPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-gray-400">
+                  <TableCell colSpan={6} className="text-center text-gray-400">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : reports.length > 0 ? (
                 reports.map(report => (
                   <TableRow key={report.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected(report.id)}
+                        onChange={() => toggleSelect(report.id)}
+                      />
+                    </TableCell>
                     <TableCell>{formatDate(report.report_date)}</TableCell>
                     <TableCell className="text-center">{formatCurrency(report.total_sales)}</TableCell>
                     <TableCell className="text-center">{report.total_orders}</TableCell>
@@ -221,7 +261,7 @@ export default function SalesReportPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-gray-400">
+                  <TableCell colSpan={6} className="text-center text-gray-400">
                     No sales reports found.
                   </TableCell>
                 </TableRow>

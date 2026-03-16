@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsEnum, IsInt, Min } from 'class-validator';
 import { KitchenItemType } from '../enum/kitchen-item-type.enum';
 
 export class BaseKitchenItemDto {
@@ -30,12 +30,18 @@ export class BaseKitchenItemDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ 
-    description: 'Kitchen item type', 
+  @ApiProperty({
+    description: 'Kitchen item type',
     enum: KitchenItemType,
     default: KitchenItemType.KITCHEN
   })
   @IsEnum(KitchenItemType)
   @IsOptional()
   type?: KitchenItemType;
+
+  @ApiProperty({ description: 'Low stock alert threshold', required: false })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  low_stock_threshold?: number;
 }
