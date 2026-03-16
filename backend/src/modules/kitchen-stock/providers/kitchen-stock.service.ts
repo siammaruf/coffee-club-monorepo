@@ -7,6 +7,7 @@ import { CreateKitchenStockDto } from '../dto/create-kitchen-stock.dto';
 import { UpdateKitchenStockDto } from '../dto/update-kitchen-stock.dto';
 import { KitchenStockResponseDto, StockSummaryItemDto } from '../dto/kitchen-stock-response.dto';
 import { KitchenItemType } from '../../kitchen-items/enum/kitchen-item-type.enum';
+import { KitchenStockEntryType } from '../enum/kitchen-stock-entry-type.enum';
 
 @Injectable()
 export class KitchenStockService {
@@ -17,11 +18,16 @@ export class KitchenStockService {
     private readonly kitchenItemRepo: Repository<KitchenItems>,
   ) {}
 
-  async create(dto: CreateKitchenStockDto): Promise<KitchenStockResponseDto> {
+  async create(dto: CreateKitchenStockDto, userId?: string): Promise<KitchenStockResponseDto> {
     const item = await this.kitchenItemRepo.findOne({ where: { id: dto.kitchen_item_id } });
     if (!item) throw new NotFoundException('Kitchen item not found');
 
-    const entry = this.stockRepo.create(dto);
+    const entry = this.stockRepo.create({
+      ...dto,
+      entry_type: dto.entry_type ?? KitchenStockEntryType.PURCHASE,
+      purchase_price: dto.purchase_price ?? 0,
+      created_by_id: userId ?? null,
+    });
     const saved = await this.stockRepo.save(entry);
     return this.toResponse(saved, item);
   }
@@ -33,8 +39,9 @@ export class KitchenStockService {
     kitchen_item_id?: string;
     start_date?: string;
     end_date?: string;
+    entry_type?: KitchenStockEntryType;
   }): Promise<{ data: KitchenStockResponseDto[]; total: number; page: number; limit: number; totalPages: number }> {
-    const { page = 1, limit = 20, type, kitchen_item_id, start_date, end_date } = params;
+    const { page = 1, limit = 20, type, kitchen_item_id, start_date, end_date, entry_type } = params;
     const skip = (page - 1) * limit;
 
     const qb = this.stockRepo
@@ -57,6 +64,9 @@ export class KitchenStockService {
     }
     if (end_date) {
       qb.andWhere('ks.purchase_date <= :end_date', { end_date });
+    }
+    if (entry_type) {
+      qb.andWhere('ks.entry_type = :entry_type', { entry_type });
     }
 
     const [entries, total] = await qb.getManyAndCount();
@@ -101,8 +111,14 @@ export class KitchenStockService {
         subQuery =>
           subQuery
             .select('s.kitchen_item_id', 'kitchen_item_id')
-            .addSelect('SUM(s.quantity)', 'total_quantity')
-            .addSelect('SUM(s.quantity * s.purchase_price)', 'total_value')
+            .addSelect(
+              `SUM(CASE WHEN s.entry_type = 'PURCHASE' THEN s.quantity ELSE -s.quantity END)`,
+              'total_quantity',
+            )
+            .addSelect(
+              `SUM(CASE WHEN s.entry_type = 'PURCHASE' THEN s.quantity * s.purchase_price ELSE 0 END)`,
+              'total_value',
+            )
             .from(KitchenStock, 's')
             .where('s.deleted_at IS NULL')
             .groupBy('s.kitchen_item_id'),
@@ -153,6 +169,8 @@ export class KitchenStockService {
       unit: entry.unit,
       purchase_price: parseFloat(entry.purchase_price as unknown as string),
       purchase_date: entry.purchase_date,
+      entry_type: entry.entry_type,
+      created_by_id: entry.created_by_id,
       note: entry.note,
       deleted_at: entry.deleted_at,
       created_at: entry.created_at,

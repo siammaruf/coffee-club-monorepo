@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Package,
   Plus,
+  Minus,
   Search,
   Trash2,
   Edit,
@@ -26,11 +27,13 @@ import { Select } from "../../../components/ui/select";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
+import UseStockModal from "~/components/modals/UseStockModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
 import type {
   KitchenStockEntry,
   KitchenStockSummaryItem,
   CreateKitchenStockInput,
+  CreateUsageStockInput,
   UpdateKitchenStockInput,
 } from "~/types/kitchenStock";
 import type { RootState } from "~/redux/store/rootReducer";
@@ -57,6 +60,7 @@ export default function KitchenStockPage() {
 
   // Filters
   const [typeFilter, setTypeFilter] = useState("");
+  const [entryTypeFilter, setEntryTypeFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
@@ -66,6 +70,7 @@ export default function KitchenStockPage() {
 
   // Modals
   const [showAdd, setShowAdd] = useState(false);
+  const [showUse, setShowUse] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editEntry, setEditEntry] = useState<KitchenStockEntry | null>(null);
 
@@ -76,7 +81,14 @@ export default function KitchenStockPage() {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const params = { page, limit, ...(typeFilter && { type: typeFilter }), ...(startDate && { start_date: startDate }), ...(endDate && { end_date: endDate }) };
+      const params = {
+        page,
+        limit,
+        ...(typeFilter && { type: typeFilter }),
+        ...(entryTypeFilter && { entry_type: entryTypeFilter as "PURCHASE" | "USAGE" }),
+        ...(startDate && { start_date: startDate }),
+        ...(endDate && { end_date: endDate }),
+      };
       const res = await kitchenStockService.getAll(params);
       setEntries((res as any)?.data || []);
       setTotal((res as any)?.total || 0);
@@ -102,7 +114,7 @@ export default function KitchenStockPage() {
 
   useEffect(() => {
     fetchEntries();
-  }, [page, typeFilter, startDate, endDate]);
+  }, [page, typeFilter, entryTypeFilter, startDate, endDate]);
 
   useEffect(() => {
     if (activeTab === "alerts") fetchAlerts();
@@ -118,6 +130,12 @@ export default function KitchenStockPage() {
 
   const handleCreate = async (data: CreateKitchenStockInput) => {
     await kitchenStockService.create(data);
+    fetchEntries();
+    if (activeTab === "alerts") fetchAlerts();
+  };
+
+  const handleRecordUsage = async (data: CreateUsageStockInput) => {
+    await kitchenStockService.recordUsage(data);
     fetchEntries();
     if (activeTab === "alerts") fetchAlerts();
   };
@@ -155,6 +173,17 @@ export default function KitchenStockPage() {
       </span>
     );
 
+  const entryTypeBadge = (entryType: string) =>
+    entryType === "USAGE" ? (
+      <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+        Usage
+      </span>
+    ) : (
+      <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+        Purchase
+      </span>
+    );
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -163,7 +192,7 @@ export default function KitchenStockPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Stock Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track kitchen and bar inventory purchases</p>
+          <p className="text-sm text-gray-500 mt-0.5">Track kitchen and bar inventory purchases and usage</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -174,13 +203,22 @@ export default function KitchenStockPage() {
             View Report
           </Button>
           {canWrite && (
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => setShowAdd(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Stock Entry
-            </Button>
+            <>
+              <Button
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+                onClick={() => setShowUse(true)}
+              >
+                <Minus className="w-4 h-4 mr-2" />
+                Use Stock
+              </Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => setShowAdd(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Stock
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -239,6 +277,15 @@ export default function KitchenStockPage() {
                 <option value="KITCHEN">Kitchen</option>
                 <option value="BAR">Bar</option>
               </Select>
+              <Select
+                className="w-36"
+                value={entryTypeFilter}
+                onChange={(e) => { setEntryTypeFilter(e.target.value); setPage(1); }}
+              >
+                <option value="">All Entries</option>
+                <option value="PURCHASE">Purchases</option>
+                <option value="USAGE">Usage</option>
+              </Select>
               <Input
                 type="date"
                 className="w-36"
@@ -286,8 +333,9 @@ export default function KitchenStockPage() {
                     <TableRow>
                       <TableHead>Item</TableHead>
                       <TableHead>Type</TableHead>
+                      <TableHead>Entry</TableHead>
                       <TableHead>Quantity</TableHead>
-                      <TableHead>Purchase Price</TableHead>
+                      <TableHead>Price / Cost</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Note</TableHead>
                       {canWrite && <TableHead className="text-right">Actions</TableHead>}
@@ -295,13 +343,16 @@ export default function KitchenStockPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((entry) => (
-                      <TableRow key={entry.id}>
+                      <TableRow key={entry.id} className={entry.entry_type === "USAGE" ? "bg-amber-50" : ""}>
                         <TableCell className="font-medium">
                           {entry.kitchen_item?.name || "—"}
                         </TableCell>
                         <TableCell>{typeBadge(entry.kitchen_item?.type || "")}</TableCell>
-                        <TableCell>{entry.quantity}</TableCell>
-                        <TableCell>{formatCurrency(entry.purchase_price)}</TableCell>
+                        <TableCell>{entryTypeBadge(entry.entry_type)}</TableCell>
+                        <TableCell>{entry.quantity} {entry.unit !== "quantity" ? entry.unit : ""}</TableCell>
+                        <TableCell>
+                          {entry.entry_type === "USAGE" ? "—" : formatCurrency(entry.purchase_price)}
+                        </TableCell>
                         <TableCell>{entry.purchase_date}</TableCell>
                         <TableCell className="text-gray-500 text-sm max-w-[200px] truncate">
                           {entry.note || "—"}
@@ -394,7 +445,7 @@ export default function KitchenStockPage() {
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Current Stock</TableHead>
+                    <TableHead>Available Stock</TableHead>
                     <TableHead>Threshold</TableHead>
                     <TableHead>Total Value</TableHead>
                     <TableHead>Status</TableHead>
@@ -404,7 +455,13 @@ export default function KitchenStockPage() {
                   {alerts.map((item) => (
                     <TableRow key={item.kitchen_item_id} className="bg-red-50">
                       <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{typeBadge(item.type)}</TableCell>
+                      <TableCell>
+                        {item.type === "KITCHEN" ? (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">Kitchen</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">Bar</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-red-600 font-semibold">
                         {item.total_quantity}
                       </TableCell>
@@ -431,6 +488,12 @@ export default function KitchenStockPage() {
         onClose={() => setShowAdd(false)}
         onSuccess={() => setShowAdd(false)}
         onCreate={handleCreate}
+      />
+      <UseStockModal
+        open={showUse}
+        onClose={() => setShowUse(false)}
+        onSuccess={() => setShowUse(false)}
+        onUse={handleRecordUsage}
       />
       <EditKitchenStockModal
         open={showEdit}
