@@ -17,6 +17,7 @@ import type { CreateKitchenStockInput } from "~/types/kitchenStock";
 interface StockForm {
   kitchen_item_id: string;
   quantity: number;
+  unit: string;
   purchase_price: number;
   purchase_date: string;
   note: string;
@@ -46,6 +47,7 @@ export default function AddKitchenStockModal({
     defaultValues: {
       kitchen_item_id: "",
       quantity: 0,
+      unit: "quantity",
       purchase_price: 0,
       purchase_date: new Date().toISOString().split("T")[0],
       note: "",
@@ -65,6 +67,7 @@ export default function AddKitchenStockModal({
       await onCreate({
         ...data,
         quantity: Number(data.quantity),
+        unit: data.unit,
         purchase_price: Number(data.purchase_price),
         note: data.note || undefined,
       });
@@ -131,22 +134,38 @@ export default function AddKitchenStockModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Purchase Price <span className="text-red-500">*</span>
+                Unit <span className="text-red-500">*</span>
               </label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("purchase_price", {
-                  required: "Required",
-                  min: { value: 0, message: "Must be ≥ 0" },
-                  valueAsNumber: true,
-                })}
-                placeholder="e.g. 250.00"
-              />
-              {errors.purchase_price && (
-                <span className="text-red-600 text-xs">{errors.purchase_price.message}</span>
+              <Select
+                {...register("unit", { required: "Required" })}
+                className="w-full"
+              >
+                <option value="quantity">Quantity</option>
+                <option value="kg">kg</option>
+                <option value="gram">gram</option>
+              </Select>
+              {errors.unit && (
+                <span className="text-red-600 text-xs">{errors.unit.message}</span>
               )}
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Purchase Price <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              step="0.01"
+              {...register("purchase_price", {
+                required: "Required",
+                min: { value: 0, message: "Must be ≥ 0" },
+                valueAsNumber: true,
+              })}
+              placeholder="e.g. 250.00"
+            />
+            {errors.purchase_price && (
+              <span className="text-red-600 text-xs">{errors.purchase_price.message}</span>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

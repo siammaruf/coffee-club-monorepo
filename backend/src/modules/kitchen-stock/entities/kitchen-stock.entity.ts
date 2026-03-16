@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
+import { KitchenStockUnit } from '../enum/kitchen-stock-unit.enum';
 
 @Entity('kitchen_stock')
 export class KitchenStock {
@@ -24,6 +25,9 @@ export class KitchenStock {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   quantity: number;
+
+  @Column({ type: 'enum', enum: KitchenStockUnit, default: KitchenStockUnit.QUANTITY })
+  unit: KitchenStockUnit;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   purchase_price: number;

@@ -7,6 +7,7 @@ export interface KitchenStockEntry {
     type: string;
   };
   quantity: number;
+  unit: string;
   purchase_price: number;
   purchase_date: string;
   note: string | null;
@@ -43,6 +44,7 @@ export interface KitchenStockFilters {
 export interface CreateKitchenStockInput {
   kitchen_item_id: string;
   quantity: number;
+  unit?: string;
   purchase_price: number;
   purchase_date: string;
   note?: string;
@@ -50,6 +52,7 @@ export interface CreateKitchenStockInput {
 
 export interface UpdateKitchenStockInput {
   quantity?: number;
+  unit?: string;
   purchase_price?: number;
   purchase_date?: string;
   note?: string;

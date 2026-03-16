@@ -11,6 +11,7 @@ export class KitchenStockResponseDto {
   @ApiProperty() kitchen_item_id: string;
   @ApiProperty({ type: () => KitchenItemRefDto }) kitchen_item: KitchenItemRefDto;
   @ApiProperty() quantity: number;
+  @ApiProperty() unit: string;
   @ApiProperty() purchase_price: number;
   @ApiProperty() purchase_date: string;
   @ApiProperty({ nullable: true }) note: string | null;
