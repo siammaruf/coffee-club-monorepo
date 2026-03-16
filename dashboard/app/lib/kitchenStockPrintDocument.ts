@@ -1,5 +1,8 @@
 import type { KitchenStockEntry, KitchenStockSummaryItem } from "~/types/kitchenStock";
 
+const esc = (s: string): string =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 interface PrintDocumentData {
   generatedAt: string;
   totalItems: number;
@@ -36,7 +39,7 @@ function summaryRows(summary: KitchenStockSummaryItem[]): string {
     .map(
       (item) => `
     <tr style="${item.is_low_stock ? "background:#fef2f2" : ""}">
-      <td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:500">${item.name}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:500">${esc(item.name)}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${typeBadgeHtml(item.type)}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${item.total_quantity}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${fmt(item.total_value)}</td>
@@ -55,12 +58,12 @@ function entryRows(entries: KitchenStockEntry[]): string {
     .map(
       (entry) => `
     <tr>
-      <td style="padding:7px 10px;border:1px solid #e5e7eb;white-space:nowrap">${entry.purchase_date}</td>
-      <td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:500">${entry.kitchen_item?.name || "—"}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb;white-space:nowrap">${esc(entry.purchase_date)}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:500">${entry.kitchen_item ? esc(entry.kitchen_item.name) : "—"}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${typeBadgeHtml(entry.kitchen_item?.type || "")}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${entry.quantity}</td>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${fmt(entry.purchase_price)}</td>
-      <td style="padding:7px 10px;border:1px solid #e5e7eb;color:#6b7280">${entry.note || "—"}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb;color:#6b7280">${entry.note ? esc(entry.note) : "—"}</td>
     </tr>`
     )
     .join("");
@@ -158,7 +161,7 @@ export function buildPrintDocument(data: PrintDocumentData): string {
     </div>
     <div class="report-meta">
       <div class="report-title">Kitchen Stock Report</div>
-      <div class="report-date">Generated: ${generatedAt}</div>
+      <div class="report-date">Generated: ${esc(generatedAt)}</div>
     </div>
   </div>
 
@@ -229,7 +232,7 @@ export function buildPrintDocument(data: PrintDocumentData): string {
 
   <!-- Footer -->
   <div class="print-footer">
-    CoffeeClub &mdash; Kitchen Stock Report &mdash; ${generatedAt}
+    CoffeeClub &mdash; Kitchen Stock Report &mdash; ${esc(generatedAt)}
   </div>
 
   <script>
