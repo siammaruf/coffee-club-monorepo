@@ -150,6 +150,7 @@ export class KitchenStockService {
         ? { id: item.id, name: item.name, type: item.type }
         : { id: entry.kitchen_item_id, name: '', type: '' },
       quantity: parseFloat(entry.quantity as unknown as string),
+      unit: entry.unit,
       purchase_price: parseFloat(entry.purchase_price as unknown as string),
       purchase_date: entry.purchase_date,
       note: entry.note,
