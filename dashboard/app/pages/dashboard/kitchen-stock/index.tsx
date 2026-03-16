@@ -27,13 +27,12 @@ import { Select } from "../../../components/ui/select";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
-import UseStockModal from "~/components/modals/UseStockModal";
+import UseStockCartModal from "~/components/modals/UseStockCartModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
 import type {
   KitchenStockEntry,
   KitchenStockSummaryItem,
   CreateKitchenStockInput,
-  CreateUsageStockInput,
   UpdateKitchenStockInput,
 } from "~/types/kitchenStock";
 import type { RootState } from "~/redux/store/rootReducer";
@@ -130,12 +129,6 @@ export default function KitchenStockPage() {
 
   const handleCreate = async (data: CreateKitchenStockInput) => {
     await kitchenStockService.create(data);
-    fetchEntries();
-    if (activeTab === "alerts") fetchAlerts();
-  };
-
-  const handleRecordUsage = async (data: CreateUsageStockInput) => {
-    await kitchenStockService.recordUsage(data);
     fetchEntries();
     if (activeTab === "alerts") fetchAlerts();
   };
@@ -489,11 +482,14 @@ export default function KitchenStockPage() {
         onSuccess={() => setShowAdd(false)}
         onCreate={handleCreate}
       />
-      <UseStockModal
+      <UseStockCartModal
         open={showUse}
         onClose={() => setShowUse(false)}
-        onSuccess={() => setShowUse(false)}
-        onUse={handleRecordUsage}
+        onSuccess={() => {
+          setShowUse(false);
+          fetchEntries();
+          if (activeTab === "alerts") fetchAlerts();
+        }}
       />
       <EditKitchenStockModal
         open={showEdit}

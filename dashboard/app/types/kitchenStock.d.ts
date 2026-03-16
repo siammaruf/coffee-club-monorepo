@@ -41,9 +41,17 @@ export interface KitchenStockFilters {
   page?: number;
   limit?: number;
   type?: string;
+  kitchen_item_id?: string;
   start_date?: string;
   end_date?: string;
   entry_type?: KitchenStockEntryType;
+}
+
+export interface UsageCartItem {
+  kitchen_item_id: string;
+  kitchen_item_name: string;
+  quantity: number;
+  unit: string;
 }
 
 export interface CreateKitchenStockInput {
