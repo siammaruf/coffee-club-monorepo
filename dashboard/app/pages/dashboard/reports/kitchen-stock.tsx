@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/table";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
 import type { KitchenStockEntry, KitchenStockSummaryItem } from "~/types/kitchenStock";
+import { buildPrintDocument } from "~/lib/kitchenStockPrintDocument";
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT" }).format(val);
@@ -81,23 +82,35 @@ export default function KitchenStockReportPage() {
     .reduce((acc, s) => acc + s.total_value, 0);
   const lowStockCount = summary.filter((s) => s.is_low_stock).length;
 
+  const openPrintWindow = () => {
+    const html = buildPrintDocument({
+      generatedAt,
+      totalItems,
+      kitchenValue,
+      barValue,
+      lowStockCount,
+      summary,
+      entries,
+    });
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) {
+      alert("Please allow pop-ups for this site to use Print/PDF.");
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  };
+
   return (
     <>
-      {/* Print styles — hide nav/buttons when printing */}
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-break { page-break-before: always; }
-          body { font-size: 12px; }
-        }
-      `}</style>
 
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <button
-              className="no-print flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-2"
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-2"
               onClick={() => navigate("/dashboard/kitchen-stock")}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -106,14 +119,15 @@ export default function KitchenStockReportPage() {
             <h1 className="text-2xl font-bold">Kitchen Stock Report</h1>
             <p className="text-sm text-gray-500 mt-0.5">Generated: {generatedAt}</p>
           </div>
-          <div className="no-print flex gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={openPrintWindow} disabled={loading}>
               <Printer className="w-4 h-4 mr-2" />
               Print
             </Button>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => window.print()}
+              onClick={openPrintWindow}
+              disabled={loading}
             >
               <Download className="w-4 h-4 mr-2" />
               Download PDF
@@ -237,7 +251,7 @@ export default function KitchenStockReportPage() {
             </Card>
 
             {/* Stock Entries Table */}
-            <Card className="print-break">
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
                   Stock Entries{" "}
@@ -286,10 +300,6 @@ export default function KitchenStockReportPage() {
               </CardContent>
             </Card>
 
-            {/* Print footer */}
-            <div className="hidden print:block text-center text-xs text-gray-400 pt-4 border-t">
-              CoffeeClub — Kitchen Stock Report — {generatedAt}
-            </div>
           </>
         )}
       </div>
