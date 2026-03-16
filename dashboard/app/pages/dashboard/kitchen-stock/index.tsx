@@ -76,7 +76,7 @@ export const KitchenStockPage = () => {
     try {
       const params = { page, limit, ...(typeFilter && { type: typeFilter }), ...(startDate && { start_date: startDate }), ...(endDate && { end_date: endDate }) };
       const res = await kitchenStockService.getAll(params);
-      const result = (res.data as KitchenStockListResponse | undefined);
+      const result = res as KitchenStockListResponse | undefined;
       setEntries(result?.data || []);
       setTotal(result?.total || 0);
     } catch {
@@ -90,7 +90,8 @@ export const KitchenStockPage = () => {
     setAlertsLoading(true);
     try {
       const res = await kitchenStockService.getLowStockAlerts();
-      setAlerts((res.data as KitchenStockSummaryItem[] | undefined) || []);
+      const alertResult = res as { data?: KitchenStockSummaryItem[] } | undefined;
+      setAlerts(alertResult?.data || []);
     } catch {
       setAlerts([]);
     } finally {
