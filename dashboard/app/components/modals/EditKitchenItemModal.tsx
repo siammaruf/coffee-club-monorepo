@@ -18,6 +18,7 @@ const EditKitchenItemModal: React.FC<EditKitchenItemModalProps> = ({ open, onClo
       image: item.image || "",
       description: item.description,
       type: item.type,
+      low_stock_threshold: item.low_stock_threshold ?? undefined,
     },
   });
 
@@ -32,6 +33,7 @@ const EditKitchenItemModal: React.FC<EditKitchenItemModalProps> = ({ open, onClo
       image: item.image || "",
       description: item.description,
       type: item.type,
+      low_stock_threshold: item.low_stock_threshold ?? undefined,
     });
     setImagePreview(item.image || "");
     setImageFile(null);
@@ -65,6 +67,9 @@ const EditKitchenItemModal: React.FC<EditKitchenItemModalProps> = ({ open, onClo
       formData.append("slug", generateSlug(data.name || ""));
       formData.append("description", data.description || "");
       formData.append("type", data.type || "KITCHEN");
+      if (data.low_stock_threshold !== undefined && data.low_stock_threshold !== null && !isNaN(data.low_stock_threshold as number)) {
+        formData.append("low_stock_threshold", String(data.low_stock_threshold));
+      }
       if (imageFile) {
         formData.append("image", imageFile);
       } else if (typeof data.image === "string") {
@@ -155,6 +160,17 @@ const EditKitchenItemModal: React.FC<EditKitchenItemModalProps> = ({ open, onClo
                   tabIndex={-1}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">Low Stock Threshold</label>
+              <input
+                type="number"
+                min={0}
+                placeholder="e.g. 10 (leave empty to disable)"
+                className="h-11 w-full px-3 py-2 text-sm border border-input bg-background rounded-md ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                {...register("low_stock_threshold", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-gray-400">Alert will trigger when total stock falls below this number</p>
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-700">Description</label>
