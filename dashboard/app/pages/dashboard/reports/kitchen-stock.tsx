@@ -25,13 +25,6 @@ import { buildPrintDocument } from "~/lib/kitchenStockPrintDocument";
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT" }).format(val);
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-BD", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
 const TypeBadge = ({ type }: { type: string }) =>
   type === "KITCHEN" ? (
     <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
@@ -40,6 +33,17 @@ const TypeBadge = ({ type }: { type: string }) =>
   ) : (
     <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
       Bar
+    </span>
+  );
+
+const EntryTypeBadge = ({ entryType }: { entryType: string }) =>
+  entryType === "USAGE" ? (
+    <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+      Usage
+    </span>
+  ) : (
+    <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+      Purchase
     </span>
   );
 
@@ -211,7 +215,7 @@ export default function KitchenStockReportPage() {
                       <TableRow>
                         <TableHead>Item Name</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Total Qty</TableHead>
+                        <TableHead>Available Qty</TableHead>
                         <TableHead>Total Value</TableHead>
                         <TableHead>Threshold</TableHead>
                         <TableHead>Status</TableHead>
@@ -254,7 +258,7 @@ export default function KitchenStockReportPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
-                  Stock Entries{" "}
+                  Stock Ledger{" "}
                   <span className="text-sm font-normal text-gray-500">
                     ({entries.length} records)
                   </span>
@@ -270,14 +274,18 @@ export default function KitchenStockReportPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Item Name</TableHead>
                         <TableHead>Type</TableHead>
+                        <TableHead>Entry</TableHead>
                         <TableHead>Quantity</TableHead>
-                        <TableHead>Purchase Price</TableHead>
+                        <TableHead>Cost</TableHead>
                         <TableHead>Note</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {entries.map((entry) => (
-                        <TableRow key={entry.id}>
+                        <TableRow
+                          key={entry.id}
+                          className={entry.entry_type === "USAGE" ? "bg-amber-50" : ""}
+                        >
                           <TableCell className="whitespace-nowrap">
                             {entry.purchase_date}
                           </TableCell>
@@ -287,8 +295,13 @@ export default function KitchenStockReportPage() {
                           <TableCell>
                             <TypeBadge type={entry.kitchen_item?.type || ""} />
                           </TableCell>
+                          <TableCell>
+                            <EntryTypeBadge entryType={entry.entry_type} />
+                          </TableCell>
                           <TableCell>{entry.quantity}</TableCell>
-                          <TableCell>{formatCurrency(entry.purchase_price)}</TableCell>
+                          <TableCell>
+                            {entry.entry_type === "USAGE" ? "—" : formatCurrency(entry.purchase_price)}
+                          </TableCell>
                           <TableCell className="text-gray-500 text-sm max-w-[180px] truncate">
                             {entry.note || "—"}
                           </TableCell>

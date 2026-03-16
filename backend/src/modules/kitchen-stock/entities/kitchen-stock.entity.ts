@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
 import { KitchenStockUnit } from '../enum/kitchen-stock-unit.enum';
+import { KitchenStockEntryType } from '../enum/kitchen-stock-entry-type.enum';
 
 @Entity('kitchen_stock')
 export class KitchenStock {
@@ -37,6 +38,12 @@ export class KitchenStock {
 
   @Column({ nullable: true, type: 'text' })
   note: string | null;
+
+  @Column({ type: 'enum', enum: KitchenStockEntryType, default: KitchenStockEntryType.PURCHASE })
+  entry_type: KitchenStockEntryType;
+
+  @Column({ type: 'uuid', nullable: true })
+  created_by_id: string | null;
 
   @DeleteDateColumn()
   deleted_at: Date | null;
