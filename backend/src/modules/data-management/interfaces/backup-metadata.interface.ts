@@ -41,3 +41,28 @@ export interface ImportResult {
   skipped_counts: Record<string, number>;
   errors: Array<{ entity: string; row: number; message: string }>;
 }
+
+export interface RestorePreviewBackup {
+  id: string;
+  filename: string;
+  file_size: number;
+  total_records: number;
+  type: string;
+  status: string;
+  created_at: string;
+  created_by: { first_name: string; last_name: string } | null;
+}
+
+export interface RestorePreview {
+  backup: RestorePreviewBackup;
+  entity_counts: Record<string, number>;
+  current_counts: Record<string, number>;
+  warnings: string[];
+}
+
+export interface RestoreResult {
+  success: boolean;
+  message: string;
+  restored_counts: Record<string, number>;
+  errors: string[];
+}
