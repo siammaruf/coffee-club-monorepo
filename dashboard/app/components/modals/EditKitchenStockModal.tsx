@@ -18,7 +18,7 @@ interface StockForm {
   kitchen_item_id: string;
   quantity: number;
   unit: string;
-  purchase_price: number;
+  unit_price: number;
   purchase_date: string;
   note: string;
 }
@@ -43,9 +43,14 @@ export default function EditKitchenStockModal({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
     setError,
   } = useForm<StockForm>();
+
+  const unitPrice = watch("unit_price") ?? 0;
+  const quantity = watch("quantity") ?? 0;
+  const computedPurchasePrice = Number((unitPrice * quantity).toFixed(2));
 
   useEffect(() => {
     if (open) {
@@ -61,7 +66,7 @@ export default function EditKitchenStockModal({
         kitchen_item_id: entry.kitchen_item_id,
         quantity: entry.quantity,
         unit: entry.unit || "quantity",
-        purchase_price: entry.purchase_price,
+        unit_price: entry.quantity > 0 ? Number((entry.purchase_price / entry.quantity).toFixed(4)) : 0,
         purchase_date: entry.purchase_date,
         note: entry.note || "",
       });
@@ -71,11 +76,12 @@ export default function EditKitchenStockModal({
   const onSubmit = async (data: StockForm) => {
     if (!entry) return;
     try {
+      const { unit_price: _, ...rest } = data;
       await onUpdate(entry.id, {
-        ...data,
+        ...rest,
         quantity: Number(data.quantity),
         unit: data.unit,
-        purchase_price: Number(data.purchase_price),
+        purchase_price: computedPurchasePrice,
         note: data.note || undefined,
       });
       onSuccess();
@@ -155,20 +161,32 @@ export default function EditKitchenStockModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Purchase Price <span className="text-red-500">*</span>
+              Unit Price <span className="text-red-500">*</span>
             </label>
             <Input
               type="number"
               step="0.01"
-              {...register("purchase_price", {
+              {...register("unit_price", {
                 required: "Required",
                 min: { value: 0, message: "Must be ≥ 0" },
                 valueAsNumber: true,
               })}
             />
-            {errors.purchase_price && (
-              <span className="text-red-600 text-xs">{errors.purchase_price.message}</span>
+            {errors.unit_price && (
+              <span className="text-red-600 text-xs">{errors.unit_price.message}</span>
             )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Purchase Price (Total)
+            </label>
+            <Input
+              type="number"
+              value={computedPurchasePrice}
+              readOnly
+              className="bg-gray-50 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-400 mt-0.5">Unit Price × Quantity (auto-calculated)</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
