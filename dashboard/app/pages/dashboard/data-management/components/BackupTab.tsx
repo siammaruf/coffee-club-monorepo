@@ -52,6 +52,8 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { dataManagementService } from "~/services/httpServices/dataManagementService";
+import { useTableSelection } from "~/hooks/useTableSelection";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { BackupStatus, BackupType } from "~/types/dataManagement";
 import type {
   BackupHistory,
@@ -678,11 +680,14 @@ export default function BackupTab() {
 
   const itemsPerPage = 10;
 
-  const loadHistory = useCallback(async () => {
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, isSelected, isAllSelected, clearSelection } = useTableSelection();
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const loadHistory = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
       const response = await dataManagementService.getBackupHistory(
-        page,
+        pageNum,
         itemsPerPage
       );
       const data = response.data;
@@ -697,7 +702,7 @@ export default function BackupTab() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   const loadDriveStatus = useCallback(async () => {
     try {
@@ -718,8 +723,8 @@ export default function BackupTab() {
   }, []);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    loadHistory(page);
+  }, [page, loadHistory]);
 
   useEffect(() => {
     loadDriveStatus();
@@ -731,7 +736,7 @@ export default function BackupTab() {
     try {
       await dataManagementService.createBackup();
       toast.success("Backup creation started");
-      loadHistory();
+      loadHistory(page);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to create backup";
@@ -763,7 +768,7 @@ export default function BackupTab() {
       await dataManagementService.deleteBackup(deleteId);
       toast.success("Backup deleted");
       setDeleteId(null);
-      loadHistory();
+      loadHistory(page);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to delete backup";
@@ -821,7 +826,7 @@ export default function BackupTab() {
       }
       setRestoreDialogOpen(false);
       setRestoreTargetId(null);
-      loadHistory();
+      loadHistory(page);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to restore backup";
@@ -833,6 +838,22 @@ export default function BackupTab() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    clearSelection();
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => dataManagementService.deleteBackup(id)));
+      toast.success(`${selectedIds.size} backup(s) deleted`);
+      clearSelection();
+      loadHistory(page);
+    } catch {
+      toast.error("Some backups could not be deleted");
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const lastBackup = history.find(
@@ -1033,9 +1054,21 @@ export default function BackupTab() {
             </div>
           ) : (
             <>
+              <BulkActionBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={clearSelection}
+                loading={bulkDeleting}
+              />
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={isAllSelected(history.map(b => b.id))}
+                        onChange={() => toggleSelectAll(history.map(b => b.id))}
+                      />
+                    </TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Size</TableHead>
@@ -1048,6 +1081,12 @@ export default function BackupTab() {
                 <TableBody>
                   {history.map((backup) => (
                     <TableRow key={backup.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected(backup.id)}
+                          onChange={() => toggleSelect(backup.id)}
+                        />
+                      </TableCell>
                       <TableCell>{getTypeBadge(backup.type)}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm">
                         {formatDate(backup.created_at)}
