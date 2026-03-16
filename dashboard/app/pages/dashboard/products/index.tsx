@@ -13,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Package, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Search, Eye, Edit, Trash2, Package, RotateCcw, AlertTriangle } from "lucide-react";
 import type { Product, ProductCategory } from "~/types/product";
 import ProductsSkeleton from "~/components/skeleton/ProductsSkeleton";
 import { productService } from "~/services/httpServices/productService";
@@ -40,9 +34,16 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm);
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("category") ?? "";
+  });
+  const [typeFilter, setTypeFilter] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("type") ?? "";
+  });
   const [statusFilter, setStatusFilter] = useState("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -85,6 +86,8 @@ export default function ProductsPage() {
     if (pageParam && !isNaN(Number(pageParam))) {
       setCurrentPage(Number(pageParam));
     }
+    setCategoryFilter(params.get("category") ?? "");
+    setTypeFilter(params.get("type") ?? "");
   }, [location.search]);
 
   const fetchProducts = async () => {
@@ -112,6 +115,7 @@ export default function ProductsPage() {
       setTotalPages(1);
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -128,6 +132,24 @@ export default function ProductsPage() {
     setCurrentPage(page);
     const params = new URLSearchParams(location.search);
     params.set("page", page.toString());
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryFilter(value);
+    const params = new URLSearchParams(location.search);
+    value ? params.set("category", value) : params.delete("category");
+    params.set("page", "1");
+    setCurrentPage(1);
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
+
+  const handleTypeChange = (value: string) => {
+    setTypeFilter(value);
+    const params = new URLSearchParams(location.search);
+    value ? params.set("type", value) : params.delete("type");
+    params.set("page", "1");
+    setCurrentPage(1);
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
@@ -256,7 +278,7 @@ export default function ProductsPage() {
 
   const hasProducts = products.length > 0;
 
-  if (isLoading) {
+  if (isLoading && isInitialLoad) {
     return <ProductsSkeleton />;
   }
 
@@ -353,7 +375,7 @@ export default function ProductsPage() {
             <div className="flex gap-4 items-center">
               <Select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-40"
               >
                 <option value="">All Categories</option>
@@ -366,7 +388,7 @@ export default function ProductsPage() {
 
               <Select
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="w-40"
               >
                 <option value="">All Types</option>
@@ -398,7 +420,7 @@ export default function ProductsPage() {
         </CardHeader>
         <CardContent>
           {hasProducts ? (
-            <>
+            <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
               <BulkActionBar
                 selectedCount={selectedCount}
                 onDelete={handleBulkDelete}
@@ -445,19 +467,23 @@ export default function ProductsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            {product.image ? (
-                              <img
-                                src={product.image}
-                                alt={product.name}
-                                className="w-12 h-12 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center">
-                                <Package className="w-6 h-6 text-gray-500" />
-                              </div>
-                            )}
+                            <Link to={`/dashboard/products/${product.id}`} state={{ fromPage: currentPage }}>
+                              {product.image ? (
+                                <img
+                                  src={product.image}
+                                  alt={product.name}
+                                  className="w-12 h-12 rounded object-cover hover:opacity-80 transition-opacity"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center hover:opacity-80 transition-opacity">
+                                  <Package className="w-6 h-6 text-gray-500" />
+                                </div>
+                              )}
+                            </Link>
                             <div>
-                              <p className="font-medium">{product.name}</p>
+                              <Link to={`/dashboard/products/${product.id}`} state={{ fromPage: currentPage }}>
+                                <p className="font-medium hover:underline cursor-pointer">{product.name}</p>
+                              </Link>
                               {product.name_bn && (
                                 <p className="text-sm text-gray-500">{product.name_bn}</p>
                               )}
@@ -559,34 +585,33 @@ export default function ProductsPage() {
                               </Button>
                             </div>
                           ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => navigate(`/dashboard/products/${product.id}`, { state: { fromPage: currentPage } })}
-                                >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => navigate(`/dashboard/products/edit/${product.id}`, { state: { fromPage: currentPage } })}
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDelete(product.id!)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="View Details"
+                                onClick={() => navigate(`/dashboard/products/${product.id}`, { state: { fromPage: currentPage } })}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Edit"
+                                onClick={() => navigate(`/dashboard/products/edit/${product.id}`, { state: { fromPage: currentPage } })}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete"
+                                className="text-red-600 hover:bg-red-50"
+                                onClick={() => handleDelete(product.id!)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -605,7 +630,7 @@ export default function ProductsPage() {
                   onPageChange={handlePageChange}
                 />
               )}
-            </>
+            </div>
           ) : (
             /* No products at all - Empty state */
             <div className="text-center py-12">

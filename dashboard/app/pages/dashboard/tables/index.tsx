@@ -13,18 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
 import {
   Search,
-  MoreHorizontal,
   Edit,
   Trash2,
   Plus,
@@ -294,7 +287,7 @@ export default function TablesPage() {
     if (!updated?.id) return;
 
     try {
-      const { id, created_at, updated_at, ...updatedTable } = updated;
+      const { id, created_at, updated_at, deleted_at, ...updatedTable } = updated;
       await tableService.update(updated.id, updatedTable);
       setEditTable(null);
       fetchTables();
@@ -478,7 +471,7 @@ export default function TablesPage() {
                     <TableHead className="text-center">Seats</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[180px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -526,48 +519,45 @@ export default function TablesPage() {
                       </TableCell>
                       <TableCell>
                         {viewMode === 'active' ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setViewTable(table)}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                View Table
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setEditTable(table)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Table
-                              </DropdownMenuItem>
-                              {table.status !== 'available' && (
-                                <DropdownMenuItem
-                                  onClick={() => handleChangeStatus(table.id, 'available')}
-                                  className="text-green-600"
-                                >
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                  Mark Available
-                                </DropdownMenuItem>
-                              )}
-                              {table.status !== 'occupied' && (
-                                <DropdownMenuItem
-                                  onClick={() => handleChangeStatus(table.id, 'occupied')}
-                                  className="text-blue-600"
-                                >
-                                  <Users className="w-4 h-4 mr-2" />
-                                  Mark Occupied
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteTable(table.id)}
-                                className="text-red-600"
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" title="View Table" onClick={() => setViewTable(table)}>
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Edit Table" onClick={() => setEditTable(table)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {table.status !== 'available' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Mark Available"
+                                className="text-green-600 hover:bg-green-50"
+                                onClick={() => handleChangeStatus(table.id, 'available')}
                               >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete Table
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {table.status !== 'occupied' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Mark Occupied"
+                                className="text-blue-600 hover:bg-blue-50"
+                                onClick={() => handleChangeStatus(table.id, 'occupied')}
+                              >
+                                <Users className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Delete Table"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleDeleteTable(table.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         ) : (
                           <div className="flex items-center gap-1">
                             <Button
