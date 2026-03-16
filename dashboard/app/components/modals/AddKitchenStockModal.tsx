@@ -18,7 +18,7 @@ interface StockForm {
   kitchen_item_id: string;
   quantity: number;
   unit: string;
-  purchase_price: number;
+  unit_price: number;
   purchase_date: string;
   note: string;
 }
@@ -41,6 +41,7 @@ export default function AddKitchenStockModal({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
     setError,
   } = useForm<StockForm>({
@@ -48,11 +49,15 @@ export default function AddKitchenStockModal({
       kitchen_item_id: "",
       quantity: 0,
       unit: "quantity",
-      purchase_price: 0,
+      unit_price: 0,
       purchase_date: new Date().toISOString().split("T")[0],
       note: "",
     },
   });
+
+  const unitPrice = watch("unit_price") ?? 0;
+  const quantity = watch("quantity") ?? 0;
+  const computedPurchasePrice = Number((unitPrice * quantity).toFixed(2));
 
   useEffect(() => {
     if (open) {
@@ -64,11 +69,12 @@ export default function AddKitchenStockModal({
 
   const onSubmit = async (data: StockForm) => {
     try {
+      const { unit_price: _, ...rest } = data;
       await onCreate({
-        ...data,
+        ...rest,
         quantity: Number(data.quantity),
         unit: data.unit,
-        purchase_price: Number(data.purchase_price),
+        purchase_price: computedPurchasePrice,
         note: data.note || undefined,
       });
       reset();
@@ -151,21 +157,33 @@ export default function AddKitchenStockModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Purchase Price <span className="text-red-500">*</span>
+              Unit Price <span className="text-red-500">*</span>
             </label>
             <Input
               type="number"
               step="0.01"
-              {...register("purchase_price", {
+              placeholder="e.g. 25.00"
+              {...register("unit_price", {
                 required: "Required",
                 min: { value: 0, message: "Must be ≥ 0" },
                 valueAsNumber: true,
               })}
-              placeholder="e.g. 250.00"
             />
-            {errors.purchase_price && (
-              <span className="text-red-600 text-xs">{errors.purchase_price.message}</span>
+            {errors.unit_price && (
+              <span className="text-red-600 text-xs">{errors.unit_price.message}</span>
             )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Purchase Price (Total)
+            </label>
+            <Input
+              type="number"
+              value={computedPurchasePrice}
+              readOnly
+              className="bg-gray-50 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-400 mt-0.5">Unit Price × Quantity (auto-calculated)</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
