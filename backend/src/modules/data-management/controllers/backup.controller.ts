@@ -110,6 +110,37 @@ export class BackupController {
     return this.backupService.findHistoryById(id);
   }
 
+  @Get('history/:id/download')
+  @ApiOperation({ summary: 'Download a backup file' })
+  @ApiParam({
+    name: 'id',
+    description: 'Backup history UUID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Backup file downloaded successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Backup not found',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Backup file not available on Google Drive',
+  })
+  async downloadBackup(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, filename } = await this.backupService.downloadBackupFile(id);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${filename}"`,
+    );
+    res.send(buffer);
+  }
+
   @Delete('history/:id')
   @ApiOperation({ summary: 'Delete a backup' })
   @ApiParam({
@@ -153,7 +184,7 @@ export class BackupController {
   })
   async restoreBackup(@Param('id', ParseUUIDPipe) id: string) {
     await this.backupService.restoreFromBackup(id);
-    return { message: 'Backup restored successfully' };
+    return { success: true, message: 'Backup restored successfully', restored_counts: {}, errors: [] };
   }
 
   @Get('restore/:id/preview')

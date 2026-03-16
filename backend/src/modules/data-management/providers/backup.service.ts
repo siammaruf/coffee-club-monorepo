@@ -15,7 +15,7 @@ import * as crypto from 'crypto';
 import { BackupHistory } from '../entities/backup-history.entity';
 import { BackupType } from '../enums/backup-type.enum';
 import { BackupStatus } from '../enums/backup-status.enum';
-import { BackupData, BackupMetadata } from '../interfaces/backup-metadata.interface';
+import { BackupData, BackupMetadata, RestorePreview, RestoreResult } from '../interfaces/backup-metadata.interface';
 import { GoogleDriveService } from './google-drive.service';
 
 import { User } from '../../users/entities/user.entity';
@@ -758,9 +758,10 @@ export class BackupService {
     }
   }
 
-  async previewBackup(backupId: string): Promise<BackupMetadata> {
+  async previewBackup(backupId: string): Promise<RestorePreview> {
     const backup = await this.historyRepo.findOne({
       where: { id: backupId },
+      relations: ['created_by'],
     });
 
     if (!backup) {
@@ -777,8 +778,114 @@ export class BackupService {
       backup.google_drive_file_id,
     );
     const backupData = await this.decompressBackup(buffer);
+    const entity_counts = backupData.metadata.entity_counts;
 
-    return backupData.metadata;
+    // Gather current DB counts for comparison
+    const current_counts: Record<string, number> = {};
+    const countMap: Array<{ key: string; repo: Repository<any> }> = [
+      { key: 'users', repo: this.userRepo },
+      { key: 'customers', repo: this.customerRepo },
+      { key: 'categories', repo: this.categoryRepo },
+      { key: 'items', repo: this.itemRepo },
+      { key: 'tables', repo: this.tableRepo },
+      { key: 'discounts', repo: this.discountRepo },
+      { key: 'expense_categories', repo: this.expenseCategoryRepo },
+      { key: 'expenses', repo: this.expensesRepo },
+      { key: 'orders', repo: this.orderRepo },
+      { key: 'order_items', repo: this.orderItemRepo },
+      { key: 'order_tokens', repo: this.orderTokenRepo },
+      { key: 'salaries', repo: this.salaryRepo },
+      { key: 'stuff_attendance', repo: this.attendanceRepo },
+      { key: 'leaves', repo: this.leaveRepo },
+      { key: 'kitchen_items', repo: this.kitchenItemsRepo },
+      { key: 'daily_reports', repo: this.dailyReportRepo },
+      { key: 'banks', repo: this.bankRepo },
+      { key: 'carts', repo: this.cartRepo },
+      { key: 'cart_items', repo: this.cartItemRepo },
+      { key: 'activities', repo: this.activityRepo },
+      { key: 'discount_applications', repo: this.discountApplicationRepo },
+    ];
+
+    for (const { key, repo } of countMap) {
+      if (key in entity_counts) {
+        try {
+          current_counts[key] = await repo.count();
+        } catch {
+          current_counts[key] = 0;
+        }
+      }
+    }
+
+    // Build warnings
+    const warnings: string[] = [];
+
+    const backupDate = new Date(backupData.metadata.created_at);
+    const ageDays = Math.floor(
+      (Date.now() - backupDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (ageDays > 7) {
+      warnings.push(
+        `This backup is ${ageDays} days old. Recent data created after the backup will be lost.`,
+      );
+    }
+
+    const currentTotal = Object.values(current_counts).reduce(
+      (sum, n) => sum + n,
+      0,
+    );
+    const backupTotal = backupData.metadata.total_records;
+    if (currentTotal > backupTotal) {
+      warnings.push(
+        `Current database has ${currentTotal.toLocaleString()} records. The backup has ${backupTotal.toLocaleString()} records. Restoring will reduce the total record count.`,
+      );
+    }
+
+    warnings.push(
+      'All current data will be permanently replaced with the backup data. This action cannot be undone.',
+    );
+
+    return {
+      backup: {
+        id: backup.id,
+        filename: backup.filename,
+        file_size: backup.file_size,
+        total_records: backup.total_records,
+        type: backup.type,
+        status: backup.status,
+        created_at: backup.created_at.toISOString(),
+        created_by: backup.created_by
+          ? {
+              first_name: backup.created_by.first_name,
+              last_name: backup.created_by.last_name,
+            }
+          : null,
+      },
+      entity_counts,
+      current_counts,
+      warnings,
+    };
+  }
+
+  async downloadBackupFile(
+    id: string,
+  ): Promise<{ buffer: Buffer; filename: string }> {
+    const backup = await this.historyRepo.findOne({ where: { id } });
+
+    if (!backup) {
+      throw new NotFoundException(`Backup with ID "${id}" not found`);
+    }
+
+    if (!backup.google_drive_file_id) {
+      throw new BadRequestException(
+        'Backup file is not available on Google Drive',
+      );
+    }
+
+    const buffer = await this.googleDriveService.downloadFile(
+      backup.google_drive_file_id,
+    );
+
+    return { buffer, filename: backup.filename };
   }
 
   async getHistory(
