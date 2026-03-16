@@ -52,6 +52,7 @@ export interface UsageCartItem {
   kitchen_item_name: string;
   quantity: number;
   unit: string;
+  unit_price: number;
 }
 
 export interface CreateKitchenStockInput {

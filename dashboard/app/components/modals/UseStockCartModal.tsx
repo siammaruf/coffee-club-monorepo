@@ -120,6 +120,7 @@ export default function UseStockCartModal({
   };
 
   const addToCart = (item: KitchenStockSummaryItem, batch: KitchenStockEntry) => {
+    const unit_price = batch.quantity > 0 ? batch.purchase_price / batch.quantity : 0;
     setCartItems((prev) => {
       const existing = prev.find((c) => c.kitchen_item_id === item.kitchen_item_id);
       if (existing) {
@@ -136,6 +137,7 @@ export default function UseStockCartModal({
           kitchen_item_name: item.name,
           quantity: 1,
           unit: batch.unit,
+          unit_price,
         },
       ];
     });
