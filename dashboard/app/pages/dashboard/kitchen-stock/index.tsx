@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import {
   AlertTriangle,
   Package,
@@ -8,6 +9,7 @@ import {
   Trash2,
   Edit,
   RefreshCw,
+  BarChart2,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -28,7 +30,6 @@ import { kitchenStockService } from "~/services/httpServices/kitchenStockService
 import type {
   KitchenStockEntry,
   KitchenStockSummaryItem,
-  KitchenStockListResponse,
   CreateKitchenStockInput,
   UpdateKitchenStockInput,
 } from "~/types/kitchenStock";
@@ -39,6 +40,7 @@ const WRITE_ROLES = ["admin", "manager", "chef"];
 type Tab = "entries" | "alerts";
 
 export default function KitchenStockPage() {
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const canWrite = user ? WRITE_ROLES.includes(user.role) : false;
 
@@ -76,9 +78,8 @@ export default function KitchenStockPage() {
     try {
       const params = { page, limit, ...(typeFilter && { type: typeFilter }), ...(startDate && { start_date: startDate }), ...(endDate && { end_date: endDate }) };
       const res = await kitchenStockService.getAll(params);
-      const result = (res as any)?.data as KitchenStockListResponse | undefined;
-      setEntries(result?.data || []);
-      setTotal(result?.total || 0);
+      setEntries((res as any)?.data || []);
+      setTotal((res as any)?.total || 0);
     } catch {
       setEntries([]);
     } finally {
@@ -164,15 +165,24 @@ export default function KitchenStockPage() {
           <h1 className="text-2xl font-bold">Stock Management</h1>
           <p className="text-sm text-gray-500 mt-0.5">Track kitchen and bar inventory purchases</p>
         </div>
-        {canWrite && (
+        <div className="flex gap-2">
           <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => setShowAdd(true)}
+            variant="outline"
+            onClick={() => navigate("/dashboard/reports/kitchen-stock")}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Stock Entry
+            <BarChart2 className="w-4 h-4 mr-2" />
+            View Report
           </Button>
-        )}
+          {canWrite && (
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setShowAdd(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Stock Entry
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

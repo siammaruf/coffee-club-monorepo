@@ -25,6 +25,7 @@ export const protectedRoutes = [
 
   route("reports/sales", "pages/dashboard/reports/sales.tsx"),
   route("reports/financial-summary", "pages/dashboard/reports/financialSummary.tsx"),
+  route("reports/kitchen-stock", "pages/dashboard/reports/kitchen-stock.tsx"),
 
   route("customers", "pages/dashboard/customers/index.tsx"),
   route("categories", "pages/dashboard/categories/index.tsx"),
