@@ -11,6 +11,7 @@ export interface KitchenItemForm{
   image: string;
   description: string;
   type: "KITCHEN" | "BAR";
+  low_stock_threshold?: number | null;
 };
 
 export interface KitchenItem {
@@ -21,6 +22,7 @@ export interface KitchenItem {
   image: string | null;
   description: string;
   type: string;
+  low_stock_threshold: number | null;
   created_at?: string;
   updated_at?: string;
 }

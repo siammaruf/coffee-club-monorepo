@@ -170,6 +170,10 @@ export default function Sidebar() {
                   <Utensils className="w-4 h-4 mr-2 text-gray-500" />
                   <span className="text-sm">Kitchen Items</span>
                 </Link>
+                <Link to="/dashboard/kitchen-stock" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                  <Package className="w-4 h-4 mr-2 text-gray-500" />
+                  <span className="text-sm">Stock Management</span>
+                </Link>
               </div>
             )}
           </div>

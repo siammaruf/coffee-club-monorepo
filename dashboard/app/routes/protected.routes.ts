@@ -31,6 +31,7 @@ export const protectedRoutes = [
   route("discounts", "pages/dashboard/discount/index.tsx"),
   route("expenses", "pages/dashboard/expenses/index.tsx"),
   route("kitchen-items", "pages/dashboard/kitchen-items/index.tsx"),
+  route("kitchen-stock", "pages/dashboard/kitchen-stock/index.tsx"),
   route("tokens", "pages/dashboard/tokens/index.tsx"),
   route("attendance", "pages/dashboard/attendance/index.tsx"),
   route("tables", "pages/dashboard/tables/index.tsx"),

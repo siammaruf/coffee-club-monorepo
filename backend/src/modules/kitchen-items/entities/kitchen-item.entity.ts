@@ -28,6 +28,9 @@ export class KitchenItems {
     })
     type: KitchenItemType;
 
+    @Column({ nullable: true, type: 'int' })
+    low_stock_threshold: number | null;
+
     @DeleteDateColumn()
     deleted_at: Date | null;
 
