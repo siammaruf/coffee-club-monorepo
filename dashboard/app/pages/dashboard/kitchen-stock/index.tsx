@@ -38,7 +38,7 @@ const WRITE_ROLES = ["admin", "manager", "chef"];
 
 type Tab = "entries" | "alerts";
 
-export const KitchenStockPage = () => {
+export default function KitchenStockPage() {
   const { user } = useSelector((state: RootState) => state.auth);
   const canWrite = user ? WRITE_ROLES.includes(user.role) : false;
 
@@ -76,7 +76,7 @@ export const KitchenStockPage = () => {
     try {
       const params = { page, limit, ...(typeFilter && { type: typeFilter }), ...(startDate && { start_date: startDate }), ...(endDate && { end_date: endDate }) };
       const res = await kitchenStockService.getAll(params);
-      const result = res as KitchenStockListResponse | undefined;
+      const result = (res as any)?.data as KitchenStockListResponse | undefined;
       setEntries(result?.data || []);
       setTotal(result?.total || 0);
     } catch {
