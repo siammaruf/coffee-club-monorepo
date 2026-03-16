@@ -31,3 +31,26 @@ export interface KitchenStockListResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface KitchenStockFilters {
+  page?: number;
+  limit?: number;
+  type?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface CreateKitchenStockInput {
+  kitchen_item_id: string;
+  quantity: number;
+  purchase_price: number;
+  purchase_date: string;
+  note?: string;
+}
+
+export interface UpdateKitchenStockInput {
+  quantity?: number;
+  purchase_price?: number;
+  purchase_date?: string;
+  note?: string;
+}

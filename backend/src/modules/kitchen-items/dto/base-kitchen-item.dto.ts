@@ -43,5 +43,5 @@ export class BaseKitchenItemDto {
   @IsInt()
   @Min(0)
   @IsOptional()
-  low_stock_threshold?: number;
+  low_stock_threshold?: number | null;
 }

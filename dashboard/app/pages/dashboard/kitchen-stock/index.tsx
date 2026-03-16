@@ -25,14 +25,20 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
-import type { KitchenStockEntry, KitchenStockSummaryItem } from "~/types/kitchenStock";
+import type {
+  KitchenStockEntry,
+  KitchenStockSummaryItem,
+  KitchenStockListResponse,
+  CreateKitchenStockInput,
+  UpdateKitchenStockInput,
+} from "~/types/kitchenStock";
 import type { RootState } from "~/redux/store/rootReducer";
 
 const WRITE_ROLES = ["admin", "manager", "chef"];
 
 type Tab = "entries" | "alerts";
 
-export default function KitchenStockPage() {
+export const KitchenStockPage = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const canWrite = user ? WRITE_ROLES.includes(user.role) : false;
 
@@ -68,12 +74,9 @@ export default function KitchenStockPage() {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const params: Record<string, any> = { page, limit };
-      if (typeFilter) params.type = typeFilter;
-      if (startDate) params.start_date = startDate;
-      if (endDate) params.end_date = endDate;
+      const params = { page, limit, ...(typeFilter && { type: typeFilter }), ...(startDate && { start_date: startDate }), ...(endDate && { end_date: endDate }) };
       const res = await kitchenStockService.getAll(params);
-      const result = (res as any)?.data;
+      const result = (res.data as KitchenStockListResponse | undefined);
       setEntries(result?.data || []);
       setTotal(result?.total || 0);
     } catch {
@@ -87,7 +90,7 @@ export default function KitchenStockPage() {
     setAlertsLoading(true);
     try {
       const res = await kitchenStockService.getLowStockAlerts();
-      setAlerts((res as any)?.data || []);
+      setAlerts((res.data as KitchenStockSummaryItem[] | undefined) || []);
     } catch {
       setAlerts([]);
     } finally {
@@ -111,13 +114,13 @@ export default function KitchenStockPage() {
       )
     : entries;
 
-  const handleCreate = async (data: Record<string, any>) => {
+  const handleCreate = async (data: CreateKitchenStockInput) => {
     await kitchenStockService.create(data);
     fetchEntries();
     if (activeTab === "alerts") fetchAlerts();
   };
 
-  const handleUpdate = async (id: string, data: Record<string, any>) => {
+  const handleUpdate = async (id: string, data: UpdateKitchenStockInput) => {
     await kitchenStockService.update(id, data);
     fetchEntries();
     if (activeTab === "alerts") fetchAlerts();

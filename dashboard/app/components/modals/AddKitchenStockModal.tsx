@@ -12,6 +12,7 @@ import { Button } from "~/components/ui/button";
 import { Select } from "~/components/ui/select";
 import { kitchenItemsService } from "~/services/httpServices/kitchenItemsService";
 import type { KitchenItem } from "~/types/kitchenItem";
+import type { CreateKitchenStockInput } from "~/types/kitchenStock";
 
 interface StockForm {
   kitchen_item_id: string;
@@ -25,7 +26,7 @@ interface AddKitchenStockModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onCreate: (data: Record<string, any>) => Promise<any>;
+  onCreate: (data: CreateKitchenStockInput) => Promise<void>;
 }
 
 export default function AddKitchenStockModal({
