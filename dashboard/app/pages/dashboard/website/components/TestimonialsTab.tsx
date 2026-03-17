@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { websiteContentService } from "~/services/httpServices/websiteContentService";
 import type { Testimonial } from "~/services/httpServices/websiteContentService";
 import { toast } from "sonner";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import TestimonialModal from "./TestimonialModal";
 
 export default function TestimonialsTab() {
@@ -16,6 +19,20 @@ export default function TestimonialsTab() {
   const [editItem, setEditItem] = useState<Testimonial | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => websiteContentService.deleteTestimonial(id)));
+      setItems(prev => prev.filter(t => !selectedIds.has(t.id)));
+      clearSelection();
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   const fetchItems = async () => {
     setIsLoading(true);
@@ -95,12 +112,24 @@ export default function TestimonialsTab() {
           <CardTitle>Testimonials ({items.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            loading={bulkLoading}
+          />
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading testimonials...</div>
           ) : (
             <div className="rounded-md border">
               <div className="p-4 bg-muted/50">
-                <div className="grid grid-cols-7 font-medium text-sm">
+                <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr_1fr_1fr] font-medium text-sm">
+                  <div className="flex items-center pr-3">
+                    <Checkbox
+                      checked={isAllSelected(items.map(t => t.id))}
+                      onChange={() => toggleSelectAll(items.map(t => t.id))}
+                    />
+                  </div>
                   <div className="text-left">Order</div>
                   <div className="text-left">Image</div>
                   <div className="text-left">Name</div>
@@ -116,7 +145,13 @@ export default function TestimonialsTab() {
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .map((item) => (
                       <div key={item.id} className="p-4 hover:bg-muted/50">
-                        <div className="grid grid-cols-7 text-sm items-center">
+                        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr_1fr_1fr] text-sm items-center">
+                          <div className="flex items-center pr-3">
+                            <Checkbox
+                              checked={isSelected(item.id)}
+                              onChange={() => toggleSelect(item.id)}
+                            />
+                          </div>
                           <div className="text-left">{item.sort_order}</div>
                           <div className="text-left">
                             {item.image ? (

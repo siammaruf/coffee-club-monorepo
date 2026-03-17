@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { websiteContentService } from "~/services/httpServices/websiteContentService";
 import type { HeroSlide } from "~/services/httpServices/websiteContentService";
 import { toast } from "sonner";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import HeroSlideModal from "./HeroSlideModal";
 
 export default function HeroSlidesTab() {
@@ -16,6 +19,20 @@ export default function HeroSlidesTab() {
   const [editSlide, setEditSlide] = useState<HeroSlide | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => websiteContentService.deleteHeroSlide(id)));
+      setSlides(prev => prev.filter(s => !selectedIds.has(s.id)));
+      clearSelection();
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   const fetchSlides = async () => {
     setIsLoading(true);
@@ -95,12 +112,24 @@ export default function HeroSlidesTab() {
           <CardTitle>Slides ({slides.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onDelete={handleBulkDelete}
+            onClearSelection={clearSelection}
+            loading={bulkLoading}
+          />
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading slides...</div>
           ) : (
             <div className="rounded-md border">
               <div className="p-4 bg-muted/50">
-                <div className="grid grid-cols-6 font-medium text-sm">
+                <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr_1fr] font-medium text-sm">
+                  <div className="flex items-center pr-3">
+                    <Checkbox
+                      checked={isAllSelected(slides.map(s => s.id))}
+                      onChange={() => toggleSelectAll(slides.map(s => s.id))}
+                    />
+                  </div>
                   <div className="text-left">Order</div>
                   <div className="text-left">Image</div>
                   <div className="text-left">Title</div>
@@ -115,7 +144,13 @@ export default function HeroSlidesTab() {
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .map((slide) => (
                       <div key={slide.id} className="p-4 hover:bg-muted/50">
-                        <div className="grid grid-cols-6 text-sm items-center">
+                        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_1fr_1fr] text-sm items-center">
+                          <div className="flex items-center pr-3">
+                            <Checkbox
+                              checked={isSelected(slide.id)}
+                              onChange={() => toggleSelect(slide.id)}
+                            />
+                          </div>
                           <div className="text-left">{slide.sort_order}</div>
                           <div className="text-left">
                             {slide.image ? (
