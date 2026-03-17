@@ -30,6 +30,7 @@ import { WebsiteContentModule } from 'src/modules/website-content/website-conten
 import { ContactMessagesModule } from 'src/modules/contact-messages/contact-messages.module';
 import { KitchenReportsModule } from 'src/modules/kitchen-reports/kitchen-reports.module';
 import { KitchenStockModule } from 'src/modules/kitchen-stock/kitchen-stock.module';
+import { PermissionsModule } from 'src/modules/permissions/permissions.module';
 
 export const featureModules = [
     UserModule,
@@ -64,4 +65,5 @@ export const featureModules = [
     ContactMessagesModule,
     KitchenReportsModule,
     KitchenStockModule,
+    PermissionsModule,
 ];

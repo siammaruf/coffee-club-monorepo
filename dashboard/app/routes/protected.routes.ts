@@ -45,4 +45,5 @@ export const protectedRoutes = [
   route("reservations", "pages/dashboard/reservations/index.tsx"),
   route("contact-messages", "pages/dashboard/contact-messages/index.tsx"),
   route("partners", "pages/dashboard/partners/index.tsx"),
+  route("settings/roles-permissions", "pages/dashboard/settings/roles-permissions.tsx"),
 ];
