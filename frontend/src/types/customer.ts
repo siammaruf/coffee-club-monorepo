@@ -2,6 +2,7 @@ export interface Customer {
   id: string
   name: string
   phone: string
+  phone_verified?: boolean
   email?: string
   address?: string
   picture?: string

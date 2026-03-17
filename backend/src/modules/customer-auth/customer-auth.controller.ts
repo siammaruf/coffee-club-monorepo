@@ -27,6 +27,8 @@ import { CustomerVerifyOtpDto } from './dto/customer-verify-otp.dto';
 import { CustomerResetPasswordDto } from './dto/customer-reset-password.dto';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
 import { ChangeCustomerPasswordDto } from './dto/change-customer-password.dto';
+import { SendCustomerPhoneOtpDto } from './dto/send-customer-phone-otp.dto';
+import { VerifyCustomerPhoneOtpDto } from './dto/verify-customer-phone-otp.dto';
 import { Customer } from '../customers/entities/customer.entity';
 
 @ApiTags('Customer Auth')
@@ -220,6 +222,46 @@ export class CustomerAuthController {
     return {
       status: 'success',
       message: 'Password changed successfully',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Post('profile/send-phone-otp')
+  @UseGuards(CustomerJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send OTP to phone number for verification' })
+  @ApiBody({ type: SendCustomerPhoneOtpDto })
+  async sendPhoneOtp(
+    @CurrentCustomer() customer: Customer,
+    @Body() dto: SendCustomerPhoneOtpDto,
+  ) {
+    const result = await this.customerAuthService.sendPhoneVerificationOtp(customer.id, dto.phone);
+
+    return {
+      status: 'success',
+      message: result.message,
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Post('profile/verify-phone-otp')
+  @UseGuards(CustomerJwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP and update phone number' })
+  @ApiBody({ type: VerifyCustomerPhoneOtpDto })
+  async verifyPhoneOtp(
+    @CurrentCustomer() customer: Customer,
+    @Body() dto: VerifyCustomerPhoneOtpDto,
+  ) {
+    const result = await this.customerAuthService.verifyPhoneOtp(customer.id, dto.phone, dto.otp);
+
+    if (!result.success) {
+      throw new BadRequestException(result.message);
+    }
+
+    return {
+      status: 'success',
+      message: result.message,
       statusCode: HttpStatus.OK,
     };
   }

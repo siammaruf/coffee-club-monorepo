@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
-import { Provider, useDispatch } from 'react-redux'
+import { Provider, useSelector, useDispatch } from 'react-redux'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { store } from './redux/store/store'
+import type { RootState, AppDispatch } from './redux/store/store'
 import { queryClient } from './lib/queryClient'
-import { hydrateCart } from './redux/features/cartSlice'
+import { hydrateCart, fetchServerCart } from './redux/features/cartSlice'
 import './index.css'
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -60,9 +61,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
+  const { isAuthenticated, initialized } = useSelector((s: RootState) => s.auth)
+
+  // Once auth check settles (via useAuth hook in components), load the right cart source
   useEffect(() => {
-    dispatch(hydrateCart())
-  }, [dispatch])
+    if (!initialized) return
+    if (isAuthenticated) {
+      dispatch(fetchServerCart())
+    } else {
+      dispatch(hydrateCart())
+    }
+  }, [dispatch, initialized, isAuthenticated])
+
   return <Outlet />
 }

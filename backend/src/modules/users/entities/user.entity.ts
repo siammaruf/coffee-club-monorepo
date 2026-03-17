@@ -55,6 +55,9 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ default: false })
+  phone_verified: boolean;
+
   @Column({nullable: true})
   picture: string;
 

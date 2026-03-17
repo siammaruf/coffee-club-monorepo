@@ -63,7 +63,7 @@ export class CustomerAuthService {
     const savedCustomer = await this.customerRepository.save(customer);
 
     // Remove sensitive fields before returning
-    const { password, refresh_token, otp, ...result } = savedCustomer;
+    const { password, refresh_token, otp, otp_expires_at, otp_sent_at, ...result } = savedCustomer;
     return result as Customer;
   }
 
@@ -256,7 +256,7 @@ export class CustomerAuthService {
       throw new NotFoundException('Customer not found');
     }
 
-    const { password, refresh_token, otp, otp_expires_at, ...profile } = customer;
+    const { password, refresh_token, otp, otp_expires_at, otp_sent_at, ...profile } = customer;
     return profile;
   }
 
@@ -299,7 +299,7 @@ export class CustomerAuthService {
 
     const updatedCustomer = await this.customerRepository.save(customer);
 
-    const { password, refresh_token, otp, otp_expires_at, ...profile } = updatedCustomer;
+    const { password, refresh_token, otp, otp_expires_at, otp_sent_at, ...profile } = updatedCustomer;
     return profile;
   }
 
@@ -327,7 +327,7 @@ export class CustomerAuthService {
     customer.picture = uploadResult.secure_url;
     const updatedCustomer = await this.customerRepository.save(customer);
 
-    const { password, refresh_token, otp, otp_expires_at, ...profile } = updatedCustomer;
+    const { password, refresh_token, otp, otp_expires_at, otp_sent_at, ...profile } = updatedCustomer;
     return profile;
   }
 
@@ -353,6 +353,67 @@ export class CustomerAuthService {
 
     customer.password = await this.encryptPassword(newPassword);
     await this.customerRepository.save(customer);
+  }
+
+  async sendPhoneVerificationOtp(
+    customerId: string,
+    newPhone: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const existing = await this.customerRepository.findOne({ where: { phone: newPhone } });
+    if (existing && existing.id !== customerId) {
+      throw new ConflictException('Phone number is already in use');
+    }
+
+    const customer = await this.customerRepository.findOne({ where: { id: customerId } });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    if (customer.otp_sent_at) {
+      const elapsed = Date.now() - customer.otp_sent_at.getTime();
+      if (elapsed < 60_000) {
+        const remaining = Math.ceil((60_000 - elapsed) / 1000);
+        throw new BadRequestException(
+          `Please wait ${remaining} seconds before requesting a new OTP`,
+        );
+      }
+    }
+
+    const otp = this.generateOtp();
+    const otpExpiresAt = new Date(Date.now() + 5 * 60_000);
+
+    customer.otp = otp;
+    customer.otp_expires_at = otpExpiresAt;
+    customer.otp_sent_at = new Date();
+    await this.customerRepository.save(customer);
+
+    await this.smsService.sendOtpSms(newPhone, otp);
+
+    return { success: true, message: 'OTP sent to your phone number' };
+  }
+
+  async verifyPhoneOtp(
+    customerId: string,
+    newPhone: string,
+    otp: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const customer = await this.customerRepository.findOne({ where: { id: customerId } });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    if (!customer.otp || customer.otp !== otp) {
+      return { success: false, message: 'Invalid OTP' };
+    }
+
+    if (!customer.otp_expires_at || new Date() > customer.otp_expires_at) {
+      return { success: false, message: 'OTP has expired' };
+    }
+
+    customer.phone = newPhone;
+    customer.phone_verified = true;
+    customer.otp = null;
+    customer.otp_expires_at = null;
+    customer.otp_sent_at = null;
+    await this.customerRepository.save(customer);
+
+    return { success: true, message: 'Phone number verified and updated successfully' };
   }
 
   async logout(customerId: string): Promise<void> {

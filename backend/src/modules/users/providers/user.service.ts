@@ -214,6 +214,19 @@ export class UserService {
             }
         }
 
+        if (userData.phone && userData.phone !== user.phone) {
+            const existingPhone = await this.userRepository.findOne({
+                where: { phone: userData.phone }
+            });
+            if (existingPhone) {
+                throw new ConflictException({
+                    status: 'error',
+                    message: 'Phone number is already in use',
+                    statusCode: HttpStatus.CONFLICT
+                });
+            }
+        }
+
         if (userData.password) {
             userData.password = await this.encryptPassword(userData.password);
         }
@@ -440,6 +453,56 @@ export class UserService {
         }
 
         return user;
+    }
+
+    async sendPhoneVerificationOtp(userId: string, newPhone: string): Promise<{ success: boolean; message: string }> {
+        const existingPhone = await this.userRepository.findOne({ where: { phone: newPhone } });
+        if (existingPhone && existingPhone.id !== userId) {
+            throw new ConflictException({
+                status: 'error',
+                message: 'Phone number is already in use',
+                statusCode: HttpStatus.CONFLICT
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+
+        const otpToken = this.passwordResetTokenRepository.create({
+            userId,
+            token: otp,
+            expiresAt,
+            used: false,
+            isOtp: true,
+        });
+        await this.passwordResetTokenRepository.save(otpToken);
+        await this.smsService.sendOtpSms(newPhone, otp);
+
+        return { success: true, message: 'OTP sent to your phone number' };
+    }
+
+    async verifyPhoneOtp(userId: string, newPhone: string, otp: string): Promise<{ success: boolean; message: string }> {
+        const otpToken = await this.passwordResetTokenRepository.findOne({
+            where: { userId, token: otp, isOtp: true, used: false },
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!otpToken) {
+            return { success: false, message: 'Invalid OTP' };
+        }
+
+        if (new Date() > otpToken.expiresAt) {
+            return { success: false, message: 'OTP has expired' };
+        }
+
+        otpToken.used = true;
+        await this.passwordResetTokenRepository.save(otpToken);
+
+        await this.userRepository.update(userId, { phone: newPhone, phone_verified: true });
+        await this.invalidateCache();
+
+        return { success: true, message: 'Phone number verified and updated successfully' };
     }
 
     async updatePassword(userId: string, hashedPassword: string): Promise<void> {

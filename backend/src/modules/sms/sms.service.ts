@@ -1,26 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import axios from 'axios';
+import { SmsLog } from './entities/sms-log.entity';
+import { SmsLogStatus } from './enum/sms-log-status.enum';
 
 @Injectable()
 export class SmsService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(SmsLog)
+    private readonly smsLogRepository: Repository<SmsLog>,
+  ) {}
 
   async sendSms(phoneNumber: string, message: string): Promise<boolean> {
+    const formattedNumber = phoneNumber.startsWith('+')
+      ? phoneNumber.substring(1)
+      : phoneNumber;
+
     try {
-      const formattedNumber = phoneNumber.startsWith('+') 
-        ? phoneNumber.substring(1) 
-        : phoneNumber;
-      
       const apiKey = this.configService.get<string>('SMS_API_KEY', '');
       const senderId = this.configService.get<string>('SMS_SENDER_ID', '');
       const url = `http://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedNumber}&senderid=${senderId}&message=${encodeURIComponent(message)}`;
       const response = await axios.get(url);
       console.log('SMS API Response:', response.data);
-      
+
+      await this.smsLogRepository
+        .save(this.smsLogRepository.create({ phone: formattedNumber, message, status: SmsLogStatus.SENT }))
+        .catch(() => {});
+
       return true;
     } catch (error) {
       console.error('Error sending SMS:', error);
+
+      await this.smsLogRepository
+        .save(this.smsLogRepository.create({
+          phone: formattedNumber,
+          message,
+          status: SmsLogStatus.FAILED,
+          error: error?.message ?? String(error),
+        }))
+        .catch(() => {});
+
       return false;
     }
   }

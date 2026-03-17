@@ -14,6 +14,7 @@ export interface User {
   last_name: string;
   email: string;
   phone: string;
+  phone_verified?: boolean;
   nid_number: string;
   nid_front_picture: string;
   nid_back_picture: string;

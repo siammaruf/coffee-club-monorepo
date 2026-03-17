@@ -67,6 +67,10 @@ export class BaseUserDto {
   @IsString()
   picture?: string;
 
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  phone_verified?: boolean;
+
   @ApiProperty({ 
     required: false, 
     type: Number,

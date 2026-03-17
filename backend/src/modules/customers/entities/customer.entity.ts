@@ -46,6 +46,12 @@ export class Customer {
     @Column({ nullable: true, type: 'timestamp' })
     otp_expires_at: Date | null;
 
+    @Column({ nullable: true, type: 'timestamp' })
+    otp_sent_at: Date | null;
+
+    @Column({ type: 'boolean', default: false })
+    phone_verified: boolean;
+
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, nullable: true })
     points: number;
 
