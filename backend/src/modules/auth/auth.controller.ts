@@ -12,13 +12,15 @@ import { UserResponseDto } from '../users/dto/user-response.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { NewUserPasswordDto } from './dto/new-user-password.dto';
 import { CacheService } from '../cache/cache.service';
+import { PermissionsService } from '../permissions/providers/permissions.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private readonly cacheService: CacheService
+    private readonly cacheService: CacheService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   @Public()
@@ -199,19 +201,20 @@ export class AuthController {
     }
 
     const cacheKey = `user:${user.id}`;
-    let cachedUser = await this.cacheService.get<UserResponseDto>(cacheKey);
+    let cachedUser = await this.cacheService.get<Record<string, unknown>>(cacheKey);
 
     if (!cachedUser) {
-      cachedUser = user;
+      const permissions = await this.permissionsService.getPermissionsForRole(user.role);
+      const { password, ...userWithoutPassword } = user as any;
+      cachedUser = { ...userWithoutPassword, permissions };
       await this.cacheService.set(cacheKey, cachedUser, 3600 * 1000);
     }
 
-    const { password, ...userWithoutPassword } = user as any;
     return {
       status: 'success',
       message: 'User information retrieved successfully',
       statusCode: HttpStatus.OK,
-      data: userWithoutPassword
+      data: cachedUser
     };
   }
 

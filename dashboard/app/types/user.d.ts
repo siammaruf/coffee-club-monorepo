@@ -22,6 +22,7 @@ export interface User {
   date_joined: string;
   status: string;
   role: UserRole;
+  permissions?: string[];
   picture: string;
   base_salary: number;
   created_at: string;
