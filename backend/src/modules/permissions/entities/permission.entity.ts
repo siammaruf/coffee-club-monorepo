@@ -22,7 +22,7 @@ export class Permission {
   @Column()
   action: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   description: string | null;
 
   @CreateDateColumn()
