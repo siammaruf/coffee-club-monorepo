@@ -9,6 +9,7 @@ import { OrderTokensModule } from '../order-tokens/order-tokens.module';
 import { Discount } from '../discount/entities/discount.entity';
 import { CustomerModule } from '../customers/customer.module';
 import { CacheModule } from '../cache/cache.module';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CacheModule } from '../cache/cache.module';
     OrderTokensModule,
     CustomerModule,
     CacheModule,
+    SmsModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

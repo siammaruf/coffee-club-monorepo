@@ -1,4 +1,4 @@
-import { get, put } from '../httpMethods'
+import { get, put, post } from '../httpMethods'
 import httpService from '../httpService'
 import type { Customer, UpdateProfilePayload, ChangePasswordPayload } from '@/types/customer'
 
@@ -14,6 +14,14 @@ export const profileService = {
   /** PUT /customer-auth/profile/password -- change password */
   changePassword: (payload: ChangePasswordPayload) =>
     put<{ message: string }>('/customer-auth/profile/password', payload),
+
+  /** POST /customer-auth/profile/send-phone-otp -- send OTP to a new phone number */
+  sendPhoneOtp: (phone: string) =>
+    post<{ message: string }>('/customer-auth/profile/send-phone-otp', { phone }),
+
+  /** POST /customer-auth/profile/verify-phone-otp -- verify OTP and update phone */
+  verifyPhoneOtp: (phone: string, otp: string) =>
+    post<{ message: string }>('/customer-auth/profile/verify-phone-otp', { phone, otp }),
 
   /** PUT /customer-auth/profile/picture with multipart form data for picture upload */
   uploadPicture: async (file: File): Promise<Customer> => {

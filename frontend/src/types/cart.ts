@@ -9,7 +9,7 @@ export interface CartItemResponse {
     name_bn: string
     image: string
     regular_price: number
-    sale_price: number
+    sale_price: number | null
   }
   quantity: number
   special_notes: string | null
