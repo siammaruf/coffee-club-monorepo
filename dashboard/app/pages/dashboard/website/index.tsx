@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import {
   Image,
   Award,
@@ -26,7 +26,10 @@ const tabs: { id: TabId; label: string; icon: typeof Image }[] = [
 ];
 
 export default function WebsiteManagementPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("hero");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const rawTab = new URLSearchParams(location.search).get("tab");
+  const activeTab: TabId = (tabs.some(t => t.id === rawTab) ? rawTab : "hero") as TabId;
 
   return (
     <div className="p-6 space-y-6">
@@ -43,7 +46,7 @@ export default function WebsiteManagementPage() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => navigate(`/dashboard/website?tab=${tab.id}`, { replace: true })}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-yellow-500 text-yellow-600 font-medium"
