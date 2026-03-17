@@ -222,6 +222,14 @@ export default function RolesPermissionsPage() {
                     <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
                   ))}
                 </div>
+              ) : resources.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <ShieldCheck className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No permissions found</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    Run <code className="bg-muted px-1 rounded">npm run seed:permissions</code> on the server to populate permissions.
+                  </p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {resources.map((resource) => {
