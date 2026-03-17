@@ -17,6 +17,7 @@ import { TableStatus } from 'src/modules/table/enum/table-status.enum';
 import { CustomerService } from 'src/modules/customers/providers/customer.service';
 import { TokenType } from '../../order-tokens/enum/TokenType.enum';
 import { CacheService } from 'src/modules/cache/cache.service';
+import { SmsService } from '../../sms/sms.service';
 
 @Injectable()
 export class OrderService {
@@ -29,7 +30,23 @@ export class OrderService {
     private readonly orderTokensService: OrderTokensService,
     private readonly customerService: CustomerService,
     private readonly cacheService: CacheService,
+    private readonly smsService: SmsService,
   ) {}
+
+  private formatOrderCompletionSms(order: Order): string {
+    const date = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    const total = `${Number(order.total_amount).toFixed(0)} Tk`;
+    const discount = Number(order.discount_amount) || 0;
+
+    if (discount > 0) {
+      return `Order #${order.order_id}\nTotal: ${total} (Disc: ${discount.toFixed(0)} Tk)\n${date}\nThanks - Coffee Club`;
+    }
+    return `Order #${order.order_id}\nTotal: ${total}\n${date}\nThanks - Coffee Club`;
+  }
 
   private calculateDiscountAmount(totalAmount: number, discount: any): number {
     if (!discount) return 0;
@@ -282,7 +299,17 @@ export class OrderService {
         console.error('Failed to process customer points:', error);
       }
     }
-    
+
+    if (updatedOrder.status === OrderStatus.COMPLETED && previousStatus !== OrderStatus.COMPLETED) {
+      const phoneTarget = updatedOrder.customer_phone || updatedOrder.customer?.phone;
+      if (phoneTarget) {
+        const message = this.formatOrderCompletionSms(updatedOrder);
+        this.smsService.sendSms(phoneTarget, message).catch((err) =>
+          console.error('Order completion SMS failed:', err),
+        );
+      }
+    }
+
     await this.invalidateCache();
     return updatedOrder;
   }

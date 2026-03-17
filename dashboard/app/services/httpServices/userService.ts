@@ -26,6 +26,16 @@ export const userService = {
     httpService.patch(`/users/${id}/profile-picture`, formData, {
       headers: { "Content-Type": "multipart/form-data" }
     }),
+  sendPhoneOtp: (phone: string) =>
+    httpService.post('/users/profile/send-phone-otp', { phone }),
+  verifyPhoneOtp: (phone: string, otp: string) =>
+    httpService.post('/users/profile/verify-phone-otp', { phone, otp }),
+  updateKyc: (data: { nid_number?: string; address?: string }) =>
+    httpService.patch('/users/profile/kyc', data),
+  updateNidImages: (formData: FormData) =>
+    httpService.patch('/users/profile/nid-images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   bulkDelete: (ids: string[]) => httpService.delete('/users/bulk/delete', { data: { ids } }),
   getTrash: (params?: Record<string, any>) => httpService.get('/users/trash/list', params ? { params } : undefined),
   restore: (id: string) => httpService.patch(`/users/${id}/restore`),

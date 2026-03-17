@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber, ValidateIf } from 'class-validator';
 import { CustomerType } from '../enum/customer-type.enum';
 
 export class BaseCustomerDto {
@@ -46,7 +46,16 @@ export class BaseCustomerDto {
     @IsOptional()
     customer_type?: CustomerType;
 
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
+        type: Boolean,
+        description: 'Whether the phone number has been verified via OTP',
+        default: false,
+    })
+    @IsBoolean()
+    @IsOptional()
+    phone_verified?: boolean;
+
+    @ApiPropertyOptional({
         type: Number,
         description: 'Customer loyalty points',
         default: 0
