@@ -11,10 +11,12 @@ import { EmailModule } from '../email/email.module';
 import { SmsModule } from '../sms/sms.module';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { CacheModule } from '../cache/cache.module';
+import { PermissionsModule } from '../permissions/permissions.module';
 
 @Module({
   imports: [
     UserModule,
+    PermissionsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
