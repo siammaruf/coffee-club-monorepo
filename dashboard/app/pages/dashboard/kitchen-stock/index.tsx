@@ -24,10 +24,13 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import { Select } from "../../../components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { BulkActionBar } from "~/components/common/BulkActionBar";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
+import { useTableSelection } from "~/hooks/useTableSelection";
 import type {
   KitchenStockEntry,
   KitchenStockSummaryItem,
@@ -75,7 +78,23 @@ export default function KitchenStockPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Bulk selection
+  const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => kitchenStockService.delete(id)));
+      clearSelection();
+      fetchEntries();
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const fetchEntries = async () => {
+    clearSelection();
     setLoading(true);
     try {
       const params = {
@@ -262,7 +281,7 @@ export default function KitchenStockPage() {
               <Select
                 className="w-36"
                 value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                onChange={(e) => { setTypeFilter(e.target.value); setPage(1); clearSelection(); }}
               >
                 <option value="">All Types</option>
                 <option value="KITCHEN">Kitchen</option>
@@ -271,7 +290,7 @@ export default function KitchenStockPage() {
               <Select
                 className="w-36"
                 value={entryTypeFilter}
-                onChange={(e) => { setEntryTypeFilter(e.target.value); setPage(1); }}
+                onChange={(e) => { setEntryTypeFilter(e.target.value); setPage(1); clearSelection(); }}
               >
                 <option value="">All Entries</option>
                 <option value="PURCHASE">Purchases</option>
@@ -281,14 +300,14 @@ export default function KitchenStockPage() {
                 type="date"
                 className="w-36"
                 value={startDate}
-                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1); clearSelection(); }}
                 placeholder="From date"
               />
               <Input
                 type="date"
                 className="w-36"
                 value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1); clearSelection(); }}
                 placeholder="To date"
               />
               <Button variant="outline" size="sm" onClick={fetchEntries} title="Refresh">
@@ -297,6 +316,14 @@ export default function KitchenStockPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {canWrite && (
+              <BulkActionBar
+                selectedCount={selectedCount}
+                onDelete={handleBulkDelete}
+                onClearSelection={clearSelection}
+                loading={bulkLoading}
+              />
+            )}
             {loading ? (
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -322,6 +349,14 @@ export default function KitchenStockPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {canWrite && (
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={isAllSelected(filteredEntries.map(e => e.id))}
+                            onChange={() => toggleSelectAll(filteredEntries.map(e => e.id))}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Item</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Entry</TableHead>
@@ -335,6 +370,14 @@ export default function KitchenStockPage() {
                   <TableBody>
                     {filteredEntries.map((entry) => (
                       <TableRow key={entry.id} className={entry.entry_type === "USAGE" ? "bg-amber-50" : ""}>
+                        {canWrite && (
+                          <TableCell>
+                            <Checkbox
+                              checked={isSelected(entry.id)}
+                              onChange={() => toggleSelect(entry.id)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">
                           {entry.kitchen_item?.name || "—"}
                         </TableCell>
