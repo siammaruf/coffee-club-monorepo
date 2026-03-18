@@ -47,6 +47,9 @@ export class AuthController {
       refresh_token: string;
     };
     const result: LoginResult = await this.authService.login(username, password, rememberMe);
+    // Bust stale Redis cache so /auth/me returns fresh role + permissions on next call
+    await this.cacheService.delete(`user:${result.user.id}`);
+    await this.cacheService.delete(`permissions:role:${result.user.role}`);
     this.setCookies(response, result.access_token, result.refresh_token, rememberMe);
 
     return {
