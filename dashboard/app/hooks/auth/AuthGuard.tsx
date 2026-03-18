@@ -18,8 +18,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
       await dispatch(checkAuthStatus());
       setInitialCheckDone(true);
     };
-    
+
     checkAuth();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        dispatch(checkAuthStatus());
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [dispatch]);
 
   useEffect(() => {
