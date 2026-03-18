@@ -39,10 +39,10 @@ export class CacheService {
         return;
       }
 
-      // Build the full Redis key pattern including Keyv namespace prefix
+      // Build the full Redis key pattern matching @keyv/redis v5 storage format: {namespace}:{key}
       const fullPattern = this.redisPrefix
-        ? `keyv:${this.redisPrefix}:${pattern}`
-        : `keyv:${pattern}`;
+        ? `${this.redisPrefix}:${pattern}`
+        : pattern;
 
       let cursor = '0';
       let deletedCount = 0;
