@@ -10,13 +10,13 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserStatus } from './enum/user-status.enum';
 import { UserRole } from './enum/user-role.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('users')
-@Roles(UserRole.ADMIN)
 export class UserController {
     constructor(
         private readonly userService: UserService,
@@ -24,6 +24,7 @@ export class UserController {
     ) {}
 
     @Post()
+    @RequirePermission('employees.create')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Create a new user with optional file uploads' })
     @ApiResponse({
@@ -122,6 +123,7 @@ export class UserController {
     }
 
     @Delete('bulk/delete')
+    @RequirePermission('employees.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.userService.bulkSoftDelete(body.ids);
@@ -133,6 +135,7 @@ export class UserController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.userService.bulkRestore(body.ids);
@@ -144,6 +147,7 @@ export class UserController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('employees.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.userService.bulkPermanentDelete(body.ids);
@@ -158,6 +162,7 @@ export class UserController {
     }
 
     @Get('trash/list')
+    @RequirePermission('employees.view')
     @ApiOperation({ summary: 'List trashed records' })
     async findTrashed(
         @Query('page') page?: string,
@@ -181,6 +186,7 @@ export class UserController {
 
 
     @Get()
+    @RequirePermission('employees.view')
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ 
         status: 200, 
@@ -265,6 +271,7 @@ export class UserController {
     }
 
     @Get(':id')
+    @RequirePermission('employees.view')
     @ApiOperation({ summary: 'Find user by ID' })
     @ApiResponse({ 
         status: 200, 
@@ -303,6 +310,7 @@ export class UserController {
     }
 
     @Get('email/:email')
+    @RequirePermission('employees.view')
     @ApiOperation({ summary: 'Find user by email' })
     @ApiResponse({ 
         status: 200, 
@@ -338,6 +346,7 @@ export class UserController {
     }
 
     @Patch(':id')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Update user with optional file uploads' })
     @ApiResponse({ 
         status: 200, 
@@ -425,6 +434,7 @@ export class UserController {
     }
 
     @Patch(':id/picture')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Update user picture' })
     @ApiResponse({ 
         status: 200, 
@@ -491,6 +501,7 @@ export class UserController {
     }
 
     @Patch(':id/nid-pictures')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Update user NID pictures' })
     @ApiResponse({ 
         status: 200, 
@@ -575,6 +586,7 @@ export class UserController {
     }
 
     @Patch(':id/deactivate')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Deactivate user' })
     @ApiResponse({ 
         status: 200, 
@@ -607,6 +619,7 @@ export class UserController {
     }
 
     @Patch(':id/activate')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Activate user' })
     @ApiResponse({ 
         status: 200, 
@@ -620,6 +633,7 @@ export class UserController {
     }
 
     @Post(':id/resend-password-reset')
+    @RequirePermission('employees.edit')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Resend password reset email to user' })
     @ApiResponse({ 
@@ -654,6 +668,7 @@ export class UserController {
     }
 
     @Patch(':id/change-password')
+    @RequirePermission('employees.edit')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Change user password' })
     @ApiResponse({
@@ -693,6 +708,7 @@ export class UserController {
     }
 
     @Patch(':id/profile-picture')
+    @RequirePermission('employees.edit')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Update user profile picture' })
     @ApiConsumes('multipart/form-data')
@@ -754,6 +770,7 @@ export class UserController {
     }
 
     @Patch(':id/restore')
+    @RequirePermission('employees.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.userService.restore(id);
@@ -765,6 +782,7 @@ export class UserController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('employees.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.userService.permanentDelete(id);
