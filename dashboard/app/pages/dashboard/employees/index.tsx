@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Link, useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -253,6 +254,7 @@ export default function Employees() {
   }
 
   return (
+    <PermissionGuard permission="employees.view">
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -485,5 +487,6 @@ export default function Employees() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }

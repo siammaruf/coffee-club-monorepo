@@ -1,4 +1,5 @@
 import  { useEffect, useState } from 'react';
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate } from 'react-router';
 import { useBackToList } from '~/hooks/useBackToList';
 import { useSelector } from 'react-redux';
@@ -226,6 +227,7 @@ export default function EmployeeDetails() {
   const isActive = user.status === 'active';
 
   return (
+    <PermissionGuard permission="employees.view">
     <>
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
@@ -471,5 +473,6 @@ export default function EmployeeDetails() {
         autoCloseDelay={statusDialog.autoCloseDelay}
       />
     </>
+    </PermissionGuard>
   );
 }

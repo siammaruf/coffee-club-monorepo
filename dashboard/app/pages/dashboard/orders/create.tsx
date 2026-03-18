@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -199,6 +200,7 @@ export default function CreateOrderPage() {
   };
 
   return (
+    <PermissionGuard permission="orders.create">
     <div className="p-6 max-w-6xl mx-auto">
       <Card className="border border-gray-200 bg-white">
         <CardHeader>
@@ -479,5 +481,6 @@ export default function CreateOrderPage() {
         onCancel={() => setStatusDialog({ ...statusDialog, open: false })}
       />
     </div>
+    </PermissionGuard>
   );
 }

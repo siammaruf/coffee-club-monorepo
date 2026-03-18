@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate } from "react-router";
 import { useBackToList } from "~/hooks/useBackToList";
 import { Button } from "~/components/ui/button";
@@ -196,6 +197,7 @@ export default function OrderDetailsPage() {
   const isPending = order.status?.toLowerCase() === 'pending';
 
   return (
+    <PermissionGuard permission="orders.view">
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -687,5 +689,6 @@ export default function OrderDetailsPage() {
         onCancel={() => setDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }

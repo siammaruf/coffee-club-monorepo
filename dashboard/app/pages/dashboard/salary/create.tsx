@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { Button } from '../../../components/ui/button';
@@ -259,6 +260,7 @@ export default function CreateSalaryPage() {
   };
 
   return (
+    <PermissionGuard permission="salary.create">
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
@@ -715,5 +717,6 @@ export default function CreateSalaryPage() {
         </form>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

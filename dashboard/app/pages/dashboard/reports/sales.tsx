@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~/components/ui/table";
 import { Select } from "~/components/ui/select";
@@ -130,6 +131,7 @@ export default function SalesReportPage() {
   };
 
   return (
+    <PermissionGuard permission="reports.view">
     <div className="p-6">
       <Card>
         <CardHeader>
@@ -295,5 +297,6 @@ export default function SalesReportPage() {
         cancelText="Cancel"
       />
     </div>
+    </PermissionGuard>
   );
 }

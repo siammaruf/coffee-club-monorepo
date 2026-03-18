@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Link, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -164,6 +165,7 @@ export default function EditUsagePage() {
   }
 
   return (
+    <PermissionGuard permission="kitchen_stock.edit">
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Page Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0">
@@ -399,5 +401,6 @@ export default function EditUsagePage() {
         </div>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

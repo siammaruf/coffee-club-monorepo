@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -290,6 +291,7 @@ export default function OrdersPage() {
   const cancelledOrders = orders.filter(order => order.status?.toLowerCase() === 'cancelled').length;
 
   return (
+    <PermissionGuard permission="orders.view">
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -641,5 +643,6 @@ export default function OrdersPage() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }

@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -130,6 +131,7 @@ export default function CreateEmployee() {
   };
 
   return (
+    <PermissionGuard permission="employees.create">
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Link to="/dashboard/employees">
@@ -540,5 +542,6 @@ export default function CreateEmployee() {
         </div>
       </div>
     </div>
+    </PermissionGuard>
   );
 }
