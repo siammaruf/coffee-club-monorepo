@@ -197,6 +197,7 @@ export default function ContactMessagesPage() {
   }
 
   return (
+    <PermissionGuard permission="contact_messages.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -450,12 +451,12 @@ export default function ContactMessagesPage() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }
 
 function ContactMessagesLoadingSkeleton() {
   return (
-    <PermissionGuard permission="contact_messages.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -511,6 +512,5 @@ function ContactMessagesLoadingSkeleton() {
         </CardContent>
       </Card>
     </div>
-    </PermissionGuard>
   );
 }

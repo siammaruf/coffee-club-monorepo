@@ -394,7 +394,7 @@ export class CustomerAuthService {
     customerId: string,
     newPhone: string,
     otp: string,
-  ): Promise<{ success: boolean; message: string; customer?: Customer }> {
+  ): Promise<{ success: boolean; message: string; customer?: Omit<Customer, 'password' | 'refresh_token' | 'otp' | 'otp_expires_at' | 'otp_sent_at'> }> {
     const customer = await this.customerRepository.findOne({ where: { id: customerId } });
     if (!customer) throw new NotFoundException('Customer not found');
 
@@ -413,7 +413,8 @@ export class CustomerAuthService {
     customer.otp_sent_at = null;
     await this.customerRepository.save(customer);
 
-    return { success: true, message: 'Phone number verified and updated successfully', customer };
+    const { password, refresh_token, otp: _otp, otp_expires_at, otp_sent_at, ...safeCustomer } = customer;
+    return { success: true, message: 'Phone number verified and updated successfully', customer: safeCustomer };
   }
 
   async logout(customerId: string): Promise<void> {

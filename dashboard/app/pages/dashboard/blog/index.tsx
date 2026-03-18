@@ -174,6 +174,7 @@ export default function BlogPage() {
   }
 
   return (
+    <PermissionGuard permission="blog.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -454,12 +455,12 @@ export default function BlogPage() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }
 
 function BlogLoadingSkeleton() {
   return (
-    <PermissionGuard permission="blog.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -517,6 +518,5 @@ function BlogLoadingSkeleton() {
         </CardContent>
       </Card>
     </div>
-    </PermissionGuard>
   );
 }
