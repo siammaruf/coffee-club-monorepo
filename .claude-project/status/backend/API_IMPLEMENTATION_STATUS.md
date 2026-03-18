@@ -609,3 +609,19 @@ Auth: All @Public
 | `/customer-auth/profile/password`         | PUT    | Complete | JWT    | Change customer password                  |
 
 
+
+
+## Authentication APIs
+
+| Endpoint                   | Method | Status   | Auth   | Notes                                                      |
+|----------------------------|--------|----------|--------|------------------------------------------------------------|
+| `/auth/me`                 | GET    | Complete | JWT    | Get current logged-in user information                     |
+| `/auth/login`              | POST   | Complete | Public | User login                                                 |
+| `/auth/logout`             | POST   | Complete | Public | User logout                                                |
+| `/auth/forgot-password`    | POST   | Complete | Public | Request password reset via email or SMS                    |
+| `/auth/reset-password`     | POST   | Complete | Public | Reset password using token                                 |
+| `/auth/verify-reset-token` | POST   | Complete | Public | Reset password using token                                 |
+| `/auth/verify-otp`         | POST   | Complete | Public | Verify password reset token before allowing password reset |
+| `/auth/new-user-password`  | POST   | Complete | Public | Set password for new user and activate account             |
+
+
