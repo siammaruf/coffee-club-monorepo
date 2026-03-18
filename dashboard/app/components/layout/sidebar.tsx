@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Handshake,
   ShieldCheck,
+  Bell,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
