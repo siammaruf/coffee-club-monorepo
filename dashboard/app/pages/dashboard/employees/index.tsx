@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Link, useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -18,6 +19,9 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 
 export default function Employees() {
+  const canCreate = usePermission('employees.create');
+  const canDelete = usePermission('employees.delete');
+
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState<number>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -263,12 +267,14 @@ export default function Employees() {
             Manage your coffee club staff members
           </p>
         </div>
-        <Link to="/dashboard/employees/create">
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Employee
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link to="/dashboard/employees/create">
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Employee
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Card>
@@ -399,24 +405,28 @@ export default function Employees() {
                       <div className="flex items-center gap-2 justify-end col-span-2">
                         {viewMode === 'trash' ? (
                           <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRestore(user.id)}
-                              className="h-8 px-3 flex items-center gap-1"
-                              title="Restore"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handlePermanentDelete(user.id)}
-                              className="h-8 px-3 flex items-center gap-1 text-red-600"
-                              title="Delete Permanently"
-                            >
-                              <AlertTriangle className="h-4 w-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRestore(user.id)}
+                                className="h-8 px-3 flex items-center gap-1"
+                                title="Restore"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePermanentDelete(user.id)}
+                                className="h-8 px-3 flex items-center gap-1 text-red-600"
+                                title="Delete Permanently"
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         ) : (
                           <>
@@ -430,15 +440,17 @@ export default function Employees() {
                               <Eye className="h-4 w-4" />
                               View
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteEmployee(user.id)}
-                              className="h-8 px-3 flex items-center gap-1 text-red-600 hover:bg-red-50"
-                              title="Delete Employee"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteEmployee(user.id)}
+                                className="h-8 px-3 flex items-center gap-1 text-red-600 hover:bg-red-50"
+                                title="Delete Employee"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

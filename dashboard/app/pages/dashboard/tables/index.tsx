@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -42,6 +43,10 @@ import ViewTableModal from "~/components/modals/ViewTableModal";
 import EditTableModal from "~/components/modals/EditTableModalProps";
 
 export default function TablesPage() {
+  const canCreate = usePermission('tables.create');
+  const canEdit = usePermission('tables.edit');
+  const canDelete = usePermission('tables.delete');
+
   const navigate = useNavigate();
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [filteredTables, setFilteredTables] = useState<RestaurantTable[]>([]);
@@ -316,7 +321,7 @@ export default function TablesPage() {
           <p className="text-gray-600">Manage restaurant tables and seating</p>
         </div>
         <div>
-          {viewMode === 'active' && (
+          {viewMode === 'active' && canCreate && (
             <Button onClick={handleAddTable} className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Add New Table
@@ -525,10 +530,12 @@ export default function TablesPage() {
                             <Button variant="ghost" size="icon" title="View Table" onClick={() => setViewTable(table)}>
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" title="Edit Table" onClick={() => setEditTable(table)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            {table.status !== 'available' && (
+                            {canEdit && (
+                              <Button variant="ghost" size="icon" title="Edit Table" onClick={() => setEditTable(table)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canEdit && table.status !== 'available' && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -539,7 +546,7 @@ export default function TablesPage() {
                                 <CheckCircle className="w-4 h-4" />
                               </Button>
                             )}
-                            {table.status !== 'occupied' && (
+                            {canEdit && table.status !== 'occupied' && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -550,36 +557,42 @@ export default function TablesPage() {
                                 <Users className="w-4 h-4" />
                               </Button>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Delete Table"
-                              className="text-red-600 hover:bg-red-50"
-                              onClick={() => handleDeleteTable(table.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete Table"
+                                className="text-red-600 hover:bg-red-50"
+                                onClick={() => handleDeleteTable(table.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRestore(table.id)}
-                              title="Restore"
-                              className="text-green-600 hover:bg-green-50 cursor-pointer"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handlePermanentDelete(table.id)}
-                              title="Delete Permanently"
-                              className="text-red-600 hover:bg-red-50 cursor-pointer"
-                            >
-                              <AlertTriangle className="w-4 h-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRestore(table.id)}
+                                title="Restore"
+                                className="text-green-600 hover:bg-green-50 cursor-pointer"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handlePermanentDelete(table.id)}
+                                title="Delete Permanently"
+                                className="text-red-600 hover:bg-red-50 cursor-pointer"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
@@ -614,7 +627,7 @@ export default function TablesPage() {
                   ? 'No deleted tables found.'
                   : "You haven't added any tables to your restaurant yet. Add your first table to get started."}
               </p>
-              {viewMode === 'active' && (
+              {viewMode === 'active' && canCreate && (
                 <Button onClick={handleAddTable}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Your First Table

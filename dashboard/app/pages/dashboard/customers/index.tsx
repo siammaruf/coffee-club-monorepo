@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -20,6 +21,10 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export default function CustomersPage() {
+  const canCreate = usePermission('customers.create');
+  const canEdit = usePermission('customers.edit');
+  const canDelete = usePermission('customers.delete');
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm);
@@ -451,10 +456,12 @@ export default function CustomersPage() {
             </h2>
             <p className="text-muted-foreground">Manage your customers</p>
           </div>
-          <Button className="flex items-center gap-2" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" />
-            Add Customer
-          </Button>
+          {canCreate && (
+            <Button className="flex items-center gap-2" onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4" />
+              Add Customer
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -591,29 +598,33 @@ export default function CustomersPage() {
                         <div className="flex justify-end gap-2 col-span-2">
                           {viewMode === 'trash' ? (
                             <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 cursor-pointer"
-                                title="Restore"
-                                onClick={() => handleRestore(customer.id)}
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                                title="Delete Permanently"
-                                onClick={() => handlePermanentDelete(customer.id)}
-                              >
-                                <AlertTriangle className="h-4 w-4" />
-                              </Button>
+                              {canDelete && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 cursor-pointer"
+                                  title="Restore"
+                                  onClick={() => handleRestore(customer.id)}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title="Delete Permanently"
+                                  onClick={() => handlePermanentDelete(customer.id)}
+                                >
+                                  <AlertTriangle className="h-4 w-4" />
+                                </Button>
+                              )}
                             </>
                           ) : (
                             <>
                               {/* Activate/Deactivate Button */}
-                              {customer.is_active ? (
+                              {canEdit && (customer.is_active ? (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -639,7 +650,7 @@ export default function CustomersPage() {
                                     ? <Loader2 className="h-4 w-4 animate-spin" />
                                     : <UserCheck className="h-4 w-4" />}
                                 </Button>
-                              )}
+                              ))}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -649,33 +660,39 @@ export default function CustomersPage() {
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 cursor-pointer"
-                                title="Edit"
-                                onClick={() => handleEdit(customer)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 cursor-pointer"
-                                title="Reset Password"
-                                onClick={() => setResetPasswordId(customer.id)}
-                              >
-                                <KeyRound className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                                title="Delete"
-                                onClick={() => handleDelete(customer.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 cursor-pointer"
+                                  title="Edit"
+                                  onClick={() => handleEdit(customer)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canEdit && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 cursor-pointer"
+                                  title="Reset Password"
+                                  onClick={() => setResetPasswordId(customer.id)}
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                  title="Delete"
+                                  onClick={() => handleDelete(customer.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>

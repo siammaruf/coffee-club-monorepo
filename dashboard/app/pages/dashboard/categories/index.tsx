@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -17,6 +18,10 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export default function CategoriesPage() {
+  const canCreate = usePermission('categories.create');
+  const canEdit = usePermission('categories.edit');
+  const canDelete = usePermission('categories.delete');
+
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -223,10 +228,12 @@ export default function CategoriesPage() {
           <h2 className="text-3xl font-bold tracking-tight">Categories</h2>
           <p className="text-muted-foreground">Manage your product categories</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4" />
-          Add Category
-        </Button>
+        {canCreate && (
+          <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add Category
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -327,24 +334,28 @@ export default function CategoriesPage() {
                       <div className="flex gap-2 justify-end col-span-2">
                         {viewMode === 'trash' ? (
                           <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 cursor-pointer"
-                              title="Restore"
-                              onClick={() => handleRestore(cat.id)}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                              title="Delete Permanently"
-                              onClick={() => handlePermanentDelete(cat.id)}
-                            >
-                              <AlertTriangle className="h-4 w-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title="Restore"
+                                onClick={() => handleRestore(cat.id)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                title="Delete Permanently"
+                                onClick={() => handlePermanentDelete(cat.id)}
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         ) : (
                           <>
@@ -357,25 +368,29 @@ export default function CategoriesPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 cursor-pointer"
-                              title="Edit"
-                              type="button"
-                              onClick={() => handleEdit(cat.id)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
-                              title="Delete"
-                              onClick={() => handleDelete(cat.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title="Edit"
+                                type="button"
+                                onClick={() => handleEdit(cat.id)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 cursor-pointer"
+                                title="Delete"
+                                onClick={() => handleDelete(cat.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -21,6 +22,10 @@ import DiscountApplicationTable from "~/components/discount/DiscountApplicationT
 const TABS = ["Discount List", "Discount Application"];
 
 export default function DiscountsPage() {
+  const canCreate = usePermission('discounts.create');
+  const canEdit = usePermission('discounts.edit');
+  const canDelete = usePermission('discounts.delete');
+
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -262,12 +267,12 @@ export default function DiscountsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Discounts</h2>
           <p className="text-muted-foreground">Manage your discount offers and promotions</p>
         </div>
-        {activeTab === "Discount List" && viewMode === 'active' ? (
+        {activeTab === "Discount List" && viewMode === 'active' && canCreate ? (
           <Button className="flex items-center gap-2" onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" />
             Add Discount
           </Button>
-        ) : activeTab === "Discount Application" ? (
+        ) : activeTab === "Discount Application" && canCreate ? (
           <Button className="flex items-center gap-2" onClick={() => setShowAddApplicationModal(true)}>
             <Plus className="h-4 w-4" />
             Add Discount Application
@@ -403,6 +408,7 @@ export default function DiscountsPage() {
                           <div className="flex justify-end">
                             {viewMode === 'active' ? (
                               <div className="flex items-center gap-1">
+                                {canEdit && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -412,6 +418,8 @@ export default function DiscountsPage() {
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
+                                )}
+                                {canDelete && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -421,9 +429,11 @@ export default function DiscountsPage() {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
+                                )}
                               </div>
                             ) : (
                               <div className="flex items-center gap-1">
+                                {canDelete && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -433,6 +443,8 @@ export default function DiscountsPage() {
                                 >
                                   <RotateCcw className="w-4 h-4" />
                                 </Button>
+                                )}
+                                {canDelete && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -442,6 +454,7 @@ export default function DiscountsPage() {
                                 >
                                   <AlertTriangle className="w-4 h-4" />
                                 </Button>
+                                )}
                               </div>
                             )}
                           </div>

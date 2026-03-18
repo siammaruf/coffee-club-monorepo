@@ -7,6 +7,7 @@ import { KitchenResponseDto } from './dto/kitchen-response-item.dto';
 import { KitchenItemType } from './enum/kitchen-item-type.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -19,6 +20,7 @@ export class KitchenItemController {
   constructor(private readonly kitchenItemService: KitchenItemService) {}
 
     @Delete('bulk/delete')
+    @RequirePermission('kitchen_items.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.kitchenItemService.bulkSoftDelete(body.ids);
@@ -30,6 +32,7 @@ export class KitchenItemController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('kitchen_items.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.kitchenItemService.bulkRestore(body.ids);
@@ -41,6 +44,7 @@ export class KitchenItemController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('kitchen_items.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.kitchenItemService.bulkPermanentDelete(body.ids);
@@ -137,6 +141,7 @@ export class KitchenItemController {
   }
 
   @Post()
+  @RequirePermission('kitchen_items.create')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new kitchen item' })
   @ApiResponse({ status: 201, description: 'Kitchen item created successfully' })
@@ -167,6 +172,7 @@ export class KitchenItemController {
   }
 
   @Patch(':id')
+  @RequirePermission('kitchen_items.edit')
   @ApiOperation({ summary: 'Update kitchen item by ID' })
   @ApiParam({ name: 'id', description: 'Kitchen item ID' })
   @ApiResponse({ status: 200, description: 'Kitchen item updated successfully' })
@@ -198,6 +204,7 @@ export class KitchenItemController {
   }
 
   @Delete(':id')
+  @RequirePermission('kitchen_items.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete kitchen item by ID' })
   @ApiParam({ name: 'id', description: 'Kitchen item ID' })
@@ -215,6 +222,7 @@ export class KitchenItemController {
   }
 
     @Patch(':id/restore')
+    @RequirePermission('kitchen_items.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.kitchenItemService.restore(id);
@@ -226,6 +234,7 @@ export class KitchenItemController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('kitchen_items.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.kitchenItemService.permanentDelete(id);

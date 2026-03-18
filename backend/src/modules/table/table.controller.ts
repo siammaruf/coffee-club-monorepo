@@ -6,6 +6,7 @@ import { UpdateTableDto } from './dto/update-table.dto';
 import { TableResponseDto } from './dto/table-response.dto';
 import { TableStatus } from './enum/table-status.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -18,6 +19,7 @@ export class TableController {
   constructor(private readonly tableService: TableService) {}
 
   @Post()
+  @RequirePermission('tables.create')
   @ApiOperation({ summary: 'Create a new table' })
   @ApiResponse({ status: 201, description: 'Table created successfully', type: TableResponseDto })
   async create(@Body() createTableDto: CreateTableDto): Promise<{
@@ -36,6 +38,7 @@ export class TableController {
   }
 
     @Delete('bulk/delete')
+    @RequirePermission('tables.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.tableService.bulkSoftDelete(body.ids);
@@ -47,6 +50,7 @@ export class TableController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('tables.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.tableService.bulkRestore(body.ids);
@@ -58,6 +62,7 @@ export class TableController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('tables.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.tableService.bulkPermanentDelete(body.ids);
@@ -225,6 +230,7 @@ export class TableController {
   }
 
   @Patch(':id')
+  @RequirePermission('tables.edit')
   @ApiOperation({ summary: 'Update a table' })
   @ApiParam({ name: 'id', description: 'Table ID' })
   @ApiResponse({ status: 200, description: 'Table updated successfully', type: TableResponseDto })
@@ -249,6 +255,7 @@ export class TableController {
   }
 
   @Patch(':id/status')
+  @RequirePermission('tables.edit')
   @ApiOperation({ summary: 'Update table status' })
   @ApiParam({ name: 'id', description: 'Table ID' })
   @ApiResponse({ status: 200, description: 'Table status updated successfully', type: TableResponseDto })
@@ -277,6 +284,7 @@ export class TableController {
   }
 
   @Delete(':id')
+  @RequirePermission('tables.delete')
   @ApiOperation({ summary: 'Delete a table' })
   @ApiParam({ name: 'id', description: 'Table ID' })
   @ApiResponse({ status: 200, description: 'Table deleted successfully' })
@@ -295,6 +303,7 @@ export class TableController {
   }
 
     @Patch(':id/restore')
+    @RequirePermission('tables.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.tableService.restore(id);
@@ -306,6 +315,7 @@ export class TableController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('tables.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.tableService.permanentDelete(id);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -44,6 +45,10 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 
 
 export default function KitchenItemsPage() {
+  const canCreate = usePermission('kitchen_items.create');
+  const canEdit = usePermission('kitchen_items.edit');
+  const canDelete = usePermission('kitchen_items.delete');
+
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editItem, setEditItem] = useState<KitchenItem | null>(null);
@@ -244,7 +249,7 @@ export default function KitchenItemsPage() {
           </h1>
           <p className="text-gray-600">Manage your kitchen supplies and ingredients</p>
         </div>
-        {viewMode === 'active' && (
+        {viewMode === 'active' && canCreate && (
           <Button
             className="flex items-center gap-2"
             onClick={() => setShowAddModal(true)}
@@ -379,47 +384,55 @@ export default function KitchenItemsPage() {
                         <div className="flex gap-2 items-center">
                           {viewMode === 'active' ? (
                             <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditItem(item);
-                                  setShowEditModal(true);
-                                }}
-                                title="Edit"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(item.id)}
-                                title="Delete"
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditItem(item);
+                                    setShowEditModal(true);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(item.id)}
+                                  title="Delete"
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </>
                           ) : (
                             <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRestore(item.id)}
-                                title="Restore"
-                                className="text-green-600 hover:bg-green-50"
-                              >
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePermanentDelete(item.id)}
-                                title="Delete Permanently"
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <AlertTriangle className="w-4 h-4" />
-                              </Button>
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestore(item.id)}
+                                  title="Restore"
+                                  className="text-green-600 hover:bg-green-50"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handlePermanentDelete(item.id)}
+                                  title="Delete Permanently"
+                                  className="text-red-600 hover:bg-red-50"
+                                >
+                                  <AlertTriangle className="w-4 h-4" />
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>

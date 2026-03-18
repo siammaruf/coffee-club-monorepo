@@ -4,6 +4,7 @@ import { BaseDiscountDto } from './dto/base-discount.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { DiscountResponseDto } from './dto/discount-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -16,6 +17,7 @@ export class DiscountController {
     constructor(private readonly discountService: DiscountService) {}
 
     @Post()
+    @RequirePermission('discounts.create')
     @ApiOperation({ summary: 'Create a new discount' })
     @ApiResponse({ status: 201, description: 'Discount created successfully', type: DiscountResponseDto })
     @ApiResponse({ status: 400, description: 'Invalid percentage value' })
@@ -31,6 +33,7 @@ export class DiscountController {
     }
 
     @Delete('bulk/delete')
+    @RequirePermission('discounts.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.discountService.bulkSoftDelete(body.ids);
@@ -42,6 +45,7 @@ export class DiscountController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('discounts.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.discountService.bulkRestore(body.ids);
@@ -53,6 +57,7 @@ export class DiscountController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('discounts.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.discountService.bulkPermanentDelete(body.ids);
@@ -171,6 +176,7 @@ export class DiscountController {
     }
 
     @Patch(':id')
+    @RequirePermission('discounts.edit')
     @ApiOperation({ summary: 'Update a discount' })
     @ApiResponse({ status: 200, description: 'Discount updated successfully', type: DiscountResponseDto })
     @ApiResponse({ status: 400, description: 'Invalid percentage value' })
@@ -190,6 +196,7 @@ export class DiscountController {
     }
 
     @Delete(':id')
+    @RequirePermission('discounts.delete')
     @ApiOperation({ summary: 'Delete a discount' })
     @ApiResponse({ status: 200, description: 'Discount deleted successfully' })
     @ApiResponse({ status: 404, description: 'Discount not found' })
@@ -204,6 +211,7 @@ export class DiscountController {
     }
 
     @Patch(':id/restore')
+    @RequirePermission('discounts.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.discountService.restore(id);
@@ -215,6 +223,7 @@ export class DiscountController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('discounts.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.discountService.permanentDelete(id);

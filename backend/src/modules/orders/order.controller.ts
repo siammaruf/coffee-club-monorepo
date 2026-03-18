@@ -5,6 +5,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { OrderStatus } from './enum/order-status.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
@@ -18,6 +19,7 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
     @Delete('bulk/delete')
+    @RequirePermission('orders.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.orderService.bulkSoftDelete(body.ids);
@@ -29,6 +31,7 @@ export class OrderController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('orders.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.orderService.bulkRestore(body.ids);
@@ -40,6 +43,7 @@ export class OrderController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('orders.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.orderService.bulkPermanentDelete(body.ids);
@@ -254,7 +258,8 @@ export class OrderController {
   }
 
   @Post()
-  @ApiOperation({ 
+  @RequirePermission('orders.create')
+  @ApiOperation({
     summary: 'Create a new order',
     description: 'Creates a new order with order items and automatically generates tokens for bar and kitchen based on item types'
   })
@@ -384,7 +389,8 @@ export class OrderController {
   }
 
   @Put(':id')
-  @ApiOperation({ 
+  @RequirePermission('orders.edit')
+  @ApiOperation({
     summary: 'Update an existing order',
     description: 'Updates an existing order by ID with new data. All fields are optional and only provided fields will be updated.'
   })
@@ -606,6 +612,7 @@ export class OrderController {
   }
 
   @Delete(':id')
+  @RequirePermission('orders.delete')
   @ApiOperation({ summary: 'Delete order', description: 'Delete an order by its unique identifier' })
   @ApiParam({ name: 'id', description: 'Order ID', type: 'string', format: 'uuid' })
   @ApiResponse({ 
@@ -633,6 +640,7 @@ export class OrderController {
   }
 
     @Patch(':id/restore')
+    @RequirePermission('orders.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.orderService.restore(id);
@@ -644,6 +652,7 @@ export class OrderController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('orders.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.orderService.permanentDelete(id);
