@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Download, Upload, HardDrive } from "lucide-react";
 import ExportTab from "./components/ExportTab";
 import ImportTab from "./components/ImportTab";
@@ -20,6 +21,7 @@ export default function DataManagementPage() {
     rawTab === "import" || rawTab === "backup" ? rawTab : "export";
 
   return (
+    <PermissionGuard permission="data_management.view">
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Data Management</h1>
@@ -52,5 +54,6 @@ export default function DataManagementPage() {
       {activeTab === "import" && <ImportTab />}
       {activeTab === "backup" && <BackupTab />}
     </div>
+    </PermissionGuard>
   );
 }

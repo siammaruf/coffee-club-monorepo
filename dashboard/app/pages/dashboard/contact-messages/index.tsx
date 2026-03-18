@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -196,6 +197,7 @@ export default function ContactMessagesPage() {
   }
 
   return (
+    <PermissionGuard permission="contact_messages.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -449,6 +451,7 @@ export default function ContactMessagesPage() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }
 

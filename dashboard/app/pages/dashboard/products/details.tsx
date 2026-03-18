@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate } from "react-router";
 import { useBackToList } from "~/hooks/useBackToList";
 import { Button } from "../../../components/ui/button";
@@ -133,6 +134,7 @@ export default function ProductDetails() {
   }
 
   return (
+    <PermissionGuard permission="products.view">
     <div className="p-6 max-w-[1200px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -364,5 +366,6 @@ export default function ProductDetails() {
         onCancel={handleDeleteCancel}
       />
     </div>
+    </PermissionGuard>
   );
 }

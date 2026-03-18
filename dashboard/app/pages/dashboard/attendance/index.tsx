@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -418,6 +419,7 @@ export default function AttendancePage() {
   }
 
   return (
+    <PermissionGuard permission="attendance.view">
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -917,5 +919,6 @@ export default function AttendancePage() {
         onCancel={() => setPermanentDeleteId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }

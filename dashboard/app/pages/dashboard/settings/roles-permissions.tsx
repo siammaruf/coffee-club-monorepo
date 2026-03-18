@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
@@ -130,6 +131,7 @@ export default function RolesPermissionsPage() {
   const resources = Object.keys(groupedPermissions).sort();
 
   return (
+    <PermissionGuard permission="settings.roles_permissions">
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -288,5 +290,6 @@ export default function RolesPermissionsPage() {
         </div>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

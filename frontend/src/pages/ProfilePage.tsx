@@ -128,10 +128,10 @@ export default function ProfilePage() {
     }
     setPhoneLoading(true)
     try {
-      await profileService.verifyPhoneOtp(newPhone.trim(), otp)
+      const response = await profileService.verifyPhoneOtp(newPhone.trim(), otp)
       setPhoneVerifyState('verified')
       setPhoneEditMode(false)
-      updateCustomer({ ...customer!, phone: newPhone.trim(), phone_verified: true })
+      updateCustomer(response.data ?? { ...customer!, phone: newPhone.trim(), phone_verified: true })
       toast.success('Phone number verified successfully!')
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Invalid or expired OTP')

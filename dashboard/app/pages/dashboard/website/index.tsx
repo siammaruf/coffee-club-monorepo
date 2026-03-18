@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import {
   Image,
   Award,
@@ -32,6 +33,7 @@ export default function WebsiteManagementPage() {
   const activeTab: TabId = (tabs.some(t => t.id === rawTab) ? rawTab : "hero") as TabId;
 
   return (
+    <PermissionGuard permission="website.view">
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Website Management</h1>
@@ -67,5 +69,6 @@ export default function WebsiteManagementPage() {
       {activeTab === "contact" && <ContactSocialTab />}
       {activeTab === "newsletter" && <NewsletterTab />}
     </div>
+    </PermissionGuard>
   );
 }

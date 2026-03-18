@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import reportService from "~/services/httpServices/reportService";
 import type { FilteredReport, FilteredSummary, FinancialSummary } from "~/types/report";
@@ -91,6 +92,7 @@ export default function FinancialSummaryPage() {
       : false;
 
   return (
+    <PermissionGuard permission="reports.view">
     <div className="p-6">
       <Card>
         <CardHeader>
@@ -316,5 +318,6 @@ export default function FinancialSummaryPage() {
         </CardContent>
       </Card>
     </div>
+    </PermissionGuard>
   );
 }

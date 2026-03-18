@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import {
@@ -197,6 +198,7 @@ export default function KitchenStockPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
+    <PermissionGuard permission="kitchen_stock.view">
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -544,5 +546,6 @@ export default function KitchenStockPage() {
         loading={deleteLoading}
       />
     </div>
+    </PermissionGuard>
   );
 }

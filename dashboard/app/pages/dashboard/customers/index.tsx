@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -354,6 +355,7 @@ export default function CustomersPage() {
   }
 
   return (
+    <PermissionGuard permission="customers.view">
     <>
       <CreateCustomerModal
         isOpen={showCreateModal}
@@ -729,5 +731,6 @@ export default function CustomersPage() {
         </Card>
       </div>
     </>
+    </PermissionGuard>
   );
 }

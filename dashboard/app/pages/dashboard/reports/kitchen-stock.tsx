@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
@@ -107,6 +108,7 @@ export default function KitchenStockReportPage() {
   };
 
   return (
+    <PermissionGuard permission="reports.view">
     <>
 
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -317,5 +319,6 @@ export default function KitchenStockReportPage() {
         )}
       </div>
     </>
+    </PermissionGuard>
   );
 }

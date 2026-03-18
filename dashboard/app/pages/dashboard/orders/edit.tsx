@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate, Link } from "react-router";
 import { useBackToList } from "~/hooks/useBackToList";
 import { useSelector } from "react-redux";
@@ -282,6 +283,7 @@ export default function EditOrderPage() {
   }
 
   return (
+    <PermissionGuard permission="orders.edit">
     <div className="p-6 max-w-6xl mx-auto">
       <Card className="border border-gray-200 bg-white">
         <CardHeader>
@@ -571,5 +573,6 @@ export default function EditOrderPage() {
         </CardContent>
       </Card>
     </div>
+    </PermissionGuard>
   );
 }
