@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Pencil, CheckCircle, AlertCircle, Upload, X } from "lucide-react";
+import { Pencil, CheckCircle, AlertCircle, Upload, X, Eye, ImageIcon, ShieldCheck, ShieldAlert, ShieldOff } from "lucide-react";
 import { userService } from "~/services/httpServices/userService";
 import { checkAuthStatus } from "~/services/httpServices/authService";
 import type { AppDispatch } from "~/redux/store/store";
@@ -24,6 +24,12 @@ function validateImageFile(file: File): string | null {
   if (!ALLOWED_TYPES.includes(file.type)) return "Only JPG and PNG files are allowed";
   if (file.size > MAX_FILE_SIZE) return "File size must be less than 5MB";
   return null;
+}
+
+function getNidStatus(front: string | null | undefined, back: string | null | undefined) {
+  if (front && back) return { label: "Uploaded", Icon: ShieldCheck, color: "text-green-700 bg-green-50 border-green-200" };
+  if (front || back) return { label: "Partial", Icon: ShieldAlert, color: "text-yellow-700 bg-yellow-50 border-yellow-200" };
+  return { label: "Not Uploaded", Icon: ShieldOff, color: "text-gray-500 bg-gray-50 border-gray-200" };
 }
 
 export default function Profile() {
@@ -63,6 +69,9 @@ export default function Profile() {
   const [nidMessage, setNidMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const nidFrontRef = useRef<HTMLInputElement>(null);
   const nidBackRef = useRef<HTMLInputElement>(null);
+  const [nidLightbox, setNidLightbox] = useState<{ src: string; label: string } | null>(null);
+  const [nidFrontDragging, setNidFrontDragging] = useState(false);
+  const [nidBackDragging, setNidBackDragging] = useState(false);
 
   // Profile form
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileForm>({
@@ -270,6 +279,14 @@ export default function Profile() {
         setNidBackPreview(URL.createObjectURL(file));
       }
     }
+  };
+
+  const handleNidDrop = (side: "front" | "back", e: React.DragEvent) => {
+    e.preventDefault();
+    if (side === "front") setNidFrontDragging(false);
+    else setNidBackDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleNidFileSelect(side, file);
   };
 
   // NID images submit
@@ -547,122 +564,195 @@ export default function Profile() {
       </Card>
 
       {/* ── Row 4: NID Documents ── */}
-      <Card className="border border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">NID Documents</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* NID Front */}
-            <div className="space-y-2">
-              <Label>NID Front</Label>
-              {(nidFrontPreview || currentUser?.nid_front_picture) ? (
-                <div className="relative inline-block">
-                  <a href={nidFrontPreview || currentUser.nid_front_picture} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={nidFrontPreview || currentUser.nid_front_picture}
-                      alt="NID Front"
-                      className="h-28 border rounded shadow object-contain"
-                    />
-                  </a>
-                  {nidFrontPreview && (
-                    <button
-                      type="button"
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                      onClick={() => { setNidFrontFile(null); setNidFrontPreview(null); setNidFrontError(null); }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="h-28 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-sm text-gray-400">
-                  No image uploaded
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png"
-                ref={nidFrontRef}
-                style={{ display: "none" }}
-                onChange={(e) => e.target.files?.[0] && handleNidFileSelect("front", e.target.files[0])}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => nidFrontRef.current?.click()}
-                disabled={nidSaving}
-              >
-                <Upload className="w-4 h-4 mr-1" />
-                {nidFrontPreview ? "Change Front" : "Upload Front"}
-              </Button>
-              {nidFrontFile && <p className="text-xs text-muted-foreground">{nidFrontFile.name}</p>}
-              {nidFrontError && <p className="text-xs text-red-500">{nidFrontError}</p>}
-            </div>
+      {(() => {
+        const nidStatus = getNidStatus(
+          nidFrontPreview || currentUser?.nid_front_picture,
+          nidBackPreview || currentUser?.nid_back_picture,
+        );
+        const { Icon: StatusIcon } = nidStatus;
+        return (
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold">NID Verification</CardTitle>
+                <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${nidStatus.color}`}>
+                  <StatusIcon className="w-3.5 h-3.5" />
+                  {nidStatus.label}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Upload clear photos of both sides of your National ID card.</p>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* ─ Front Side ─ */}
+                {(["front", "back"] as const).map((side) => {
+                  const preview = side === "front" ? nidFrontPreview : nidBackPreview;
+                  const uploaded = side === "front" ? currentUser?.nid_front_picture : currentUser?.nid_back_picture;
+                  const file = side === "front" ? nidFrontFile : nidBackFile;
+                  const error = side === "front" ? nidFrontError : nidBackError;
+                  const ref = side === "front" ? nidFrontRef : nidBackRef;
+                  const dragging = side === "front" ? nidFrontDragging : nidBackDragging;
+                  const setDragging = side === "front" ? setNidFrontDragging : setNidBackDragging;
+                  const clearPreview = side === "front"
+                    ? () => { setNidFrontFile(null); setNidFrontPreview(null); setNidFrontError(null); }
+                    : () => { setNidBackFile(null); setNidBackPreview(null); setNidBackError(null); };
+                  const label = side === "front" ? "Front Side" : "Back Side";
+                  const imgSrc = preview || uploaded || null;
 
-            {/* NID Back */}
-            <div className="space-y-2">
-              <Label>NID Back</Label>
-              {(nidBackPreview || currentUser?.nid_back_picture) ? (
-                <div className="relative inline-block">
-                  <a href={nidBackPreview || currentUser.nid_back_picture} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={nidBackPreview || currentUser.nid_back_picture}
-                      alt="NID Back"
-                      className="h-28 border rounded shadow object-contain"
-                    />
-                  </a>
-                  {nidBackPreview && (
-                    <button
-                      type="button"
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                      onClick={() => { setNidBackFile(null); setNidBackPreview(null); setNidBackError(null); }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="h-28 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-sm text-gray-400">
-                  No image uploaded
-                </div>
+                  return (
+                    <div key={side} className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">{label}</Label>
+
+                      {imgSrc ? (
+                        /* Thumbnail card */
+                        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 shadow-sm">
+                          <img
+                            src={imgSrc}
+                            alt={label}
+                            className="w-full h-44 object-cover"
+                          />
+                          {/* Preview badge */}
+                          {preview && !uploaded && (
+                            <span className="absolute top-2 left-2 text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-medium">
+                              Preview
+                            </span>
+                          )}
+                          {/* Action buttons */}
+                          <div className="absolute top-2 right-2 flex gap-1.5">
+                            <button
+                              type="button"
+                              title="View full image"
+                              className="bg-white/90 hover:bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center shadow-sm border border-gray-200 transition-colors"
+                              onClick={() => setNidLightbox({ src: imgSrc, label })}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {preview && (
+                              <button
+                                type="button"
+                                title="Remove"
+                                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition-colors"
+                                onClick={clearPreview}
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          {/* Replace button at bottom */}
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3 flex justify-end">
+                            <button
+                              type="button"
+                              disabled={nidSaving}
+                              className="text-xs text-white bg-white/20 hover:bg-white/30 border border-white/40 rounded-lg px-3 py-1.5 flex items-center gap-1 backdrop-blur-sm transition-colors"
+                              onClick={() => { ref.current?.click(); }}
+                            >
+                              <Upload className="w-3 h-3" />
+                              Replace
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Drag-and-drop zone */
+                        <div
+                          className={`relative h-44 rounded-xl border-2 border-dashed transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 ${
+                            dragging
+                              ? "border-blue-400 bg-blue-50"
+                              : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+                          }`}
+                          onClick={() => ref.current?.click()}
+                          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                          onDragLeave={() => setDragging(false)}
+                          onDrop={(e) => handleNidDrop(side, e)}
+                        >
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragging ? "bg-blue-100" : "bg-gray-200"}`}>
+                            <ImageIcon className={`w-6 h-6 ${dragging ? "text-blue-500" : "text-gray-400"}`} />
+                          </div>
+                          <div className="text-center px-4">
+                            <p className="text-sm font-medium text-gray-600">
+                              {dragging ? "Drop to upload" : "Click or drag to upload"}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG · Max 5MB</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hidden file input */}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png"
+                        ref={ref}
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) handleNidFileSelect(side, e.target.files[0]);
+                          e.target.value = "";
+                        }}
+                      />
+
+                      {file && !preview && (
+                        <p className="text-xs text-muted-foreground truncate">{file.name}</p>
+                      )}
+                      {error && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {error}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {(nidFrontFile || nidBackFile) && (
+                <Button
+                  onClick={handleNidImagesSubmit}
+                  disabled={nidSaving || !!nidFrontError || !!nidBackError}
+                  className="w-full sm:w-auto"
+                >
+                  {nidSaving ? "Uploading..." : "Save NID Images"}
+                </Button>
               )}
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png"
-                ref={nidBackRef}
-                style={{ display: "none" }}
-                onChange={(e) => e.target.files?.[0] && handleNidFileSelect("back", e.target.files[0])}
-              />
-              <Button
+
+              {nidMessage && (
+                <p className={`text-sm flex items-center gap-1.5 ${nidMessage.type === "success" ? "text-green-600" : "text-red-500"}`}>
+                  {nidMessage.type === "success"
+                    ? <CheckCircle className="w-4 h-4" />
+                    : <AlertCircle className="w-4 h-4" />}
+                  {nidMessage.text}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* ── Lightbox ── */}
+      {nidLightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
+          onClick={() => setNidLightbox(null)}
+        >
+          <div
+            className="relative max-w-3xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-white font-medium">{nidLightbox.label}</p>
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => nidBackRef.current?.click()}
-                disabled={nidSaving}
+                className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+                onClick={() => setNidLightbox(null)}
               >
-                <Upload className="w-4 h-4 mr-1" />
-                {nidBackPreview ? "Change Back" : "Upload Back"}
-              </Button>
-              {nidBackFile && <p className="text-xs text-muted-foreground">{nidBackFile.name}</p>}
-              {nidBackError && <p className="text-xs text-red-500">{nidBackError}</p>}
+                <X className="w-5 h-5" />
+              </button>
             </div>
+            <img
+              src={nidLightbox.src}
+              alt={nidLightbox.label}
+              className="w-full rounded-xl max-h-[80vh] object-contain bg-white/5"
+            />
           </div>
-
-          {(nidFrontFile || nidBackFile) && (
-            <Button onClick={handleNidImagesSubmit} disabled={nidSaving || !!nidFrontError || !!nidBackError}>
-              {nidSaving ? "Uploading..." : "Save NID Images"}
-            </Button>
-          )}
-
-          {nidMessage && (
-            <p className={`text-sm ${nidMessage.type === "success" ? "text-green-600" : "text-red-500"}`}>
-              {nidMessage.text}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }

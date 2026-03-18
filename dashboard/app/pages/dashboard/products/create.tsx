@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { Button } from "../../../components/ui/button";
@@ -217,6 +218,7 @@ export default function CreateProduct() {
   };
   
   return (
+    <PermissionGuard permission="products.create">
     <div className="p-6">
       <Card className="max-w-5xl mx-auto shadow-lg">
         <CardHeader>
@@ -658,5 +660,6 @@ export default function CreateProduct() {
         onCancel={() => setStatusDialog({ ...statusDialog, open: false })}
       />
     </div>
+    </PermissionGuard>
   );
 }

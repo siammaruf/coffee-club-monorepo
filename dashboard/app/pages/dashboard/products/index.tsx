@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Link, useNavigate, useLocation } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -283,6 +284,7 @@ export default function ProductsPage() {
   }
 
   return (
+    <PermissionGuard permission="products.view">
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -678,5 +680,6 @@ export default function ProductsPage() {
         message="Are you sure you want to permanently delete this product? This action cannot be undone."
       />
     </div>
+    </PermissionGuard>
   );
 }

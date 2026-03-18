@@ -1,7 +1,7 @@
 # API Implementation Status: CoffeeClub Backend
 
 > **Backend Framework:** NestJS 11 + TypeORM + PostgreSQL
-> **Last Updated:** 2026-03-15
+> **Last Updated:** 2026-03-18
 > **Total Endpoints:** ~210 across 35 controllers
 > **Swagger Coverage:** 100% (all endpoints have @ApiTags + @ApiOperation)
 
@@ -587,5 +587,25 @@ Auth: All @Public
 | `/data-management/backup/drive/oauth/authorize` | GET    | Complete | JWT    | Check Google Drive connection status                            |
 | `/data-management/backup/drive/oauth/callback`  | GET    | Complete | Public | Google OAuth2 callback — exchanges code and saves refresh token |
 | `/data-management/backup/settings/oauth`        | PATCH  | Complete | JWT    | Update backup settings                                          |
+
+
+
+
+## Customer-auth APIs
+
+| Endpoint                                  | Method | Status   | Auth   | Notes                                     |
+|-------------------------------------------|--------|----------|--------|-------------------------------------------|
+| `/customer-auth/me`                       | GET    | Complete | JWT    | Customer logout                           |
+| `/customer-auth/register`                 | POST   | Complete | Public | Customer registration                     |
+| `/customer-auth/login`                    | POST   | Complete | JWT    | Customer registration                     |
+| `/customer-auth/logout`                   | POST   | Complete | JWT    | Customer logout                           |
+| `/customer-auth/forgot-password`          | POST   | Complete | JWT    | Get current customer profile              |
+| `/customer-auth/verify-otp`               | POST   | Complete | JWT    | Request password reset OTP                |
+| `/customer-auth/reset-password`           | POST   | Complete | JWT    | Reset password using token                |
+| `/customer-auth/profile/send-phone-otp`   | POST   | Complete | JWT    | Send OTP to phone number for verification |
+| `/customer-auth/profile/verify-phone-otp` | POST   | Complete | JWT    | Send OTP to phone number for verification |
+| `/customer-auth/profile`                  | PUT    | Complete | JWT    | Reset password using token                |
+| `/customer-auth/profile/picture`          | PUT    | Complete | JWT    | Update customer profile                   |
+| `/customer-auth/profile/password`         | PUT    | Complete | JWT    | Change customer password                  |
 
 

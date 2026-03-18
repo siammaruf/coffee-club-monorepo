@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Link, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -197,6 +198,7 @@ export default function UseStockPage() {
   const cartCount = cartItems.length;
 
   return (
+    <PermissionGuard permission="kitchen_stock.create">
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Page Header */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between shrink-0">
@@ -503,5 +505,6 @@ export default function UseStockPage() {
         </div>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

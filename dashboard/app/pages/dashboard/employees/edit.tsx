@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate } from 'react-router';
 import { useBackToList } from '~/hooks/useBackToList';
 import { useForm, type FieldValues } from 'react-hook-form';
@@ -204,6 +205,7 @@ export default function EditEmployee() {
   }
 
   return (
+    <PermissionGuard permission="employees.edit">
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigateWithPage(`/dashboard/employees/${id}`)}>
@@ -574,5 +576,6 @@ export default function EditEmployee() {
         </Card>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

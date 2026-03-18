@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -458,6 +459,7 @@ export default function BlogPage() {
 
 function BlogLoadingSkeleton() {
   return (
+    <PermissionGuard permission="blog.view">
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
@@ -515,5 +517,6 @@ function BlogLoadingSkeleton() {
         </CardContent>
       </Card>
     </div>
+    </PermissionGuard>
   );
 }

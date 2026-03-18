@@ -21,7 +21,7 @@ export const profileService = {
 
   /** POST /customer-auth/profile/verify-phone-otp -- verify OTP and update phone */
   verifyPhoneOtp: (phone: string, otp: string) =>
-    post<{ message: string }>('/customer-auth/profile/verify-phone-otp', { phone, otp }),
+    post<{ message: string; data?: Customer }>('/customer-auth/profile/verify-phone-otp', { phone, otp }),
 
   /** PUT /customer-auth/profile/picture with multipart form data for picture upload */
   uploadPicture: async (file: File): Promise<Customer> => {

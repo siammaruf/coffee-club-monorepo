@@ -263,6 +263,7 @@ export class CustomerAuthController {
       status: 'success',
       message: result.message,
       statusCode: HttpStatus.OK,
+      data: result.customer,
     };
   }
 
