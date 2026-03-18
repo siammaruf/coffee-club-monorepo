@@ -27,6 +27,7 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @ApiTags('Data Management - Export')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('data-management/export')
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}

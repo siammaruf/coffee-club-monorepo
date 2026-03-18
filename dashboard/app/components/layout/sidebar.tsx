@@ -174,6 +174,12 @@ export default function Sidebar() {
                       )}
                     </Link>
                   )}
+                  {can('orders.view') && (
+                    <Link to="/dashboard/tokens" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                      <Bell className="w-4 h-4 mr-2 text-gray-500" />
+                      <span className="text-sm">Order Tokens</span>
+                    </Link>
+                  )}
                   {can('categories.view') && (
                     <Link to="/dashboard/categories" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                       <Package className="w-4 h-4 mr-2 text-gray-500" />
@@ -276,6 +282,10 @@ export default function Sidebar() {
                   <Link to="/dashboard/reports/financial-summary" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
                     <PieChart className="w-4 h-4 mr-2 text-gray-500" />
                     <span className="text-sm">Financial</span>
+                  </Link>
+                  <Link to="/dashboard/reports/kitchen-stock" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-gray-500" />
+                    <span className="text-sm">Kitchen Stock</span>
                   </Link>
                 </div>
               )}
