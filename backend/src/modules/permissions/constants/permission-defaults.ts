@@ -28,6 +28,7 @@ export const DEFAULT_PERMISSIONS: Array<{
   { name: 'categories.delete', resource: 'categories', action: 'delete', description: 'Delete categories' },
   // Customers
   { name: 'customers.view', resource: 'customers', action: 'view', description: 'View customers' },
+  { name: 'customers.create', resource: 'customers', action: 'create', description: 'Create customers' },
   { name: 'customers.edit', resource: 'customers', action: 'edit', description: 'Edit customer details' },
   { name: 'customers.delete', resource: 'customers', action: 'delete', description: 'Delete customers' },
   // Kitchen Items
@@ -44,6 +45,7 @@ export const DEFAULT_PERMISSIONS: Array<{
   { name: 'tables.view', resource: 'tables', action: 'view', description: 'View tables' },
   { name: 'tables.create', resource: 'tables', action: 'create', description: 'Create tables' },
   { name: 'tables.edit', resource: 'tables', action: 'edit', description: 'Edit tables' },
+  { name: 'tables.delete', resource: 'tables', action: 'delete', description: 'Delete tables' },
   // Attendance
   { name: 'attendance.view', resource: 'attendance', action: 'view', description: 'View attendance records' },
   { name: 'attendance.create', resource: 'attendance', action: 'create', description: 'Mark attendance' },
@@ -95,10 +97,10 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'employees.view', 'employees.create', 'employees.edit',
     'products.view', 'products.create', 'products.edit', 'products.delete',
     'categories.view', 'categories.create', 'categories.edit', 'categories.delete',
-    'customers.view', 'customers.edit',
+    'customers.view', 'customers.create', 'customers.edit',
     'kitchen_items.view', 'kitchen_items.create', 'kitchen_items.edit', 'kitchen_items.delete',
     'kitchen_stock.view', 'kitchen_stock.create', 'kitchen_stock.edit', 'kitchen_stock.delete',
-    'tables.view', 'tables.create', 'tables.edit',
+    'tables.view', 'tables.create', 'tables.edit', 'tables.delete',
     'attendance.view', 'attendance.create', 'attendance.edit',
     'salary.view', 'salary.create',
     'expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete',

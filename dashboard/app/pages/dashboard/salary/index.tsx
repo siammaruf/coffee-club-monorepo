@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -50,6 +51,10 @@ import type { Salary } from "~/types/salary";
 import SalaryDetailsModal from "~/components/modals/SalaryDetailsModal";
 
 export default function SalaryPage() {
+  const canCreate = usePermission('salary.create');
+  const canEdit = usePermission('salary.edit');
+  const canDelete = usePermission('salary.delete');
+
   const navigate = useNavigate();
   const [salaryRecords, setSalaryRecords] = useState<Salary[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<Salary[]>([]);
@@ -314,7 +319,7 @@ export default function SalaryPage() {
           <p className="text-gray-600">Manage salary payments and records</p>
         </div>
         <div className="flex gap-2">
-          {viewMode === 'active' && (
+          {viewMode === 'active' && canCreate && (
             <>
               <Button onClick={handleAddSalary} className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
@@ -554,12 +559,14 @@ export default function SalaryPage() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/edit`)}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Record
-                              </DropdownMenuItem>
+                              {canEdit && (
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/edit`)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit Record
+                                </DropdownMenuItem>
+                              )}
                               {record.is_paid ? (
                                 <DropdownMenuItem
                                   onClick={() => navigate(`/dashboard/salary/${record.user_id}/${record.month}/receipt`)}
@@ -567,7 +574,7 @@ export default function SalaryPage() {
                                   <Receipt className="w-4 h-4 mr-2" />
                                   View Payslip
                                 </DropdownMenuItem>
-                              ) : (
+                              ) : (canEdit && (
                                 <DropdownMenuItem
                                   onClick={() => record.user_id && handlePaySalary(record.user_id)}
                                   className="text-green-600"
@@ -575,36 +582,42 @@ export default function SalaryPage() {
                                   <CreditCard className="w-4 h-4 mr-2" />
                                   Mark as Paid
                                 </DropdownMenuItem>
+                              ))}
+                              {canDelete && (
+                                <DropdownMenuItem
+                                  onClick={() => record.id && handleDeleteSalary(record.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem
-                                onClick={() => record.id && handleDeleteSalary(record.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         ) : (
                           <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => record.id && handleRestore(record.id)}
-                              title="Restore"
-                              className="text-green-600 hover:bg-green-50 cursor-pointer"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => record.id && handlePermanentDelete(record.id)}
-                              title="Delete Permanently"
-                              className="text-red-600 hover:bg-red-50 cursor-pointer"
-                            >
-                              <AlertTriangle className="w-4 h-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => record.id && handleRestore(record.id)}
+                                title="Restore"
+                                className="text-green-600 hover:bg-green-50 cursor-pointer"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => record.id && handlePermanentDelete(record.id)}
+                                title="Delete Permanently"
+                                className="text-red-600 hover:bg-red-50 cursor-pointer"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>

@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 import { CurrentUser } from '../../common/decorators/user.decorator';
@@ -86,6 +87,7 @@ export class KitchenStockController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
+  @RequirePermission('kitchen_stock.create')
   @ApiOperation({ summary: 'Create a new stock entry (purchase or usage)' })
   async create(@Body() dto: CreateKitchenStockDto, @CurrentUser() user: any) {
     const data = await this.kitchenStockService.create(dto, user?.id);
@@ -94,6 +96,7 @@ export class KitchenStockController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
+  @RequirePermission('kitchen_stock.edit')
   @ApiOperation({ summary: 'Update a stock entry' })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateKitchenStockDto) {
     const data = await this.kitchenStockService.update(id, dto);
@@ -102,6 +105,7 @@ export class KitchenStockController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF)
+  @RequirePermission('kitchen_stock.delete')
   @ApiOperation({ summary: 'Soft delete a stock entry' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
     await this.kitchenStockService.softDelete(id);

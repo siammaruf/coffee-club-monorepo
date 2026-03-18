@@ -22,6 +22,7 @@ import { RedeemPointsDto } from './dto/redeem-points.dto';
 import { AddPointsDto } from './dto/add-points.dto';
 import { ResetCustomerPasswordDto } from './dto/reset-customer-password.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 import { CustomerType } from './enum/customer-type.enum';
@@ -35,6 +36,7 @@ export class CustomerController {
     constructor(private readonly customerService: CustomerService) {}
 
     @Post()
+    @RequirePermission('customers.create')
     @ApiOperation({ summary: 'Create a new customer' })
     @ApiResponse({ status: 201, description: 'Customer created successfully', type: CustomerResponseDto })
     @ApiResponse({ status: 400, description: 'Bad request' })
@@ -61,6 +63,7 @@ export class CustomerController {
     }
 
     @Delete('bulk/delete')
+    @RequirePermission('customers.delete')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.customerService.bulkSoftDelete(body.ids);
@@ -72,6 +75,7 @@ export class CustomerController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.customerService.bulkRestore(body.ids);
@@ -83,6 +87,7 @@ export class CustomerController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('customers.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.customerService.bulkPermanentDelete(body.ids);
@@ -194,6 +199,7 @@ export class CustomerController {
     }
 
     @Patch(':id')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Update a customer' })
     @ApiResponse({ status: 200, description: 'Customer updated successfully', type: CustomerResponseDto })
     @ApiResponse({ status: 404, description: 'Customer not found' })
@@ -249,6 +255,7 @@ export class CustomerController {
     }
 
     @Patch(':id/reset-password')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Reset customer password (admin)' })
     @ApiResponse({ status: 200, description: 'Password reset successfully' })
     @ApiResponse({ status: 404, description: 'Customer not found' })
@@ -265,6 +272,7 @@ export class CustomerController {
     }
 
     @Delete(':id')
+    @RequirePermission('customers.delete')
     @ApiOperation({ summary: 'Delete a customer' })
     @ApiResponse({ status: 200, description: 'Customer deleted successfully' })
     @ApiResponse({ status: 404, description: 'Customer not found' })
@@ -346,6 +354,7 @@ export class CustomerController {
     }
 
     @Patch(':id/activate')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Activate a customer' })
     @ApiResponse({ status: 200, description: 'Customer activated successfully', type: CustomerResponseDto })
     @ApiResponse({ status: 404, description: 'Customer not found' })
@@ -362,6 +371,7 @@ export class CustomerController {
     }
 
     @Patch(':id/deactivate')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Deactivate a customer' })
     @ApiResponse({ status: 200, description: 'Customer deactivated successfully', type: CustomerResponseDto })
     @ApiResponse({ status: 404, description: 'Customer not found' })
@@ -378,6 +388,7 @@ export class CustomerController {
     }
 
     @Patch(':id/restore')
+    @RequirePermission('customers.edit')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.customerService.restore(id);
@@ -389,6 +400,7 @@ export class CustomerController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('customers.delete')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.customerService.permanentDelete(id);

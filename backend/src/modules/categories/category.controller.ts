@@ -6,6 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { CategoryResponseDto } from './dto/category-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
@@ -18,6 +19,7 @@ export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
 
     @Post()
+    @RequirePermission('categories.create')
     @ApiOperation({ summary: 'Create a new category' })
     @ApiResponse({ status: 201, description: 'Category created successfully', type: CategoryResponseDto })
     async create(
@@ -33,6 +35,7 @@ export class CategoryController {
     }
 
     @Delete('bulk/delete')
+    @RequirePermission('categories.delete')
     @ApiOperation({ summary: 'Bulk soft delete categories' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.categoryService.bulkSoftDelete(body.ids);
@@ -44,6 +47,7 @@ export class CategoryController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('categories.edit')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.categoryService.bulkRestore(body.ids);
@@ -55,6 +59,7 @@ export class CategoryController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('categories.delete')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.categoryService.bulkPermanentDelete(body.ids);
@@ -157,6 +162,7 @@ export class CategoryController {
     }
 
     @Patch(':id')
+    @RequirePermission('categories.edit')
     @ApiOperation({ summary: 'Update a category' })
     @ApiResponse({ status: 200, description: 'Category updated successfully', type: CategoryResponseDto })
     @ApiResponse({ status: 404, description: 'Category not found' })
@@ -174,6 +180,7 @@ export class CategoryController {
     }
 
     @Delete(':id')
+    @RequirePermission('categories.delete')
     @ApiOperation({ summary: 'Delete a category' })
     @ApiResponse({ status: 200, description: 'Category deleted successfully' })
     @ApiResponse({ status: 404, description: 'Category not found' })
@@ -187,6 +194,7 @@ export class CategoryController {
     }
 
     @Patch(':id/restore')
+    @RequirePermission('categories.edit')
     @ApiOperation({ summary: 'Restore category from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.categoryService.restore(id);
@@ -198,6 +206,7 @@ export class CategoryController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('categories.delete')
     @ApiOperation({ summary: 'Permanently delete category' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.categoryService.permanentDelete(id);
