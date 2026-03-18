@@ -31,7 +31,7 @@ export class PermissionsGuard implements CanActivate {
     if (!user) return false;
 
     // Admin bypasses all permission checks
-    if (user.role === UserRole.ADMIN) return true;
+    if (user.role?.toLowerCase() === UserRole.ADMIN) return true;
 
     const rolePermissions = await this.permissionsService.getPermissionsForRole(
       user.role,

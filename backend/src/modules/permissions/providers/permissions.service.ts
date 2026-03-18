@@ -33,12 +33,13 @@ export class PermissionsService {
   }
 
   async getPermissionsForRole(role: UserRole): Promise<string[]> {
-    const cacheKey = `permissions:role:${role}`;
+    const normalizedRole = (role?.toLowerCase() ?? role) as UserRole;
+    const cacheKey = `permissions:role:${normalizedRole}`;
     const cached = await this.cacheService.get<string[]>(cacheKey);
     if (cached) return cached;
 
     const rolePerms = await this.rolePermissionRepo.find({
-      where: { role },
+      where: { role: normalizedRole },
       relations: ['permission'],
     });
 
