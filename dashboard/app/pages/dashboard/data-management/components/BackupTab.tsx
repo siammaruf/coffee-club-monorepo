@@ -247,7 +247,7 @@ function BackupSettingsDialog({
     setConnecting(true);
 
     const popup = window.open(
-      `${API_URL}/data-management/backup/drive/oauth/authorize`,
+      `${API_URL.replace(/\/$/, '')}/data-management/backup/drive/oauth/authorize`,
       "oauth_popup",
       "width=600,height=700,left=200,top=100"
     );
