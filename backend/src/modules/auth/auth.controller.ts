@@ -13,6 +13,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { NewUserPasswordDto } from './dto/new-user-password.dto';
 import { CacheService } from '../cache/cache.service';
 import { PermissionsService } from '../permissions/providers/permissions.service';
+import { UserService } from '../users/providers/user.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -21,6 +22,7 @@ export class AuthController {
     private authService: AuthService,
     private readonly cacheService: CacheService,
     private readonly permissionsService: PermissionsService,
+    private readonly userService: UserService,
   ) {}
 
   @Public()
@@ -204,8 +206,9 @@ export class AuthController {
     let cachedUser = await this.cacheService.get<Record<string, unknown>>(cacheKey);
 
     if (!cachedUser) {
-      const permissions = await this.permissionsService.getPermissionsForRole(user.role);
-      const { password, ...userWithoutPassword } = user as any;
+      const dbUser = await this.userService.findById(user.id!);
+      const permissions = await this.permissionsService.getPermissionsForRole(dbUser.role);
+      const { password, ...userWithoutPassword } = dbUser as any;
       cachedUser = { ...userWithoutPassword, permissions };
       await this.cacheService.set(cacheKey, cachedUser, 3600 * 1000);
     }

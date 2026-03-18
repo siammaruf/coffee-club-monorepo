@@ -18,22 +18,23 @@ export class PermissionsSeedService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    const count = await this.permissionRepo.count();
-    if (count > 0) return;
-
-    this.logger.log('Permissions table is empty — seeding default permissions...');
-
+    // Phase 1: Upsert permissions — insert any that don't exist yet
     for (const perm of DEFAULT_PERMISSIONS) {
       const existing = await this.permissionRepo.findOne({ where: { name: perm.name } });
       if (!existing) {
         await this.permissionRepo.save(this.permissionRepo.create(perm));
+        this.logger.log(`Seeded permission: ${perm.name}`);
       }
     }
 
+    // Phase 2: Seed role_permissions per-role — only if that role has no assignments yet
     const allPermissions = await this.permissionRepo.find();
     const permByName = new Map(allPermissions.map((p) => [p.name, p]));
 
     for (const [role, permNames] of Object.entries(ROLE_PERMISSION_DEFAULTS)) {
+      const existingCount = await this.rolePermissionRepo.count({ where: { role: role as UserRole } });
+      if (existingCount > 0) continue;
+
       const rows: RolePermission[] = [];
       for (const name of permNames) {
         const perm = permByName.get(name);
@@ -43,9 +44,8 @@ export class PermissionsSeedService implements OnApplicationBootstrap {
       }
       if (rows.length > 0) {
         await this.rolePermissionRepo.save(rows);
+        this.logger.log(`Seeded ${rows.length} permissions for role: ${role}`);
       }
     }
-
-    this.logger.log(`Seeded ${DEFAULT_PERMISSIONS.length} permissions with default role assignments.`);
   }
 }
