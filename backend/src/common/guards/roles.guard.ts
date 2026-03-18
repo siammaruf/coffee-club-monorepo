@@ -35,10 +35,10 @@ export class RolesGuard implements CanActivate {
     }
 
     // Admin role has access to everything
-    if (user.role === UserRole.ADMIN) {
+    if (user.role?.toLowerCase() === UserRole.ADMIN) {
       return true;
     }
 
-    return requiredRoles.some((role) => user.role === role);
+    return requiredRoles.some((role) => user.role?.toLowerCase() === role);
   }
 }

@@ -180,6 +180,7 @@ export class UserService {
         }
 
         const banks = await this.bankService.findByUserId(id);
+        if (user.role) user.role = user.role.toLowerCase() as any;
         const userResponse = new UserResponseDto(user);
         userResponse.banks = banks;
         return userResponse;
@@ -188,6 +189,7 @@ export class UserService {
 
     async findByEmail(email: string): Promise<UserResponseDto> {
         const user = await this.findUserOrFail({ email });
+        if (user.role) user.role = user.role.toLowerCase() as any;
         return new UserResponseDto(user);
     }
 
@@ -322,6 +324,7 @@ export class UserService {
             throw new UnauthorizedException('Account is inactive');
         }
 
+        if (user.role) user.role = user.role.toLowerCase() as any;
         return new UserResponseDto(user);
     }
 
