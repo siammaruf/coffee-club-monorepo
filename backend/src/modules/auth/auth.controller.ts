@@ -88,15 +88,15 @@ export class AuthController {
     response.cookie('access', access, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: accessExpiry,
       path: '/'
     });
-    
+
     response.cookie('refresh', refresh, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: refreshExpiry,
       path: '/'
     });
