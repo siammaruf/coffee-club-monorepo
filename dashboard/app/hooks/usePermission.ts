@@ -9,7 +9,7 @@ export function usePermission(permission: string): boolean {
   const user = useSelector((state: RootState) => state.auth.user);
 
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role?.toLowerCase() === 'admin') return true;
 
   return user.permissions?.includes(permission) ?? false;
 }
@@ -22,7 +22,7 @@ export function usePermissions(permissions: string[]): boolean {
   const user = useSelector((state: RootState) => state.auth.user);
 
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role?.toLowerCase() === 'admin') return true;
 
   return permissions.every((p) => user.permissions?.includes(p) ?? false);
 }
@@ -35,7 +35,7 @@ export function useAnyPermission(permissions: string[]): boolean {
   const user = useSelector((state: RootState) => state.auth.user);
 
   if (!user) return false;
-  if (user.role === 'admin') return true;
+  if (user.role?.toLowerCase() === 'admin') return true;
 
   return permissions.some((p) => user.permissions?.includes(p) ?? false);
 }

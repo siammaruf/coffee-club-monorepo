@@ -35,7 +35,7 @@ function useCan() {
   const user = useSelector((state: RootState) => state.auth.user);
   return (permission: string): boolean => {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.role?.toLowerCase() === 'admin') return true;
     return user.permissions?.includes(permission) ?? false;
   };
 }

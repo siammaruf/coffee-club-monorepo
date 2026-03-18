@@ -30,7 +30,7 @@ export function PermissionGuard({
   const user = useSelector((state: RootState) => state.auth.user);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role === 'admin') return <>{children}</>;
+  if (user.role?.toLowerCase() === 'admin') return <>{children}</>;
   if (user.permissions?.includes(permission)) return <>{children}</>;
 
   return <Navigate to={redirectTo} replace />;
