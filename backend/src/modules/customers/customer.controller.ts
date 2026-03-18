@@ -31,7 +31,7 @@ import { CustomerType } from './enum/customer-type.enum';
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('customers')
-@Roles(UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF)
 export class CustomerController {
     constructor(private readonly customerService: CustomerService) {}
 

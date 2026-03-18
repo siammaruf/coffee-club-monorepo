@@ -28,6 +28,7 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @ApiTags('Data Management - Import')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('data-management/import')
 export class ImportController {
   constructor(private readonly importService: ImportService) {}

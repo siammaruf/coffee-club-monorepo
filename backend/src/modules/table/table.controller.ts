@@ -14,7 +14,7 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('tables')
-@Roles(UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.STUFF, UserRole.BARISTA)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 

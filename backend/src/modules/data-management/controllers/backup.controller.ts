@@ -43,6 +43,7 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @ApiTags('Data Management - Backup')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('data-management/backup')
 export class BackupController {
   constructor(
