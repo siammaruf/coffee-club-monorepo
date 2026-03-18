@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Link, useNavigate, useLocation } from "react-router";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -28,6 +29,10 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export default function ProductsPage() {
+  const canCreate = usePermission('products.create');
+  const canEdit = usePermission('products.edit');
+  const canDelete = usePermission('products.delete');
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -295,12 +300,14 @@ export default function ProductsPage() {
           </h1>
           <p className="text-gray-600">Manage your products and inventory</p>
         </div>
-        <Link to="/dashboard/products/create">
-          <Button className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Product
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link to="/dashboard/products/create">
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Add Product
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Stats Cards - Only show if we have products and in active view */}
@@ -579,12 +586,16 @@ export default function ProductsPage() {
                         <TableCell>
                           {viewMode === 'trash' ? (
                             <div className="flex gap-1">
-                              <Button variant="outline" size="sm" onClick={() => handleRestore(product.id!)} title="Restore">
-                                <RotateCcw className="h-4 w-4" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(product.id!)} title="Delete Permanently">
-                                <AlertTriangle className="h-4 w-4" />
-                              </Button>
+                              {canDelete && (
+                                <Button variant="outline" size="sm" onClick={() => handleRestore(product.id!)} title="Restore">
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(product.id!)} title="Delete Permanently">
+                                  <AlertTriangle className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           ) : (
                             <div className="flex items-center gap-1">
@@ -596,23 +607,27 @@ export default function ProductsPage() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Edit"
-                                onClick={() => navigate(`/dashboard/products/edit/${product.id}`, { state: { fromPage: currentPage } })}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Delete"
-                                className="text-red-600 hover:bg-red-50"
-                                onClick={() => handleDelete(product.id!)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Edit"
+                                  onClick={() => navigate(`/dashboard/products/edit/${product.id}`, { state: { fromPage: currentPage } })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Delete"
+                                  className="text-red-600 hover:bg-red-50"
+                                  onClick={() => handleDelete(product.id!)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           )}
                         </TableCell>
@@ -645,7 +660,7 @@ export default function ProductsPage() {
                   ? 'No deleted products found.'
                   : 'Get started by adding your first product to the inventory.'}
               </p>
-              {viewMode === 'active' && (
+              {viewMode === 'active' && canCreate && (
                 <Link className="flex justify-center" to="/dashboard/products/create">
                   <Button className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />

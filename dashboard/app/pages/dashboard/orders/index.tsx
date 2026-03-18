@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -46,6 +47,9 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export default function OrdersPage() {
+  const canCreate = usePermission('orders.create');
+  const canDelete = usePermission('orders.delete');
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -302,12 +306,14 @@ export default function OrdersPage() {
           </h1>
           <p className="text-gray-600">Manage your customer orders</p>
         </div>
-        <Link to="/dashboard/orders/create">
-          <Button className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            New Order
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link to="/dashboard/orders/create">
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              New Order
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Error Message */}
@@ -526,12 +532,16 @@ export default function OrdersPage() {
                       <TableCell>
                         {viewMode === 'trash' ? (
                           <div className="flex gap-1">
-                            <Button variant="outline" size="sm" onClick={() => handleRestore(order.id)} title="Restore">
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(order.id)} title="Delete Permanently">
-                              <AlertTriangle className="h-4 w-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button variant="outline" size="sm" onClick={() => handleRestore(order.id)} title="Restore">
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button variant="outline" size="sm" className="text-red-600" onClick={() => handlePermanentDelete(order.id)} title="Delete Permanently">
+                                <AlertTriangle className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         ) : (
                           <DropdownMenu>
@@ -547,13 +557,15 @@ export default function OrdersPage() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Order
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(order.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
+                              {canDelete && (
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(order.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePermission } from '~/hooks/usePermission';
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import {
@@ -40,14 +41,16 @@ import type {
 } from "~/types/kitchenStock";
 import type { RootState } from "~/redux/store/rootReducer";
 
-const WRITE_ROLES = ["admin", "manager", "chef"];
-
 type Tab = "entries" | "alerts";
 
 export default function KitchenStockPage() {
+  const canCreate = usePermission('kitchen_stock.create');
+  const canEdit = usePermission('kitchen_stock.edit');
+  const canDelete = usePermission('kitchen_stock.delete');
+  const canWrite = canCreate || canEdit || canDelete;
+
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-  const canWrite = user ? WRITE_ROLES.includes(user.role) : false;
 
   // Entries state
   const [entries, setEntries] = useState<KitchenStockEntry[]>([]);
@@ -214,7 +217,7 @@ export default function KitchenStockPage() {
             <BarChart2 className="w-4 h-4 mr-2" />
             View Report
           </Button>
-          {canWrite && (
+          {canCreate && (
             <>
               <Button
                 className="bg-amber-500 hover:bg-amber-600 text-white"
@@ -318,7 +321,7 @@ export default function KitchenStockPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {canWrite && (
+            {canDelete && (
               <BulkActionBar
                 selectedCount={selectedCount}
                 onDelete={handleBulkDelete}
@@ -336,7 +339,7 @@ export default function KitchenStockPage() {
               <div className="text-center py-12 text-gray-400">
                 <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No stock entries found</p>
-                {canWrite && (
+                {canCreate && (
                   <Button
                     size="sm"
                     className="mt-3 bg-blue-600 text-white"
@@ -351,7 +354,7 @@ export default function KitchenStockPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {canWrite && (
+                      {(canEdit || canDelete) && (
                         <TableHead className="w-10">
                           <Checkbox
                             checked={isAllSelected(filteredEntries.map(e => e.id))}
@@ -366,13 +369,13 @@ export default function KitchenStockPage() {
                       <TableHead>Price / Cost</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Note</TableHead>
-                      {canWrite && <TableHead className="text-right">Actions</TableHead>}
+                      {(canEdit || canDelete) && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((entry) => (
                       <TableRow key={entry.id} className={entry.entry_type === "USAGE" ? "bg-amber-50" : ""}>
-                        {canWrite && (
+                        {(canEdit || canDelete) && (
                           <TableCell>
                             <Checkbox
                               checked={isSelected(entry.id)}
@@ -393,31 +396,35 @@ export default function KitchenStockPage() {
                         <TableCell className="text-gray-500 text-sm max-w-[200px] truncate">
                           {entry.note || "—"}
                         </TableCell>
-                        {canWrite && (
+                        {(canEdit || canDelete) && (
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  if (entry.entry_type === "USAGE") {
-                                    navigate(`/dashboard/kitchen-stock/edit-usage/${entry.id}`);
-                                  } else {
-                                    setEditEntry(entry);
-                                    setShowEdit(true);
-                                  }
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => setDeleteId(entry.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (entry.entry_type === "USAGE") {
+                                      navigate(`/dashboard/kitchen-stock/edit-usage/${entry.id}`);
+                                    } else {
+                                      setEditEntry(entry);
+                                      setShowEdit(true);
+                                    }
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => setDeleteId(entry.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         )}
