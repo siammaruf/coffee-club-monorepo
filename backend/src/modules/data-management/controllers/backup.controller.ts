@@ -27,6 +27,7 @@ import {
 
 import { Public } from '../../../common/decorators/public.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { RequirePermission } from '../../../common/decorators/require-permission.decorator';
 import { CurrentUser } from '../../../common/decorators/user.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
 import { User } from '../../users/entities/user.entity';
@@ -43,7 +44,6 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('data-management/backup')
-@Roles(UserRole.ADMIN)
 export class BackupController {
   constructor(
     private readonly backupService: BackupService,
@@ -52,6 +52,7 @@ export class BackupController {
   ) {}
 
   @Post('create')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Create a manual backup' })
   @ApiResponse({
     status: 201,
@@ -66,6 +67,7 @@ export class BackupController {
   }
 
   @Get('history')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Get backup history with pagination' })
   @ApiQuery({
     name: 'page',
@@ -93,6 +95,7 @@ export class BackupController {
   }
 
   @Get('history/:id')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Get backup detail by ID' })
   @ApiParam({
     name: 'id',
@@ -111,6 +114,7 @@ export class BackupController {
   }
 
   @Get('history/:id/download')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Download a backup file' })
   @ApiParam({
     name: 'id',
@@ -142,6 +146,7 @@ export class BackupController {
   }
 
   @Delete('history/:id')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Delete a backup' })
   @ApiParam({
     name: 'id',
@@ -161,6 +166,7 @@ export class BackupController {
   }
 
   @Post('restore/:id')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Restore database from a backup' })
   @ApiParam({
     name: 'id',
@@ -188,6 +194,7 @@ export class BackupController {
   }
 
   @Get('restore/:id/preview')
+  @RequirePermission('data_management.view')
   @ApiOperation({
     summary: 'Preview backup metadata before restoring',
   })
@@ -208,6 +215,7 @@ export class BackupController {
   }
 
   @Get('settings')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Get backup settings' })
   @ApiResponse({
     status: 200,
@@ -218,6 +226,7 @@ export class BackupController {
   }
 
   @Put('settings')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Update backup settings' })
   @ApiResponse({
     status: 200,
@@ -228,6 +237,7 @@ export class BackupController {
   }
 
   @Patch('settings/oauth')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Save Google OAuth2 refresh token for Drive access' })
   @ApiResponse({ status: 200, description: 'OAuth credentials saved successfully' })
   async updateOAuthSettings(@Body() dto: UpdateOAuthSettingsDto) {
@@ -235,6 +245,7 @@ export class BackupController {
   }
 
   @Delete('drive/oauth')
+  @RequirePermission('data_management.view')
   @HttpCode(200)
   @ApiOperation({ summary: 'Disconnect Google Drive (clear refresh token)' })
   @ApiResponse({ status: 200, description: 'Google Drive disconnected successfully' })
@@ -244,6 +255,7 @@ export class BackupController {
   }
 
   @Get('drive/folders')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'List Google Drive folders available to the connected account' })
   @ApiResponse({ status: 200, description: 'Folder list retrieved successfully' })
   async listDriveFolders() {
@@ -251,6 +263,7 @@ export class BackupController {
   }
 
   @Get('drive/status')
+  @RequirePermission('data_management.view')
   @ApiOperation({
     summary: 'Check Google Drive connection status',
   })
@@ -263,6 +276,7 @@ export class BackupController {
   }
 
   @Post('drive/test')
+  @RequirePermission('data_management.view')
   @HttpCode(200)
   @ApiOperation({ summary: 'Upload a test file to verify Google Drive integration' })
   @ApiResponse({ status: 200, description: 'Test upload result' })
@@ -271,6 +285,7 @@ export class BackupController {
   }
 
   @Get('drive/oauth/authorize')
+  @RequirePermission('data_management.view')
   @ApiOperation({
     summary: 'Initiate Google OAuth2 flow for Drive access',
   })

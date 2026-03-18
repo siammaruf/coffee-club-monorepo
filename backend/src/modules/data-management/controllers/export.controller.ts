@@ -21,17 +21,18 @@ import { ExportDataDto } from '../dto/export-data.dto';
 import { ExportGroup } from '../enums/export-group.enum';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
+import { RequirePermission } from '../../../common/decorators/require-permission.decorator';
 import { ApiErrorResponses } from '../../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Data Management - Export')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('data-management/export')
-@Roles(UserRole.ADMIN)
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}
 
   @Get('groups')
+  @RequirePermission('data_management.view')
   @ApiOperation({ summary: 'Get available export groups with record counts' })
   @ApiResponse({
     status: 200,
@@ -67,6 +68,7 @@ export class ExportController {
   }
 
   @Post('excel')
+  @RequirePermission('data_management.export')
   @ApiOperation({ summary: 'Export selected groups to Excel file' })
   @ApiResponse({
     status: 200,
@@ -97,6 +99,7 @@ export class ExportController {
   }
 
   @Get('template/:group')
+  @RequirePermission('data_management.export')
   @ApiOperation({ summary: 'Download empty import template for a specific group' })
   @ApiParam({
     name: 'group',

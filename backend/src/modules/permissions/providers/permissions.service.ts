@@ -72,9 +72,8 @@ export class PermissionsService {
       await this.rolePermissionRepo.save(rows);
     }
 
-    // Invalidate caches
+    // Invalidate role-level permissions cache — user cache no longer stores permissions
     await this.cacheService.delete(`permissions:role:${role}`);
-    await this.cacheService.delete('user:*');
 
     // Write audit log
     await this.auditLogRepo.save(
