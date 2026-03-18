@@ -15,6 +15,7 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiTags('Staff Salary')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('staff-salary')
 export class SalaryController {
   constructor(private readonly salaryService: SalaryService) {}

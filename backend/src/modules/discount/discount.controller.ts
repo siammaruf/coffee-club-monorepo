@@ -12,7 +12,7 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('discounts')
-@Roles(UserRole.ADMIN, UserRole.MANAGER)
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.BARISTA)
 export class DiscountController {
     constructor(private readonly discountService: DiscountService) {}
 
