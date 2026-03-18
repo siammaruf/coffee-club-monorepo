@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
@@ -22,12 +23,12 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 @ApiTags('Settings')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
-@Roles(UserRole.ADMIN)
 @Controller('settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
+  @RequirePermission('settings.roles_permissions')
   @ApiOperation({
     summary: 'List all settings',
     description: 'Retrieves all application settings (admin only)',
@@ -44,6 +45,7 @@ export class SettingsController {
   }
 
   @Get(':key')
+  @RequirePermission('settings.roles_permissions')
   @ApiOperation({
     summary: 'Get setting by key',
     description: 'Retrieves a single setting by its key (admin only)',
@@ -62,6 +64,7 @@ export class SettingsController {
   }
 
   @Put(':key')
+  @RequirePermission('settings.roles_permissions')
   @ApiOperation({
     summary: 'Update setting',
     description: 'Updates a setting value by key (admin only). Creates the setting if it does not exist.',

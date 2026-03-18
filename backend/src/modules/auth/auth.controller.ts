@@ -14,6 +14,7 @@ import { NewUserPasswordDto } from './dto/new-user-password.dto';
 import { CacheService } from '../cache/cache.service';
 import { PermissionsService } from '../permissions/providers/permissions.service';
 import { UserService } from '../users/providers/user.service';
+import { UserRole } from '../users/enum/user-role.enum';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -210,17 +211,21 @@ export class AuthController {
 
     if (!cachedUser) {
       const dbUser = await this.userService.findById(user.id!);
-      const permissions = await this.permissionsService.getPermissionsForRole(dbUser.role);
       const { password, ...userWithoutPassword } = dbUser as any;
-      cachedUser = { ...userWithoutPassword, permissions };
+      cachedUser = userWithoutPassword;
       await this.cacheService.set(cacheKey, cachedUser, 3600 * 1000);
     }
+
+    // Permissions fetched separately so busting permissions:role:{role} is sufficient
+    const permissions = await this.permissionsService.getPermissionsForRole(
+      cachedUser.role as UserRole,
+    );
 
     return {
       status: 'success',
       message: 'User information retrieved successfully',
       statusCode: HttpStatus.OK,
-      data: cachedUser
+      data: { ...cachedUser, permissions },
     };
   }
 

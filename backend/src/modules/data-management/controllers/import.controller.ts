@@ -19,6 +19,7 @@ import {
 
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/enum/user-role.enum';
+import { RequirePermission } from '../../../common/decorators/require-permission.decorator';
 import { ImportService } from '../providers/import.service';
 import { ImportDataDto } from '../dto/import-data.dto';
 import { ImportPreview, ImportResult } from '../interfaces/backup-metadata.interface';
@@ -28,11 +29,11 @@ import { ApiErrorResponses } from '../../../common/decorators/api-error-response
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('data-management/import')
-@Roles(UserRole.ADMIN)
 export class ImportController {
   constructor(private readonly importService: ImportService) {}
 
   @Post('preview')
+  @RequirePermission('data_management.view')
   @ApiOperation({
     summary: 'Upload Excel file and preview import',
     description:
@@ -85,6 +86,7 @@ export class ImportController {
   }
 
   @Post('execute')
+  @RequirePermission('data_management.export')
   @ApiOperation({
     summary: 'Execute import from uploaded Excel file',
     description:

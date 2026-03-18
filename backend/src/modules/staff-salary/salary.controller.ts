@@ -9,18 +9,19 @@ import { receiptStorage } from 'src/common/utils/storage.util';
 import { SalaryResponseDto } from './dto/salary-response.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/enum/user-role.enum';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Staff Salary')
 @ApiBearerAuth('staff-auth')
 @ApiErrorResponses()
 @Controller('staff-salary')
-@Roles(UserRole.ADMIN)
 export class SalaryController {
   constructor(private readonly salaryService: SalaryService) {}
 
   @Post()
-  @ApiOperation({ 
+  @RequirePermission('salary.create')
+  @ApiOperation({
     summary: 'Create a new salary record',
     description: 'Create a new salary record for an employee with optional receipt image upload'
   })
@@ -130,6 +131,7 @@ export class SalaryController {
   }
 
     @Delete('bulk/delete')
+    @RequirePermission('salary.create')
     @ApiOperation({ summary: 'Bulk soft delete' })
     async bulkSoftDelete(@Body() body: { ids: string[] }): Promise<any> {
         await this.salaryService.bulkSoftDelete(body.ids);
@@ -141,6 +143,7 @@ export class SalaryController {
     }
 
     @Patch('bulk/restore')
+    @RequirePermission('salary.create')
     @ApiOperation({ summary: 'Bulk restore from trash' })
     async bulkRestore(@Body() body: { ids: string[] }): Promise<any> {
         await this.salaryService.bulkRestore(body.ids);
@@ -152,6 +155,7 @@ export class SalaryController {
     }
 
     @Delete('bulk/permanent')
+    @RequirePermission('salary.create')
     @ApiOperation({ summary: 'Bulk permanent delete' })
     async bulkPermanentDelete(@Body() body: { ids: string[] }): Promise<any> {
         const result = await this.salaryService.bulkPermanentDelete(body.ids);
@@ -166,6 +170,7 @@ export class SalaryController {
     }
 
     @Get('trash/list')
+    @RequirePermission('salary.view')
     @ApiOperation({ summary: 'List trashed records' })
     async findTrashed(
         @Query('page') page?: string,
@@ -189,7 +194,8 @@ export class SalaryController {
 
 
   @Get()
-  @ApiOperation({ 
+  @RequirePermission('salary.view')
+  @ApiOperation({
     summary: 'Get all salary records with optional filtering',
     description: 'Retrieve a paginated list of salary records with optional filters for user, payment status, and date range'
   })
@@ -330,7 +336,8 @@ export class SalaryController {
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @RequirePermission('salary.view')
+  @ApiOperation({
     summary: 'Get salary record by ID',
     description: 'Retrieve a specific salary record by its unique identifier'
   })
@@ -383,7 +390,8 @@ export class SalaryController {
   }
 
   @Put(':id')
-  @ApiOperation({ 
+  @RequirePermission('salary.create')
+  @ApiOperation({
     summary: 'Update a salary record',
     description: 'Update an existing salary record with new information and optional receipt image'
   })
@@ -493,7 +501,8 @@ export class SalaryController {
   }
 
   @Post(':id/mark-as-paid')
-  @ApiOperation({ 
+  @RequirePermission('salary.create')
+  @ApiOperation({
     summary: 'Mark a salary as paid',
     description: 'Update the payment status of a salary record to paid with optional receipt image. Payment date will be tracked by created_at timestamp.'
   })
@@ -570,7 +579,8 @@ export class SalaryController {
   }
 
   @Post(':id/mark-as-unpaid')
-  @ApiOperation({ 
+  @RequirePermission('salary.create')
+  @ApiOperation({
     summary: 'Mark a salary as unpaid',
     description: 'Revert the payment status of a salary record back to unpaid'
   })
@@ -709,7 +719,8 @@ export class SalaryController {
   }
 
   @Delete(':id')
-  @ApiOperation({ 
+  @RequirePermission('salary.create')
+  @ApiOperation({
     summary: 'Delete a salary record',
     description: 'Permanently delete a salary record from the system. This action cannot be undone.'
   })
@@ -747,6 +758,7 @@ export class SalaryController {
   }
 
     @Patch(':id/restore')
+    @RequirePermission('salary.create')
     @ApiOperation({ summary: 'Restore from trash' })
     async restore(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.salaryService.restore(id);
@@ -758,6 +770,7 @@ export class SalaryController {
     }
 
     @Delete(':id/permanent')
+    @RequirePermission('salary.create')
     @ApiOperation({ summary: 'Permanently delete' })
     async permanentDelete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         await this.salaryService.permanentDelete(id);
