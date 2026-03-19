@@ -89,6 +89,9 @@ export const DEFAULT_PERMISSIONS: Array<{
   { name: 'data_management.export', resource: 'data_management', action: 'export', description: 'Export data' },
   // Settings
   { name: 'settings.roles_permissions', resource: 'settings', action: 'roles_permissions', description: 'Manage roles & permissions' },
+  // WiFi Settings
+  { name: 'wifi_settings.view', resource: 'wifi_settings', action: 'view', description: 'View WiFi settings' },
+  { name: 'wifi_settings.edit', resource: 'wifi_settings', action: 'edit', description: 'Edit WiFi settings' },
 ];
 
 export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
@@ -112,6 +115,7 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'contact_messages.view', 'contact_messages.delete',
     'partners.view', 'partners.create', 'partners.edit', 'partners.delete',
     'data_management.view', 'data_management.export',
+    'wifi_settings.view', 'wifi_settings.edit',
   ],
   [UserRole.CHEF]: [
     'kitchen_items.view', 'kitchen_items.create', 'kitchen_items.edit',

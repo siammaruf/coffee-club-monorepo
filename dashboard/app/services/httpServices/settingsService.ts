@@ -12,4 +12,6 @@ export const settingsService = {
   getByKey: (key: string) => httpService.get(`/settings/${key}`),
   update: (key: string, value: string) => httpService.put(`/settings/${key}`, { value }),
   getWifi: () => httpService.get<WifiSettingsResponse>('/settings/wifi'),
+  updateWifi: (wifi_name: string, wifi_password: string) =>
+    httpService.put('/settings/wifi', { wifi_name, wifi_password }),
 };
