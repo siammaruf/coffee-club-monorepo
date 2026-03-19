@@ -44,18 +44,27 @@ export class CacheService {
         ? `${this.redisPrefix}:${pattern}`
         : pattern;
 
-      let cursor = '0';
+      let cursor: string | number = '0';
       let deletedCount = 0;
       do {
-        const [nextCursor, keys]: [string, string[]] = await redisClient.scan(
+        const result = await redisClient.scan(
           cursor, 'MATCH', fullPattern, 'COUNT', 100,
         );
+        // Support both ioredis ([cursor, keys]) and node-redis ({ cursor, keys })
+        let nextCursor: string | number;
+        let keys: string[];
+        if (Array.isArray(result)) {
+          [nextCursor, keys] = result;
+        } else {
+          nextCursor = result.cursor;
+          keys = result.keys;
+        }
         cursor = nextCursor;
         if (keys.length > 0) {
           await redisClient.del(...keys);
           deletedCount += keys.length;
         }
-      } while (cursor !== '0');
+      } while (String(cursor) !== '0');
 
       this.logger.debug(`Deleted ${deletedCount} keys matching pattern: ${fullPattern}`);
     } catch (error) {
@@ -83,14 +92,22 @@ export class CacheService {
         : `keyv:${pattern}`;
 
       const found: string[] = [];
-      let cursor = '0';
+      let cursor: string | number = '0';
       do {
-        const [nextCursor, keys]: [string, string[]] = await redisClient.scan(
+        const result = await redisClient.scan(
           cursor, 'MATCH', fullPattern, 'COUNT', 100,
         );
+        let nextCursor: string | number;
+        let keys: string[];
+        if (Array.isArray(result)) {
+          [nextCursor, keys] = result;
+        } else {
+          nextCursor = result.cursor;
+          keys = result.keys;
+        }
         cursor = nextCursor;
         found.push(...keys);
-      } while (cursor !== '0');
+      } while (String(cursor) !== '0');
 
       // Strip the keyv namespace prefix to return app-level keys
       const prefixToStrip = this.redisPrefix
