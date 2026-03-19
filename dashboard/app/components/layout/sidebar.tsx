@@ -120,9 +120,7 @@ export default function Sidebar() {
     <div className="w-64 bg-card border-r h-full flex flex-col">
       <div className="p-4 border-b">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-            <Coffee className="w-4 h-4 text-white" />
-          </div>
+          <img src="/favicon/apple-touch-icon.png" alt="Coffee Club" className="w-8 h-8 rounded-lg" />
           <h2 className="text-lg font-bold tracking-tight">Coffee Club</h2>
         </div>
       </div>
