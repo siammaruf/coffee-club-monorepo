@@ -94,10 +94,12 @@ export class OrderService {
     const totalAmount = order_items?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
     const discountAmount = this.calculateDiscountAmount(totalAmount, discount);
     const order_id = await this.generateOrderId();
-    
+    const token_number = await this.generateUnifiedTokenNumber();
+
     const order = this.orderRepository.create({
       ...rest,
       order_id,
+      token_number,
       tables,
       discount,
       user: createOrderDto.user_id ? { id: createOrderDto.user_id } : undefined,
@@ -543,21 +545,39 @@ export class OrderService {
     }
   }
 
+  private async generateUnifiedTokenNumber(): Promise<string> {
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
+    const tokenNumber = `T-${dateStr}-${uniqueId.slice(-3)}`;
+
+    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber } });
+    if (existing) {
+      const fallbackNumber = `T-${dateStr}-${timestamp.toString().slice(-3)}`;
+      return fallbackNumber;
+    }
+
+    return tokenNumber;
+  }
+
   private async generateTokenNumber(prefix: string): Promise<string> {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-    
+
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
     const tokenNumber = `${prefix}-${dateStr}-${uniqueId.slice(-3)}`;
-    
+
     const existingToken = await this.orderTokensService.findByToken(tokenNumber);
     if (existingToken) {
       const fallbackNumber = `${prefix}-${dateStr}-${timestamp.toString().slice(-3)}`;
       return fallbackNumber;
     }
-    
+
     return tokenNumber;
   }
 

@@ -14,7 +14,8 @@ import { customerService } from '@/services/httpServices/customerService';
 import { discountService } from '@/services/httpServices/discountService';
 import type { Discount } from '@/types/discount';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { printBarToken, printKitchenToken, printReceipt } from '@/utils/printer';
+import { printBarToken, printKitchenToken, printReceipt, printCustomerToken } from '@/utils/printer';
+import { settingsService } from '@/services/httpServices/settingsService';
 import { formatPrice } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
 
@@ -413,12 +414,26 @@ export default function OrderDetails() {
     }
   };
 
+  const handlePrintCustomerToken = async () => {
+    if (!order) return;
+    try {
+      setIsPrinting(true);
+      const wifi = await settingsService.getWifiSettings();
+      await withTimeout(printCustomerToken(order, wifi.wifi_name, wifi.wifi_password), 2000);
+    } catch (err) {
+      Alert.alert('Print Error', 'Failed to print customer token');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   const handlePrintReceipt = async (orderToPrint?: Order) => {
     const target = orderToPrint || order;
     if (!target) return;
     try {
       setIsPrinting(true);
-      await withTimeout(printReceipt(target), 2000);
+      const wifi = await settingsService.getWifiSettings();
+      await withTimeout(printReceipt(target, wifi.wifi_name, wifi.wifi_password), 2000);
     } catch (err) {
       Alert.alert('Print Error', 'Failed to print receipt');
     } finally {
@@ -896,7 +911,7 @@ export default function OrderDetails() {
           className="bg-white border-t border-gray-200 p-3"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
-          <View className="flex-row gap-2 mb-4">
+          <View className="flex-row gap-2 mb-2">
             <TouchableOpacity
               onPress={handlePrintKitchenToken}
               disabled={isPrinting || !order.order_tokens?.kitchen}
@@ -920,6 +935,17 @@ export default function OrderDetails() {
               <View className="flex-row items-center justify-center">
                 <Ionicons name="wine" size={16} color="#ffffff" />
                 <Text className="text-white ml-1 text-sm font-medium">Bar</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handlePrintCustomerToken}
+              disabled={isPrinting}
+              className={`flex-1 py-4 rounded-lg ${isPrinting ? 'bg-gray-400' : 'bg-teal-500'}`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="receipt" size={16} color="#ffffff" />
+                <Text className="text-white ml-1 text-sm font-medium">Customer</Text>
               </View>
             </TouchableOpacity>
 
@@ -950,7 +976,7 @@ export default function OrderDetails() {
           className="bg-white border-t border-gray-200 p-3"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
-          <View className="flex-row gap-2 mb-4">
+          <View className="flex-row gap-2 mb-2">
             <TouchableOpacity
               onPress={handlePrintKitchenToken}
               disabled={isPrinting || !order.order_tokens?.kitchen}
@@ -974,6 +1000,17 @@ export default function OrderDetails() {
               <View className="flex-row items-center justify-center">
                 <Ionicons name="wine" size={16} color="#ffffff" />
                 <Text className="text-white ml-1 text-sm font-medium">Bar</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handlePrintCustomerToken}
+              disabled={isPrinting}
+              className={`flex-1 py-4 rounded-lg ${isPrinting ? 'bg-gray-400' : 'bg-teal-500'}`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="receipt" size={16} color="#ffffff" />
+                <Text className="text-white ml-1 text-sm font-medium">Customer</Text>
               </View>
             </TouchableOpacity>
           </View>

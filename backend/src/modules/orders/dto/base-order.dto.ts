@@ -23,6 +23,11 @@ export class BaseOrderDto {
     @IsOptional()
     order_id?: string;
 
+    @ApiPropertyOptional({ description: 'Unified token number shared across kitchen, bar, and customer tokens' })
+    @IsString()
+    @IsOptional()
+    token_number?: string;
+
     @ApiPropertyOptional({ enum: OrderType, default: OrderType.DINEIN })
     @IsEnum(OrderType)
     @IsOptional()

@@ -58,7 +58,8 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
     await ReactNativePosPrinter.printText('COFFEE CLUB GO', { align: 'CENTER', size: 14, bold: true, fontType: 'A' });
     await ReactNativePosPrinter.printText('='.repeat(32));
     await ReactNativePosPrinter.printText(`*** ${title} ***`, { align: 'CENTER', size: 13, fontType: 'B' });
-    await ReactNativePosPrinter.printText(`${token.token}`, { align: 'CENTER', size: 12, fontType: 'B', bold: true });
+    const displayNumber = order.token_number || token.token;
+    await ReactNativePosPrinter.printText(`# ${displayNumber}`, { align: 'CENTER', size: 12, fontType: 'B', bold: true });
     await ReactNativePosPrinter.printText('='.repeat(32));
     await ReactNativePosPrinter.printText(`ORDER: ${order.order_id || order.id}`);
     await ReactNativePosPrinter.printText(`STATUS: ${token.status}`);
@@ -93,7 +94,7 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
 };
 
 // Print receipt
-export const printReceipt = async (order: Order, printerAddress?: string) => {
+export const printReceipt = async (order: Order, wifiName?: string, wifiPassword?: string, printerAddress?: string) => {
     const ReactNativePosPrinter = getPrinter();
     if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
 
@@ -175,6 +176,15 @@ export const printReceipt = async (order: Order, printerAddress?: string) => {
         await ReactNativePosPrinter.printText('+88 01895 440225', { align: 'CENTER', size: 13 });
         await ReactNativePosPrinter.printText('-'.repeat(32));
         await ReactNativePosPrinter.printText('** Thank you for your visit! **', { align: 'CENTER', size: 9, italic: true, fontType: 'C' });
+
+        if (wifiName) {
+            await ReactNativePosPrinter.printText('-'.repeat(32));
+            await ReactNativePosPrinter.printText(`WiFi: ${wifiName}`, { align: 'CENTER', size: 10, fontType: 'C' });
+            if (wifiPassword) {
+                await ReactNativePosPrinter.printText(`Pass: ${wifiPassword}`, { align: 'CENTER', size: 10, fontType: 'C' });
+            }
+        }
+
         await ReactNativePosPrinter.printText(`Printed: ${new Date().toLocaleString()}`, { align: 'CENTER', size: 9, fontType: 'C' });
 
         await ReactNativePosPrinter.newLine();
@@ -188,6 +198,73 @@ export const printReceipt = async (order: Order, printerAddress?: string) => {
 
 export const printKitchenToken = async (order: Order): Promise<void> => printToken(order, 'kitchen');
 export const printBarToken = async (order: Order): Promise<void> => printToken(order, 'bar');
+
+// Print customer token with unified token number and WiFi info
+export const printCustomerToken = async (order: Order, wifiName?: string, wifiPassword?: string, printerAddress?: string): Promise<void> => {
+  const ReactNativePosPrinter = getPrinter();
+  if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
+
+  const printer = printerAddress || await selectedPrinter();
+  try {
+    if (!order.order_items || order.order_items.length === 0) {
+      Alert.alert('No Items', 'This order has no items to print.');
+      return;
+    }
+
+    const printerInstance = await ReactNativePosPrinter.connectPrinter(printer);
+    if (!printerInstance) {
+      Alert.alert('Print Error', 'Could not get printer instance.');
+      return;
+    }
+
+    await ReactNativePosPrinter.printText('COFFEE CLUB GO', { align: 'CENTER', size: 14, bold: true, fontType: 'A' });
+    await ReactNativePosPrinter.printText('='.repeat(32));
+    await ReactNativePosPrinter.printText('*** CUSTOMER TOKEN ***', { align: 'CENTER', size: 13, fontType: 'B' });
+
+    const displayNumber = order.token_number || order.order_id || order.id;
+    await ReactNativePosPrinter.printText(`# ${displayNumber}`, { align: 'CENTER', size: 12, fontType: 'B', bold: true });
+    await ReactNativePosPrinter.printText('='.repeat(32));
+
+    await ReactNativePosPrinter.printText(`ORDER: ${order.order_id || order.id}`);
+    await ReactNativePosPrinter.printText(`DATE: ${order.created_at ? new Date(order.created_at).toLocaleString() : new Date().toLocaleString()}`);
+
+    if (order.order_type === 'TAKEAWAY') {
+      await ReactNativePosPrinter.printText('TABLES: TAKEAWAY');
+    } else if (order.tables && order.tables.length > 0) {
+      const tableNumbers = order.tables.map(t => t.number).join(', ');
+      await ReactNativePosPrinter.printText(`TABLES: ${tableNumbers}`);
+    }
+
+    await ReactNativePosPrinter.printText('='.repeat(32));
+    await ReactNativePosPrinter.printText('*** ITEMS ***');
+
+    for (const item of order.order_items) {
+      const name = item.item?.name || 'Item';
+      const variation = item.item_variation ? ` (${item.item_variation.name || item.item_variation.name_bn})` : '';
+      await ReactNativePosPrinter.printText(`>> ${item.quantity}x ${name}${variation}`, { fontType: 'C' });
+    }
+
+    if (wifiName) {
+      await ReactNativePosPrinter.printText('-'.repeat(32));
+      await ReactNativePosPrinter.printText(`WiFi: ${wifiName}`, { align: 'CENTER', size: 10, fontType: 'C' });
+      if (wifiPassword) {
+        await ReactNativePosPrinter.printText(`Pass: ${wifiPassword}`, { align: 'CENTER', size: 10, fontType: 'C' });
+      }
+    }
+
+    await ReactNativePosPrinter.printText('-'.repeat(32));
+    await ReactNativePosPrinter.printText('** Thank you! **', { align: 'CENTER', size: 9, italic: true, fontType: 'C' });
+    await ReactNativePosPrinter.printText(`Printed: ${new Date().toLocaleString()}`, { size: 10, align: 'CENTER', fontType: 'C' });
+
+    await ReactNativePosPrinter.newLine();
+    await ReactNativePosPrinter.feedLine();
+    await ReactNativePosPrinter.feedLine();
+    await ReactNativePosPrinter.disconnectPrinter();
+    Alert.alert('Success', 'Customer token printed successfully!');
+  } catch (error) {
+    console.error('Error printing customer token:', error);
+  }
+};
 
 export const printSalesReport = async (report: any, printerAddress?: string): Promise<void> => {
     const ReactNativePosPrinter = getPrinter();

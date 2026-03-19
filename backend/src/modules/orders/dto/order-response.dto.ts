@@ -10,6 +10,7 @@ export class OrderResponseDto extends BaseOrderDto {
     this.id = order.id;
     this.order_type = order.order_type;
     this.order_id = order.order_id;
+    this.token_number = order.token_number ?? undefined;
     this.customer = order.customer;
     this.tables = order.tables;
     this.discount = order.discount;

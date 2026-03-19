@@ -27,6 +27,26 @@ import { ApiErrorResponses } from '../../common/decorators/api-error-responses.d
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
+  @Get('wifi')
+  @ApiOperation({
+    summary: 'Get WiFi settings',
+    description: 'Retrieves WiFi name and password for printing on receipts/tokens',
+  })
+  @ApiResponse({ status: 200, description: 'WiFi settings retrieved successfully' })
+  async getWifiSettings() {
+    const wifiName = await this.settingsService.getSetting('wifi_name');
+    const wifiPassword = await this.settingsService.getSetting('wifi_password');
+    return {
+      data: {
+        wifi_name: wifiName || '',
+        wifi_password: wifiPassword || '',
+      },
+      status: 'success',
+      message: 'WiFi settings retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
   @Get()
   @RequirePermission('settings.roles_permissions')
   @ApiOperation({
