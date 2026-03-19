@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -25,7 +26,7 @@ export default function PartnersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
 
@@ -215,7 +216,7 @@ export default function PartnersPage() {
                 className="pl-8"
                 value={searchTerm}
                 onChange={e => {
-                  setCurrentPage(1);
+                  resetPage();
                   setSearchTerm(e.target.value);
                 }}
               />
@@ -374,7 +375,7 @@ export default function PartnersPage() {
               totalPages={totalPages}
               totalItems={total}
               itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
+              onPageChange={handlePageChange}
             />
           </div>
         </CardContent>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -22,12 +23,7 @@ export default function Employees() {
   const canCreate = usePermission('employees.create');
   const canDelete = usePermission('employees.delete');
 
-  const location = useLocation();
-  const [currentPage, setCurrentPage] = useState<number>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const p = params.get('page');
-    return p && !isNaN(Number(p)) ? Number(p) : 1;
-  });
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
   const [searchTerm, setSearchTerm] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -97,20 +93,6 @@ export default function Employees() {
   const totalPages = Math.ceil(total / itemsPerPage);
   const currentItems = users;
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const p = params.get('page');
-    if (p && !isNaN(Number(p))) {
-      setCurrentPage(Number(p));
-    }
-  }, [location.search]);
-
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-    const params = new URLSearchParams(location.search);
-    params.set('page', pageNumber.toString());
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  };
 
   const uniquePositions = [...new Set(users.map(user => user.role))];
   const uniqueStatuses = [...new Set(users.map(user => user.status))];
@@ -265,14 +247,14 @@ export default function Employees() {
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('active'); clearSelection(); resetPage(); }}
                 >
                   Active
                 </Button>
                 <Button
                   variant={viewMode === 'trash' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('trash'); clearSelection(); resetPage(); }}
                 >
                   Trash ({trashCount})
                 </Button>
@@ -283,7 +265,7 @@ export default function Employees() {
                 value={positionFilter}
                 onChange={(e) => {
                   setPositionFilter(e.target.value);
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 className="w-40"
               >
@@ -297,7 +279,7 @@ export default function Employees() {
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 className="w-40"
               >
@@ -315,7 +297,7 @@ export default function Employees() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+                    resetPage();
                   }}
                 />
               </div>

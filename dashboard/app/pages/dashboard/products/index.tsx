@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
 import { Link, useNavigate, useLocation } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -35,6 +36,7 @@ export default function ProductsPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -51,11 +53,6 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState<number>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pageParam = params.get("page");
-    return pageParam && !isNaN(Number(pageParam)) ? Number(pageParam) : 1;
-  });
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -88,10 +85,6 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const pageParam = params.get("page");
-    if (pageParam && !isNaN(Number(pageParam))) {
-      setCurrentPage(Number(pageParam));
-    }
     setCategoryFilter(params.get("category") ?? "");
     setTypeFilter(params.get("type") ?? "");
   }, [location.search]);
@@ -134,19 +127,12 @@ export default function ProductsPage() {
     clearSelection();
   }, [viewMode]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    const params = new URLSearchParams(location.search);
-    params.set("page", page.toString());
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  };
-
   const handleCategoryChange = (value: string) => {
     setCategoryFilter(value);
     const params = new URLSearchParams(location.search);
     value ? params.set("category", value) : params.delete("category");
-    params.set("page", "1");
-    setCurrentPage(1);
+    params.delete("page");
+    resetPage();
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
@@ -154,8 +140,8 @@ export default function ProductsPage() {
     setTypeFilter(value);
     const params = new URLSearchParams(location.search);
     value ? params.set("type", value) : params.delete("type");
-    params.set("page", "1");
-    setCurrentPage(1);
+    params.delete("page");
+    resetPage();
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
 
@@ -164,8 +150,8 @@ export default function ProductsPage() {
     setCategoryFilter("");
     setTypeFilter("");
     setStatusFilter("");
-    setCurrentPage(1);
-    navigate(`${location.pathname}?page=1`, { replace: true });
+    resetPage();
+    navigate(location.pathname, { replace: true });
   };
 
   const handleDelete = async (id: string) => {
@@ -368,14 +354,14 @@ export default function ProductsPage() {
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('active'); clearSelection(); resetPage(); }}
                 >
                   Active
                 </Button>
                 <Button
                   variant={viewMode === 'trash' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('trash'); clearSelection(); resetPage(); }}
                 >
                   Trash ({trashCount})
                 </Button>
