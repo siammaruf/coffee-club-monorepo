@@ -3,6 +3,7 @@ import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import {
   AlertTriangle,
   Package,
@@ -57,7 +58,7 @@ export default function KitchenStockPage() {
   const [entries, setEntries] = useState<KitchenStockEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const { currentPage: page, handlePageChange, resetPage } = usePaginationUrl();
   const limit = 20;
 
   // Alerts state
@@ -287,7 +288,7 @@ export default function KitchenStockPage() {
               <Select
                 className="w-36"
                 value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value); setPage(1); clearSelection(); }}
+                onChange={(e) => { setTypeFilter(e.target.value); resetPage(); clearSelection(); }}
               >
                 <option value="">All Types</option>
                 <option value="KITCHEN">Kitchen</option>
@@ -296,7 +297,7 @@ export default function KitchenStockPage() {
               <Select
                 className="w-36"
                 value={entryTypeFilter}
-                onChange={(e) => { setEntryTypeFilter(e.target.value); setPage(1); clearSelection(); }}
+                onChange={(e) => { setEntryTypeFilter(e.target.value); resetPage(); clearSelection(); }}
               >
                 <option value="">All Entries</option>
                 <option value="PURCHASE">Purchases</option>
@@ -306,14 +307,14 @@ export default function KitchenStockPage() {
                 type="date"
                 className="w-36"
                 value={startDate}
-                onChange={(e) => { setStartDate(e.target.value); setPage(1); clearSelection(); }}
+                onChange={(e) => { setStartDate(e.target.value); resetPage(); clearSelection(); }}
                 placeholder="From date"
               />
               <Input
                 type="date"
                 className="w-36"
                 value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setPage(1); clearSelection(); }}
+                onChange={(e) => { setEndDate(e.target.value); resetPage(); clearSelection(); }}
                 placeholder="To date"
               />
               <Button variant="outline" size="sm" onClick={fetchEntries} title="Refresh">
@@ -440,7 +441,7 @@ export default function KitchenStockPage() {
                   totalPages={totalPages}
                   totalItems={total}
                   itemsPerPage={limit}
-                  onPageChange={setPage}
+                  onPageChange={handlePageChange}
                 />
               </>
             )}

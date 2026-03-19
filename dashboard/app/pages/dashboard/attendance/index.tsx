@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -77,7 +78,7 @@ export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, handlePageChange: paginationPageChange, resetPage } = usePaginationUrl();
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [perPage] = useState(20);
@@ -311,17 +312,17 @@ export default function AttendancePage() {
     setStatusFilter("");
     setRoleFilter("");
     setApprovalFilter("");
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     setDateFilter(date);
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    paginationPageChange(page);
   };
 
 

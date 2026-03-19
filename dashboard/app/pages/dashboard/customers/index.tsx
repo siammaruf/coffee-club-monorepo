@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -37,7 +38,7 @@ export default function CustomersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
   const itemsPerPage = 10;
   const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [isActiveFilter, setIsActiveFilter] = useState<"" | "true" | "false">("");
@@ -476,14 +477,14 @@ export default function CustomersPage() {
                   <Button
                     variant={viewMode === 'active' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                    onClick={() => { setViewMode('active'); clearSelection(); resetPage(); }}
                   >
                     Active
                   </Button>
                   <Button
                     variant={viewMode === 'trash' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                    onClick={() => { setViewMode('trash'); clearSelection(); resetPage(); }}
                   >
                     Trash ({trashCount})
                   </Button>
@@ -497,7 +498,7 @@ export default function CustomersPage() {
                     className="pl-8"
                     value={searchTerm}
                     onChange={e => {
-                      setCurrentPage(1);
+                      resetPage();
                       setSearchTerm(e.target.value);
                     }}
                   />
@@ -506,7 +507,7 @@ export default function CustomersPage() {
                   className="border rounded px-2 py-1 text-sm"
                   value={isActiveFilter}
                   onChange={e => {
-                    setCurrentPage(1);
+                    resetPage();
                     setIsActiveFilter(e.target.value as "" | "true" | "false");
                   }}
                 >
@@ -518,7 +519,7 @@ export default function CustomersPage() {
                   className="border rounded px-2 py-1 text-sm"
                   value={customerTypeFilter}
                   onChange={e => {
-                    setCurrentPage(1);
+                    resetPage();
                     setCustomerTypeFilter(e.target.value as "" | "regular" | "member");
                   }}
                 >
@@ -726,7 +727,7 @@ export default function CustomersPage() {
                 totalPages={totalPages}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
             </div>
           </CardContent>

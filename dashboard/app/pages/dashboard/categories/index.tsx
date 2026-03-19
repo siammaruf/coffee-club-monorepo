@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -38,7 +39,7 @@ export default function CategoriesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
   const itemsPerPage = 10;
   const [total, setTotal] = useState(0);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
@@ -248,14 +249,14 @@ export default function CategoriesPage() {
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('active'); clearSelection(); resetPage(); }}
                 >
                   Active
                 </Button>
                 <Button
                   variant={viewMode === 'trash' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('trash'); clearSelection(); resetPage(); }}
                 >
                   Trash ({trashCount})
                 </Button>
@@ -268,7 +269,7 @@ export default function CategoriesPage() {
                 className="pl-8"
                 value={searchTerm}
                 onChange={e => {
-                  setCurrentPage(1);
+                  resetPage();
                   setSearchTerm(e.target.value);
                 }}
               />
@@ -424,7 +425,7 @@ export default function CategoriesPage() {
               totalPages={totalPages}
               totalItems={total}
               itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
+              onPageChange={handlePageChange}
             />
           </div>
         </CardContent>
