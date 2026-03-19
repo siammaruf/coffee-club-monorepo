@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, type ComponentProps } from "react";
+import { Link, useLocation } from "react-router";
+import { useSidebar } from "../../hooks/useSidebar";
 import {
   LayoutDashboard,
   Users,
@@ -26,6 +27,7 @@ import {
   Handshake,
   ShieldCheck,
   Bell,
+  ChevronDown,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
@@ -41,9 +43,51 @@ function useCan() {
   };
 }
 
+function SidebarLink(props: ComponentProps<typeof Link>) {
+  const { close } = useSidebar();
+  const location = useLocation();
+  const isActive = location.pathname === props.to || location.pathname.startsWith(`${props.to}/`);
+
+  return (
+    <Link
+      {...props}
+      className={`${props.className ?? ""} transition-colors ${
+        isActive
+          ? "bg-primary/10 text-primary font-medium"
+          : ""
+      }`}
+      onClick={(e) => { props.onClick?.(e); close(); }}
+    />
+  );
+}
+
+function SectionHeader({
+  label,
+  isOpen,
+  onToggle,
+}: {
+  label: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex items-center justify-between w-full py-1.5 px-1 rounded-md text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      onClick={onToggle}
+    >
+      <span>{label}</span>
+      <ChevronDown
+        className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "" : "-rotate-90"}`}
+      />
+    </button>
+  );
+}
+
 export default function Sidebar() {
   const pendingOrderCount = usePendingOrderCount();
   const can = useCan();
+  const { close } = useSidebar();
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     employee: true,
@@ -61,7 +105,6 @@ export default function Sidebar() {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Section visibility — show section only if at least one child is visible
   const showEmployeeSection = can('employees.view') || can('attendance.view') || can('salary.view');
   const showCustomerSection = can('customers.view');
   const showRestaurantSection = can('products.view') || can('orders.view') || can('categories.view') || can('tables.view') || can('discounts.view');
@@ -71,332 +114,269 @@ export default function Sidebar() {
   const showDataMgmtSection = can('data_management.view');
   const showWebsiteSection = can('website.view') || can('blog.view') || can('reservations.view') || can('contact_messages.view') || can('partners.view');
 
+  const linkClass = "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors";
+
   return (
-    <div className="w-64 bg-card border-r h-full">
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4 text-yellow-500">Coffee Club Go</h2>
-        <nav className="space-y-4">
-          {/* Main Navigation */}
-          <div>
-            <Link to="/dashboard" className="flex items-center p-2 rounded-md hover:bg-accent">
-              <LayoutDashboard className="w-5 h-5 mr-2" />
-              <span className="font-medium">Dashboard</span>
-            </Link>
+    <div className="w-64 bg-card border-r h-full flex flex-col">
+      <div className="p-4 border-b">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+            <Coffee className="w-4 h-4 text-white" />
           </div>
+          <h2 className="text-lg font-bold tracking-tight">Coffee Club</h2>
+        </div>
+      </div>
 
-          {/* Employee Management */}
-          {showEmployeeSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("employee")}
-              >
-                <h3 className="text-base font-bold text-black">Employee Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.employee ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.employee && (
-                <div className="space-y-1">
-                  {can('employees.view') && (
-                    <Link to="/dashboard/employees" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Users className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Employees</span>
-                    </Link>
-                  )}
-                  {can('attendance.view') && (
-                    <Link to="/dashboard/attendance" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <ClipboardCheck className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Attendance</span>
-                    </Link>
-                  )}
-                  {can('salary.view') && (
-                    <Link to="/dashboard/salary" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Salary</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        {/* Dashboard */}
+        <SidebarLink to="/dashboard" className={linkClass.replace("text-muted-foreground", "text-foreground font-medium")}>
+          <LayoutDashboard className="w-4 h-4" />
+          <span>Dashboard</span>
+        </SidebarLink>
 
-          {/* Customer Management */}
-          {showCustomerSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("customer")}
-              >
-                <h3 className="text-base font-bold text-black">Customer Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.customer ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.customer && (
-                <div className="space-y-1">
-                  <Link to="/dashboard/customers" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <UserCheck className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Customers</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Restaurant Management */}
-          {showRestaurantSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("restaurant")}
-              >
-                <h3 className="text-base font-bold text-black">Restaurant Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.restaurant ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.restaurant && (
-                <div className="space-y-1">
-                  {can('products.view') && (
-                    <Link to="/dashboard/products" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Coffee className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Products</span>
-                    </Link>
-                  )}
-                  {can('orders.view') && (
-                    <Link to="/dashboard/orders" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <ShoppingCart className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Orders</span>
-                      {pendingOrderCount > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
-                          {pendingOrderCount}
-                        </span>
-                      )}
-                    </Link>
-                  )}
-                  {can('orders.view') && (
-                    <Link to="/dashboard/tokens" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Bell className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Order Tokens</span>
-                    </Link>
-                  )}
-                  {can('categories.view') && (
-                    <Link to="/dashboard/categories" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Package className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Categories</span>
-                    </Link>
-                  )}
-                  {can('tables.view') && (
-                    <Link to="/dashboard/tables" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Table className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Tables</span>
-                    </Link>
-                  )}
-                  {can('discounts.view') && (
-                    <Link to="/dashboard/discounts" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Percent className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Discount</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Kitchen Management */}
-          {showKitchenSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("kitchen")}
-              >
-                <h3 className="text-base font-bold text-black">Kitchen Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.kitchen ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.kitchen && (
-                <div className="space-y-1">
-                  {can('kitchen_items.view') && (
-                    <Link to="/dashboard/kitchen-items" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Utensils className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Kitchen Items</span>
-                    </Link>
-                  )}
-                  {can('kitchen_stock.view') && (
-                    <Link to="/dashboard/kitchen-stock" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Package className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Stock Management</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Financial */}
-          {showFinancialSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("financial")}
-              >
-                <h3 className="text-base font-bold text-black">Financial</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.financial ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.financial && (
-                <div className="space-y-1">
-                  <Link to="/dashboard/expenses" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Expenses</span>
-                  </Link>
-                  <Link to="/dashboard/expenses/categories" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <FileSpreadsheet className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Categories</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Reports */}
-          {showReportsSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("reports")}
-              >
-                <h3 className="text-base font-bold text-black">Reports</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.reports ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.reports && (
-                <div className="space-y-1">
-                  <Link to="/dashboard/reports/sales" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <BarChart3 className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Sales</span>
-                  </Link>
-                  <Link to="/dashboard/reports/financial-summary" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <PieChart className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Financial</span>
-                  </Link>
-                  <Link to="/dashboard/reports/kitchen-stock" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <FileSpreadsheet className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Kitchen Stock</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Data Management */}
-          {showDataMgmtSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("dataManagement")}
-              >
-                <h3 className="text-base font-bold text-black">Data Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.dataManagement ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.dataManagement && (
-                <div className="space-y-1">
-                  <Link to="/dashboard?tab=export" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <HardDrive className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Data Management</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Website Management */}
-          {showWebsiteSection && (
-            <div>
-              <div
-                className="flex items-center justify-between cursor-pointer mb-1"
-                onClick={() => toggleSection("website")}
-              >
-                <h3 className="text-base font-bold text-black">Website Management</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                  {openSections.website ? "-" : "+"}
-                </span>
-              </div>
-              {openSections.website && (
-                <div className="space-y-1">
-                  {can('website.view') && (
-                    <Link to="/dashboard/website" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Globe className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Website Content</span>
-                    </Link>
-                  )}
-                  {can('blog.view') && (
-                    <Link to="/dashboard/blog" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Blog Posts</span>
-                    </Link>
-                  )}
-                  {can('reservations.view') && (
-                    <Link to="/dashboard/reservations" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <CalendarDays className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Reservations</span>
-                    </Link>
-                  )}
-                  {can('contact_messages.view') && (
-                    <Link to="/dashboard/contact-messages" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <MessageSquare className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Contact Messages</span>
-                    </Link>
-                  )}
-                  {can('partners.view') && (
-                    <Link to="/dashboard/partners" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                      <Handshake className="w-4 h-4 mr-2 text-gray-500" />
-                      <span className="text-sm">Partners</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* User Settings */}
-          <div>
-            <div
-              className="flex items-center justify-between cursor-pointer mb-1"
-              onClick={() => toggleSection("settings")}
-            >
-              <h3 className="text-base font-bold text-black">Settings</h3>
-              <span className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white text-black text-lg select-none">
-                {openSections.settings ? "-" : "+"}
-              </span>
-            </div>
-            {openSections.settings && (
-              <div className="space-y-1">
-                <Link to="/dashboard/profile" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                  <UserCircle className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="text-sm">Profile</span>
-                </Link>
-                {can('settings.roles_permissions') && (
-                  <Link to="/dashboard/settings/roles-permissions" className="flex items-center p-1 rounded-md hover:bg-accent pl-3">
-                    <ShieldCheck className="w-4 h-4 mr-2 text-gray-500" />
-                    <span className="text-sm">Roles & Permissions</span>
-                  </Link>
+        {/* Employee Management */}
+        {showEmployeeSection && (
+          <div className="pt-3">
+            <SectionHeader label="Employees" isOpen={openSections.employee} onToggle={() => toggleSection("employee")} />
+            {openSections.employee && (
+              <div className="mt-1 space-y-0.5">
+                {can('employees.view') && (
+                  <SidebarLink to="/dashboard/employees" className={linkClass}>
+                    <Users className="w-4 h-4" />
+                    <span>Employees</span>
+                  </SidebarLink>
                 )}
-                <LogoutButton className="flex items-center p-1 rounded-md hover:bg-accent pl-3 w-full text-left cursor-pointer">
-                  <LogOut className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="text-sm">Logout</span>
-                </LogoutButton>
+                {can('attendance.view') && (
+                  <SidebarLink to="/dashboard/attendance" className={linkClass}>
+                    <ClipboardCheck className="w-4 h-4" />
+                    <span>Attendance</span>
+                  </SidebarLink>
+                )}
+                {can('salary.view') && (
+                  <SidebarLink to="/dashboard/salary" className={linkClass}>
+                    <DollarSign className="w-4 h-4" />
+                    <span>Salary</span>
+                  </SidebarLink>
+                )}
               </div>
             )}
           </div>
-        </nav>
-      </div>
+        )}
+
+        {/* Customer Management */}
+        {showCustomerSection && (
+          <div className="pt-3">
+            <SectionHeader label="Customers" isOpen={openSections.customer} onToggle={() => toggleSection("customer")} />
+            {openSections.customer && (
+              <div className="mt-1 space-y-0.5">
+                <SidebarLink to="/dashboard/customers" className={linkClass}>
+                  <UserCheck className="w-4 h-4" />
+                  <span>Customers</span>
+                </SidebarLink>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Restaurant Management */}
+        {showRestaurantSection && (
+          <div className="pt-3">
+            <SectionHeader label="Restaurant" isOpen={openSections.restaurant} onToggle={() => toggleSection("restaurant")} />
+            {openSections.restaurant && (
+              <div className="mt-1 space-y-0.5">
+                {can('products.view') && (
+                  <SidebarLink to="/dashboard/products" className={linkClass}>
+                    <Coffee className="w-4 h-4" />
+                    <span>Products</span>
+                  </SidebarLink>
+                )}
+                {can('orders.view') && (
+                  <SidebarLink to="/dashboard/orders" className={linkClass}>
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Orders</span>
+                    {pendingOrderCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center leading-none">
+                        {pendingOrderCount}
+                      </span>
+                    )}
+                  </SidebarLink>
+                )}
+                {can('orders.view') && (
+                  <SidebarLink to="/dashboard/tokens" className={linkClass}>
+                    <Bell className="w-4 h-4" />
+                    <span>Order Tokens</span>
+                  </SidebarLink>
+                )}
+                {can('categories.view') && (
+                  <SidebarLink to="/dashboard/categories" className={linkClass}>
+                    <Package className="w-4 h-4" />
+                    <span>Categories</span>
+                  </SidebarLink>
+                )}
+                {can('tables.view') && (
+                  <SidebarLink to="/dashboard/tables" className={linkClass}>
+                    <Table className="w-4 h-4" />
+                    <span>Tables</span>
+                  </SidebarLink>
+                )}
+                {can('discounts.view') && (
+                  <SidebarLink to="/dashboard/discounts" className={linkClass}>
+                    <Percent className="w-4 h-4" />
+                    <span>Discounts</span>
+                  </SidebarLink>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Kitchen Management */}
+        {showKitchenSection && (
+          <div className="pt-3">
+            <SectionHeader label="Kitchen" isOpen={openSections.kitchen} onToggle={() => toggleSection("kitchen")} />
+            {openSections.kitchen && (
+              <div className="mt-1 space-y-0.5">
+                {can('kitchen_items.view') && (
+                  <SidebarLink to="/dashboard/kitchen-items" className={linkClass}>
+                    <Utensils className="w-4 h-4" />
+                    <span>Kitchen Items</span>
+                  </SidebarLink>
+                )}
+                {can('kitchen_stock.view') && (
+                  <SidebarLink to="/dashboard/kitchen-stock" className={linkClass}>
+                    <Package className="w-4 h-4" />
+                    <span>Stock Management</span>
+                  </SidebarLink>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Financial */}
+        {showFinancialSection && (
+          <div className="pt-3">
+            <SectionHeader label="Financial" isOpen={openSections.financial} onToggle={() => toggleSection("financial")} />
+            {openSections.financial && (
+              <div className="mt-1 space-y-0.5">
+                <SidebarLink to="/dashboard/expenses" className={linkClass}>
+                  <DollarSign className="w-4 h-4" />
+                  <span>Expenses</span>
+                </SidebarLink>
+                <SidebarLink to="/dashboard/expenses/categories" className={linkClass}>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Categories</span>
+                </SidebarLink>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reports */}
+        {showReportsSection && (
+          <div className="pt-3">
+            <SectionHeader label="Reports" isOpen={openSections.reports} onToggle={() => toggleSection("reports")} />
+            {openSections.reports && (
+              <div className="mt-1 space-y-0.5">
+                <SidebarLink to="/dashboard/reports/sales" className={linkClass}>
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Sales</span>
+                </SidebarLink>
+                <SidebarLink to="/dashboard/reports/financial-summary" className={linkClass}>
+                  <PieChart className="w-4 h-4" />
+                  <span>Financial</span>
+                </SidebarLink>
+                <SidebarLink to="/dashboard/reports/kitchen-stock" className={linkClass}>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Kitchen Stock</span>
+                </SidebarLink>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Data Management */}
+        {showDataMgmtSection && (
+          <div className="pt-3">
+            <SectionHeader label="Data" isOpen={openSections.dataManagement} onToggle={() => toggleSection("dataManagement")} />
+            {openSections.dataManagement && (
+              <div className="mt-1 space-y-0.5">
+                <SidebarLink to="/dashboard?tab=export" className={linkClass}>
+                  <HardDrive className="w-4 h-4" />
+                  <span>Data Management</span>
+                </SidebarLink>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Website Management */}
+        {showWebsiteSection && (
+          <div className="pt-3">
+            <SectionHeader label="Website" isOpen={openSections.website} onToggle={() => toggleSection("website")} />
+            {openSections.website && (
+              <div className="mt-1 space-y-0.5">
+                {can('website.view') && (
+                  <SidebarLink to="/dashboard/website" className={linkClass}>
+                    <Globe className="w-4 h-4" />
+                    <span>Website Content</span>
+                  </SidebarLink>
+                )}
+                {can('blog.view') && (
+                  <SidebarLink to="/dashboard/blog" className={linkClass}>
+                    <FileText className="w-4 h-4" />
+                    <span>Blog Posts</span>
+                  </SidebarLink>
+                )}
+                {can('reservations.view') && (
+                  <SidebarLink to="/dashboard/reservations" className={linkClass}>
+                    <CalendarDays className="w-4 h-4" />
+                    <span>Reservations</span>
+                  </SidebarLink>
+                )}
+                {can('contact_messages.view') && (
+                  <SidebarLink to="/dashboard/contact-messages" className={linkClass}>
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Contact Messages</span>
+                  </SidebarLink>
+                )}
+                {can('partners.view') && (
+                  <SidebarLink to="/dashboard/partners" className={linkClass}>
+                    <Handshake className="w-4 h-4" />
+                    <span>Partners</span>
+                  </SidebarLink>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Settings */}
+        <div className="pt-3">
+          <SectionHeader label="Settings" isOpen={openSections.settings} onToggle={() => toggleSection("settings")} />
+          {openSections.settings && (
+            <div className="mt-1 space-y-0.5">
+              <SidebarLink to="/dashboard/profile" className={linkClass}>
+                <UserCircle className="w-4 h-4" />
+                <span>Profile</span>
+              </SidebarLink>
+              {can('settings.roles_permissions') && (
+                <SidebarLink to="/dashboard/settings/roles-permissions" className={linkClass}>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Roles & Permissions</span>
+                </SidebarLink>
+              )}
+              <LogoutButton
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors w-full text-left cursor-pointer"
+                onClick={close}
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </LogoutButton>
+            </div>
+          )}
+        </div>
+      </nav>
     </div>
   );
 }

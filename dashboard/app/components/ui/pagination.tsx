@@ -66,19 +66,19 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t">
       {showItemCount && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Showing <span className="font-medium text-foreground">{indexOfFirstItem}</span> to{" "}
           <span className="font-medium text-foreground">{indexOfLastItem}</span> of{" "}
           <span className="font-medium text-foreground">{totalItems}</span> results
         </p>
       )}
-      <div className="flex items-center gap-1 ml-auto">
+      <div className="flex items-center gap-1 sm:ml-auto">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
+          className="h-8 w-8 cursor-pointer border"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           title="First Page"
@@ -89,7 +89,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
+          className="h-8 w-8 cursor-pointer border"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           title="Previous Page"
@@ -104,7 +104,7 @@ export function Pagination({
                 key={index}
                 variant={currentPage === page ? "default" : "ghost"}
                 size="icon"
-                className={`h-8 w-8 cursor-pointer border border-[#d9d9d9] text-sm ${
+                className={`h-8 w-8 cursor-pointer border text-sm ${
                   currentPage === page ? "font-semibold" : ""
                 }`}
                 onClick={() => onPageChange(page)}
@@ -125,7 +125,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
+          className="h-8 w-8 cursor-pointer border"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           title="Next Page"
@@ -136,7 +136,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 cursor-pointer border border-[#d9d9d9]"
+          className="h-8 w-8 cursor-pointer border"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           title="Last Page"
