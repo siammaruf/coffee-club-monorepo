@@ -518,6 +518,87 @@ export class BackupService {
     return JSON.parse(decompressed.toString('utf-8')) as BackupData;
   }
 
+  async uploadBackup(
+    buffer: Buffer,
+    originalFilename: string,
+    user?: User,
+  ): Promise<BackupHistory> {
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-')
+      .slice(0, 19);
+    const filename = originalFilename || `upload_${timestamp}.ccbak`;
+
+    const history = new BackupHistory();
+    history.filename = filename;
+    history.type = BackupType.UPLOADED;
+    history.status = BackupStatus.IN_PROGRESS;
+    if (user) {
+      history.created_by = user;
+    }
+    const savedHistory = await this.historyRepo.save(history);
+
+    try {
+      this.logger.log(`Processing uploaded backup: ${filename}`);
+
+      // Decompress and validate
+      const backupData = await this.decompressBackup(buffer);
+
+      // Verify checksum integrity
+      const jsonString = JSON.stringify(backupData.data);
+      const checksum = crypto
+        .createHash('md5')
+        .update(jsonString)
+        .digest('hex');
+
+      if (checksum !== backupData.metadata.checksum) {
+        throw new BadRequestException(
+          'Backup data integrity check failed. The file may be corrupted.',
+        );
+      }
+
+      savedHistory.status = BackupStatus.UPLOADING;
+      savedHistory.file_size = buffer.length;
+      savedHistory.total_records = backupData.metadata.total_records;
+      savedHistory.entity_counts = backupData.metadata.entity_counts;
+      savedHistory.version = backupData.metadata.version;
+      await this.historyRepo.save(savedHistory);
+
+      // Upload to Google Drive if connected
+      const uploadResult =
+        await this.googleDriveService.uploadFile(buffer, filename);
+
+      if (uploadResult) {
+        savedHistory.google_drive_file_id = uploadResult.fileId;
+      }
+
+      savedHistory.status = BackupStatus.COMPLETED;
+      await this.historyRepo.save(savedHistory);
+
+      this.logger.log(
+        `Upload backup completed: ${filename} (${buffer.length} bytes, ${backupData.metadata.total_records} records)`,
+      );
+
+      return savedHistory;
+    } catch (error) {
+      savedHistory.status = BackupStatus.FAILED;
+      savedHistory.error_message =
+        error instanceof Error ? error.message : String(error);
+      await this.historyRepo.save(savedHistory);
+
+      this.logger.error(
+        `Upload backup failed: ${filename}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw error instanceof BadRequestException
+        ? error
+        : new InternalServerErrorException(
+            `Upload backup failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
+    }
+  }
+
   async restoreFromBackup(backupId: string): Promise<void> {
     const backup = await this.historyRepo.findOne({
       where: { id: backupId },

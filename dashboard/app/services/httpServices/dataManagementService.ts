@@ -147,6 +147,28 @@ const downloadBackup = async (id: string): Promise<{ blob: Blob; filename: strin
   return { blob: response.data as Blob, filename };
 };
 
+const uploadBackup = (
+  file: File,
+  onUploadProgress?: (percent: number) => void,
+) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return httpService.post<DataManagementApiResponse<BackupHistory>>(
+    `${BASE}/backup/upload`,
+    formData,
+    {
+      timeout: 120000,
+      ...(onUploadProgress && {
+        onUploadProgress: (evt: { total?: number; loaded: number }) => {
+          if (evt.total) {
+            onUploadProgress(Math.round((evt.loaded * 100) / evt.total));
+          }
+        },
+      }),
+    },
+  );
+};
+
 // ─── Restore ─────────────────────────────────────────────────────────────────
 
 const previewRestore = (id: string) =>
@@ -218,6 +240,7 @@ export const dataManagementService = {
 
   // Backup
   createBackup,
+  uploadBackup,
   getBackupHistory,
   getBackupDetail,
   deleteBackup,
