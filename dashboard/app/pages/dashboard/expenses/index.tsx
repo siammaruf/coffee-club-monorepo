@@ -94,13 +94,7 @@ export default function ExpensesPage() {
   // Clear selection when viewMode changes
   useEffect(() => {
     clearSelection();
-    resetPage();
   }, [viewMode]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    resetPage();
-  }, [categoryFilter, statusFilter, dateFilter]);
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -402,14 +396,14 @@ export default function ExpensesPage() {
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('active'); clearSelection(); }}
+                  onClick={() => { setViewMode('active'); resetPage(); clearSelection(); }}
                 >
                   Active
                 </Button>
                 <Button
                   variant={viewMode === 'trash' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('trash'); clearSelection(); }}
+                  onClick={() => { setViewMode('trash'); resetPage(); clearSelection(); }}
                 >
                   Trash ({trashCount})
                 </Button>
@@ -418,7 +412,7 @@ export default function ExpensesPage() {
             <div className="flex gap-4 items-center">
               <Select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => { setCategoryFilter(e.target.value); resetPage(); }}
                 className="w-40"
               >
                 <option value="">All Categories</option>
@@ -431,7 +425,7 @@ export default function ExpensesPage() {
 
               <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => { setStatusFilter(e.target.value); resetPage(); }}
                 className="w-40"
               >
                 <option value="">All Statuses</option>
@@ -442,7 +436,7 @@ export default function ExpensesPage() {
 
               <Select
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
+                onChange={(e) => { setDateFilter(e.target.value); resetPage(); }}
                 className="w-40"
               >
                 <option value="">All Dates</option>

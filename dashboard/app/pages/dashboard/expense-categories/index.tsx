@@ -70,11 +70,6 @@ export default function ExpenseCategoriesPage() {
     expenseCategoryService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
-  // Reset page when viewMode changes
-  useEffect(() => {
-    resetPage();
-  }, [viewMode]);
-
   useEffect(() => {
     let filtered = categories.filter(category =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -273,14 +268,14 @@ export default function ExpenseCategoriesPage() {
               <Button
                 variant={viewMode === 'active' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('active')}
+                onClick={() => { setViewMode('active'); resetPage(); clearSelection(); }}
               >
                 Active
               </Button>
               <Button
                 variant={viewMode === 'trash' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('trash')}
+                onClick={() => { setViewMode('trash'); resetPage(); clearSelection(); }}
                 className="flex items-center gap-1"
               >
                 <Trash2 className="h-4 w-4" />

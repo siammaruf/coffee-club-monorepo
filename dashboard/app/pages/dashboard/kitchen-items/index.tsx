@@ -109,11 +109,6 @@ export default function KitchenItemsPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
-    resetPage();
-    clearSelection();
-  }, [viewMode]);
-
-  useEffect(() => {
     fetchKitchenItems();
     clearSelection();
   }, [viewMode, page]);
@@ -310,14 +305,14 @@ export default function KitchenItemsPage() {
               <Button
                 variant={viewMode === 'active' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('active')}
+                onClick={() => { setViewMode('active'); resetPage(); clearSelection(); }}
               >
                 Active
               </Button>
               <Button
                 variant={viewMode === 'trash' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('trash')}
+                onClick={() => { setViewMode('trash'); resetPage(); clearSelection(); }}
                 className="flex items-center gap-1"
               >
                 <Trash2 className="h-4 w-4" />
@@ -408,44 +403,45 @@ export default function KitchenItemsPage() {
                       <TableCell>
                         <div className="flex gap-2 items-center">
                           {viewMode === 'active' ? (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setViewItem(item);
+                                  setShowViewModal(true);
+                                }}
+                                title="View"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
                                   onClick={() => {
-                                    setViewItem(item);
-                                    setShowViewModal(true);
+                                    setEditItem(item);
+                                    setShowEditModal(true);
                                   }}
+                                  title="Edit"
                                 >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View
-                                </DropdownMenuItem>
-                                {canEdit && (
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setEditItem(item);
-                                      setShowEditModal(true);
-                                    }}
-                                  >
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                )}
-                                {canDelete && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleDelete(item.id)}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-600"
+                                  onClick={() => handleDelete(item.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </>
                           ) : (
                             <>
                               {canDelete && (
