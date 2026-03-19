@@ -109,7 +109,7 @@ export default function HeroSlideModal({ open, onClose, onSave, slide }: HeroSli
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{slide ? "Edit Hero Slide" : "Add Hero Slide"}</DialogTitle>
           <DialogDescription>
@@ -117,52 +117,54 @@ export default function HeroSlideModal({ open, onClose, onSave, slide }: HeroSli
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Type */}
-          <div className="space-y-2">
-            <Label htmlFor="slide-type">Type</Label>
-            <Select
-              id="slide-type"
-              value={form.type}
-              onChange={(e) => handleChange("type", e.target.value)}
-            >
-              <option value="centered">Centered</option>
-              <option value="side-text">Side Text</option>
-              <option value="bg-image">Background Image</option>
-            </Select>
+          {/* Type + Title */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="slide-type">Type</Label>
+              <Select
+                id="slide-type"
+                value={form.type}
+                onChange={(e) => handleChange("type", e.target.value)}
+              >
+                <option value="centered">Centered</option>
+                <option value="side-text">Side Text</option>
+                <option value="bg-image">Background Image</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="slide-title">Title *</Label>
+              <Input
+                id="slide-title"
+                value={form.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Enter slide title"
+                required
+              />
+            </div>
           </div>
 
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="slide-title">Title *</Label>
-            <Input
-              id="slide-title"
-              value={form.title}
-              onChange={(e) => handleChange("title", e.target.value)}
-              placeholder="Enter slide title"
-              required
-            />
-          </div>
+          {/* Subtitle + Heading */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="slide-subtitle">Subtitle</Label>
+              <Input
+                id="slide-subtitle"
+                value={form.subtitle}
+                onChange={(e) => handleChange("subtitle", e.target.value)}
+                placeholder="Enter subtitle (optional)"
+              />
+            </div>
 
-          {/* Subtitle */}
-          <div className="space-y-2">
-            <Label htmlFor="slide-subtitle">Subtitle</Label>
-            <Input
-              id="slide-subtitle"
-              value={form.subtitle}
-              onChange={(e) => handleChange("subtitle", e.target.value)}
-              placeholder="Enter subtitle (optional)"
-            />
-          </div>
-
-          {/* Heading */}
-          <div className="space-y-2">
-            <Label htmlFor="slide-heading">Heading</Label>
-            <Input
-              id="slide-heading"
-              value={form.heading}
-              onChange={(e) => handleChange("heading", e.target.value)}
-              placeholder="Enter heading (optional)"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="slide-heading">Heading</Label>
+              <Input
+                id="slide-heading"
+                value={form.heading}
+                onChange={(e) => handleChange("heading", e.target.value)}
+                placeholder="Enter heading (optional)"
+              />
+            </div>
           </div>
 
           {/* Description */}

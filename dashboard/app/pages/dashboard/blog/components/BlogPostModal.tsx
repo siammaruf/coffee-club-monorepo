@@ -164,34 +164,36 @@ export default function BlogPostModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
           <div className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-semibold text-gray-700">
-                Title *
-              </Label>
-              <Input
-                id="title"
-                placeholder="Enter blog post title"
-                {...register("title", { required: "Title is required" })}
-                className="h-11"
-              />
-              {errors.title && (
-                <p className="text-sm text-red-500">{errors.title.message}</p>
-              )}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-semibold text-gray-700">
+                  Title *
+                </Label>
+                <Input
+                  id="title"
+                  placeholder="Enter blog post title"
+                  {...register("title", { required: "Title is required" })}
+                  className="h-11"
+                />
+                {errors.title && (
+                  <p className="text-sm text-red-500">{errors.title.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="author" className="text-sm font-semibold text-gray-700">
-                Author *
-              </Label>
-              <Input
-                id="author"
-                placeholder="Author name"
-                {...register("author", { required: "Author is required" })}
-                className="h-11"
-              />
-              {errors.author && (
-                <p className="text-sm text-red-500">{errors.author.message}</p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="author" className="text-sm font-semibold text-gray-700">
+                  Author *
+                </Label>
+                <Input
+                  id="author"
+                  placeholder="Author name"
+                  {...register("author", { required: "Author is required" })}
+                  className="h-11"
+                />
+                {errors.author && (
+                  <p className="text-sm text-red-500">{errors.author.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -93,7 +93,7 @@ export default function AdvantageModal({ open, onClose, onSave, advantage }: Adv
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{advantage ? "Edit Advantage" : "Add Advantage"}</DialogTitle>
           <DialogDescription>
