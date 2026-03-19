@@ -62,8 +62,8 @@ export default function EditDiscountModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h3 className="text-lg font-bold text-gray-900">Edit Discount</h3>
           <Button
             variant="ghost"
@@ -75,7 +75,7 @@ export default function EditDiscountModal({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6">
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="edit-name" className="text-sm font-semibold text-gray-700">
@@ -91,7 +91,7 @@ export default function EditDiscountModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-discount_type" className="text-sm font-semibold text-gray-700">
                   Discount Type *
@@ -184,7 +184,7 @@ export default function EditDiscountModal({
             )}
           </div>
 
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-6 pt-4 sm:mt-8 sm:pt-6 border-t">
             <Button
               type="button"
               variant="outline"
