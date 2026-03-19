@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Database,
   Download,
@@ -14,6 +14,8 @@ import {
   XCircle,
   Loader2,
   CloudUpload,
+  Upload,
+  FileUp,
   LogIn,
   LogOut,
 } from "lucide-react";
@@ -42,6 +44,7 @@ import { Select } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
 import { Pagination } from "~/components/ui/pagination";
+import { Progress } from "~/components/ui/progress";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import {
   Dialog,
@@ -143,6 +146,13 @@ function getTypeBadge(type: BackupType) {
       return (
         <Badge className="bg-purple-100 text-purple-800 text-xs">
           Scheduled
+        </Badge>
+      );
+    case BackupType.UPLOADED:
+      return (
+        <Badge className="bg-blue-100 text-blue-800 text-xs">
+          <Upload className="w-3 h-3 mr-1" />
+          Uploaded
         </Badge>
       );
     default:
@@ -652,6 +662,209 @@ function RestorePreviewDialog({
   );
 }
 
+// ─── Upload Backup Dialog ───────────────────────────────────────────────────
+
+interface UploadBackupDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUploaded: () => void;
+}
+
+function UploadBackupDialog({
+  open,
+  onOpenChange,
+  onUploaded,
+}: UploadBackupDialogProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const reset = () => {
+    setFile(null);
+    setDragging(false);
+    setUploading(false);
+    setProgress(0);
+  };
+
+  const handleOpenChange = (value: boolean) => {
+    if (!uploading) {
+      if (!value) reset();
+      onOpenChange(value);
+    }
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    const selected = files?.[0];
+    if (!selected) return;
+    if (!selected.name.endsWith(".ccbak")) {
+      toast.error("Only .ccbak backup files are accepted");
+      return;
+    }
+    setFile(selected);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    setProgress(0);
+    try {
+      await dataManagementService.uploadBackup(file, (pct) => setProgress(pct));
+      toast.success("Backup uploaded successfully");
+      onUploaded();
+      handleOpenChange(false);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to upload backup";
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="w-5 h-5" />
+            Upload Backup
+          </DialogTitle>
+          <DialogDescription>
+            Upload a previously downloaded <code>.ccbak</code> backup file to
+            restore or keep in your backup history.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-4">
+          {!file ? (
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => inputRef.current?.click()}
+              className={`
+                relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors
+                ${
+                  dragging
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+                }
+              `}
+            >
+              <div
+                className={`rounded-full p-3 transition-colors ${
+                  dragging ? "bg-primary/10" : "bg-muted"
+                }`}
+              >
+                <FileUp
+                  className={`w-8 h-8 transition-colors ${
+                    dragging ? "text-primary" : "text-muted-foreground"
+                  }`}
+                />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">
+                  {dragging
+                    ? "Drop your backup file here"
+                    : "Drag & drop your backup file here"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  or click to browse &mdash; accepts <code>.ccbak</code> files
+                  only
+                </p>
+              </div>
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".ccbak"
+                className="hidden"
+                onChange={(e) => {
+                  handleFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Selected file preview */}
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
+                <div className="rounded-md bg-primary/10 p-2">
+                  <Database className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(file.size)}
+                  </p>
+                </div>
+                {!uploading && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFile(null)}
+                    className="shrink-0"
+                  >
+                    <XCircle className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Upload progress */}
+              {uploading && (
+                <Progress
+                  value={progress}
+                  label={progress < 100 ? "Uploading..." : "Processing..."}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleUpload} disabled={!file || uploading}>
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Upload
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Backup Tab ────────────────────────────────────────────────────────
 
 export default function BackupTab() {
@@ -668,6 +881,7 @@ export default function BackupTab() {
   const [deleting, setDeleting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [testingDrive, setTestingDrive] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Restore state
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
@@ -1012,6 +1226,13 @@ export default function BackupTab() {
             </Button>
           )}
           <Button
+            variant="outline"
+            onClick={() => setUploadDialogOpen(true)}
+          >
+            <Upload className="w-4 h-4" />
+            Upload Backup
+          </Button>
+          <Button
             onClick={handleCreateBackup}
             disabled={creating}
             className="min-w-[160px]"
@@ -1185,6 +1406,13 @@ export default function BackupTab() {
         loading={restorePreviewLoading}
         restoring={restoring}
         onRestore={handleRestoreConfirm}
+      />
+
+      {/* Upload Backup Dialog */}
+      <UploadBackupDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUploaded={() => loadHistory(page)}
       />
 
       {/* Delete Confirm Dialog */}

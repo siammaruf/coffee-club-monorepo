@@ -14,7 +14,10 @@ import {
   Header,
   BadRequestException,
   HttpCode,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import {
   ApiTags,
@@ -23,6 +26,8 @@ import {
   ApiParam,
   ApiQuery,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 
 import { Public } from '../../../common/decorators/public.decorator';
@@ -65,6 +70,35 @@ export class BackupController {
   })
   async createBackup(@CurrentUser() user: User) {
     return this.backupService.createBackup(user, BackupType.MANUAL);
+  }
+
+  @Post('upload')
+  @RequirePermission('data_management.view')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 } }))
+  @ApiOperation({ summary: 'Upload a backup file (.ccbak)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary', description: 'Backup file (.ccbak)' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Backup uploaded and registered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or corrupted backup file' })
+  async uploadBackup(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+    if (!file.originalname.endsWith('.ccbak')) {
+      throw new BadRequestException('Only .ccbak backup files are accepted');
+    }
+    return this.backupService.uploadBackup(file.buffer, file.originalname, user);
   }
 
   @Get('history')
