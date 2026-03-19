@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -40,7 +41,6 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { orderService } from "~/services/httpServices/orderService";
 import type {ApiOrder, GetAllOrdersParams} from "~/types/order";
 import { Pagination } from "~/components/ui/pagination";
-import { getPageFromUrl } from "~/utils/common";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
@@ -50,8 +50,8 @@ export default function OrdersPage() {
   const canCreate = usePermission('orders.create');
   const canDelete = usePermission('orders.delete');
 
-  const location = useLocation();
   const navigate = useNavigate();
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
 
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,7 +63,6 @@ export default function OrdersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(getPageFromUrl());
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -76,13 +75,6 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [currentPage, pageSize, debouncedSearch, statusFilter, paymentFilter, dateFilter, viewMode]);
-
-  useEffect(() => {
-    const urlPage = getPageFromUrl();
-    if (urlPage !== currentPage) {
-      setCurrentPage(urlPage);
-    }
-  }, [location.search]);
 
   // Fetch trash count on initial load
   useEffect(() => {
@@ -221,16 +213,9 @@ export default function OrdersPage() {
     setBulkLoading(false);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    const params = new URLSearchParams(location.search);
-    params.set("page", newPage.toString());
-    navigate({ search: params.toString() });
-  };
-
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
-    setCurrentPage(1);
+    resetPage();
   };
 
   const clearFilters = () => {
@@ -238,7 +223,7 @@ export default function OrdersPage() {
     setStatusFilter("");
     setPaymentFilter("");
     setDateFilter("");
-    setCurrentPage(1);
+    resetPage();
   };
 
   const formatPrice = (price: number | string) => {
@@ -400,14 +385,14 @@ export default function OrdersPage() {
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('active'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('active'); clearSelection(); resetPage(); }}
                 >
                   Active
                 </Button>
                 <Button
                   variant={viewMode === 'trash' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => { setViewMode('trash'); clearSelection(); setCurrentPage(1); }}
+                  onClick={() => { setViewMode('trash'); clearSelection(); resetPage(); }}
                 >
                   Trash ({trashCount})
                 </Button>

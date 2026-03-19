@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -50,7 +51,7 @@ export default function DiscountsPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const { currentPage: page, handlePageChange, resetPage } = usePaginationUrl();
   const [total, setTotal] = useState(0);
   const itemsPerPage = 10;
 
@@ -66,7 +67,7 @@ export default function DiscountsPage() {
 
   // Reset page when viewMode changes
   useEffect(() => {
-    setPage(1);
+    resetPage();
   }, [viewMode]);
 
   const fetchDiscounts = async () => {
@@ -501,7 +502,7 @@ export default function DiscountsPage() {
               totalPages={Math.ceil(total / itemsPerPage)}
               totalItems={total}
               itemsPerPage={itemsPerPage}
-              onPageChange={setPage}
+              onPageChange={handlePageChange}
             />
           </CardContent>
         </Card>

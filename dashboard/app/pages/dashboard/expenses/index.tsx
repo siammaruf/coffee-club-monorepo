@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -66,7 +67,7 @@ export default function ExpensesPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const { currentPage: page, handlePageChange, resetPage } = usePaginationUrl();
   const [total, setTotal] = useState(0);
   const itemsPerPage = 10;
 
@@ -93,12 +94,12 @@ export default function ExpensesPage() {
   // Clear selection when viewMode changes
   useEffect(() => {
     clearSelection();
-    setPage(1);
+    resetPage();
   }, [viewMode]);
 
   // Reset page when filters change
   useEffect(() => {
-    setPage(1);
+    resetPage();
   }, [categoryFilter, statusFilter, dateFilter]);
 
   const fetchExpenses = async () => {
@@ -278,7 +279,7 @@ export default function ExpensesPage() {
     setCategoryFilter("");
     setStatusFilter("");
     setDateFilter("");
-    setPage(1);
+    resetPage();
   };
 
   const formatCurrency = (amount: number | string) => {
@@ -623,7 +624,7 @@ export default function ExpensesPage() {
                 totalPages={Math.ceil(total / itemsPerPage)}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
               />
             </>
           ) : (

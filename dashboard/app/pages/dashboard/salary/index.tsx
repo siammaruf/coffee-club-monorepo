@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -67,7 +68,7 @@ export default function SalaryPage() {
   const [paymentRecord, setPaymentRecord] = useState<string | null>(null);
   const [deleteRecord, setDeleteRecord] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { currentPage, handlePageChange, resetPage } = usePaginationUrl();
   const [totalRecords, setTotalRecords] = useState(0);
   const [perPage] = useState(20);
   const [viewRecord, setViewRecord] = useState<Salary | null>(null);
@@ -259,12 +260,12 @@ export default function SalaryPage() {
     setMonthFilter("");
     setDepartmentFilter("");
     setPaymentFilter("");
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handleMonthChange = (month: string) => {
     setMonthFilter(month);
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handleAddSalary = () => {
@@ -633,7 +634,7 @@ export default function SalaryPage() {
                 totalPages={Math.ceil(totalRecords / perPage)}
                 totalItems={totalRecords}
                 itemsPerPage={perPage}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
 
               {/* No filtered results message */}

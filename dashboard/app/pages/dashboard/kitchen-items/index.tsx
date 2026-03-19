@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -11,6 +12,7 @@ import { kitchenItemsService } from "~/services/httpServices/kitchenItemsService
 import type { KitchenItem } from "~/types/kitchenItem";
 import AddKitchenItemAddModal from "~/components/modals/AddKitchenItemAddModal";
 import EditKitchenItemModal from "~/components/modals/EditKitchenItemModal";
+import ViewKitchenItemModal from "~/components/modals/ViewKitchenItemModal";
 import React from "react";
 import {
   Table,
@@ -49,6 +51,10 @@ export default function KitchenItemsPage() {
   const canCreate = usePermission('kitchen_items.create');
   const canEdit = usePermission('kitchen_items.edit');
   const canDelete = usePermission('kitchen_items.delete');
+
+  // View modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewItem, setViewItem] = useState<KitchenItem | null>(null);
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -93,7 +99,7 @@ export default function KitchenItemsPage() {
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
 
   // Pagination state
-  const [page, setPage] = useState(1);
+  const { currentPage: page, handlePageChange, resetPage } = usePaginationUrl();
   const [total, setTotal] = useState(0);
   const itemsPerPage = 10;
 
@@ -103,7 +109,7 @@ export default function KitchenItemsPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
-    setPage(1);
+    resetPage();
     clearSelection();
   }, [viewMode]);
 
@@ -286,6 +292,14 @@ export default function KitchenItemsPage() {
             onEdited={handleEditKitchenItem}
           />
         )}
+        <ViewKitchenItemModal
+          open={showViewModal}
+          onClose={() => {
+            setShowViewModal(false);
+            setViewItem(null);
+          }}
+          item={viewItem}
+        />
       </div>
 
       {/* Kitchen Items Table or Empty State */}
@@ -394,32 +408,44 @@ export default function KitchenItemsPage() {
                       <TableCell>
                         <div className="flex gap-2 items-center">
                           {viewMode === 'active' ? (
-                            <>
-                              {canEdit && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
                                   onClick={() => {
-                                    setEditItem(item);
-                                    setShowEditModal(true);
+                                    setViewItem(item);
+                                    setShowViewModal(true);
                                   }}
-                                  title="Edit"
                                 >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              )}
-                              {canDelete && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(item.id)}
-                                  title="Delete"
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View
+                                </DropdownMenuItem>
+                                {canEdit && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setEditItem(item);
+                                      setShowEditModal(true);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                )}
+                                {canDelete && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(item.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           ) : (
                             <>
                               {canDelete && (
@@ -473,7 +499,7 @@ export default function KitchenItemsPage() {
                 totalPages={Math.ceil(total / itemsPerPage)}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
               />
             </>
           ) : (

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { usePermission } from '~/hooks/usePermission';
 import { useNavigate } from "react-router";
+import { usePaginationUrl } from "~/hooks/usePaginationUrl";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -67,7 +68,7 @@ export default function TablesPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const { currentPage: page, handlePageChange, resetPage } = usePaginationUrl();
   const [total, setTotal] = useState(0);
   const itemsPerPage = 10;
 
@@ -82,7 +83,7 @@ export default function TablesPage() {
 
   // Reset page when viewMode or filters change
   useEffect(() => {
-    setPage(1);
+    resetPage();
   }, [viewMode, locationFilter, statusFilter, seatFilter]);
 
   useEffect(() => {
@@ -244,7 +245,7 @@ export default function TablesPage() {
     setLocationFilter("");
     setStatusFilter("");
     setSeatFilter("");
-    setPage(1);
+    resetPage();
   };
 
   const getStatusColor = (status: string) => {
@@ -633,7 +634,7 @@ export default function TablesPage() {
                 totalPages={Math.ceil(total / itemsPerPage)}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
               />
             </>
           ) : (
