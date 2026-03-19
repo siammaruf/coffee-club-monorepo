@@ -74,8 +74,8 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h3 className="text-lg font-bold text-gray-900">Add Kitchen Item</h3>
           <Button
             variant="ghost"
@@ -88,7 +88,7 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
             ×
           </Button>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
           {apiError && (
             <div className="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-200 text-sm">
               {apiError}
@@ -116,7 +116,7 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Type *</label>
                 <select
@@ -192,7 +192,7 @@ const AddKitchenItemAddModal: React.FC<AddKitchenItemAddModalProps> = ({ open, o
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-6 pt-4 sm:mt-8 sm:pt-6 border-t">
             <Button type="button" variant="outline" onClick={onClose} className="px-6">
               Cancel
             </Button>

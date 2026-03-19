@@ -43,7 +43,7 @@ export default function ViewCustomerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md border">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[calc(100%-2rem)] sm:max-w-md border">
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <h3 className="text-lg font-semibold text-gray-800">Customer Details</h3>
           <Button
@@ -124,7 +124,7 @@ export default function ViewCustomerModal({
             )}
           </div>
           {customer.customer_type === 'member' && (
-            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
               <div className="text-center">
                 <div className="text-lg font-bold text-blue-600">
                   {customer.points ?? 0}

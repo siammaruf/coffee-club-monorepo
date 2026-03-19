@@ -14,8 +14,8 @@ export default function ViewCategoryModal({ isOpen, onClose, category }: ViewCat
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h3 className="text-lg font-bold text-gray-900">Category Details</h3>
           <Button
             variant="ghost"
@@ -26,7 +26,7 @@ export default function ViewCategoryModal({ isOpen, onClose, category }: ViewCat
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Card className="p-4 flex flex-col items-center gap-4">
             {category.icon ? (
               <img

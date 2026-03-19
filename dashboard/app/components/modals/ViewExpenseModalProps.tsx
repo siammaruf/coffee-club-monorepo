@@ -47,7 +47,7 @@ export default function ViewExpenseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md border">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[calc(100%-2rem)] sm:max-w-md border">
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <CardTitle className="text-lg font-semibold">Expense Details</CardTitle>
           <Button

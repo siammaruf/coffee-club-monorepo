@@ -25,11 +25,11 @@ export default function SalaryDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg w-full p-0 overflow-hidden rounded-xl shadow-2xl">
-        <DialogHeader className="px-8 pt-8 pb-2">
+      <DialogContent className="sm:max-w-lg w-full p-0 overflow-hidden rounded-xl shadow-2xl">
+        <DialogHeader className="px-4 pt-4 pb-2 sm:px-8 sm:pt-8">
           <DialogTitle className="text-xl font-bold">Salary Details</DialogTitle>
         </DialogHeader>
-        <div className="px-8 pb-8 pt-2 space-y-6">
+        <div className="px-4 pb-4 pt-2 sm:px-8 sm:pb-8 space-y-6">
           <div className="flex items-center gap-5">
             {record.user?.picture ? (
               <img
@@ -49,7 +49,7 @@ export default function SalaryDetailsModal({
               <div className="text-gray-500">{record.user?.role}</div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
             <div>
               <span className="block text-xs text-gray-500">Month</span>
               <span className="font-medium">{formatMonth(record.month ?? "")}</span>
