@@ -81,11 +81,6 @@ export default function TablesPage() {
     tableService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
-  // Reset page when viewMode or filters change
-  useEffect(() => {
-    resetPage();
-  }, [viewMode, locationFilter, statusFilter, seatFilter]);
-
   useEffect(() => {
     let filtered = tables.filter(table =>
       table.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -402,14 +397,14 @@ export default function TablesPage() {
               <Button
                 variant={viewMode === 'active' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('active')}
+                onClick={() => { setViewMode('active'); resetPage(); clearSelection(); }}
               >
                 Active
               </Button>
               <Button
                 variant={viewMode === 'trash' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('trash')}
+                onClick={() => { setViewMode('trash'); resetPage(); clearSelection(); }}
                 className="flex items-center gap-1"
               >
                 <Trash2 className="h-4 w-4" />
@@ -421,7 +416,7 @@ export default function TablesPage() {
                 <>
                   <Select
                     value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
+                    onChange={(e) => { setLocationFilter(e.target.value); resetPage(); }}
                     className="w-40"
                   >
                     <option value="">All Locations</option>
@@ -432,7 +427,7 @@ export default function TablesPage() {
 
                   <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => { setStatusFilter(e.target.value); resetPage(); }}
                     className="w-40"
                   >
                     <option value="">All Statuses</option>
@@ -444,7 +439,7 @@ export default function TablesPage() {
 
                   <Select
                     value={seatFilter}
-                    onChange={(e) => setSeatFilter(e.target.value)}
+                    onChange={(e) => { setSeatFilter(e.target.value); resetPage(); }}
                     className="w-40"
                   >
                     <option value="">All Seats</option>
