@@ -216,7 +216,7 @@ export default function UseStockCartModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-4xl p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-5 pb-3 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -231,9 +231,9 @@ export default function UseStockCartModal({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-row h-[560px]">
+        <div className="flex flex-col sm:flex-row h-auto sm:h-[560px]">
           {/* Left Panel — Item Browser */}
-          <div className="w-[58%] flex flex-col border-r">
+          <div className="w-full sm:w-[58%] flex flex-col border-r">
             <div className="px-4 py-3 border-b">
               <Input
                 placeholder="Search items..."
@@ -351,7 +351,7 @@ export default function UseStockCartModal({
           </div>
 
           {/* Right Panel — Cart */}
-          <div className="w-[42%] flex flex-col">
+          <div className="w-full sm:w-[42%] flex flex-col">
             <div className="px-4 py-3 border-b bg-amber-50">
               <h3 className="text-sm font-semibold text-amber-800 flex items-center gap-1.5">
                 <ShoppingCart className="w-4 h-4" />

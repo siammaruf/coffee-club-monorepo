@@ -452,7 +452,7 @@ export default function AddAttendanceFormModal({
           </div>
 
           {SelectedStatus !== AttendanceStatus.ABSENT && SelectedStatus !== AttendanceStatus.ON_LEAVE && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="check_in">Check In</Label>
                 <div className="relative">
@@ -490,7 +490,7 @@ export default function AddAttendanceFormModal({
           )}
 
           {SelectedStatus !== AttendanceStatus.ABSENT && SelectedStatus !== AttendanceStatus.ON_LEAVE && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="work_hours">Work Hours</Label>
                 <Input

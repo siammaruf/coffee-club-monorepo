@@ -142,8 +142,8 @@ export default function ContactMessageModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h3 className="text-lg font-bold text-gray-900">Contact Message</h3>
           <Button
             variant="ghost"
@@ -155,13 +155,13 @@ export default function ContactMessageModal({
           </Button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           {/* Sender Information */}
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <h4 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
               Sender Information
             </h4>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="font-medium text-gray-600">Name:</span>
                 <p className="text-gray-900">{message.name}</p>
@@ -261,7 +261,7 @@ export default function ContactMessageModal({
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"

@@ -82,7 +82,7 @@ export default function UseStockModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Record Stock Usage</DialogTitle>
         </DialogHeader>
@@ -112,7 +112,7 @@ export default function UseStockModal({
               <span className="text-red-600 text-xs">{errors.kitchen_item_id.message}</span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Quantity Used <span className="text-red-500">*</span>
