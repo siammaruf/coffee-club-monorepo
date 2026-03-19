@@ -4,12 +4,14 @@ import { authService } from '~/services/httpServices/authService';
 interface LogoutButtonProps {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
-export function LogoutButton({ children, className = '' }: LogoutButtonProps) {
+export function LogoutButton({ children, className = '', onClick }: LogoutButtonProps) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    onClick?.();
     try {
       await authService.logout();
       navigate('/login');
@@ -20,7 +22,7 @@ export function LogoutButton({ children, className = '' }: LogoutButtonProps) {
   };
 
   return (
-    <button 
+    <button
       onClick={handleLogout}
       className={className}
       type="button"
