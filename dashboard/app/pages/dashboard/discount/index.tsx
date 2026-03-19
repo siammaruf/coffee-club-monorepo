@@ -12,6 +12,7 @@ import { useTableSelection } from "~/hooks/useTableSelection";
 import AddDiscountModal from "~/components/modals/AddDiscountModal";
 import EditDiscountModal from "~/components/modals/EditDiscountModal";
 import AddDiscountApplicationModal from "~/components/modals/AddDiscountApplicationModal";
+import { Pagination } from "~/components/ui/pagination";
 import { discountService } from "~/services/httpServices/discountService";
 import { discountApplicationService } from "~/services/httpServices/discountApplicationService";
 import type { Discount } from "~/types/discount";
@@ -49,25 +50,36 @@ export default function DiscountsPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   // Fetch discounts from API
   useEffect(() => {
     fetchDiscounts();
     clearSelection();
-  }, [viewMode]);
+  }, [viewMode, page]);
 
   useEffect(() => {
     discountService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
 
+  // Reset page when viewMode changes
+  useEffect(() => {
+    setPage(1);
+  }, [viewMode]);
+
   const fetchDiscounts = async () => {
     try {
+      const params = { page, limit: itemsPerPage };
       const res = viewMode === 'active'
-        ? await discountService.getAll()
-        : await discountService.getTrash();
+        ? await discountService.getAll(params)
+        : await discountService.getTrash(params);
       setDiscounts((res as any).data || []);
+      setTotal((res as any).total || 0);
     } catch (error) {
       setDiscounts([]);
+      setTotal(0);
     }
   };
 
@@ -484,6 +496,13 @@ export default function DiscountsPage() {
                 )}
               </div>
             </div>
+            <Pagination
+              currentPage={page}
+              totalPages={Math.ceil(total / itemsPerPage)}
+              totalItems={total}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setPage}
+            />
           </CardContent>
         </Card>
       )}

@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { Pagination } from "~/components/ui/pagination";
 import { useTableSelection } from "~/hooks/useTableSelection";
 
 
@@ -91,15 +92,25 @@ export default function KitchenItemsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
+
   const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
-    fetchKitchenItems();
+    setPage(1);
     clearSelection();
   }, [viewMode]);
+
+  useEffect(() => {
+    fetchKitchenItems();
+    clearSelection();
+  }, [viewMode, page]);
 
   useEffect(() => {
     // Fetch trash count on mount
@@ -120,16 +131,19 @@ export default function KitchenItemsPage() {
   const fetchKitchenItems = async () => {
     setIsLoading(true);
     try {
-      const res = viewMode === 'active'
-        ? await kitchenItemsService.getAll()
-        : await kitchenItemsService.getTrash();
-      const items = (res as { data: KitchenItem[] }).data || [];
+      const params = { page, limit: itemsPerPage };
+      const res: any = viewMode === 'active'
+        ? await kitchenItemsService.getAll(params)
+        : await kitchenItemsService.getTrash(params);
+      const items = res?.data || [];
       setKitchenItems(items);
       setFilteredItems(items);
+      setTotal(res?.total || 0);
     } catch (error) {
       console.error('Error fetching kitchen items:', error);
       setKitchenItems([]);
       setFilteredItems([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
@@ -143,9 +157,9 @@ export default function KitchenItemsPage() {
     if (!deleteId) return;
     try {
       await kitchenItemsService.delete(deleteId);
-      setKitchenItems(prev => prev.filter(item => item.id !== deleteId));
       setTrashCount(prev => prev + 1);
       setDeleteId(null);
+      fetchKitchenItems();
     } catch (error) {
       console.error('Error deleting kitchen item:', error);
     }
@@ -160,10 +174,9 @@ export default function KitchenItemsPage() {
     setBulkLoading(true);
     try {
       await kitchenItemsService.bulkDelete(Array.from(selectedIds));
-      setKitchenItems(prev => prev.filter(item => !selectedIds.has(item.id)));
-      setFilteredItems(prev => prev.filter(item => !selectedIds.has(item.id)));
       setTrashCount(prev => prev + selectedIds.size);
       clearSelection();
+      fetchKitchenItems();
     } catch (error) {
       console.error("Bulk delete failed:", error);
     }
@@ -204,9 +217,8 @@ export default function KitchenItemsPage() {
   const handleRestore = async (id: string) => {
     try {
       await kitchenItemsService.restore(id);
-      setKitchenItems(prev => prev.filter(item => item.id !== id));
-      setFilteredItems(prev => prev.filter(item => item.id !== id));
       setTrashCount(prev => prev - 1);
+      fetchKitchenItems();
     } catch (error) {
       console.error("Restore failed:", error);
     }
@@ -220,9 +232,8 @@ export default function KitchenItemsPage() {
     if (!permanentDeleteId) return;
     try {
       await kitchenItemsService.permanentDelete(permanentDeleteId);
-      setKitchenItems(prev => prev.filter(item => item.id !== permanentDeleteId));
-      setFilteredItems(prev => prev.filter(item => item.id !== permanentDeleteId));
       setTrashCount(prev => prev - 1);
+      fetchKitchenItems();
     } catch (error) {
       console.error("Permanent delete failed:", error);
     }
@@ -455,6 +466,15 @@ export default function KitchenItemsPage() {
                   </Button>
                 </div>
               )}
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / itemsPerPage)}
+                totalItems={total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setPage}
+              />
             </>
           ) : (
             /* No items at all - Empty state */

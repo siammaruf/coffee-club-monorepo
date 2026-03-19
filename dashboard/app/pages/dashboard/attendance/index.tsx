@@ -37,8 +37,6 @@ import {
   Filter,
   Download,
   Plus,
-  ChevronLeft,
-  ChevronRight,
   Trash2,
   RotateCcw,
   AlertTriangle
@@ -48,6 +46,7 @@ import AttendanceSkeleton from "~/components/skeleton/AttendanceSkeleton";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import AddAttendanceFormModal from "~/components/modals/AddAttendanceFormModal";
 import { attendanceService } from "~/services/httpServices/attendanceService";
+import { Pagination } from "~/components/ui/pagination";
 import { userService } from "~/services/httpServices/userService";
 import type {
   Attendance,
@@ -325,17 +324,7 @@ export default function AttendancePage() {
     setCurrentPage(page);
   };
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
 
   const exportAttendance = async () => {
     try {
@@ -389,17 +378,7 @@ export default function AttendancePage() {
     }
   };
 
-  const getPaginationNumbers = () => {
-    const pages = [];
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  };
 
   const uniqueRoles = [...new Set(employees.map(emp => emp.role).filter(Boolean))].sort();
 
@@ -769,84 +748,13 @@ export default function AttendancePage() {
                 </TableBody>
               </Table>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * perPage) + 1} to {Math.min(currentPage * perPage, totalRecords)} of {totalRecords} entries
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePreviousPage}
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-1"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Previous
-                    </Button>
-
-                    <div className="flex items-center gap-1">
-                      {currentPage > 3 && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePageChange(1)}
-                            className="w-8 h-8 p-0"
-                          >
-                            1
-                          </Button>
-                          {currentPage > 4 && (
-                            <span className="text-gray-500 px-2">...</span>
-                          )}
-                        </>
-                      )}
-
-                      {getPaginationNumbers().map((page) => (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {page}
-                        </Button>
-                      ))}
-
-                      {currentPage < totalPages - 2 && (
-                        <>
-                          {currentPage < totalPages - 3 && (
-                            <span className="text-gray-500 px-2">...</span>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePageChange(totalPages)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {totalPages}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleNextPage}
-                      disabled={currentPage === totalPages}
-                      className="flex items-center gap-1"
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalRecords}
+                itemsPerPage={perPage}
+                onPageChange={handlePageChange}
+              />
 
               {/* No filtered results message */}
               {!hasFilteredResults && hasActiveFilters && (
