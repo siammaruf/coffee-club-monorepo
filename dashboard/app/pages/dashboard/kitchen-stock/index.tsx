@@ -29,6 +29,7 @@ import { Select } from "../../../components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
+import { Pagination } from "~/components/ui/pagination";
 import AddKitchenStockModal from "~/components/modals/AddKitchenStockModal";
 import EditKitchenStockModal from "~/components/modals/EditKitchenStockModal";
 import { kitchenStockService } from "~/services/httpServices/kitchenStockService";
@@ -434,31 +435,13 @@ export default function KitchenStockPage() {
                 </Table>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-                    <span>
-                      Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page === 1}
-                        onClick={() => setPage(p => p - 1)}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page >= totalPages}
-                        onClick={() => setPage(p => p + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalItems={total}
+                  itemsPerPage={limit}
+                  onPageChange={setPage}
+                />
               </>
             )}
           </CardContent>

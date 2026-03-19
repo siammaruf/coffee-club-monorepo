@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
+import { Pagination } from "~/components/ui/pagination";
 import { useDebounce } from "~/hooks/useDebounce";
 
 export default function CustomersPage() {
@@ -720,29 +721,13 @@ export default function CustomersPage() {
                   </div>
                 )}
               </div>
-              {totalPages > 1 && (
-                <div className="flex justify-end items-center gap-2 p-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    Prev
-                  </Button>
-                  <span className="text-sm">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </CardContent>
         </Card>

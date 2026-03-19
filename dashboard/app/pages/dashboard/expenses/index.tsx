@@ -39,6 +39,7 @@ import type { Expense } from "~/types/expense";
 import AddExpenseModal from "~/components/modals/AddExpenseModal";
 import EditExpenseModal from "~/components/modals/EditExpenseModal";
 import ViewExpenseModal from "~/components/modals/ViewExpenseModalProps";
+import { Pagination } from "~/components/ui/pagination";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
@@ -65,6 +66,9 @@ export default function ExpensesPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     // Fetch categories only once
@@ -84,17 +88,23 @@ export default function ExpensesPage() {
   useEffect(() => {
     fetchExpenses();
     // eslint-disable-next-line
-  }, [categoryFilter, statusFilter, dateFilter, viewMode]);
+  }, [categoryFilter, statusFilter, dateFilter, viewMode, page]);
 
   // Clear selection when viewMode changes
   useEffect(() => {
     clearSelection();
+    setPage(1);
   }, [viewMode]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [categoryFilter, statusFilter, dateFilter]);
 
   const fetchExpenses = async () => {
     setIsLoading(true);
     try {
-      const params: any = {};
+      const params: any = { page, limit: itemsPerPage };
       if (categoryFilter) params.categoryId = categoryFilter;
       if (statusFilter) params.status = statusFilter;
       if (dateFilter) params.dateFilter = dateFilter;
@@ -109,14 +119,17 @@ export default function ExpensesPage() {
       if (res && typeof res === "object" && "data" in res) {
         setExpenses((res as { data: Expense[] }).data || []);
         setFilteredExpenses((res as { data: Expense[] }).data || []);
+        setTotal(res.total || 0);
       } else {
         setExpenses([]);
         setFilteredExpenses([]);
+        setTotal(0);
       }
     } catch (error) {
       console.error('Error fetching expenses:', error);
       setExpenses([]);
       setFilteredExpenses([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
@@ -265,6 +278,7 @@ export default function ExpensesPage() {
     setCategoryFilter("");
     setStatusFilter("");
     setDateFilter("");
+    setPage(1);
   };
 
   const formatCurrency = (amount: number | string) => {
@@ -603,6 +617,14 @@ export default function ExpensesPage() {
                   </Button>
                 </div>
               )}
+
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / itemsPerPage)}
+                totalItems={total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setPage}
+              />
             </>
           ) : (
             /* No expenses at all - Empty state */

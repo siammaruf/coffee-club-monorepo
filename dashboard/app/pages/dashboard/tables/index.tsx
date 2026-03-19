@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
+import { Pagination } from "~/components/ui/pagination";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
@@ -66,15 +67,23 @@ export default function TablesPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchTables();
     clearSelection();
-  }, [viewMode]);
+  }, [viewMode, page]);
 
   useEffect(() => {
     tableService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
+
+  // Reset page when viewMode or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [viewMode, locationFilter, statusFilter, seatFilter]);
 
   useEffect(() => {
     let filtered = tables.filter(table =>
@@ -101,15 +110,18 @@ export default function TablesPage() {
   const fetchTables = async () => {
     try {
       setIsLoading(true);
+      const params = { page, limit: itemsPerPage };
       const data = viewMode === 'active'
-        ? await tableService.getAll()
-        : await tableService.getTrash();
+        ? await tableService.getAll(params)
+        : await tableService.getTrash(params);
       setTables((data as any).data);
       setFilteredTables((data as any).data);
+      setTotal((data as any).total || 0);
     } catch (error) {
       console.error('Error fetching tables:', error);
       setTables([]);
       setFilteredTables([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
@@ -232,6 +244,7 @@ export default function TablesPage() {
     setLocationFilter("");
     setStatusFilter("");
     setSeatFilter("");
+    setPage(1);
   };
 
   const getStatusColor = (status: string) => {
@@ -614,6 +627,14 @@ export default function TablesPage() {
                   </Button>
                 </div>
               )}
+
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / itemsPerPage)}
+                totalItems={total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setPage}
+              />
             </>
           ) : (
             /* No tables at all - Empty state */

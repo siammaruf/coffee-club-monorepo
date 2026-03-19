@@ -23,6 +23,7 @@ import {
   RotateCcw,
   AlertTriangle
 } from "lucide-react";
+import { Pagination } from "~/components/ui/pagination";
 import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
@@ -54,16 +55,24 @@ export default function ExpenseCategoriesPage() {
   const [viewMode, setViewMode] = useState<'active' | 'trash'>('active');
   const [trashCount, setTrashCount] = useState(0);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchCategories();
     clearSelection();
-  }, [viewMode]);
+  }, [viewMode, page]);
 
   useEffect(() => {
     // Fetch trash count on mount
     expenseCategoryService.getTrash({ page: 1, limit: 1 }).then((res: any) => setTrashCount(res.total || 0)).catch(() => {});
   }, []);
+
+  // Reset page when viewMode changes
+  useEffect(() => {
+    setPage(1);
+  }, [viewMode]);
 
   useEffect(() => {
     let filtered = categories.filter(category =>
@@ -77,14 +86,17 @@ export default function ExpenseCategoriesPage() {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
+      const params = { page, limit: itemsPerPage };
       const res = viewMode === 'active'
-        ? await expenseCategoryService.getAll() as { data: ExpenseCategory[] }
-        : await expenseCategoryService.getTrash() as { data: ExpenseCategory[] };
+        ? await expenseCategoryService.getAll(params) as { data: ExpenseCategory[]; total?: number }
+        : await expenseCategoryService.getTrash(params) as { data: ExpenseCategory[]; total?: number };
       setCategories(res.data || []);
       setFilteredCategories(res.data || []);
+      setTotal(res.total || 0);
     } catch (error) {
       setCategories([]);
       setFilteredCategories([]);
+      setTotal(0);
     } finally {
       setIsLoading(false);
     }
@@ -433,6 +445,14 @@ export default function ExpenseCategoriesPage() {
                   </Button>
                 </div>
               )}
+
+              <Pagination
+                currentPage={page}
+                totalPages={Math.ceil(total / itemsPerPage)}
+                totalItems={total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setPage}
+              />
             </>
           ) : (
             /* No categories at all - Empty state */

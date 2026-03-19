@@ -46,6 +46,7 @@ import {
 import { format } from "date-fns";
 import SalarySkeleton from "~/components/skeleton/SalarySkeleton";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { Pagination } from "~/components/ui/pagination";
 import { salaryService } from "~/services/httpServices/salaryService";
 import type { Salary } from "~/types/salary";
 import SalaryDetailsModal from "~/components/modals/SalaryDetailsModal";
@@ -625,6 +626,15 @@ export default function SalaryPage() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalRecords / perPage)}
+                totalItems={totalRecords}
+                itemsPerPage={perPage}
+                onPageChange={setCurrentPage}
+              />
 
               {/* No filtered results message */}
               {!hasFilteredResults && hasActiveFilters && (
