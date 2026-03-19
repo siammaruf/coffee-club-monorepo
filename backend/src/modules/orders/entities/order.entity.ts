@@ -17,6 +17,9 @@ export class Order {
     @Column({ unique: true, nullable: true })
     order_id: string;
 
+    @Column({ nullable: true })
+    token_number: string | null;
+
     @Column({
         type: 'enum',
         enum: OrderType,

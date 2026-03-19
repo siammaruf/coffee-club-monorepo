@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   Bell,
   ChevronDown,
+  Wifi,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
@@ -362,6 +363,12 @@ export default function Sidebar() {
                 <SidebarLink to="/dashboard/settings/roles-permissions" className={linkClass}>
                   <ShieldCheck className="w-4 h-4" />
                   <span>Roles & Permissions</span>
+                </SidebarLink>
+              )}
+              {can('settings.roles_permissions') && (
+                <SidebarLink to="/dashboard/settings/wifi" className={linkClass}>
+                  <Wifi className="w-4 h-4" />
+                  <span>WiFi Settings</span>
                 </SidebarLink>
               )}
               <LogoutButton

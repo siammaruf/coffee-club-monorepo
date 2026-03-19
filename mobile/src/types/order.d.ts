@@ -66,6 +66,7 @@ export interface OrderToken {
 export interface Order {
   id: string;
   order_id: string;
+  token_number?: string;
   order_type: OrderType;
   tables: OrderTable[];
   customer: OrderCustomer | null;

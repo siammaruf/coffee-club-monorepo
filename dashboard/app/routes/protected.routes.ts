@@ -46,4 +46,5 @@ export const protectedRoutes = [
   route("contact-messages", "pages/dashboard/contact-messages/index.tsx"),
   route("partners", "pages/dashboard/partners/index.tsx"),
   route("settings/roles-permissions", "pages/dashboard/settings/roles-permissions.tsx"),
+  route("settings/wifi", "pages/dashboard/settings/wifi.tsx"),
 ];
