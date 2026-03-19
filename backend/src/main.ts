@@ -7,6 +7,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { PermissionsGuard } from './common/guards/permissions.guard';
+import { PermissionsService } from './modules/permissions/providers/permissions.service';
 import cookieParser from 'cookie-parser';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -43,9 +45,14 @@ async function bootstrap() {
     }),
   );
 
-  // Apply global guards
+  // Apply global guards in correct order: JWT → Roles → Permissions
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector), new RolesGuard(reflector));
+  const permissionsService = app.get(PermissionsService);
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+    new RolesGuard(reflector),
+    new PermissionsGuard(reflector, permissionsService),
+  );
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new DatabaseExceptionFilter());
 
