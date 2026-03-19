@@ -96,7 +96,7 @@ export default function TestimonialModal({ open, onClose, onSave, testimonial }:
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{testimonial ? "Edit Testimonial" : "Add Testimonial"}</DialogTitle>
           <DialogDescription>
@@ -104,27 +104,28 @@ export default function TestimonialModal({ open, onClose, onSave, testimonial }:
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="test-name">Name *</Label>
-            <Input
-              id="test-name"
-              value={form.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Enter person's name"
-              required
-            />
-          </div>
+          {/* Name + Position */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-name">Name *</Label>
+              <Input
+                id="test-name"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="Enter person's name"
+                required
+              />
+            </div>
 
-          {/* Position */}
-          <div className="space-y-2">
-            <Label htmlFor="test-position">Position</Label>
-            <Input
-              id="test-position"
-              value={form.position}
-              onChange={(e) => handleChange("position", e.target.value)}
-              placeholder="e.g. CEO, Regular Customer"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="test-position">Position</Label>
+              <Input
+                id="test-position"
+                value={form.position}
+                onChange={(e) => handleChange("position", e.target.value)}
+                placeholder="e.g. CEO, Regular Customer"
+              />
+            </div>
           </div>
 
           {/* Quote */}

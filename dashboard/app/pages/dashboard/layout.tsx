@@ -1,10 +1,19 @@
-import { Outlet } from "react-router";
+import { Link, Outlet } from "react-router";
 import Sidebar from "../../components/layout/sidebar";
 import { AuthGuard } from "../../hooks/auth/AuthGuard";
 import { useSelector } from "react-redux";
 import React from "react";
 import { SidebarProvider, useSidebar } from "../../hooks/useSidebar";
-import { Menu } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
+import { LogoutButton } from "../../hooks/auth/LogoutButton";
 
 const selectCurrentUser = (state: any) => state.auth?.user;
 
@@ -46,16 +55,52 @@ function DashboardContent() {
               <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
             </div>
             {currentUser && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground hidden sm:inline">
-                  {currentUser.first_name} {currentUser.last_name}
-                </span>
-                <img
-                  src={currentUser.picture || "/default-profile.png"}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full ring-2 ring-border object-cover"
-                />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors focus:outline-none">
+                    <span className="text-sm text-muted-foreground hidden sm:inline">
+                      {currentUser.first_name} {currentUser.last_name}
+                    </span>
+                    <img
+                      src={currentUser.picture || "/default-profile.png"}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full ring-2 ring-border object-cover"
+                    />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {currentUser.first_name} {currentUser.last_name}
+                      </p>
+                      {currentUser.email && (
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {currentUser.email}
+                        </p>
+                      )}
+                      <p className="text-xs leading-none text-muted-foreground capitalize">
+                        {currentUser.role}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/profile" className="flex items-center gap-2 cursor-pointer">
+                      <User className="w-4 h-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <LogoutButton className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 cursor-pointer">
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </LogoutButton>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </header>

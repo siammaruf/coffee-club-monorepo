@@ -102,7 +102,7 @@ export default function CreateCustomerModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-[calc(100%-2rem)] sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h3 className="text-lg font-bold text-gray-900">Add Customer</h3>
           <Button
@@ -178,95 +178,99 @@ export default function CreateCustomerModal({
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
-                Full Name *
-              </Label>
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: "Name is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="name"
-                    placeholder="Enter customer's full name"
-                    className={`h-11 ${errors.name ? 'border-red-500' : ''}`}
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+                  Full Name *
+                </Label>
+                <Controller
+                  name="name"
+                  control={control}
+                  rules={{ required: "Name is required" }}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      id="name"
+                      placeholder="Enter customer's full name"
+                      className={`h-11 ${errors.name ? 'border-red-500' : ''}`}
+                    />
+                  )}
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
                 )}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
-              )}
+              </div>
+
+              <div>
+                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                  Phone Number *
+                </Label>
+                <Controller
+                  name="phone"
+                  control={control}
+                  rules={{ required: "Phone number is required" }}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      id="phone"
+                      type="tel"
+                      placeholder="+1234567890"
+                      className={`h-11 ${errors.phone ? 'border-red-500' : ''}`}
+                    />
+                  )}
+                />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                )}
+              </div>
             </div>
-            
-            <div>
-              <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
-                Phone Number *
-              </Label>
-              <Controller
-                name="phone"
-                control={control}
-                rules={{ required: "Phone number is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="phone"
-                    type="tel"
-                    placeholder="+1234567890"
-                    className={`h-11 ${errors.phone ? 'border-red-500' : ''}`}
-                  />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                  Email Address
+                </Label>
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address"
+                    }
+                  }}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      placeholder="customer@example.com"
+                      className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
+                    />
+                  )}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
                 )}
-              />
-              {errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
-                Email Address
-              </Label>
-              <Controller
-                name="email"
-                control={control}
-                rules={{
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address"
-                  }
-                }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="email"
-                    type="email"
-                    placeholder="customer@example.com"
-                    className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
-                  />
-                )}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
-                Address
-              </Label>
-              <Controller
-                name="address"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="address"
-                    placeholder="123 Main St"
-                    className="h-11"
-                  />
-                )}
-              />
+              </div>
+
+              <div>
+                <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
+                  Address
+                </Label>
+                <Controller
+                  name="address"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      id="address"
+                      placeholder="123 Main St"
+                      className="h-11"
+                    />
+                  )}
+                />
+              </div>
             </div>
             
             <div>
