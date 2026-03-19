@@ -16,6 +16,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
+import { Pagination } from "~/components/ui/pagination";
 
 export default function CategoriesPage() {
   const canCreate = usePermission('categories.create');
@@ -418,30 +419,13 @@ export default function CategoriesPage() {
                 </div>
               )}
             </div>
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-2 p-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Prev
-                </Button>
-                <span className="text-sm">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </CardContent>
       </Card>

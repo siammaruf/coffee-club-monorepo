@@ -34,7 +34,8 @@ export default function Employees() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
+  const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [permanentDeleteId, setPermanentDeleteId] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ export default function Employees() {
 
   useEffect(() => {
     fetchUsers();
-  }, [viewMode]);
+  }, [viewMode, currentPage, searchTerm, positionFilter, statusFilter]);
 
   // Fetch trash count on initial load
   useEffect(() => {
@@ -62,60 +63,39 @@ export default function Employees() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      const params: any = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (positionFilter) params.role = positionFilter;
+      if (statusFilter) params.status = statusFilter;
+
       let response: any;
       if (viewMode === 'trash') {
-        response = await userService.getTrash();
+        response = await userService.getTrash(params);
+        setUsers(response?.data || []);
+        setTotal(response?.total || 0);
       } else {
-        response = await userService.getUsers();
-      }
-
-      if (viewMode === 'trash') {
+        response = await userService.getUsers(params);
         const data = response?.data || response;
-        if (Array.isArray(data)) {
-          setUsers(data);
-        } else {
-          setUsers([]);
-        }
-      } else {
-        if (Array.isArray(response)) {
-          setUsers(response);
-        } else {
-          const users = (response as any)?.data?.users || (response as any)?.users || response;
-          if (Array.isArray(users)) {
-            setUsers(users);
-          } else {
-            console.error('API response structure is unexpected:', response);
-            setUsers([]);
-            setError('Invalid data format received from server');
-          }
-        }
+        const usersList = data?.users || data?.data?.users || [];
+        setUsers(Array.isArray(usersList) ? usersList : []);
+        setTotal(data?.total || response?.total || 0);
       }
       setError(null);
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setUsers([]);
+      setTotal(0);
       setError(err.message || 'Failed to fetch users');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredEmployees = (Array.isArray(users) ? users : []).filter(user => {
-    const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
-    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesPosition = positionFilter === "" || user.role === positionFilter;
-    const matchesStatus = statusFilter === "" || user.status === statusFilter;
-
-    return matchesSearch && matchesPosition && matchesStatus;
-  });
-
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(total / itemsPerPage);
+  const currentItems = users;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -130,10 +110,6 @@ export default function Employees() {
     const params = new URLSearchParams(location.search);
     params.set('page', pageNumber.toString());
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  };
-
-  const handleFilterChange = () => {
-    setCurrentPage(1);
   };
 
   const uniquePositions = [...new Set(users.map(user => user.role))];
@@ -307,7 +283,7 @@ export default function Employees() {
                 value={positionFilter}
                 onChange={(e) => {
                   setPositionFilter(e.target.value);
-                  handleFilterChange();
+                  setCurrentPage(1);
                 }}
                 className="w-40"
               >
@@ -321,7 +297,7 @@ export default function Employees() {
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
-                  handleFilterChange();
+                  setCurrentPage(1);
                 }}
                 className="w-40"
               >
@@ -339,7 +315,7 @@ export default function Employees() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    handleFilterChange();
+                    setCurrentPage(1);
                   }}
                 />
               </div>
@@ -467,15 +443,13 @@ export default function Employees() {
             </div>
           </div>
 
-          {filteredEmployees.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredEmployees.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 

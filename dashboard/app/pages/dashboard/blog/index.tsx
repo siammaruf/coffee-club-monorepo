@@ -14,6 +14,7 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import BlogPostModal from "./components/BlogPostModal";
 import ViewBlogPostModal from "./components/ViewBlogPostModal";
 import type { BlogPost } from "~/types/blog";
+import { Pagination } from "~/components/ui/pagination";
 
 export default function BlogPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -374,36 +375,13 @@ export default function BlogPage() {
                 </div>
               )}
             </div>
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center gap-2 p-4 border-t">
-                <span className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * itemsPerPage + 1}-
-                  {Math.min(currentPage * itemsPerPage, total)} of {total}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    Prev
-                  </Button>
-                  <span className="text-sm">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </CardContent>
       </Card>
