@@ -21,6 +21,7 @@ export enum ImportMode {
 export enum BackupType {
   MANUAL = 'manual',
   SCHEDULED = 'scheduled',
+  UPLOADED = 'uploaded',
 }
 
 export enum BackupStatus {
