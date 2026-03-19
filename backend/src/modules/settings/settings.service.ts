@@ -51,6 +51,16 @@ export class SettingsService implements OnModuleInit {
         value: '100',
         description: 'Minimum taka amount required for redemption',
       },
+      {
+        key: 'wifi_name',
+        value: '',
+        description: 'WiFi network name (SSID) displayed on receipts and customer tokens',
+      },
+      {
+        key: 'wifi_password',
+        value: '',
+        description: 'WiFi password displayed on receipts and customer tokens',
+      },
     ];
 
     for (const def of defaults) {
