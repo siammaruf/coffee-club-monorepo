@@ -3,6 +3,52 @@ import { useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import reportService from "~/services/httpServices/reportService";
 import DataManagementPage from "./data-management/index";
+import {
+  DollarSign,
+  TrendingUp,
+  ShoppingCart,
+  Clock,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  ShoppingBag,
+  UtensilsCrossed,
+  BarChart3,
+  CalendarClock,
+} from "lucide-react";
+
+function StatCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconColor = "text-primary",
+  iconBg = "bg-primary/10",
+}: {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  icon: React.ElementType;
+  iconColor?: string;
+  iconBg?: string;
+}) {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+          <div className={`rounded-lg p-2.5 ${iconBg}`}>
+            <Icon className={`w-5 h-5 ${iconColor}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const location = useLocation();
@@ -14,7 +60,6 @@ export default function Dashboard() {
   const [ApexChart, setApexChart] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Chart filter states (shared for both charts)
   const [chartPeriod, setChartPeriod] = useState<'daily' | 'monthly' | 'yearly'>('daily');
   const [chartFilterType, setChartFilterType] = useState<'month' | 'year' | 'custom'>('month');
   const [chartFilterValue, setChartFilterValue] = useState<string>(`${new Date().getMonth() + 1}`);
@@ -84,7 +129,6 @@ export default function Dashboard() {
     }
   };
 
-  // Prepare sales chart data
   const salesChartCategories = salesChart?.chartData?.map((d: any) => d.period) || [];
   const salesChartSeries = [
     {
@@ -97,7 +141,6 @@ export default function Dashboard() {
     },
   ];
 
-  // Prepare expenses chart data
   const expensesChartCategories = expensesChart?.chartData?.map((d: any) => d.period) || [];
   const expensesChartSeries = [
     {
@@ -106,56 +149,37 @@ export default function Dashboard() {
     },
   ];
 
-  // Filter UI as a component for reuse (ONE filter for both charts)
+  const selectClass = "rounded-lg border bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20";
+  const inputClass = "rounded-lg border bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/20";
+
   const ChartFilter = (
-    <div className="flex flex-wrap gap-2 mt-2">
-      <select
-        className="border rounded px-2 py-1 text-sm"
-        value={chartPeriod}
-        onChange={e => setChartPeriod(e.target.value as any)}
-      >
+    <div className="flex flex-wrap items-center gap-2">
+      <select className={selectClass} value={chartPeriod} onChange={e => setChartPeriod(e.target.value as any)}>
         <option value="daily">Daily</option>
         <option value="monthly">Monthly</option>
         <option value="yearly">Yearly</option>
       </select>
-      <select
-        className="border rounded px-2 py-1 text-sm"
-        value={chartFilterType}
-        onChange={e => setChartFilterType(e.target.value as any)}
-      >
+      <select className={selectClass} value={chartFilterType} onChange={e => setChartFilterType(e.target.value as any)}>
         <option value="month">Month</option>
         <option value="year">Year</option>
-        <option value="custom">Custom (Date Range)</option>
+        <option value="custom">Custom Range</option>
       </select>
       {(chartFilterType === "month" || chartFilterType === "year") && (
         <input
-          className="border rounded px-2 py-1 text-sm"
+          className={`${inputClass} w-28`}
           type="number"
           min={chartFilterType === "month" ? 1 : 2000}
           max={chartFilterType === "month" ? 12 : 2100}
           value={chartFilterValue}
           onChange={e => setChartFilterValue(e.target.value)}
-          placeholder={chartFilterType === "month" ? "Month (1-12)" : "Year (YYYY)"}
-          style={{ width: 110 }}
+          placeholder={chartFilterType === "month" ? "Month (1-12)" : "Year"}
         />
       )}
       {chartFilterType === "custom" && (
         <>
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            type="date"
-            value={chartStartDate}
-            onChange={e => setChartStartDate(e.target.value)}
-          />
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            type="date"
-            value={chartEndDate}
-            onChange={e => setChartEndDate(e.target.value)}
-          />
-          <div className="text-xs text-muted-foreground mt-1">
-            Select a custom date range
-          </div>
+          <input className={inputClass} type="date" value={chartStartDate} onChange={e => setChartStartDate(e.target.value)} />
+          <span className="text-muted-foreground text-sm">to</span>
+          <input className={inputClass} type="date" value={chartEndDate} onChange={e => setChartEndDate(e.target.value)} />
         </>
       )}
     </div>
@@ -167,268 +191,233 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Welcome back!</h2>
-      <p className="text-muted-foreground">
-        Here's an overview of your coffee club activity
-      </p>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.todays_total_sales !== undefined
-                ? `৳${dashboard.todays_total_sales}`
-                : "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Total sales for today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Today's Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.todays_expenses !== undefined
-                ? `৳${dashboard.todays_expenses}`
-                : "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Total expenses for today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Today's Profit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.todays_profit !== undefined
-                ? `৳${dashboard.todays_profit}`
-                : "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Profit for today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders Today</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.total_orders_today ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Orders placed today</p>
-          </CardContent>
-        </Card>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
+        <p className="text-muted-foreground mt-1">
+          Here's an overview of your coffee club activity
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.active_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Currently active</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.pending_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Waiting to be processed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.completed_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Finished today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Cancelled Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.cancelled_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Cancelled today</p>
-          </CardContent>
-        </Card>
+      {/* Today's Summary */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Today's Sales"
+          value={dashboard?.todays_total_sales !== undefined ? `৳${dashboard.todays_total_sales}` : "--"}
+          subtitle="Total sales for today"
+          icon={DollarSign}
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-100"
+        />
+        <StatCard
+          title="Today's Expenses"
+          value={dashboard?.todays_expenses !== undefined ? `৳${dashboard.todays_expenses}` : "--"}
+          subtitle="Total expenses for today"
+          icon={TrendingUp}
+          iconColor="text-red-600"
+          iconBg="bg-red-100"
+        />
+        <StatCard
+          title="Today's Profit"
+          value={dashboard?.todays_profit !== undefined ? `৳${dashboard.todays_profit}` : "--"}
+          subtitle="Profit for today"
+          icon={BarChart3}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+        />
+        <StatCard
+          title="Total Orders Today"
+          value={dashboard?.total_orders_today ?? "--"}
+          subtitle="Orders placed today"
+          icon={ShoppingCart}
+          iconColor="text-violet-600"
+          iconBg="bg-violet-100"
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Takeaway Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.takeaway_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Takeaway today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Dine-in Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.dinein_orders ?? "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Dine-in today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.average_order_value !== undefined
-                ? `৳${dashboard.average_order_value}`
-                : "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Avg. value today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Generated At</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboard?.generated_at
-                ? new Date(dashboard.generated_at).toLocaleString()
-                : "--"}
-            </div>
-            <p className="text-xs text-muted-foreground">Last updated</p>
-          </CardContent>
-        </Card>
+      {/* Order Status */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Active Orders"
+          value={dashboard?.active_orders ?? "--"}
+          subtitle="Currently active"
+          icon={Loader2}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-100"
+        />
+        <StatCard
+          title="Pending Orders"
+          value={dashboard?.pending_orders ?? "--"}
+          subtitle="Waiting to be processed"
+          icon={Clock}
+          iconColor="text-orange-600"
+          iconBg="bg-orange-100"
+        />
+        <StatCard
+          title="Completed Orders"
+          value={dashboard?.completed_orders ?? "--"}
+          subtitle="Finished today"
+          icon={CheckCircle2}
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-100"
+        />
+        <StatCard
+          title="Cancelled Orders"
+          value={dashboard?.cancelled_orders ?? "--"}
+          subtitle="Cancelled today"
+          icon={XCircle}
+          iconColor="text-red-600"
+          iconBg="bg-red-100"
+        />
       </div>
 
-      {/* Place the filter ONCE above both charts */}
-      <div className="mb-4">{ChartFilter}</div>
+      {/* Order Details */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Takeaway Orders"
+          value={dashboard?.takeaway_orders ?? "--"}
+          subtitle="Takeaway today"
+          icon={ShoppingBag}
+          iconColor="text-cyan-600"
+          iconBg="bg-cyan-100"
+        />
+        <StatCard
+          title="Dine-in Orders"
+          value={dashboard?.dinein_orders ?? "--"}
+          subtitle="Dine-in today"
+          icon={UtensilsCrossed}
+          iconColor="text-pink-600"
+          iconBg="bg-pink-100"
+        />
+        <StatCard
+          title="Average Order Value"
+          value={dashboard?.average_order_value !== undefined ? `৳${dashboard.average_order_value}` : "--"}
+          subtitle="Avg. value today"
+          icon={DollarSign}
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-100"
+        />
+        <StatCard
+          title="Last Updated"
+          value={dashboard?.generated_at ? new Date(dashboard.generated_at).toLocaleTimeString() : "--"}
+          subtitle={dashboard?.generated_at ? new Date(dashboard.generated_at).toLocaleDateString() : "Last updated"}
+          icon={CalendarClock}
+          iconColor="text-slate-600"
+          iconBg="bg-slate-100"
+        />
+      </div>
 
+      {/* Chart Filters */}
+      <Card>
+        <CardContent className="pt-5 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Analytics</h3>
+            {ChartFilter}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Sales Progress Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Sales Progress</CardTitle>
+            <CardTitle className="text-base">Sales Progress</CardTitle>
           </CardHeader>
           <CardContent>
             {ApexChart && salesChart ? (
               <>
                 <ApexChart
-                  type="line"
+                  type="area"
                   height={250}
                   options={{
-                    chart: { id: "sales-progress" },
-                    xaxis: { categories: salesChartCategories },
+                    chart: { id: "sales-progress", toolbar: { show: false }, sparkline: { enabled: false } },
+                    xaxis: { categories: salesChartCategories, labels: { style: { fontSize: "11px" } } },
+                    yaxis: { labels: { style: { fontSize: "11px" } } },
                     dataLabels: { enabled: false },
-                    stroke: { curve: "smooth" },
+                    stroke: { curve: "smooth", width: 2 },
                     colors: ["#2563eb", "#22c55e"],
+                    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05 } },
+                    grid: { borderColor: "#f1f1f1", strokeDashArray: 4 },
+                    tooltip: { theme: "light" },
                   }}
                   series={salesChartSeries}
                 />
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="font-semibold">Total Sales:</span>{" "}
-                    {salesChart?.summary?.totalSales !== undefined
-                      ? `৳${salesChart.summary.totalSales}`
-                      : "--"}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Total Sales</p>
+                    <p className="text-sm font-semibold">{salesChart?.summary?.totalSales !== undefined ? `৳${salesChart.summary.totalSales}` : "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Total Orders:</span>{" "}
-                    {salesChart?.summary?.totalOrders ?? "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Total Orders</p>
+                    <p className="text-sm font-semibold">{salesChart?.summary?.totalOrders ?? "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Avg. Sales:</span>{" "}
-                    {salesChart?.summary?.averageSales !== undefined
-                      ? `৳${salesChart.summary.averageSales}`
-                      : "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Avg. Sales</p>
+                    <p className="text-sm font-semibold">{salesChart?.summary?.averageSales !== undefined ? `৳${salesChart.summary.averageSales}` : "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Growth Rate:</span>{" "}
-                    {salesChart?.summary?.growthRate !== undefined
-                      ? `${salesChart.summary.growthRate}%`
-                      : "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Growth Rate</p>
+                    <p className="text-sm font-semibold">{salesChart?.summary?.growthRate !== undefined ? `${salesChart.summary.growthRate}%` : "--"}</p>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="text-center text-gray-400">No sales chart data</div>
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
+                No sales chart data
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Expenses Progress Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Expenses Progress</CardTitle>
+            <CardTitle className="text-base">Expenses Progress</CardTitle>
           </CardHeader>
           <CardContent>
             {ApexChart && expensesChart ? (
               <>
                 <ApexChart
-                  type="line"
+                  type="area"
                   height={250}
                   options={{
-                    chart: { id: "expenses-progress" },
-                    xaxis: { categories: expensesChartCategories },
+                    chart: { id: "expenses-progress", toolbar: { show: false } },
+                    xaxis: { categories: expensesChartCategories, labels: { style: { fontSize: "11px" } } },
+                    yaxis: { labels: { style: { fontSize: "11px" } } },
                     dataLabels: { enabled: false },
-                    stroke: { curve: "smooth" },
+                    stroke: { curve: "smooth", width: 2 },
                     colors: ["#e11d48"],
+                    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05 } },
+                    grid: { borderColor: "#f1f1f1", strokeDashArray: 4 },
+                    tooltip: { theme: "light" },
                   }}
                   series={expensesChartSeries}
                 />
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="font-semibold">Total Expenses:</span>{" "}
-                    {expensesChart?.summary?.totalExpenses !== undefined
-                      ? `৳${expensesChart.summary.totalExpenses}`
-                      : "--"}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Total Expenses</p>
+                    <p className="text-sm font-semibold">{expensesChart?.summary?.totalExpenses !== undefined ? `৳${expensesChart.summary.totalExpenses}` : "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Total Transactions:</span>{" "}
-                    {expensesChart?.summary?.totalTransactions ?? "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Transactions</p>
+                    <p className="text-sm font-semibold">{expensesChart?.summary?.totalTransactions ?? "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Avg. Expense:</span>{" "}
-                    {expensesChart?.summary?.averageExpense !== undefined
-                      ? `৳${expensesChart.summary.averageExpense}`
-                      : "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Avg. Expense</p>
+                    <p className="text-sm font-semibold">{expensesChart?.summary?.averageExpense !== undefined ? `৳${expensesChart.summary.averageExpense}` : "--"}</p>
                   </div>
-                  <div>
-                    <span className="font-semibold">Top Category:</span>{" "}
-                    {expensesChart?.summary?.topCategory ?? "--"}
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground">Top Category</p>
+                    <p className="text-sm font-semibold truncate">{expensesChart?.summary?.topCategory ?? "--"}</p>
                   </div>
                 </div>
                 {expensesChart?.categoryBreakdown && expensesChart.categoryBreakdown.length > 0 && (
                   <div className="mt-4">
-                    <div className="font-semibold mb-1 text-xs">Category Breakdown</div>
-                    <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Category Breakdown</p>
+                    <div className="space-y-1.5">
                       {expensesChart.categoryBreakdown.map((cat: any) => (
-                        <div key={cat.category} className="flex justify-between text-xs">
-                          <span>{cat.category}</span>
-                          <span>
-                            ৳{cat.totalAmount} ({cat.percentage}%)
+                        <div key={cat.category} className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">{cat.category}</span>
+                          <span className="font-medium">
+                            ৳{cat.totalAmount} <span className="text-xs text-muted-foreground">({cat.percentage}%)</span>
                           </span>
                         </div>
                       ))}
@@ -437,7 +426,9 @@ export default function Dashboard() {
                 )}
               </>
             ) : (
-              <div className="text-center text-gray-400">No expenses chart data</div>
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">
+                No expenses chart data
+              </div>
             )}
           </CardContent>
         </Card>
