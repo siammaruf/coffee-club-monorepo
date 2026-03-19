@@ -155,30 +155,32 @@ export default function AddCategoryModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
           <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
-                Category Name *
-              </Label>
-              <Input
-                id="name"
-                placeholder="Enter category name"
-                {...register("name", { required: true })}
-                onChange={handleNameChange}
-                className="h-11"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+                  Category Name *
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="Enter category name"
+                  {...register("name", { required: true })}
+                  onChange={handleNameChange}
+                  className="h-11"
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name_bn" className="text-sm font-semibold text-gray-700">
-                Bengali Name
-              </Label>
-              <Input
-                id="name_bn"
-                placeholder="বাংলা নাম"
-                {...register("name_bn")}
-                className="h-11"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="name_bn" className="text-sm font-semibold text-gray-700">
+                  Bengali Name
+                </Label>
+                <Input
+                  id="name_bn"
+                  placeholder="বাংলা নাম"
+                  {...register("name_bn")}
+                  className="h-11"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
