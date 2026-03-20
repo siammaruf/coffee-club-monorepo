@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getConfig } from '~/lib/config';
 
-const WS_URL = (getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1').replace('/api/v1', '');
+const WS_URL = (getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1')
+  .replace('/api/v1', '')
+  .replace(/\/+$/, '')
+  .replace(/^https:\/\//, 'wss://')
+  .replace(/^http:\/\//, 'ws://');
 
 export function useWhatsAppSocket() {
   const [status, setStatus] = useState<string>('unknown');
