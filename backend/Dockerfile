@@ -2,7 +2,7 @@ FROM oven/bun:latest AS builder
 
 WORKDIR /app
 COPY package.json bun.lockb* package-lock.json* ./
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && bun install
+RUN bun install
 COPY . .
 RUN bun run build
 
