@@ -18,9 +18,18 @@ import {
   Users,
   Mail,
   Megaphone,
+  SendHorizontal,
 } from 'lucide-react';
 import { whatsappService } from '~/services/httpServices/whatsappService';
 import { useWhatsAppSocket } from '~/hooks/useWhatsAppSocket';
+
+interface WhatsAppContact {
+  id: string;
+  name: string;
+  phone: string;
+  type: 'INDIVIDUAL' | 'GROUP';
+  is_active: boolean;
+}
 
 interface WhatsAppConfig {
   enabled: boolean;
@@ -87,6 +96,13 @@ export default function WhatsAppSettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
 
+  // Test send message state
+  const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [testMessage, setTestMessage] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
+
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -111,6 +127,63 @@ export default function WhatsAppSettingsPage() {
     };
     fetchConfig();
   }, []);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const res = (await whatsappService.getContacts({ limit: 100 })) as any;
+        const data = res?.data || res;
+        const list: WhatsAppContact[] = data?.data || [];
+        setContacts(list.filter((c) => c.is_active));
+      } catch {
+        // silent
+      } finally {
+        setLoadingContacts(false);
+      }
+    };
+    fetchContacts();
+  }, []);
+
+  const handleToggleRecipient = useCallback((phone: string) => {
+    setSelectedRecipients((prev) =>
+      prev.includes(phone) ? prev.filter((p) => p !== phone) : [...prev, phone],
+    );
+  }, []);
+
+  const handleSelectAllRecipients = useCallback(() => {
+    setSelectedRecipients((prev) =>
+      prev.length === contacts.length ? [] : contacts.map((c) => c.phone),
+    );
+  }, [contacts]);
+
+  const handleSendTestMessage = useCallback(async () => {
+    if (selectedRecipients.length === 0) {
+      toast.error('Select at least one recipient');
+      return;
+    }
+    if (!testMessage.trim()) {
+      toast.error('Enter a message');
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const res = (await whatsappService.sendMessage({
+        recipients: selectedRecipients,
+        message: testMessage.trim(),
+        message_type: 'test',
+      })) as any;
+      const result = res?.data || res;
+      toast.success(
+        `Sent: ${result.successful || 0} successful, ${result.failed || 0} failed`,
+      );
+      setTestMessage('');
+      setSelectedRecipients([]);
+    } catch {
+      toast.error('Failed to send test message');
+    } finally {
+      setSendingTest(false);
+    }
+  }, [selectedRecipients, testMessage]);
 
   const handleConnect = useCallback(async () => {
     setConnecting(true);
@@ -419,6 +492,120 @@ export default function WhatsAppSettingsPage() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Send Test Message Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Send Test Message</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isConnected && (
+              <div className="rounded-md bg-yellow-50 p-3 dark:bg-yellow-900/20">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                  WhatsApp must be connected to send messages.
+                </p>
+              </div>
+            )}
+
+            {/* Recipients */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Recipients</Label>
+                {contacts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllRecipients}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    {selectedRecipients.length === contacts.length
+                      ? 'Clear All'
+                      : 'Select All'}
+                  </button>
+                )}
+              </div>
+              {loadingContacts ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : contacts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No active contacts.{' '}
+                  <Link
+                    to="/dashboard/settings/whatsapp/contacts"
+                    className="text-primary hover:underline"
+                  >
+                    Add contacts
+                  </Link>
+                </p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto rounded-md border p-2 space-y-1">
+                  {contacts.map((contact) => (
+                    <label
+                      key={contact.id}
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRecipients.includes(contact.phone)}
+                        onChange={() => handleToggleRecipient(contact.phone)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium">{contact.name}</span>
+                      <Badge
+                        variant="secondary"
+                        className={`ml-auto text-[10px] ${
+                          contact.type === 'GROUP'
+                            ? 'border-transparent bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                            : 'border-transparent bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                        }`}
+                      >
+                        {contact.type === 'GROUP' ? 'Group' : 'Individual'}
+                      </Badge>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {selectedRecipients.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedRecipients.length} recipient
+                  {selectedRecipients.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            {/* Message */}
+            <div className="space-y-2">
+              <Label htmlFor="test-message">Message</Label>
+              <Textarea
+                id="test-message"
+                placeholder="Type your test message..."
+                rows={3}
+                value={testMessage}
+                onChange={(e) => setTestMessage(e.target.value)}
+              />
+            </div>
+
+            {/* Send Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSendTestMessage}
+                disabled={
+                  !isConnected ||
+                  selectedRecipients.length === 0 ||
+                  !testMessage.trim() ||
+                  sendingTest
+                }
+              >
+                {sendingTest ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <SendHorizontal className="mr-2 h-4 w-4" />
+                )}
+                {sendingTest ? 'Sending...' : 'Send Test Message'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

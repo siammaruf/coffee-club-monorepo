@@ -15,8 +15,6 @@ export function useWhatsAppSocket() {
     const apiUrl = getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1';
     const wsUrl = apiUrl.replace('/api/v1', '').replace(/\/+$/, '');
 
-    console.log('[WhatsApp WS] Connecting to:', `${wsUrl}/whatsapp`, 'path: /api/v1/ws');
-
     const socket = io(`${wsUrl}/whatsapp`, {
       path: '/api/v1/ws',
       withCredentials: true,
@@ -32,13 +30,11 @@ export function useWhatsAppSocket() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('[WhatsApp WS] Connected, transport:', socket.io.engine.transport.name);
       setError(null);
       setSocketConnected(true);
     });
 
-    socket.on('connect_error', (err) => {
-      console.error('[WhatsApp WS] Connection error:', err.message);
+    socket.on('connect_error', () => {
       setError(`WebSocket connection failed. Trying alternative connection...`);
       setSocketConnected(false);
     });
@@ -60,7 +56,6 @@ export function useWhatsAppSocket() {
     });
 
     socket.on('disconnect', () => {
-      console.log('[WhatsApp WS] Disconnected');
       setSocketConnected(false);
     });
 
@@ -80,7 +75,6 @@ export function useWhatsAppSocket() {
       try {
         const res = (await whatsappService.getPendingQr()) as any;
         const data = res?.data || res;
-        console.log('[WhatsApp Poll]', data);
         if (!active) return;
         if (data?.qr) {
           setQrCode(data.qr);
@@ -91,8 +85,8 @@ export function useWhatsAppSocket() {
             setQrCode(null);
           }
         }
-      } catch (err) {
-        console.warn('[WhatsApp Poll] Error:', err);
+      } catch {
+        // polling error — will retry on next interval
       }
     };
 
