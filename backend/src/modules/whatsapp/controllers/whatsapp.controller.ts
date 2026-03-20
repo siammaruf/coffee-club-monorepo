@@ -78,6 +78,16 @@ export class WhatsAppController {
     return { message: 'Logged out. Auth state cleared.' };
   }
 
+  @Get('pending-qr')
+  @RequirePermission('whatsapp.manage')
+  @ApiOperation({ summary: 'Get pending QR code if available (polling fallback)' })
+  getPendingQr() {
+    return {
+      qr: this.connectionService.getPendingQr(),
+      status: this.connectionService.getStatus(),
+    };
+  }
+
   // ─── Config ───────────────────────────────────────────
 
   @Get('config')

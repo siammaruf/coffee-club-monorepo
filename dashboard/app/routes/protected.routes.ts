@@ -35,7 +35,6 @@ export const protectedRoutes = [
   route("kitchen-stock/use-stock", "pages/dashboard/kitchen-stock/use-stock.tsx"),
   route("kitchen-stock/edit-usage/:id", "pages/dashboard/kitchen-stock/edit-usage.tsx"),
   route("kitchen-stock", "pages/dashboard/kitchen-stock/index.tsx"),
-  route("tokens", "pages/dashboard/tokens/index.tsx"),
   route("attendance", "pages/dashboard/attendance/index.tsx"),
   route("tables", "pages/dashboard/tables/index.tsx"),
   route("expenses/categories", "pages/dashboard/expense-categories/index.tsx"),

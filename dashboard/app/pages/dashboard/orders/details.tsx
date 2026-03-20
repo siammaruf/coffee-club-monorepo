@@ -38,9 +38,12 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { orderService } from "~/services/httpServices/orderService";
+import { orderTokensService } from "~/services/httpServices/orderTokensService";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import OrdersSkeleton from "~/components/skeleton/OrdersSkeleton";
 import type { ApiOrder } from "~/types/order";
+import type { OrderTokenStatus } from "~/types/orderToken";
+import { toast } from "sonner";
 
 export default function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +53,7 @@ export default function OrderDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [actionToken, setActionToken] = useState<{ id: string; action: string; tokenLabel: string } | null>(null);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -154,6 +158,61 @@ export default function OrderDetailsPage() {
         return <Coffee className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
+    }
+  };
+
+  const getTokenStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending": return "bg-yellow-100 text-yellow-800";
+      case "Preparing": return "bg-blue-100 text-blue-800";
+      case "Ready": return "bg-green-100 text-green-800";
+      case "Delivered": return "bg-purple-100 text-purple-800";
+      case "Cancelled": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "High": return "bg-orange-100 text-orange-800";
+      case "Urgent": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleTokenStatusUpdate = (tokenId: string, newStatus: string, tokenLabel: string) => {
+    setActionToken({ id: tokenId, action: newStatus, tokenLabel });
+  };
+
+  const handleTokenActionConfirm = async () => {
+    if (!actionToken) return;
+    try {
+      await orderTokensService.update(actionToken.id, { status: actionToken.action as OrderTokenStatus });
+      toast.success("Token status updated.");
+      if (id) {
+        fetchOrderDetails(id);
+      }
+    } catch (error) {
+      console.error("Error updating token status:", error);
+      toast.error("Failed to update token status.");
+    } finally {
+      setActionToken(null);
+    }
+  };
+
+  const getTokenActionDialogDetails = () => {
+    if (!actionToken) return { title: "", description: "" };
+    switch (actionToken.action) {
+      case "Preparing":
+        return { title: "Start Preparing?", description: `Start preparing token ${actionToken.tokenLabel}?` };
+      case "Ready":
+        return { title: "Mark as Ready?", description: `Confirm token ${actionToken.tokenLabel} is ready for service.` };
+      case "Delivered":
+        return { title: "Mark as Delivered?", description: `Confirm token ${actionToken.tokenLabel} has been delivered.` };
+      case "Cancelled":
+        return { title: "Cancel Token?", description: `Cancel token ${actionToken.tokenLabel}? This cannot be undone.` };
+      default:
+        return { title: "", description: "" };
     }
   };
 
@@ -434,11 +493,20 @@ export default function OrderDetailsPage() {
                       <CardTitle className="flex items-center gap-2">
                         <Badge variant="secondary">{tokenObj.token_type}</Badge>
                         <span className="font-mono text-xs">{tokenObj.token}</span>
+                        <Badge className={getTokenStatusColor(tokenObj.status)}>{tokenObj.status}</Badge>
+                        {tokenObj.priority && tokenObj.priority !== "Normal" && (
+                          <Badge className={getPriorityColor(tokenObj.priority)}>{tokenObj.priority}</Badge>
+                        )}
                       </CardTitle>
                       <div className="flex flex-wrap gap-4 mt-2 text-xs text-gray-500">
                         <div>
                           <span className="font-semibold">Created:</span> {tokenObj.createdAt ? formatDate(tokenObj.createdAt) : 'N/A'}
                         </div>
+                        {tokenObj.readyAt && (
+                          <div>
+                            <span className="font-semibold">Ready at:</span> {formatDate(tokenObj.readyAt)}
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -491,6 +559,31 @@ export default function OrderDetailsPage() {
                           ))}
                         </TableBody>
                       </Table>
+                      {/* Token Status Actions */}
+                      {!["Delivered", "Cancelled"].includes(tokenObj.status) && (
+                        <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                          {tokenObj.status === "Pending" && (
+                            <Button size="sm" onClick={() => handleTokenStatusUpdate(tokenObj.id, "Preparing", tokenObj.token)}>
+                              Start Preparing
+                            </Button>
+                          )}
+                          {tokenObj.status === "Preparing" && (
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleTokenStatusUpdate(tokenObj.id, "Ready", tokenObj.token)}>
+                              Mark Ready
+                            </Button>
+                          )}
+                          {tokenObj.status === "Ready" && (
+                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleTokenStatusUpdate(tokenObj.id, "Delivered", tokenObj.token)}>
+                              Mark Delivered
+                            </Button>
+                          )}
+                          {["Pending", "Preparing"].includes(tokenObj.status) && (
+                            <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleTokenStatusUpdate(tokenObj.id, "Cancelled", tokenObj.token)}>
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -687,6 +780,17 @@ export default function OrderDetailsPage() {
         cancelText="Cancel"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteId(null)}
+      />
+
+      {/* Confirm Token Action Dialog */}
+      <ConfirmDialog
+        open={!!actionToken}
+        title={getTokenActionDialogDetails().title}
+        description={getTokenActionDialogDetails().description}
+        confirmText={actionToken?.action === "Cancelled" ? "Cancel Token" : `Mark as ${actionToken?.action}`}
+        cancelText="Back"
+        onConfirm={handleTokenActionConfirm}
+        onCancel={() => setActionToken(null)}
       />
     </div>
     </PermissionGuard>

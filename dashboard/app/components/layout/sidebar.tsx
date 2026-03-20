@@ -26,7 +26,6 @@ import {
   MessageSquare,
   Handshake,
   ShieldCheck,
-  Bell,
   ChevronDown,
   Wifi,
   MessageCircle,
@@ -199,12 +198,6 @@ export default function Sidebar() {
                         {pendingOrderCount}
                       </span>
                     )}
-                  </SidebarLink>
-                )}
-                {can('orders.view') && (
-                  <SidebarLink to="/dashboard/tokens" className={linkClass}>
-                    <Bell className="w-4 h-4" />
-                    <span>Order Tokens</span>
                   </SidebarLink>
                 )}
                 {can('categories.view') && (

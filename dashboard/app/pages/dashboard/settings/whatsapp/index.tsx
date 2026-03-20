@@ -78,7 +78,7 @@ function getStatusBadge(status: string) {
 }
 
 export default function WhatsAppSettingsPage() {
-  const { status, qrCode, error, isConnected } = useWhatsAppSocket();
+  const { status, qrCode, error, isConnected, socketConnected } = useWhatsAppSocket();
 
   const [config, setConfig] = useState<WhatsAppConfig>(defaultConfig);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -189,7 +189,11 @@ export default function WhatsAppSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <div className="rounded-md bg-yellow-50 p-3 dark:bg-yellow-900/20">
+                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                  {error}
+                </p>
+              </div>
             )}
 
             {status === 'SCANNING_QR' && qrCode && (

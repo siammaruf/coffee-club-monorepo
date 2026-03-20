@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~/components/ui/table";
@@ -10,7 +11,7 @@ import { Label } from "~/components/ui/label";
 import { format } from "date-fns";
 import reportService from "~/services/httpServices/reportService";
 import { whatsappService } from "~/services/httpServices/whatsappService";
-import { Eye, Trash2, Send, Clock, Loader2, Save } from "lucide-react";
+import { Eye, Trash2, Send, Clock, Loader2, Save, BarChart3, Settings } from "lucide-react";
 import type { SalesReport } from "~/types/report";
 import ViewSalesReportModal from "~/components/modals/ViewSalesReportModal";
 import InfoDialog from "~/components/modals/InfoDialog";
@@ -34,7 +35,19 @@ const defaultReportConfig: ReportConfig = {
   daily_report_time: '23:00',
 };
 
+type TabId = "reports" | "settings";
+
+const tabsList: { id: TabId; label: string; icon: typeof BarChart3 }[] = [
+  { id: "reports", label: "Sales Reports", icon: BarChart3 },
+  { id: "settings", label: "Report Settings", icon: Settings },
+];
+
 export default function SalesReportPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const rawTab = new URLSearchParams(location.search).get("tab");
+  const activeTab: TabId = rawTab === "settings" ? rawTab : "reports";
+
   const [reports, setReports] = useState<SalesReport[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -210,7 +223,27 @@ export default function SalesReportPage() {
   return (
     <PermissionGuard permission="reports.view">
     <div className="p-6 space-y-6">
-      {/* Daily Report Settings Card */}
+      {/* Tab navigation */}
+      <div className="flex border-b overflow-x-auto">
+        {tabsList.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => navigate(`/dashboard/reports/sales?tab=${tab.id}`)}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer flex-shrink-0 ${
+              activeTab === tab.id
+                ? "border-yellow-500 text-yellow-600 font-medium"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Settings Tab */}
+      {activeTab === "settings" && (
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -336,8 +369,10 @@ export default function SalesReportPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      {/* Reports Table Card */}
+      {/* Reports Tab */}
+      {activeTab === "reports" && (
       <Card>
         <CardHeader>
           <CardTitle>Sales Report</CardTitle>
@@ -477,6 +512,8 @@ export default function SalesReportPage() {
           </Table>
         </CardContent>
       </Card>
+      )}
+
       <ViewSalesReportModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
