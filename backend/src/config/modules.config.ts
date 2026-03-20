@@ -31,6 +31,7 @@ import { ContactMessagesModule } from 'src/modules/contact-messages/contact-mess
 import { KitchenReportsModule } from 'src/modules/kitchen-reports/kitchen-reports.module';
 import { KitchenStockModule } from 'src/modules/kitchen-stock/kitchen-stock.module';
 import { PermissionsModule } from 'src/modules/permissions/permissions.module';
+import { WhatsAppModule } from 'src/modules/whatsapp/whatsapp.module';
 
 export const featureModules = [
     UserModule,
@@ -66,4 +67,5 @@ export const featureModules = [
     KitchenReportsModule,
     KitchenStockModule,
     PermissionsModule,
+    WhatsAppModule,
 ];

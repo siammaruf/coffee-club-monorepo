@@ -29,6 +29,7 @@ import {
   Bell,
   ChevronDown,
   Wifi,
+  MessageCircle,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { LogoutButton } from "../../hooks/auth/LogoutButton";
@@ -369,6 +370,12 @@ export default function Sidebar() {
                 <SidebarLink to="/dashboard/settings/wifi" className={linkClass}>
                   <Wifi className="w-4 h-4" />
                   <span>WiFi Settings</span>
+                </SidebarLink>
+              )}
+              {can('whatsapp.view') && (
+                <SidebarLink to="/dashboard/settings/whatsapp" className={linkClass}>
+                  <MessageCircle className="w-4 h-4" />
+                  <span>WhatsApp</span>
                 </SidebarLink>
               )}
               <LogoutButton
