@@ -71,12 +71,31 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     return this.pendingQr;
   }
 
-  async connect(): Promise<void> {
+  async connect(fresh = false): Promise<void> {
     if (this.status === ConnectionStatus.CONNECTED) {
       this.logger.warn('Already connected');
       return;
     }
 
+    // Clean up any existing socket before creating a new one
+    if (this.sock) {
+      try {
+        this.sock.ev.removeAllListeners('connection.update');
+        this.sock.ev.removeAllListeners('creds.update');
+        this.sock.end(undefined);
+      } catch {
+        // ignore cleanup errors
+      }
+      this.sock = null;
+    }
+
+    // Fresh mode: clear stale auth state to force QR generation
+    if (fresh && fs.existsSync(this.authDir)) {
+      this.logger.log('Fresh connect requested — clearing auth state');
+      fs.rmSync(this.authDir, { recursive: true, force: true });
+    }
+
+    this.pendingQr = null;
     this.setStatus(ConnectionStatus.CONNECTING);
 
     try {
@@ -99,6 +118,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
       this.sock.ev.on('creds.update', saveCreds);
 
       this.sock.ev.on('connection.update', async (update: any) => {
+        this.logger.debug(`connection.update: ${JSON.stringify(update)}`);
         await this.handleConnectionUpdate(update);
       });
     } catch (error) {
@@ -173,10 +193,14 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
         this.logger.log(
           `Reconnecting in ${delay / 1000}s (attempt ${this.retryCount}/${this.maxRetries})...`,
         );
-        setTimeout(() => this.connect(), delay);
+        setTimeout(() => this.connect(false), delay);
       } else if (this.retryCount >= this.maxRetries) {
+        this.logger.warn('Max retries exhausted — clearing stale auth state');
+        if (fs.existsSync(this.authDir)) {
+          fs.rmSync(this.authDir, { recursive: true, force: true });
+        }
         this.setStatus(ConnectionStatus.DISCONNECTED);
-        this.gateway.emitError('Max reconnection attempts reached');
+        this.gateway.emitError('Max reconnection attempts reached. Click Connect to try again.');
         this.retryCount = 0;
       }
     }

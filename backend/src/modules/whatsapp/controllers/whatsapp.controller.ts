@@ -58,7 +58,8 @@ export class WhatsAppController {
   @RequirePermission('whatsapp.manage')
   @ApiOperation({ summary: 'Connect to WhatsApp (generates QR)' })
   async connect() {
-    await this.connectionService.connect();
+    // Fresh connect: clear stale auth state so Baileys generates a new QR
+    await this.connectionService.connect(true);
     return { message: 'Connection initiated. Scan QR code from dashboard.' };
   }
 
