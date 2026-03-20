@@ -8,6 +8,9 @@ export const whatsappService = {
   disconnect: () => httpService.post('/whatsapp/disconnect'),
   logout: () => httpService.post('/whatsapp/logout'),
 
+  // QR polling fallback
+  getPendingQr: () => httpService.get('/whatsapp/pending-qr'),
+
   // Config
   getConfig: () => httpService.get('/whatsapp/config'),
   updateConfig: (data: any) => httpService.put('/whatsapp/config', data),

@@ -31,6 +31,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
   private readonly maxRetries = 5;
   private readonly authDir: string;
   private keepAliveInterval: ReturnType<typeof setInterval> | null = null;
+  private pendingQr: string | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -64,6 +65,10 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
 
   isConnected(): boolean {
     return this.status === ConnectionStatus.CONNECTED;
+  }
+
+  getPendingQr(): string | null {
+    return this.pendingQr;
   }
 
   async connect(): Promise<void> {
@@ -134,6 +139,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
       this.setStatus(ConnectionStatus.SCANNING_QR);
       try {
         const qrDataUrl = await QRCode.toDataURL(qr);
+        this.pendingQr = qrDataUrl;
         this.gateway.emitQrCode(qrDataUrl);
       } catch (err) {
         this.logger.error(`QR generation failed: ${err.message}`);
@@ -177,6 +183,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
 
     if (connection === 'open') {
       this.retryCount = 0;
+      this.pendingQr = null;
       this.setStatus(ConnectionStatus.CONNECTED);
       this.logger.log('WhatsApp connected successfully');
       this.startKeepAlive();

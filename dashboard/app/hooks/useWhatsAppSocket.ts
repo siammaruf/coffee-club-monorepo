@@ -1,25 +1,30 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getConfig } from '~/lib/config';
-
-// Socket.IO expects HTTP(S) URLs — it handles WebSocket upgrade internally
-const WS_URL = (getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1')
-  .replace('/api/v1', '')
-  .replace(/\/+$/, '');
+import { whatsappService } from '~/services/httpServices/whatsappService';
 
 export function useWhatsAppSocket() {
   const [status, setStatus] = useState<string>('unknown');
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    // Compute URL on client only — module scope runs during SSR where window is undefined
+    const apiUrl = getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1';
+    const wsUrl = apiUrl.replace('/api/v1', '').replace(/\/+$/, '');
 
-    const socket = io(`${WS_URL}/whatsapp`, {
+    console.log('[WhatsApp WS] Connecting to:', `${wsUrl}/whatsapp`, 'path: /api/v1/ws');
+
+    const socket = io(`${wsUrl}/whatsapp`, {
+      path: '/api/v1/ws',
       withCredentials: true,
       transports: ['websocket', 'polling'],
-      auth: token ? { token } : undefined,
+      auth: (cb) => {
+        const token = localStorage.getItem('token');
+        cb(token ? { token } : {});
+      },
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
     });
@@ -27,11 +32,15 @@ export function useWhatsAppSocket() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('[WhatsApp WS] Connected, transport:', socket.io.engine.transport.name);
       setError(null);
+      setSocketConnected(true);
     });
 
     socket.on('connect_error', (err) => {
-      setError(`Connection failed: ${err.message}`);
+      console.error('[WhatsApp WS] Connection error:', err.message);
+      setError(`WebSocket connection failed. Trying alternative connection...`);
+      setSocketConnected(false);
     });
 
     socket.on('whatsapp:qr', (data: { qr: string }) => {
@@ -51,7 +60,8 @@ export function useWhatsAppSocket() {
     });
 
     socket.on('disconnect', () => {
-      setStatus('unknown');
+      console.log('[WhatsApp WS] Disconnected');
+      setSocketConnected(false);
     });
 
     return () => {
@@ -60,5 +70,40 @@ export function useWhatsAppSocket() {
     };
   }, []);
 
-  return { status, qrCode, error, isConnected: status === 'CONNECTED' };
+  // Polling fallback when WebSocket is not connected
+  useEffect(() => {
+    if (socketConnected) return;
+
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const res = (await whatsappService.getPendingQr()) as any;
+        const data = res?.data || res;
+        console.log('[WhatsApp Poll]', data);
+        if (!active) return;
+        if (data?.qr) {
+          setQrCode(data.qr);
+          setStatus('SCANNING_QR');
+        } else if (data?.status) {
+          setStatus(data.status);
+          if (data.status === 'CONNECTED') {
+            setQrCode(null);
+          }
+        }
+      } catch (err) {
+        console.warn('[WhatsApp Poll] Error:', err);
+      }
+    };
+
+    const interval = setInterval(poll, 3000);
+    poll();
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [socketConnected]);
+
+  return { status, qrCode, error, isConnected: status === 'CONNECTED', socketConnected };
 }

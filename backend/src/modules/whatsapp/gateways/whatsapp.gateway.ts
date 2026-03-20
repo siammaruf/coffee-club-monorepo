@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   namespace: '/whatsapp',
+  path: '/api/v1/ws',
   cors: {
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow connections with no origin (server-to-server, mobile apps)
