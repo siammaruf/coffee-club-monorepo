@@ -46,7 +46,7 @@
     "@types/moment-timezone": "^0.5.30",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/qrcode": "^1.5.6",
-    "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "@whiskeysockets/baileys": "^6.7.16",
     "axios": "^1.13.6",
     "cache-manager": "^7.2.8",
     "cacheable": "^2.3.3",
