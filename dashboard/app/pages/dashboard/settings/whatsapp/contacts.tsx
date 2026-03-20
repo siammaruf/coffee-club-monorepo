@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Download,
+  Check,
 } from 'lucide-react';
 import { whatsappService } from '~/services/httpServices/whatsappService';
 
@@ -47,6 +49,12 @@ interface ContactFormData {
   receive_daily_reports: boolean;
 }
 
+interface WhatsAppGroup {
+  jid: string;
+  name: string;
+  participants_count: number;
+}
+
 const defaultFormData: ContactFormData = {
   name: '',
   phone: '',
@@ -72,6 +80,13 @@ export default function WhatsAppContactsPage() {
   const [formData, setFormData] = useState<ContactFormData>(defaultFormData);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Import groups state
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const fetchContacts = useCallback(async (currentPage: number) => {
     setLoading(true);
@@ -176,6 +191,81 @@ export default function WhatsAppContactsPage() {
     [],
   );
 
+  // Import groups handlers
+  const isGroupImported = useCallback(
+    (jid: string) => contacts.some((c) => c.phone === jid),
+    [contacts],
+  );
+
+  const openImportModal = useCallback(async () => {
+    setImportModalOpen(true);
+    setSelectedGroups([]);
+    setLoadingGroups(true);
+    try {
+      const res = (await whatsappService.getGroups()) as any;
+      const data = res?.data || res;
+      setGroups(data?.data || []);
+    } catch {
+      toast.error('Failed to fetch WhatsApp groups. Is WhatsApp connected?');
+      setImportModalOpen(false);
+    } finally {
+      setLoadingGroups(false);
+    }
+  }, []);
+
+  const closeImportModal = useCallback(() => {
+    setImportModalOpen(false);
+    setGroups([]);
+    setSelectedGroups([]);
+  }, []);
+
+  const handleToggleGroup = useCallback((jid: string) => {
+    setSelectedGroups((prev) =>
+      prev.includes(jid) ? prev.filter((g) => g !== jid) : [...prev, jid],
+    );
+  }, []);
+
+  const handleImportGroups = useCallback(async () => {
+    if (selectedGroups.length === 0) return;
+
+    setImporting(true);
+    let imported = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const jid of selectedGroups) {
+      if (isGroupImported(jid)) {
+        skipped++;
+        continue;
+      }
+      const group = groups.find((g) => g.jid === jid);
+      if (!group) continue;
+
+      try {
+        await whatsappService.createContact({
+          name: group.name,
+          phone: group.jid,
+          type: 'GROUP',
+          is_active: true,
+          receive_order_notifications: false,
+          receive_daily_reports: false,
+        });
+        imported++;
+      } catch {
+        failed++;
+      }
+    }
+
+    const parts: string[] = [];
+    if (imported > 0) parts.push(`${imported} imported`);
+    if (skipped > 0) parts.push(`${skipped} already existed`);
+    if (failed > 0) parts.push(`${failed} failed`);
+    toast.success(parts.join(', '));
+
+    closeImportModal();
+    fetchContacts(page);
+  }, [selectedGroups, groups, isGroupImported, closeImportModal, fetchContacts, page]);
+
   return (
     <PermissionGuard permission="whatsapp.view">
       <div className="space-y-6">
@@ -191,6 +281,10 @@ export default function WhatsAppContactsPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Link>
+            </Button>
+            <Button variant="outline" onClick={openImportModal}>
+              <Download className="mr-2 h-4 w-4" />
+              Import Groups
             </Button>
             <Button onClick={openAddModal}>
               <Plus className="mr-2 h-4 w-4" />
@@ -513,6 +607,116 @@ export default function WhatsAppContactsPage() {
                   : editingContact
                     ? 'Update Contact'
                     : 'Create Contact'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Import Groups Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={closeImportModal}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') closeImportModal();
+            }}
+          />
+          <div className="relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold">Import WhatsApp Groups</h2>
+              <Button variant="ghost" size="icon" onClick={closeImportModal}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {loadingGroups ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Fetching groups...
+                </span>
+              </div>
+            ) : groups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <Users className="mb-3 h-10 w-10" />
+                <p className="text-sm">No WhatsApp groups found.</p>
+                <p className="text-xs mt-1">
+                  Make sure WhatsApp is connected and you are a member of at least one group.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Select groups to import as contacts. Groups already imported are marked.
+                </p>
+                <div className="max-h-80 overflow-y-auto rounded-md border p-2 space-y-1">
+                  {groups.map((group) => {
+                    const alreadyImported = isGroupImported(group.jid);
+                    return (
+                      <label
+                        key={group.jid}
+                        className={`flex cursor-pointer items-center gap-3 rounded px-3 py-2 ${
+                          alreadyImported
+                            ? 'opacity-60'
+                            : 'hover:bg-muted'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            alreadyImported || selectedGroups.includes(group.jid)
+                          }
+                          disabled={alreadyImported}
+                          onChange={() => handleToggleGroup(group.jid)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {group.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {group.participants_count} members
+                          </p>
+                        </div>
+                        {alreadyImported && (
+                          <Badge
+                            variant="secondary"
+                            className="border-transparent bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]"
+                          >
+                            <Check className="mr-1 h-3 w-3" />
+                            Imported
+                          </Badge>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={closeImportModal}
+                disabled={importing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleImportGroups}
+                disabled={
+                  importing || selectedGroups.length === 0 || loadingGroups
+                }
+              >
+                {importing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                {importing
+                  ? 'Importing...'
+                  : `Import Selected (${selectedGroups.length})`}
               </Button>
             </div>
           </div>

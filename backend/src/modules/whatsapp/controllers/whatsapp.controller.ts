@@ -89,6 +89,19 @@ export class WhatsAppController {
     };
   }
 
+  // ─── Groups ──────────────────────────────────────────
+
+  @Get('groups')
+  @RequirePermission('whatsapp.view')
+  @ApiOperation({ summary: 'Fetch WhatsApp groups the account participates in' })
+  async getGroups() {
+    if (!this.connectionService.isConnected()) {
+      return { data: [], message: 'WhatsApp is not connected' };
+    }
+    const groups = await this.connectionService.getGroups();
+    return { data: groups };
+  }
+
   // ─── Config ───────────────────────────────────────────
 
   @Get('config')

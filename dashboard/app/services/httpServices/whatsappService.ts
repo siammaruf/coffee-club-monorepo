@@ -11,6 +11,9 @@ export const whatsappService = {
   // QR polling fallback
   getPendingQr: () => httpService.get('/whatsapp/pending-qr'),
 
+  // Groups
+  getGroups: () => httpService.get('/whatsapp/groups'),
+
   // Config
   getConfig: () => httpService.get('/whatsapp/config'),
   updateConfig: (data: any) => httpService.put('/whatsapp/config', data),
