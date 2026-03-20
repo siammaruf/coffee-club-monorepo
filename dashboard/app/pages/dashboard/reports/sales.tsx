@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "~/components/ui/table";
@@ -6,10 +6,11 @@ import { Select } from "~/components/ui/select";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
 import { format } from "date-fns";
 import reportService from "~/services/httpServices/reportService";
-import { useNavigate } from "react-router";
-import { Eye, Trash2 } from "lucide-react";
+import { whatsappService } from "~/services/httpServices/whatsappService";
+import { Eye, Trash2, Send, Clock, Loader2, Save } from "lucide-react";
 import type { SalesReport } from "~/types/report";
 import ViewSalesReportModal from "~/components/modals/ViewSalesReportModal";
 import InfoDialog from "~/components/modals/InfoDialog";
@@ -17,6 +18,21 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { BulkActionBar } from "~/components/common/BulkActionBar";
 import { useTableSelection } from "~/hooks/useTableSelection";
 import { useDebounce } from "~/hooks/useDebounce";
+import { toast } from "sonner";
+
+interface ReportConfig {
+  auto_report_generation_enabled: boolean;
+  auto_report_generation_time: string;
+  daily_report_enabled: boolean;
+  daily_report_time: string;
+}
+
+const defaultReportConfig: ReportConfig = {
+  auto_report_generation_enabled: true,
+  auto_report_generation_time: '00:00',
+  daily_report_enabled: false,
+  daily_report_time: '23:00',
+};
 
 export default function SalesReportPage() {
   const [reports, setReports] = useState<SalesReport[]>([]);
@@ -27,10 +43,16 @@ export default function SalesReportPage() {
   const [loading, setLoading] = useState(false);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [regenerateDate, setRegenerateDate] = useState("");
-  const [generateDate, setGenerateDate] = useState(""); // Add this state for report_date
+  const [generateDate, setGenerateDate] = useState("");
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const { selectedIds, selectedCount, toggleSelect, toggleSelectAll, clearSelection, isSelected, isAllSelected } = useTableSelection();
+
+  // Report config state
+  const [reportConfig, setReportConfig] = useState<ReportConfig>(defaultReportConfig);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
 
   // Dialog state
   const [dialog, setDialog] = useState<{ open: boolean; type: "success" | "error"; message: string }>({
@@ -48,6 +70,61 @@ export default function SalesReportPage() {
   useEffect(() => {
     fetchReports();
   }, [statusFilter, dateFilter, debouncedSearch]);
+
+  useEffect(() => {
+    fetchReportConfig();
+  }, []);
+
+  const fetchReportConfig = async () => {
+    try {
+      const res = (await whatsappService.getConfig()) as any;
+      const data = res?.data || res;
+      if (data) {
+        setReportConfig({
+          auto_report_generation_enabled: data.auto_report_generation_enabled ?? true,
+          auto_report_generation_time: data.auto_report_generation_time ?? '00:00',
+          daily_report_enabled: data.daily_report_enabled ?? false,
+          daily_report_time: data.daily_report_time ?? '23:00',
+        });
+      }
+    } catch {
+      // Use defaults
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  const handleSaveConfig = useCallback(async () => {
+    setSavingConfig(true);
+    try {
+      await whatsappService.updateConfig(reportConfig);
+      toast.success('Report settings saved successfully');
+    } catch {
+      toast.error('Failed to save report settings');
+    } finally {
+      setSavingConfig(false);
+    }
+  }, [reportConfig]);
+
+  const handleSendDailyReport = useCallback(async () => {
+    setSendingReport(true);
+    try {
+      await whatsappService.sendDailyReport();
+      toast.success('Daily report sent via WhatsApp');
+    } catch {
+      toast.error('Failed to send daily report. Make sure WhatsApp is connected.');
+    } finally {
+      setSendingReport(false);
+    }
+  }, []);
+
+  const handleToggle = useCallback((field: keyof ReportConfig) => {
+    setReportConfig((prev) => ({ ...prev, [field]: !prev[field] }));
+  }, []);
+
+  const handleTimeChange = useCallback((field: keyof ReportConfig, value: string) => {
+    setReportConfig((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const fetchReports = async () => {
     clearSelection();
@@ -132,7 +209,135 @@ export default function SalesReportPage() {
 
   return (
     <PermissionGuard permission="reports.view">
-    <div className="p-6">
+    <div className="p-6 space-y-6">
+      {/* Daily Report Settings Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5 text-primary" />
+            <CardTitle>Daily Report Settings</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {loadingConfig ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {/* Manual Send */}
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <p className="font-medium">Send Daily Report via WhatsApp</p>
+                  <p className="text-sm text-muted-foreground">
+                    Manually send today's sales report to subscribed WhatsApp contacts
+                  </p>
+                </div>
+                <Button onClick={handleSendDailyReport} disabled={sendingReport}>
+                  {sendingReport ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  {sendingReport ? 'Sending...' : 'Send Now'}
+                </Button>
+              </div>
+
+              {/* Auto Report Generation */}
+              <div className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Auto Report Generation</p>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically generate daily sales reports at a scheduled time
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={reportConfig.auto_report_generation_enabled}
+                    onClick={() => handleToggle('auto_report_generation_enabled')}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                      reportConfig.auto_report_generation_enabled ? 'bg-primary' : 'bg-input'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+                        reportConfig.auto_report_generation_enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {reportConfig.auto_report_generation_enabled && (
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="auto-gen-time">Generation Time</Label>
+                    <Input
+                      id="auto-gen-time"
+                      type="time"
+                      value={reportConfig.auto_report_generation_time}
+                      onChange={(e) => handleTimeChange('auto_report_generation_time', e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* WhatsApp Delivery */}
+              <div className="rounded-lg border p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">WhatsApp Daily Report Delivery</p>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically send daily reports to WhatsApp contacts at a scheduled time
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={reportConfig.daily_report_enabled}
+                    onClick={() => handleToggle('daily_report_enabled')}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                      reportConfig.daily_report_enabled ? 'bg-primary' : 'bg-input'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+                        reportConfig.daily_report_enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {reportConfig.daily_report_enabled && (
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="wa-report-time">Delivery Time</Label>
+                    <Input
+                      id="wa-report-time"
+                      type="time"
+                      value={reportConfig.daily_report_time}
+                      onChange={(e) => handleTimeChange('daily_report_time', e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button onClick={handleSaveConfig} disabled={savingConfig}>
+                  {savingConfig ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {savingConfig ? 'Saving...' : 'Save Settings'}
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Reports Table Card */}
       <Card>
         <CardHeader>
           <CardTitle>Sales Report</CardTitle>

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ReportService } from './providers/report.service';
 import { ActivityService } from './providers/activity.service';
 import { SalesReportController } from './controllers/report.controller';
@@ -13,6 +14,7 @@ import { User } from '../users/entities/user.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { Table } from '../table/entities/table.entity';
 import { Item } from '../items/entities/item.entity';
+import { WhatsAppConfig } from '../whatsapp/entities/whatsapp-config.entity';
 import { CacheModule } from '../cache/cache.module';
 import { KitchenReportsModule } from '../kitchen-reports/kitchen-reports.module';
 
@@ -28,7 +30,9 @@ import { KitchenReportsModule } from '../kitchen-reports/kitchen-reports.module'
       Customer,
       Table,
       Item,
+      WhatsAppConfig,
     ]),
+    ScheduleModule.forRoot(),
     CacheModule,
     KitchenReportsModule,
   ],

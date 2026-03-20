@@ -25,6 +25,12 @@ export class WhatsAppConfig {
   @Column({ default: false })
   otp_via_whatsapp: boolean;
 
+  @Column({ default: true })
+  auto_report_generation_enabled: boolean;
+
+  @Column({ type: 'varchar', default: '00:00' })
+  auto_report_generation_time: string;
+
   @Column({ type: 'text', nullable: true })
   order_notification_template: string | null;
 
