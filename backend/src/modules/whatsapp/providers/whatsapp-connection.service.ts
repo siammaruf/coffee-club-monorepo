@@ -67,6 +67,27 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     return this.status === ConnectionStatus.CONNECTED;
   }
 
+  async getGroups(): Promise<
+    Array<{ jid: string; name: string; participants_count: number }>
+  > {
+    if (!this.isConnected() || !this.sock) {
+      return [];
+    }
+
+    try {
+      const groups = await this.sock.groupFetchAllParticipating();
+      return Object.values(groups).map((group: any) => ({
+        jid: group.id,
+        name: group.subject || group.id,
+        participants_count:
+          group.size || group.participants?.length || 0,
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to fetch groups: ${error.message}`);
+      return [];
+    }
+  }
+
   getPendingQr(): string | null {
     return this.pendingQr;
   }
