@@ -365,7 +365,7 @@ export default function Sidebar() {
                   <span>Roles & Permissions</span>
                 </SidebarLink>
               )}
-              {can('settings.roles_permissions') && (
+              {can('wifi_settings.view') && (
                 <SidebarLink to="/dashboard/settings/wifi" className={linkClass}>
                   <Wifi className="w-4 h-4" />
                   <span>WiFi Settings</span>

@@ -33,10 +33,7 @@ export default function WifiSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await Promise.all([
-        settingsService.update('wifi_name', wifiName),
-        settingsService.update('wifi_password', wifiPassword),
-      ]);
+      await settingsService.updateWifi(wifiName, wifiPassword);
       toast.success('WiFi settings saved successfully');
     } catch {
       toast.error('Failed to save WiFi settings');
@@ -46,7 +43,7 @@ export default function WifiSettingsPage() {
   };
 
   return (
-    <PermissionGuard permission="settings.roles_permissions">
+    <PermissionGuard permission="wifi_settings.view">
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Wifi className="h-6 w-6 text-primary" />

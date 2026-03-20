@@ -18,6 +18,7 @@ import { UserRole } from '../users/enum/user-role.enum';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
+import { UpdateWifiSettingsDto } from './dto/update-wifi-settings.dto';
 import { ApiErrorResponses } from '../../common/decorators/api-error-responses.decorator';
 
 @ApiTags('Settings')
@@ -28,6 +29,7 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get('wifi')
+  @RequirePermission('wifi_settings.view')
   @ApiOperation({
     summary: 'Get WiFi settings',
     description: 'Retrieves WiFi name and password for printing on receipts/tokens',
@@ -79,6 +81,29 @@ export class SettingsController {
       data: setting,
       status: 'success',
       message: 'Setting retrieved successfully.',
+      statusCode: HttpStatus.OK,
+    };
+  }
+
+  @Put('wifi')
+  @RequirePermission('wifi_settings.edit')
+  @ApiOperation({
+    summary: 'Update WiFi settings',
+    description: 'Updates WiFi name and password for printing on receipts/tokens',
+  })
+  @ApiResponse({ status: 200, description: 'WiFi settings updated successfully' })
+  async updateWifiSettings(@Body() dto: UpdateWifiSettingsDto) {
+    const [wifiName, wifiPassword] = await Promise.all([
+      this.settingsService.setSetting('wifi_name', dto.wifi_name),
+      this.settingsService.setSetting('wifi_password', dto.wifi_password),
+    ]);
+    return {
+      data: {
+        wifi_name: wifiName.value,
+        wifi_password: wifiPassword.value,
+      },
+      status: 'success',
+      message: 'WiFi settings updated successfully.',
       statusCode: HttpStatus.OK,
     };
   }
