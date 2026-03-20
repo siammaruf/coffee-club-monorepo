@@ -48,6 +48,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# WhatsApp auth state
+/whatsapp-auth
+
 # Runtime data
 pids
 *.pid

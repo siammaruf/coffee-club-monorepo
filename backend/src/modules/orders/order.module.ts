@@ -10,6 +10,7 @@ import { Discount } from '../discount/entities/discount.entity';
 import { CustomerModule } from '../customers/customer.module';
 import { CacheModule } from '../cache/cache.module';
 import { SmsModule } from '../sms/sms.module';
+import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SmsModule } from '../sms/sms.module';
     CustomerModule,
     CacheModule,
     SmsModule,
+    WhatsAppModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

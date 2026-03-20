@@ -17,7 +17,7 @@ export class Order {
     @Column({ unique: true, nullable: true })
     order_id: string;
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     token_number: string | null;
 
     @Column({

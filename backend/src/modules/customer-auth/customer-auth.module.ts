@@ -12,6 +12,7 @@ import { EmailModule } from '../email/email.module';
 import { SmsModule } from '../sms/sms.module';
 import { CacheModule } from '../cache/cache.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
     SmsModule,
     CacheModule,
     CloudinaryModule,
+    WhatsAppModule,
   ],
   controllers: [CustomerAuthController],
   providers: [CustomerAuthService, CustomerJwtStrategy],
