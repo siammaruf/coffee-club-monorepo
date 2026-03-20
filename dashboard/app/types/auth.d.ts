@@ -7,7 +7,8 @@ export interface LoginResponse {
   statusCode?: number;
   data?: {
     user: User;
-    token: string;
+    access_token: string;
+    refresh_token: string;
   };
 }
 

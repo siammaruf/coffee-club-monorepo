@@ -25,6 +25,9 @@ import { WhatsAppPromotionService } from './providers/whatsapp-promotion.service
 import { WhatsAppController } from './controllers/whatsapp.controller';
 import { WhatsAppPromotionController } from './controllers/whatsapp-promotion.controller';
 
+// External modules
+import { ReportModule } from '../reports/report.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -43,6 +46,7 @@ import { WhatsAppPromotionController } from './controllers/whatsapp-promotion.co
       }),
     }),
     ScheduleModule.forRoot(),
+    ReportModule,
   ],
   controllers: [WhatsAppController, WhatsAppPromotionController],
   providers: [
