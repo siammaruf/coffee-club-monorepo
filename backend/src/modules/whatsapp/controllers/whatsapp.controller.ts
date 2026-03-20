@@ -28,6 +28,7 @@ import { CreateContactDto } from '../dto/create-contact.dto';
 import { UpdateContactDto } from '../dto/update-contact.dto';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { UpdateConfigDto } from '../dto/update-config.dto';
+import { ReportService } from '../../reports/providers/report.service';
 
 @ApiTags('WhatsApp')
 @ApiBearerAuth('staff-auth')
@@ -37,6 +38,7 @@ export class WhatsAppController {
     private readonly connectionService: WhatsAppConnectionService,
     private readonly messageService: WhatsAppMessageService,
     private readonly reportService: WhatsAppReportService,
+    private readonly dailyReportService: ReportService,
     @InjectRepository(WhatsAppContact)
     private readonly contactRepo: Repository<WhatsAppContact>,
     @InjectRepository(WhatsAppConfig)
@@ -93,11 +95,19 @@ export class WhatsAppController {
     Object.assign(config, dto);
     const saved = await this.configRepo.save(config);
 
-    // Update cron schedule if report time changed
+    // Update WhatsApp report cron schedule if changed
     if (dto.daily_report_time !== undefined || dto.daily_report_enabled !== undefined) {
       await this.reportService.updateSchedule(
         saved.daily_report_time,
         saved.daily_report_enabled,
+      );
+    }
+
+    // Update auto report generation cron schedule if changed
+    if (dto.auto_report_generation_time !== undefined || dto.auto_report_generation_enabled !== undefined) {
+      await this.dailyReportService.updateReportSchedule(
+        saved.auto_report_generation_time,
+        saved.auto_report_generation_enabled,
       );
     }
 

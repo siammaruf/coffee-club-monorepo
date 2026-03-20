@@ -31,13 +31,24 @@ export class WhatsAppGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake?.headers?.cookie
-        ?.split(';')
-        .find((c: string) => c.trim().startsWith('access='))
-        ?.split('=')[1];
+      // 1. Try socket.io auth payload first (cross-origin safe)
+      let token = client.handshake?.auth?.token as string | undefined;
+
+      // 2. Fallback: try cookie extraction
+      if (!token) {
+        const cookieHeader = client.handshake?.headers?.cookie;
+        if (cookieHeader) {
+          const accessCookie = cookieHeader
+            .split(';')
+            .find((c: string) => c.trim().startsWith('access='));
+          if (accessCookie) {
+            token = accessCookie.trim().split('=').slice(1).join('=');
+          }
+        }
+      }
 
       if (!token) {
-        this.logger.warn('WebSocket connection rejected: no auth cookie');
+        this.logger.warn('WebSocket connection rejected: no auth token');
         client.disconnect();
         return;
       }

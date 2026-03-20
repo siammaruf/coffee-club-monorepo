@@ -11,15 +11,22 @@ export function useWhatsAppSocket() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+
     const socket = io(`${WS_URL}/whatsapp`, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      auth: token ? { token } : undefined,
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
       setError(null);
+    });
+
+    socket.on('connect_error', (err) => {
+      setError(`Connection failed: ${err.message}`);
     });
 
     socket.on('whatsapp:qr', (data: { qr: string }) => {

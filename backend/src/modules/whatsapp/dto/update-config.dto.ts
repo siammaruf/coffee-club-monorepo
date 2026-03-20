@@ -29,6 +29,17 @@ export class UpdateConfigDto {
   otp_via_whatsapp?: boolean;
 
   @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  auto_report_generation_enabled?: boolean;
+
+  @ApiPropertyOptional({ description: 'Auto report generation time in HH:mm format' })
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'auto_report_generation_time must be in HH:mm format' })
+  @IsOptional()
+  auto_report_generation_time?: string;
+
+  @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   order_notification_template?: string;
