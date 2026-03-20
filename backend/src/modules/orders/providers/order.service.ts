@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
@@ -18,6 +18,7 @@ import { CustomerService } from 'src/modules/customers/providers/customer.servic
 import { TokenType } from '../../order-tokens/enum/TokenType.enum';
 import { CacheService } from 'src/modules/cache/cache.service';
 import { SmsService } from '../../sms/sms.service';
+import { WhatsAppMessageService } from '../../whatsapp/providers/whatsapp-message.service';
 
 @Injectable()
 export class OrderService {
@@ -31,7 +32,10 @@ export class OrderService {
     private readonly customerService: CustomerService,
     private readonly cacheService: CacheService,
     private readonly smsService: SmsService,
+    @Optional() private readonly whatsappMessageService: WhatsAppMessageService,
   ) {}
+
+  private readonly logger = new Logger(OrderService.name);
 
   private formatOrderCompletionSms(order: Order): string {
     const date = new Date().toLocaleDateString('en-GB', {
@@ -141,6 +145,12 @@ export class OrderService {
     }
     
     await this.invalidateCache();
+
+    // Fire-and-forget WhatsApp notification
+    this.whatsappMessageService?.notifyNewOrder(savedOrder).catch((err) =>
+      this.logger.warn(`WhatsApp order notification failed: ${err.message}`),
+    );
+
     return savedOrder;
   }
 

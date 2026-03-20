@@ -92,6 +92,10 @@ export const DEFAULT_PERMISSIONS: Array<{
   // WiFi Settings
   { name: 'wifi_settings.view', resource: 'wifi_settings', action: 'view', description: 'View WiFi settings' },
   { name: 'wifi_settings.edit', resource: 'wifi_settings', action: 'edit', description: 'Edit WiFi settings' },
+  // WhatsApp
+  { name: 'whatsapp.view', resource: 'whatsapp', action: 'view', description: 'View WhatsApp settings, contacts, messages, promotions' },
+  { name: 'whatsapp.manage', resource: 'whatsapp', action: 'manage', description: 'Manage WhatsApp connection, contacts, config, promotions' },
+  { name: 'whatsapp.send', resource: 'whatsapp', action: 'send', description: 'Send WhatsApp messages, promotions, trigger reports' },
 ];
 
 export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
@@ -116,6 +120,7 @@ export const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
     'partners.view', 'partners.create', 'partners.edit', 'partners.delete',
     'data_management.view', 'data_management.export',
     'wifi_settings.view', 'wifi_settings.edit',
+    'whatsapp.view', 'whatsapp.manage', 'whatsapp.send',
   ],
   [UserRole.CHEF]: [
     'kitchen_items.view', 'kitchen_items.create', 'kitchen_items.edit',

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, Optional, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,10 +10,13 @@ import { UpdateCustomerProfileDto } from '../dto/update-customer-profile.dto';
 import { EmailService } from '../../email/email.service';
 import { SmsService } from '../../sms/sms.service';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { WhatsAppMessageService } from '../../whatsapp/providers/whatsapp-message.service';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class CustomerAuthService {
+  private readonly logger = new Logger(CustomerAuthService.name);
+
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
@@ -23,6 +26,7 @@ export class CustomerAuthService {
     private readonly emailService: EmailService,
     private readonly smsService: SmsService,
     private readonly cloudinaryService: CloudinaryService,
+    @Optional() private readonly whatsappMessageService: WhatsAppMessageService,
   ) {}
 
   private async encryptPassword(password: string): Promise<string> {
@@ -155,6 +159,11 @@ export class CustomerAuthService {
 
       if (customer.phone) {
         promises.push(this.smsService.sendOtpSms(customer.phone, otp));
+
+        // Send OTP via WhatsApp if enabled (fire-and-forget)
+        this.whatsappMessageService?.sendOtp(customer.phone, otp).catch((err) =>
+          this.logger.warn(`WhatsApp OTP failed: ${err.message}`),
+        );
       }
 
       await Promise.all(promises);

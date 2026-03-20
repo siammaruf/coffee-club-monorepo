@@ -12,6 +12,7 @@ import { SmsModule } from '../sms/sms.module';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { CacheModule } from '../cache/cache.module';
 import { PermissionsModule } from '../permissions/permissions.module';
+import { WhatsAppModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PermissionsModule } from '../permissions/permissions.module';
     EmailModule,
     SmsModule,
     CacheModule,
+    WhatsAppModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

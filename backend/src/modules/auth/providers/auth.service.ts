@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../users/providers/user.service';
 import { UserStatus } from '../../users/enum/user-status.enum';
@@ -8,9 +8,12 @@ import { PasswordResetToken } from '../entities/password-reset-token.entity';
 import { Repository } from 'typeorm';
 import { EmailService } from 'src/modules/email/email.service';
 import { SmsService } from 'src/modules/sms/sms.service';
+import { WhatsAppMessageService } from '../../whatsapp/providers/whatsapp-message.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
@@ -18,6 +21,7 @@ export class AuthService {
     private passwordResetTokenRepository: Repository<PasswordResetToken>,
     private emailService: EmailService,
     private smsService: SmsService,
+    @Optional() private whatsappMessageService: WhatsAppMessageService,
   ) {}
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
@@ -155,6 +159,11 @@ export class AuthService {
 
       if (user.phone) {
         promises.push(this.smsService.sendOtpSms(user.phone, token));
+
+        // Send OTP via WhatsApp if enabled (fire-and-forget)
+        this.whatsappMessageService?.sendOtp(user.phone, token).catch((err) =>
+          this.logger.warn(`WhatsApp OTP failed: ${err.message}`),
+        );
       }
 
       await Promise.all(promises);
