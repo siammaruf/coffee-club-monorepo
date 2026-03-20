@@ -2,11 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getConfig } from '~/lib/config';
 
+// Socket.IO expects HTTP(S) URLs — it handles WebSocket upgrade internally
 const WS_URL = (getConfig('VITE_API_URL') || 'http://localhost:3000/api/v1')
   .replace('/api/v1', '')
-  .replace(/\/+$/, '')
-  .replace(/^https:\/\//, 'wss://')
-  .replace(/^http:\/\//, 'ws://');
+  .replace(/\/+$/, '');
 
 export function useWhatsAppSocket() {
   const [status, setStatus] = useState<string>('unknown');
@@ -21,6 +20,8 @@ export function useWhatsAppSocket() {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       auth: token ? { token } : undefined,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
     });
 
     socketRef.current = socket;
