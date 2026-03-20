@@ -74,8 +74,10 @@ async function bootstrap() {
   
   const serverUrl = `http://localhost:${port}`;
   const docsUrl = `${serverUrl}/api/v1/docs`;
-  
+
   console.log('\n🚀 Application is running on:', serverUrl);
-  console.log('📚 API Documentation:', docsUrl, '\n');
+  console.log('📚 API Documentation:', docsUrl);
+  console.log('🔌 Socket.IO:', serverUrl);
+  console.log('   └─ WhatsApp:', `${serverUrl}/whatsapp`, '\n');
 }
 bootstrap();

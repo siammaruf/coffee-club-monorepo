@@ -23,7 +23,13 @@ import { JwtService } from '@nestjs/jwt';
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean);
-      callback(null, allowed.includes(origin));
+      const isAllowed = allowed.includes(origin);
+      if (!isAllowed) {
+        console.warn(
+          `[WhatsApp WS] CORS rejected origin: ${origin}. Allowed: ${allowed.join(', ')}`,
+        );
+      }
+      callback(null, isAllowed);
     },
     credentials: true,
   },

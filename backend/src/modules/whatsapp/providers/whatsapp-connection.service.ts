@@ -5,12 +5,6 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import makeWASocket, {
-  useMultiFileAuthState,
-  DisconnectReason,
-  WASocket,
-  ConnectionState,
-} from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import * as QRCode from 'qrcode';
 import pino from 'pino';
@@ -19,14 +13,24 @@ import * as fs from 'fs';
 import { WhatsAppGateway } from '../gateways/whatsapp.gateway';
 import { ConnectionStatus } from '../enums';
 
+// Baileys v7 is ESM-only — use cached dynamic import for CJS compatibility
+let baileysModule: any = null;
+async function getBaileys() {
+  if (!baileysModule) {
+    baileysModule = await import('@whiskeysockets/baileys');
+  }
+  return baileysModule;
+}
+
 @Injectable()
 export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WhatsAppConnectionService.name);
-  private sock: WASocket | null = null;
+  private sock: any = null;
   private status: ConnectionStatus = ConnectionStatus.DISCONNECTED;
   private retryCount = 0;
   private readonly maxRetries = 5;
   private readonly authDir: string;
+  private keepAliveInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -46,6 +50,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
   }
 
   async onModuleDestroy() {
+    this.stopKeepAlive();
     await this.disconnect();
   }
 
@@ -53,7 +58,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     return this.status;
   }
 
-  getSock(): WASocket | null {
+  getSock(): any {
     return this.sock;
   }
 
@@ -70,18 +75,25 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     this.setStatus(ConnectionStatus.CONNECTING);
 
     try {
+      const baileys = await getBaileys();
+      const makeWASocket = baileys.default || baileys.makeWASocket;
+      const { useMultiFileAuthState, Browsers } = baileys;
+
       const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
 
       this.sock = makeWASocket({
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }) as any,
-        browser: ['CoffeeClub', 'Chrome', '1.0.0'],
+        browser: Browsers.ubuntu('Chrome'),
+        shouldIgnoreJid: (jid: string) =>
+          jid?.endsWith('@broadcast') || jid?.endsWith('@newsletter'),
+        getMessage: async () => ({ conversation: '' }),
       });
 
       this.sock.ev.on('creds.update', saveCreds);
 
-      this.sock.ev.on('connection.update', async (update: Partial<ConnectionState>) => {
+      this.sock.ev.on('connection.update', async (update: any) => {
         await this.handleConnectionUpdate(update);
       });
     } catch (error) {
@@ -92,6 +104,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
   }
 
   async disconnect(): Promise<void> {
+    this.stopKeepAlive();
     this.retryCount = this.maxRetries;
     if (this.sock) {
       this.sock.end(undefined);
@@ -102,6 +115,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
   }
 
   async logout(): Promise<void> {
+    this.stopKeepAlive();
     if (this.sock) {
       await this.sock.logout();
       this.sock = null;
@@ -113,7 +127,7 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     this.retryCount = 0;
   }
 
-  private async handleConnectionUpdate(update: Partial<ConnectionState>) {
+  private async handleConnectionUpdate(update: any) {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
@@ -127,8 +141,11 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     }
 
     if (connection === 'close') {
+      this.stopKeepAlive();
       const boom = lastDisconnect?.error as Boom;
       const statusCode = boom?.output?.statusCode;
+
+      const { DisconnectReason } = await getBaileys();
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
       this.logger.warn(
@@ -162,6 +179,23 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
       this.retryCount = 0;
       this.setStatus(ConnectionStatus.CONNECTED);
       this.logger.log('WhatsApp connected successfully');
+      this.startKeepAlive();
+    }
+  }
+
+  private startKeepAlive() {
+    this.stopKeepAlive();
+    this.keepAliveInterval = setInterval(() => {
+      if (this.sock) {
+        this.sock.sendPresenceUpdate('available').catch(() => {});
+      }
+    }, 25_000);
+  }
+
+  private stopKeepAlive() {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+      this.keepAliveInterval = null;
     }
   }
 
