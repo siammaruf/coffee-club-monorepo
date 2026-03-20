@@ -70,8 +70,10 @@ export function useWhatsAppSocket() {
     };
   }, []);
 
-  // Continuous polling safety net — WebSocket events may be dropped behind reverse proxies
+  // Polling fallback — only when WebSocket is not connected
   useEffect(() => {
+    if (socketConnected) return;
+
     let active = true;
 
     const poll = async () => {
@@ -101,7 +103,7 @@ export function useWhatsAppSocket() {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [socketConnected]);
 
   return { status, qrCode, error, isConnected: status === 'CONNECTED', socketConnected };
 }

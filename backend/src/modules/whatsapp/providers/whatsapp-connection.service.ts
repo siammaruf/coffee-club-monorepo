@@ -101,12 +101,24 @@ export class WhatsAppConnectionService implements OnModuleInit, OnModuleDestroy 
     try {
       const baileys = await getBaileys();
       const makeWASocket = baileys.default || baileys.makeWASocket;
-      const { useMultiFileAuthState, Browsers } = baileys;
+      const { useMultiFileAuthState, Browsers, fetchLatestBaileysVersion } =
+        baileys;
+
+      // Fetch current WA Web version to avoid 405 rejections from stale defaults
+      let version: [number, number, number] | undefined;
+      try {
+        const versionInfo = await fetchLatestBaileysVersion();
+        version = versionInfo?.version;
+        this.logger.log(`Using WA Web version: ${version?.join('.')}`);
+      } catch {
+        this.logger.warn('Failed to fetch latest WA version, using default');
+      }
 
       const { state, saveCreds } = await useMultiFileAuthState(this.authDir);
 
       this.sock = makeWASocket({
         auth: state,
+        ...(version ? { version } : {}),
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }) as any,
         browser: Browsers.ubuntu('Chrome'),
