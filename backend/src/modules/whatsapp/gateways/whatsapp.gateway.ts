@@ -1,6 +1,7 @@
 import {
   WebSocketGateway,
   WebSocketServer,
+  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
@@ -13,12 +14,21 @@ import { JwtService } from '@nestjs/jwt';
   namespace: '/whatsapp',
   cors: {
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      callback(null, true);
+      // Allow connections with no origin (server-to-server, mobile apps)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const allowed = (process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean);
+      callback(null, allowed.includes(origin));
     },
     credentials: true,
   },
 })
-export class WhatsAppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class WhatsAppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -29,7 +39,18 @@ export class WhatsAppGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly configService: ConfigService,
   ) {}
 
+  afterInit() {
+    const allowedOrigins = this.configService.get<string>('CORS_ORIGINS', '');
+    this.logger.debug(
+      `WhatsApp WebSocket gateway initialized on namespace: /whatsapp, allowed origins: ${allowedOrigins}`,
+    );
+  }
+
   async handleConnection(client: Socket) {
+    this.logger.debug(
+      `Client attempting connection: ${client.id}, origin: ${client.handshake?.headers?.origin}, transport: ${client.conn?.transport?.name}`,
+    );
+
     try {
       // 1. Try socket.io auth payload first (cross-origin safe)
       let token = client.handshake?.auth?.token as string | undefined;
@@ -55,7 +76,7 @@ export class WhatsAppGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       const secret = this.configService.get<string>('JWT_SECRET');
       this.jwtService.verify(token, { secret });
-      this.logger.log(`Client connected: ${client.id}`);
+      this.logger.debug(`Client authenticated and connected: ${client.id}`);
     } catch {
       this.logger.warn(`WebSocket connection rejected: invalid token`);
       client.disconnect();
