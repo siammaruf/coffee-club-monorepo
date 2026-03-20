@@ -36,6 +36,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   partners: 'Partners',
   data_management: 'Data Management',
   settings: 'Settings',
+  wifi_settings: 'WiFi Settings',
 };
 
 export default function RolesPermissionsPage() {
