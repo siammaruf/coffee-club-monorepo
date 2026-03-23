@@ -1,7 +1,7 @@
 # API Implementation Status: CoffeeClub Backend
 
 > **Backend Framework:** NestJS 11 + TypeORM + PostgreSQL
-> **Last Updated:** 2026-03-18
+> **Last Updated:** 2026-03-23
 > **Total Endpoints:** ~210 across 35 controllers
 > **Swagger Coverage:** 100% (all endpoints have @ApiTags + @ApiOperation)
 
@@ -623,5 +623,29 @@ Auth: All @Public
 | `/auth/verify-reset-token` | POST   | Complete | Public | Reset password using token                                 |
 | `/auth/verify-otp`         | POST   | Complete | Public | Verify password reset token before allowing password reset |
 | `/auth/new-user-password`  | POST   | Complete | Public | Set password for new user and activate account             |
+
+
+
+
+## Users APIs
+
+| Endpoint                           | Method | Status   | Auth  | Notes                                        |
+|------------------------------------|--------|----------|-------|----------------------------------------------|
+| `/users/trash/list`                | GET    | Complete | JWT   | List trashed records                         |
+| `/users`                           | POST   | Complete | Admin | Create a new user with optional file uploads |
+| `/users/:id`                       | PATCH  | Complete | JWT   | Update user with optional file uploads       |
+| `/users/email/:email`              | GET    | Complete | JWT   | Find user by email                           |
+| `/users/:id/resend-password-reset` | POST   | Complete | JWT   | Resend password reset email to user          |
+| `/users/bulk/restore`              | PATCH  | Complete | JWT   | Bulk soft delete                             |
+| `/users/:id/picture`               | PATCH  | Complete | JWT   | Update user picture                          |
+| `/users/:id/nid-pictures`          | PATCH  | Complete | JWT   | Update user NID pictures                     |
+| `/users/:id/deactivate`            | PATCH  | Complete | JWT   | Deactivate user                              |
+| `/users/:id/activate`              | PATCH  | Complete | JWT   | Activate user                                |
+| `/users/:id/change-password`       | PATCH  | Complete | JWT   | Change user password                         |
+| `/users/:id/profile-picture`       | PATCH  | Complete | JWT   | Update user profile picture                  |
+| `/users/:id/restore`               | PATCH  | Complete | JWT   | Restore from trash                           |
+| `/users/bulk/delete`               | DELETE | Complete | JWT   | Bulk soft delete                             |
+| `/users/bulk/permanent`            | DELETE | Complete | JWT   | Bulk restore from trash                      |
+| `/users/:id/permanent`             | DELETE | Complete | JWT   | Restore from trash                           |
 
 
