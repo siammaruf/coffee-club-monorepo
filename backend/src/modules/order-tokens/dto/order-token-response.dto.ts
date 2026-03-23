@@ -20,18 +20,19 @@ export class OrderTokenResponseDto {
     this.token = entity.token;
     this.token_type = entity.token_type;
     this.orderId = entity.order?.id || entity.orderId;
-    this.order_items = Array.isArray(entity.order_items) 
-  ? entity.order_items.map((item: any) => {
-      const dto = new OrderItemResponseDto({
-        id: item.id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        item: item.item,
-      });
-      return dto;
-    }) 
-  : [];
+    this.order_items = Array.isArray(entity.order_items)
+      ? entity.order_items.map((item: any) => {
+          const dto = new OrderItemResponseDto({
+            id: item.id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            item: item.item,
+            item_variation: item.variation || undefined,
+          });
+          return dto;
+        })
+      : [];
     this.priority = entity.priority;
     this.status = entity.status;
     this.createdAt = entity.createdAt;

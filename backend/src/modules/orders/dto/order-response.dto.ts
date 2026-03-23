@@ -20,6 +20,7 @@ export class OrderResponseDto extends BaseOrderDto {
       unit_price: orderItem.unit_price,
       total_price: orderItem.total_price,
       item: orderItem.item,
+      item_variation: orderItem.variation || undefined,
       created_at: orderItem.created_at,
       updated_at: orderItem.updated_at
     })) || [];
