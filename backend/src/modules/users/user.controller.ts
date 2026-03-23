@@ -629,8 +629,14 @@ export class UserController {
     })
     @ApiResponse({ status: 404, description: 'User not found' })
 
-    async activateUser(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
-        return this.userService.activateUser(id);
+    async activateUser(@Param('id', ParseUUIDPipe) id: string) {
+        const user = await this.userService.activateUser(id);
+        return {
+            data: user,
+            status: 'success',
+            message: 'User activated successfully.',
+            statusCode: HttpStatus.OK
+        };
     }
 
     @Post(':id/resend-password-reset')

@@ -95,7 +95,7 @@ export default function Employees() {
 
 
   const uniquePositions = [...new Set(users.map(user => user.role))];
-  const uniqueStatuses = [...new Set(users.map(user => user.status))];
+  const uniqueStatuses = ['active', 'inactive'];
 
   const navigate = useNavigate();
 
