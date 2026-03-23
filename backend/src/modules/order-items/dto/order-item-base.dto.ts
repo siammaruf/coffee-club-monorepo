@@ -2,6 +2,7 @@ import { IsNumber, IsUUID, IsOptional, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { Item } from 'src/modules/items/entities/item.entity';
+import { ItemVariation } from 'src/modules/items/entities/item-variation.entity';
 import { Order } from 'src/modules/orders/entities/order.entity';
 
 export class OrderItemBaseDto {
@@ -60,6 +61,15 @@ export class OrderItemBaseDto {
   @IsUUID()
   @IsOptional()
   item_variation_id?: string;
+
+  @ApiProperty({
+    description: 'Item variation details associated with this order item',
+    type: () => ItemVariation,
+    required: false,
+  })
+  @Type(() => ItemVariation)
+  @IsOptional()
+  item_variation?: ItemVariation;
 
   @ApiProperty({
     description: 'Order associated with this order item',

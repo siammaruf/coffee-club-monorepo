@@ -540,13 +540,24 @@ export default function OrderDetailsPage() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {Number(item.item.sale_price) > 0 ? (
-                                  <>
-                                    <span className="line-through text-gray-400 mr-1">{formatPrice(Number(item.item.regular_price))}</span>
-                                    <span className="text-green-600 font-semibold">{formatPrice(Number(item.item.sale_price))}</span>
-                                  </>
+                                {item.item_variation ? (
+                                  Number(item.item_variation.sale_price) > 0 ? (
+                                    <>
+                                      <span className="line-through text-gray-400 mr-1">{formatPrice(Number(item.item_variation.regular_price))}</span>
+                                      <span className="text-green-600 font-semibold">{formatPrice(Number(item.item_variation.sale_price))}</span>
+                                    </>
+                                  ) : (
+                                    <span className="font-semibold">{formatPrice(Number(item.item_variation.regular_price))}</span>
+                                  )
                                 ) : (
-                                  <span className="font-semibold">{formatPrice(Number(item.item.regular_price))}</span>
+                                  Number(item.item.sale_price) > 0 ? (
+                                    <>
+                                      <span className="line-through text-gray-400 mr-1">{formatPrice(Number(item.item.regular_price))}</span>
+                                      <span className="text-green-600 font-semibold">{formatPrice(Number(item.item.sale_price))}</span>
+                                    </>
+                                  ) : (
+                                    <span className="font-semibold">{formatPrice(Number(item.item.regular_price))}</span>
+                                  )
                                 )}
                               </TableCell>
                               <TableCell>

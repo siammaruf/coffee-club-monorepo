@@ -484,7 +484,9 @@ export class OrderService {
         'orderItems.variation',
         'orderTokens',
         'orderTokens.order_items',
-      ] 
+        'orderTokens.order_items.item',
+        'orderTokens.order_items.variation',
+      ]
     });
     if (!order) {
       throw new NotFoundException('Order not found');
