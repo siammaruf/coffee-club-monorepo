@@ -2,3 +2,9 @@
 	path = .claude
 	url = https://github.com/CoFixer/claude-workflow
 	branch = main
+[submodule ".opencode"]
+	path = .opencode
+	url = https://github.com/CoFixer/opencode-workflow
+[submodule ".kimi"]
+	path = .kimi
+	url = https://github.com/CoFixer/kimi-workflow

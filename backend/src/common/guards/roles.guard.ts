@@ -1,9 +1,11 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../modules/users/enum/user-role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private readonly logger = new Logger(RolesGuard.name);
+
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -31,6 +33,7 @@ export class RolesGuard implements CanActivate {
 
     // If no user is present in the request, deny access
     if (!user) {
+      this.logger.warn(`Role check denied: no user in request for ${context.getClass().name}.${context.getHandler().name}`);
       return false;
     }
 
@@ -39,6 +42,12 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    return requiredRoles.some((role) => user.role?.toLowerCase() === role);
+    const hasRole = requiredRoles.some((role) => user.role?.toLowerCase() === role);
+    if (!hasRole) {
+      this.logger.warn(
+        `Role check denied: user ${user.id} (role: ${user.role}) does not have any of [${requiredRoles.join(', ')}] for ${context.getClass().name}.${context.getHandler().name}`
+      );
+    }
+    return hasRole;
   }
 }

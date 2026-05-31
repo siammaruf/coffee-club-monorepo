@@ -36,7 +36,7 @@ export default function TitleBar({ showUserInfo = true }: TitleBarProps) {
 
     return (
         <View
-            className="absolute top-0 left-0 right-0 bg-[#F3FAF9] px-4 pt-[16px] pb-[8px] flex-row items-center justify-between z-50 border-b border-gray-200"
+            className="bg-[#F3FAF9] px-4 pt-[16px] pb-[8px] flex-row items-center justify-between z-50 border-b border-gray-200"
             style={insets.top ? { paddingTop: insets.top } : undefined}
         >
             <View className="flex-row items-center">

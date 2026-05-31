@@ -72,8 +72,8 @@ export default function CreateExpenseScreen() {
         >
             {/* Title Bar */}
             <View className="flex-row items-center mb-6">
-                <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full bg-white border border-gray-200 mr-2">
-                    <Ionicons name="arrow-back" size={22} color="#EF4444" />
+                <TouchableOpacity onPress={() => router.back()} className="p-3 rounded-full bg-white border border-gray-200 mr-2">
+                    <Ionicons name="arrow-back" size={24} color="#EF4444" />
                 </TouchableOpacity>
                 <Text className="text-lg font-bold text-gray-800">Create Expense</Text>
             </View>
@@ -88,13 +88,16 @@ export default function CreateExpenseScreen() {
                 />
 
                 <Text className="text-gray-700 mb-1 font-semibold">Amount</Text>
-                <TextInput
-                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-3"
-                    value={amount}
-                    onChangeText={setAmount}
-                    placeholder="Amount"
-                    keyboardType="numeric"
-                />
+                <View className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-3 flex-row items-center">
+                    <Text className="text-gray-800 font-semibold mr-2">৳</Text>
+                    <TextInput
+                        className="flex-1 text-gray-800"
+                        value={amount}
+                        onChangeText={setAmount}
+                        placeholder="Amount"
+                        keyboardType="numeric"
+                    />
+                </View>
 
                 <Text className="text-gray-700 mb-1 font-semibold">Category</Text>
                 <View className="bg-gray-50 border border-gray-200 rounded-lg mb-3">

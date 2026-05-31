@@ -268,9 +268,9 @@ export default function OrderForm() {
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => router.back()}
-              className="mr-3 p-2 rounded-lg bg-gray-100"
+              className="mr-3 p-3 rounded-lg bg-gray-100"
             >
-              <Ionicons name="arrow-back" size={20} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color="#374151" />
             </TouchableOpacity>
             <View className="flex-1">
               <Text className="text-xl font-bold text-gray-800">Create New Order</Text>

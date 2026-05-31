@@ -4,7 +4,6 @@ import React from 'react';
 import { View, Text, Animated, Easing } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ReduxProvider from '@/redux/store';
@@ -96,27 +95,11 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    NotoSansBengali: require('../../assets/fonts/NotoSansBengali-Regular.ttf'),
-  });
-
+  // Fonts are preloaded at build time by the expo-font plugin in app.json.
+  // Do NOT use useFonts() here — it causes the font to fail in production builds.
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  // Timeout fallback: force-hide splash after 5s if font loading hangs
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      SplashScreen.hideAsync();
-    }, 5000);
-    return () => clearTimeout(timeout);
+    SplashScreen.hideAsync();
   }, []);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
 
   return (
     <ReduxProvider>

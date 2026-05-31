@@ -49,8 +49,11 @@ export class AuthController {
     };
     const result: LoginResult = await this.authService.login(username, password, rememberMe);
     // Bust stale Redis cache so /auth/me returns fresh role + permissions on next call
+    const normalizedRole = result.user.role?.toLowerCase();
     await this.cacheService.delete(`user:${result.user.id}`);
-    await this.cacheService.delete(`permissions:role:${result.user.role}`);
+    await this.cacheService.delete(`permissions:role:${normalizedRole}`);
+    // Also clear all role permission caches to be safe
+    await this.cacheService.delete('permissions:role:*');
     this.setCookies(response, result.access_token, result.refresh_token, rememberMe);
 
     return {
@@ -206,26 +209,20 @@ export class AuthController {
       throw new UnauthorizedException('Not authenticated');
     }
 
-    const cacheKey = `user:${user.id}`;
-    let cachedUser = await this.cacheService.get<Record<string, unknown>>(cacheKey);
-
-    if (!cachedUser) {
-      const dbUser = await this.userService.findById(user.id!);
-      const { password, ...userWithoutPassword } = dbUser as any;
-      cachedUser = userWithoutPassword;
-      await this.cacheService.set(cacheKey, cachedUser, 3600 * 1000);
-    }
+    // Always use findById to ensure consistent caching and object shape
+    const dbUser = await this.userService.findById(user.id!);
+    const { password, ...userWithoutPassword } = dbUser as any;
 
     // Permissions fetched separately so busting permissions:role:{role} is sufficient
     const permissions = await this.permissionsService.getPermissionsForRole(
-      cachedUser.role as UserRole,
+      dbUser.role as UserRole,
     );
 
     return {
       status: 'success',
       message: 'User information retrieved successfully',
       statusCode: HttpStatus.OK,
-      data: { ...cachedUser, permissions },
+      data: { ...userWithoutPassword, permissions },
     };
   }
 

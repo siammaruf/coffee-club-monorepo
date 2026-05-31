@@ -1,4 +1,6 @@
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router';
+import { logout } from '~/redux/features/authSlice';
 import { authService } from '~/services/httpServices/authService';
 
 interface LogoutButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,14 +11,16 @@ interface LogoutButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
 
 export function LogoutButton({ children, className = '', onClick, ...rest }: LogoutButtonProps) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     onClick?.();
     try {
       await authService.logout();
-      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      dispatch(logout());
       navigate('/login');
     }
   };

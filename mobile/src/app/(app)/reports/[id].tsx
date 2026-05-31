@@ -97,10 +97,10 @@ export default function SalesReportDetailsScreen() {
             <View className="flex-row items-center mb-3 px-2">
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="p-2 rounded-full bg-white border border-gray-200 mr-2"
+                    className="p-3 rounded-full bg-white border border-gray-200 mr-2"
                     style={{ elevation: 2 }}
                 >
-                    <Ionicons name="arrow-back" size={22} color="#EF4444" />
+                    <Ionicons name="arrow-back" size={24} color="#EF4444" />
                 </TouchableOpacity>
                 <Text className="text-xl font-bold text-gray-800 flex-1">Sales Report Details</Text>
             </View>
