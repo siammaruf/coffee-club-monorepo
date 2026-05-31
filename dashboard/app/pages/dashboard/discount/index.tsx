@@ -20,6 +20,7 @@ import type { Discount } from "~/types/discount";
 import type { DiscountApplication } from "~/types/discountApplication";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import DiscountApplicationTable from "~/components/discount/DiscountApplicationTable";
+import { toast } from "sonner";
 
 const TABS = ["Discount List", "Discount Application"];
 
@@ -106,7 +107,9 @@ export default function DiscountsPage() {
       setShowAddModal(false);
       setNewDiscount({ name: "", discount_type: "", discount_value: 0, description: "", expiry_date: "" });
       fetchDiscounts();
-    } catch (error) {
+      toast.success("Discount created successfully");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create discount");
     }
   };
 
@@ -136,8 +139,9 @@ export default function DiscountsPage() {
       setShowEditModal(false);
       setSelectedDiscount(null);
       fetchDiscounts();
-    } catch (error) {
-      // Optionally handle error
+      toast.success("Discount updated successfully");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update discount");
     }
   };
 

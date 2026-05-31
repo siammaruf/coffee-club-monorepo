@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsUUID, IsString, IsNumber, IsOptional, IsEnum } from "class-validator";
+import { IsUUID, IsString, IsNumber, IsOptional, IsEnum, IsDate } from "class-validator";
+import { Type } from "class-transformer";
 import { DiscountType } from "../enum/discount-type.enum";  // Make sure you import the DiscountType enum
 
 export class BaseDiscountDto {
@@ -25,8 +26,8 @@ export class BaseDiscountDto {
   @IsString()
   description?: string;
 
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
+  @ApiProperty({ type: String, format: 'date-time' })
+  @Type(() => Date)
+  @IsDate()
   expiry_date: Date;
 }
