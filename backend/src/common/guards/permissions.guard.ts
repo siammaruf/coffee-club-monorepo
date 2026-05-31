@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../modules/users/enum/user-role.enum';
 import { PermissionsService } from '../../modules/permissions/providers/permissions.service';
@@ -6,6 +6,8 @@ import { PERMISSION_KEY } from '../decorators/require-permission.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionsGuard.name);
+
   constructor(
     private reflector: Reflector,
     private permissionsService: PermissionsService,
@@ -28,7 +30,10 @@ export class PermissionsGuard implements CanActivate {
     if (!requiredPermission) return true;
 
     const { user } = context.switchToHttp().getRequest();
-    if (!user) return false;
+    if (!user) {
+      this.logger.warn(`Permission denied: no user in request for ${context.getClass().name}.${context.getHandler().name}`);
+      return false;
+    }
 
     // Admin bypasses all permission checks
     if (user.role?.toLowerCase() === UserRole.ADMIN) return true;
@@ -36,6 +41,12 @@ export class PermissionsGuard implements CanActivate {
     const rolePermissions = await this.permissionsService.getPermissionsForRole(
       user.role,
     );
-    return rolePermissions.includes(requiredPermission);
+    const hasPermission = rolePermissions.includes(requiredPermission);
+    if (!hasPermission) {
+      this.logger.warn(
+        `Permission denied: user ${user.id} (role: ${user.role}) lacks permission "${requiredPermission}" for ${context.getClass().name}.${context.getHandler().name}. Available: [${rolePermissions.join(', ')}]`
+      );
+    }
+    return hasPermission;
   }
 }

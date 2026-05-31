@@ -32,9 +32,16 @@ export class UserService {
         private readonly cloudinaryService: CloudinaryService,
     ) {}
 
-    private async invalidateCache(): Promise<void> {
+    private async invalidateCache(role?: string, oldRole?: string): Promise<void> {
         await this.cacheService.delete('user:*');
         await this.cacheService.delete('users:*');
+        // Also clear role permission caches when role changes or for safety
+        if (role) {
+            await this.cacheService.delete(`permissions:role:${role.toLowerCase()}`);
+        }
+        if (oldRole && oldRole !== role) {
+            await this.cacheService.delete(`permissions:role:${oldRole.toLowerCase()}`);
+        }
     }
 
     async createPasswordResetToken(userId: string): Promise<string> {
@@ -180,8 +187,10 @@ export class UserService {
         }
 
         const banks = await this.bankService.findByUserId(id);
-        if (user.role) user.role = user.role.toLowerCase() as any;
-        const userResponse = new UserResponseDto(user);
+        // Clone to avoid mutating the cached object reference
+        const userCopy = { ...user };
+        if (userCopy.role) userCopy.role = userCopy.role.toLowerCase() as any;
+        const userResponse = new UserResponseDto(userCopy);
         userResponse.banks = banks;
         return userResponse;
       }
@@ -189,8 +198,9 @@ export class UserService {
 
     async findByEmail(email: string): Promise<UserResponseDto> {
         const user = await this.findUserOrFail({ email });
-        if (user.role) user.role = user.role.toLowerCase() as any;
-        return new UserResponseDto(user);
+        const userCopy = { ...user };
+        if (userCopy.role) userCopy.role = userCopy.role.toLowerCase() as any;
+        return new UserResponseDto(userCopy);
     }
 
     async findByPhone(phone: string): Promise<UserResponseDto> {
@@ -244,6 +254,7 @@ export class UserService {
           userData.nid_back_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_back_picture, 'coffee-club/users') ?? undefined;
         }
 
+        const oldRole = user.role;
         await this.userRepository.update(id, userData);
         if (bank) {
             const existingBanks = await this.bankService.findByUserId(id);
@@ -254,7 +265,7 @@ export class UserService {
             }
         }
         
-        await this.invalidateCache();
+        await this.invalidateCache(userData.role, oldRole);
 
         const updated = await this.findUserOrFail({ id });
         return new UserResponseDto(updated);
@@ -324,8 +335,9 @@ export class UserService {
             throw new UnauthorizedException('Account is inactive');
         }
 
-        if (user.role) user.role = user.role.toLowerCase() as any;
-        return new UserResponseDto(user);
+        const userCopy = { ...user };
+        if (userCopy.role) userCopy.role = userCopy.role.toLowerCase() as any;
+        return new UserResponseDto(userCopy);
     }
 
     async findAll(

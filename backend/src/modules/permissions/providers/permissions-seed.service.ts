@@ -27,16 +27,21 @@ export class PermissionsSeedService implements OnApplicationBootstrap {
       }
     }
 
-    // Phase 2: Seed role_permissions per-role — only if that role has no assignments yet
+    // Phase 2: Seed role_permissions per-role — ensure ALL default permissions are present
     const allPermissions = await this.permissionRepo.find();
     const permByName = new Map(allPermissions.map((p) => [p.name, p]));
 
     for (const [role, permNames] of Object.entries(ROLE_PERMISSION_DEFAULTS)) {
-      const existingCount = await this.rolePermissionRepo.count({ where: { role: role as UserRole } });
-      if (existingCount > 0) continue;
+      // Get existing assignments for this role
+      const existingRolePerms = await this.rolePermissionRepo.find({
+        where: { role: role as UserRole },
+        relations: ['permission'],
+      });
+      const existingPermNames = new Set(existingRolePerms.map((rp) => rp.permission?.name).filter(Boolean));
 
       const rows: RolePermission[] = [];
       for (const name of permNames) {
+        if (existingPermNames.has(name)) continue; // Already assigned, skip
         const perm = permByName.get(name);
         if (perm) {
           rows.push(this.rolePermissionRepo.create({ role: role as UserRole, permission_id: perm.id }));
@@ -44,7 +49,7 @@ export class PermissionsSeedService implements OnApplicationBootstrap {
       }
       if (rows.length > 0) {
         await this.rolePermissionRepo.save(rows);
-        this.logger.log(`Seeded ${rows.length} permissions for role: ${role}`);
+        this.logger.log(`Seeded ${rows.length} missing permissions for role: ${role}`);
       }
     }
   }
