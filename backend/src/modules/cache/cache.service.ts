@@ -39,10 +39,10 @@ export class CacheService {
         return;
       }
 
-      // Build the full Redis key pattern matching @keyv/redis v5 storage format: keyv:{namespace}:{key}
+      // Build the full Redis key pattern matching @keyv/redis v5 storage format: {namespace}:{key}
       const fullPattern = this.redisPrefix
-        ? `keyv:${this.redisPrefix}:${pattern}`
-        : `keyv:${pattern}`;
+        ? `${this.redisPrefix}:${pattern}`
+        : pattern;
 
       let cursor: string | number = '0';
       let deletedCount = 0;
@@ -91,8 +91,8 @@ export class CacheService {
       if (!redisClient) return [];
 
       const fullPattern = this.redisPrefix
-        ? `keyv:${this.redisPrefix}:${pattern}`
-        : `keyv:${pattern}`;
+        ? `${this.redisPrefix}:${pattern}`
+        : pattern;
 
       const found: string[] = [];
       let cursor: string | number = '0';
@@ -112,10 +112,10 @@ export class CacheService {
         found.push(...keys);
       } while (String(cursor) !== '0');
 
-      // Strip the keyv namespace prefix to return app-level keys
+      // Strip the namespace prefix to return app-level keys
       const prefixToStrip = this.redisPrefix
-        ? `keyv:${this.redisPrefix}:`
-        : 'keyv:';
+        ? `${this.redisPrefix}:`
+        : '';
       return found.map(k => k.startsWith(prefixToStrip) ? k.slice(prefixToStrip.length) : k);
     } catch (error) {
       this.logger.error('Error getting keys:', error);
