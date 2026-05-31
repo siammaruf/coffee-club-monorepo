@@ -62,6 +62,19 @@ export class CacheService {
         cursor = nextCursor;
         if (keys.length > 0) {
           await redisClient.del(...keys);
+          // Also delete from primary (in-memory) cache. Cacheable.delete()
+          // removes from both tiers, so we pass the app-level key to clear
+          // the in-memory layer as well.
+          for (const key of keys) {
+            const appKey = this.redisPrefix && key.startsWith(`${this.redisPrefix}:`)
+              ? key.slice(`${this.redisPrefix}:`.length)
+              : key;
+            try {
+              await this.cache.delete(appKey);
+            } catch {
+              // Ignore errors deleting from primary cache
+            }
+          }
           deletedCount += keys.length;
         }
       } while (String(cursor) !== '0');
