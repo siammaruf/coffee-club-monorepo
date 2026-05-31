@@ -133,7 +133,7 @@ export default function ReportListScreen() {
         <View className="flex-1 bg-gray-50">
             <TitleBar showUserInfo={true} />
 
-            <View className="px-4 pt-20 mt-2 pb-4 flex-row items-center justify-between">
+            <View className="px-4 py-4 pb-4 flex-row items-center justify-between">
                 <View>
                     <Text className="text-lg font-bold text-orange-500">Sales Reports</Text>
                     <Text className="text-gray-500 text-sm">View your daily sales reports</Text>

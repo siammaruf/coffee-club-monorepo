@@ -58,9 +58,9 @@ export default function ProductSelectionModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
         {/* Header */}
-        <View className="bg-white border-b border-gray-200 p-4 pt-6">
+        <View className="bg-white border-b border-gray-200 p-4">
           <View className="flex-row items-center justify-between">
             <Text className="text-lg font-bold text-gray-800">Add Products</Text>
             <TouchableOpacity onPress={onClose}>

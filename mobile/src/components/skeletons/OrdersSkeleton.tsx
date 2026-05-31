@@ -5,8 +5,8 @@ const OrdersSkeleton = () => (
   <View className="flex-1 bg-gray-50">
     <TitleBar showUserInfo={true} />
     {/* Header Skeleton */}
-    <View className="bg-white shadow-sm mt-4">
-      <View className="px-4 py-2 pt-16 mt-2 mb-1">
+    <View className="bg-white shadow-sm">
+      <View className="px-4 py-2 mb-1">
         <View className="flex-row items-center justify-between">
           <View className="w-24 h-6 bg-gray-200 rounded" />
           <View className="w-20 h-8 bg-gray-200 rounded" />

@@ -112,7 +112,7 @@ export default function ProductListScreen() {
                 onPress={() => router.push(`/(app)/products/${item.id}`)}
                 activeOpacity={0.85}
             >
-                <View className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-3 flex-row items-center">
+                <View className={`rounded-xl shadow-sm border p-3 mb-3 flex-row items-center ${['out_of_stock', 'discontinued'].includes(item.status) ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100'}`}>
                     <View className="w-12 h-12 rounded-lg bg-gray-100 mr-3 overflow-hidden items-center justify-center">
                         {item.image ? (
                             <Image source={{ uri: item.image }} className="w-full h-full" resizeMode="cover" />
@@ -153,9 +153,14 @@ export default function ProductListScreen() {
                                 )}
                             </>
                         )}
-                        <Text className="text-xs text-gray-400">
-                            {item.type === 'bar' ? 'Bar' : 'Kitchen'} {'\u2022'} {['out_of_stock', 'discontinued'].includes(item.status) ? 'Unavailable' : 'Available'}
-                        </Text>
+                        <View className="flex-row items-center mt-1">
+                            <Text className="text-xs text-gray-400">{item.type === 'bar' ? 'Bar' : 'Kitchen'}</Text>
+                            {['out_of_stock', 'discontinued'].includes(item.status) ? (
+                                <View className="ml-2 w-3 h-3 rounded-full bg-red-500" />
+                            ) : (
+                                <Text className="ml-2 text-xs text-green-600">Available</Text>
+                            )}
+                        </View>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -169,9 +174,9 @@ export default function ProductListScreen() {
                     <View className="flex-row items-center">
                         <TouchableOpacity
                             onPress={() => router.back()}
-                            className="p-2 rounded-full bg-white border border-gray-200 mr-2"
+                            className="p-3 rounded-full bg-white border border-gray-200 mr-2"
                         >
-                            <Ionicons name="arrow-back" size={20} color="#F59E0B" />
+                            <Ionicons name="arrow-back" size={24} color="#F59E0B" />
                         </TouchableOpacity>
                         <Text className="text-xl font-bold text-orange-600">Products</Text>
                     </View>

@@ -56,9 +56,9 @@ export default function CustomerDetailsScreen() {
                 </Text>
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="bg-blue-600 px-6 py-3 rounded-lg mt-6"
+                    className="bg-blue-600 px-6 py-4 rounded-lg mt-6 w-full"
                 >
-                    <Text className="text-white font-medium">Go Back</Text>
+                    <Text className="text-white font-medium text-center text-lg">Go Back</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -75,9 +75,9 @@ export default function CustomerDetailsScreen() {
                     <View className="flex-row items-center">
                         <TouchableOpacity
                             onPress={() => router.back()}
-                            className="mr-3 p-1.5 rounded-lg bg-gray-100"
+                            className="mr-3 p-3 rounded-lg bg-gray-100"
                         >
-                            <Ionicons name="arrow-back" size={18} color="#374151" />
+                            <Ionicons name="arrow-back" size={24} color="#374151" />
                         </TouchableOpacity>
                         <View>
                             <Text className="text-lg font-bold text-gray-800">Customer Details</Text>

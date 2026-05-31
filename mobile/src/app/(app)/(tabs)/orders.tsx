@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TitleBar from '@/components/common/TitleBar';
@@ -322,8 +322,8 @@ export default function OrderListScreen() {
       <TitleBar showUserInfo={true} />
 
       {/* Compact Header */}
-      <View className="bg-white shadow-sm mt-2">
-        <View className="px-4 py-2 pt-16 mt-4 mb-1">
+      <View className="bg-white shadow-sm">
+        <View className="px-4 py-2 mb-1">
           <View className="flex-row items-center justify-between">
             <View>
               <Text className="text-lg font-bold text-orange-500">Orders</Text>

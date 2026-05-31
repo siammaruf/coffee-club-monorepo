@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, ImageBackground, Alert, BackHandle
 import { useAuth } from '@/context/AuthContext';
 import InputField from '@/components/common/InputField';
 import type { LoginFormData } from '@/types/auth';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternetScreen from '@/components/NoInternetScreen';
 

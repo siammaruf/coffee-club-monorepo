@@ -143,9 +143,9 @@ export default function OrderDetails() {
       const updateData = {
         discount_id: discount.id,
         status: (order?.status || 'PENDING') as OrderStatus,
-        sub_total: currentSubtotal,
-        discount_amount: currentDiscountAmount,
-        total_amount: currentTotal,
+        sub_total: Number(currentSubtotal),
+        discount_amount: Number(currentDiscountAmount),
+        total_amount: Number(currentTotal),
         ...(order?.customer_id && { customer_id: order.customer_id }),
         ...(order?.payment_method && { payment_method: order.payment_method })
       };
@@ -181,9 +181,9 @@ export default function OrderDetails() {
       const updateData = {
         discount_id: null,
         status: (order?.status || 'PENDING') as OrderStatus,
-        sub_total: currentSubtotal,
+        sub_total: Number(currentSubtotal),
         discount_amount: 0,
-        total_amount: currentTotal,
+        total_amount: Number(currentTotal),
         ...(order?.customer_id && { customer_id: order.customer_id }),
         ...(order?.payment_method && { payment_method: order.payment_method })
       };
@@ -216,9 +216,9 @@ export default function OrderDetails() {
         const updateData = {
           customer_id: customer.id,
           status: (order?.status || 'PENDING') as OrderStatus,
-          sub_total: currentSubtotal,
-          discount_amount: currentDiscountAmount,
-          total_amount: currentTotal,
+          sub_total: Number(currentSubtotal),
+          discount_amount: Number(currentDiscountAmount),
+          total_amount: Number(currentTotal),
           ...(order?.payment_method && { payment_method: order.payment_method }),
           ...(selectedDiscount && { discount_id: selectedDiscount.id })
         };
@@ -262,9 +262,9 @@ export default function OrderDetails() {
       const updateData = {
         payment_method: method,
         status: (order?.status || 'PENDING') as OrderStatus,
-        sub_total: currentSubtotal,
-        discount_amount: currentDiscountAmount,
-        total_amount: currentTotal,
+        sub_total: Number(currentSubtotal),
+        discount_amount: Number(currentDiscountAmount),
+        total_amount: Number(currentTotal),
         ...(order?.customer_id && { customer_id: order.customer_id }),
         ...(selectedDiscount && { discount_id: selectedDiscount.id })
       };
@@ -358,9 +358,9 @@ export default function OrderDetails() {
 
               const updateData = {
                 status: 'CANCELLED' as OrderStatus,
-                sub_total: currentSubtotal,
-                discount_amount: currentDiscountAmount,
-                total_amount: currentTotal,
+                sub_total: Number(currentSubtotal),
+                discount_amount: Number(currentDiscountAmount),
+                total_amount: Number(currentTotal),
                 ...(order?.customer_id && { customer_id: order.customer_id }),
                 ...(order?.payment_method && { payment_method: order.payment_method }),
                 ...(selectedDiscount && { discount_id: selectedDiscount.id })
@@ -526,9 +526,9 @@ export default function OrderDetails() {
         </Text>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="bg-[#EF4444] px-6 py-3 rounded-lg mt-6"
+          className="bg-[#EF4444] px-6 py-4 rounded-lg mt-6 w-full"
         >
-          <Text className="text-white font-medium">Go Back</Text>
+          <Text className="text-white font-medium text-center text-lg">Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -546,9 +546,9 @@ export default function OrderDetails() {
             <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => router.push('/(app)/(tabs)/orders')}
-                className="mr-3 p-1.5 rounded-lg bg-gray-100"
+                className="mr-3 p-3 rounded-lg bg-gray-100"
               >
-                <Ionicons name="arrow-back" size={18} color="#374151" />
+                <Ionicons name="arrow-back" size={24} color="#374151" />
               </TouchableOpacity>
               <View>
                 <Text className="text-lg font-bold text-gray-800">Order Details</Text>
@@ -556,22 +556,19 @@ export default function OrderDetails() {
               </View>
             </View>
             <View className="flex-row items-center gap-2">
-              {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
-                <TouchableOpacity
-                  onPress={() => router.push({ pathname: '/(app)/orders/edit', params: { orderId: order.id } })}
-                  className="bg-blue-500 px-3 py-1.5 rounded-lg"
-                >
-                  <View className="flex-row items-center">
-                    <Ionicons name="pencil" size={14} color="#ffffff" />
-                    <Text className="text-white text-xs font-medium ml-1">Edit</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
               <View className={`px-2 py-1 rounded-lg ${statusColors[order.status]?.bg || 'bg-gray-100'}`}>
                 <Text className={`text-xs font-medium ${statusColors[order.status]?.text || 'text-gray-800'}`}>
                   {order.status}
                 </Text>
               </View>
+              {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/(app)/orders/edit', params: { orderId: order.id } })}
+                  className="bg-green-500 w-14 h-14 rounded-full shadow-md items-center justify-center"
+                >
+                  <Text className="text-white text-sm font-bold uppercase">EDIT</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -591,9 +588,9 @@ export default function OrderDetails() {
                       loadCustomers();
                       setShowCustomerModal(true);
                     }}
-                    className="bg-blue-500 px-2 py-1 rounded"
+                    className="bg-blue-500 px-4 py-2 rounded-lg min-w-[80px]"
                   >
-                    <Text className="text-white text-xs font-medium">
+                    <Text className="text-white text-sm font-semibold text-center">
                       {selectedCustomer ? 'Change' : 'Select'}
                     </Text>
                   </TouchableOpacity>
@@ -657,9 +654,9 @@ export default function OrderDetails() {
                 {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
                   <TouchableOpacity
                     onPress={() => setShowPaymentModal(true)}
-                    className="bg-blue-500 px-2 py-1 rounded"
+                    className="bg-blue-500 px-4 py-2 rounded-lg min-w-[80px]"
                   >
-                    <Text className="text-white text-xs font-medium">
+                    <Text className="text-white text-sm font-semibold text-center">
                       {order.payment_method ? 'Change' : 'Select'}
                     </Text>
                   </TouchableOpacity>
@@ -710,9 +707,9 @@ export default function OrderDetails() {
                     {selectedDiscount && (
                       <TouchableOpacity
                         onPress={handleRemoveDiscount}
-                        className="bg-red-100 px-2 py-1 rounded"
+                        className="bg-red-100 px-4 py-2 rounded-lg min-w-[80px]"
                       >
-                        <Text className="text-red-600 text-xs">Remove</Text>
+                        <Text className="text-red-600 text-sm font-semibold text-center">Remove</Text>
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity
@@ -720,9 +717,9 @@ export default function OrderDetails() {
                         loadDiscounts();
                         setShowDiscountModal(true);
                       }}
-                      className="bg-blue-500 px-2 py-1 rounded"
+                      className="bg-blue-500 px-4 py-2 rounded-lg min-w-[80px]"
                     >
-                      <Text className="text-white text-xs">
+                      <Text className="text-white text-sm font-semibold text-center">
                         {selectedDiscount ? 'Change' : 'Apply'}
                       </Text>
                     </TouchableOpacity>
@@ -767,11 +764,11 @@ export default function OrderDetails() {
                         handlePointsRedemption();
                       }
                     }}
-                    className={`px-2 py-1 rounded ${
+                    className={`px-4 py-2 rounded-lg min-w-[80px] ${
                       isPointsRedemptionApplied ? 'bg-red-100' : 'bg-purple-500'
                     }`}
                   >
-                    <Text className={`text-xs font-medium ${
+                    <Text className={`text-sm font-semibold text-center ${
                       isPointsRedemptionApplied ? 'text-red-600' : 'text-white'
                     }`}>
                       {isPointsRedemptionApplied ? 'Remove' : 'Apply'}

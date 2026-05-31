@@ -85,7 +85,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Welcome Section */}
-        <View className="bg-gradient-to-r from-orange-500 to-orange-400 mx-4 mt-20 pt-2 rounded-2xl">
+        <View className="bg-gradient-to-r from-orange-500 to-orange-400 mx-4 mt-4 pt-2 rounded-2xl">
           <View className="flex-row items-center justify-between">
             <View className="flex-1">
               <Text className="text-orange-500 text-xl font-bold">Welcome back!</Text>

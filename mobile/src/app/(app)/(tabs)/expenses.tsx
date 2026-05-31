@@ -5,7 +5,7 @@ import TitleBar from '@/components/common/TitleBar';
 import expenseService from '@/services/httpServices/expenseService';
 import expenseCategoryService from '@/services/httpServices/expenseCategoryService';
 import { ExpenseCategory, ExpenseItem } from '@/types/expense';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { formatPrettyDate } from '@/utils/helpers';
 import { formatPrice } from '@/utils/currency';
@@ -124,7 +124,7 @@ export default function ExpensesListScreen() {
         <View className="flex-1 bg-gray-50">
             {/* Header & Filters - fixed above list */}
             <TitleBar showUserInfo={true} />
-            <View className="px-3 pt-[75px] pb-2 mb-1">
+            <View className="px-3 py-2 mb-1">
                 <View className="flex-row items-center justify-between">
                     <View>
                         <Text className="text-lg font-bold text-orange-500">Expenses</Text>

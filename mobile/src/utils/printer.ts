@@ -3,7 +3,7 @@ import { StorageService } from "../services/storageService";
 import { Order } from "../types/order";
 import { base64 } from "./printerUtil";
 import { formatPrettyDateOnly } from "./helpers";
-import { CURRENCY_SYMBOL, formatAmount } from './currency';
+import { CURRENCY_SYMBOL_PRINT, formatAmount } from './currency';
 
 function getPrinter(): any | null {
     try {
@@ -36,6 +36,69 @@ const formatDateWithOrdinal = (d: Date) => {
   const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
   return `${day}${ord} ${month} ${year},${h}:${m} ${ampm}`;
 };
+
+const DEFAULT_LINE_WIDTH = 32;
+const FONT_C_LINE_WIDTH = 24; // Conservative width for Font C due to printer variability
+
+function wrapText(text: string, maxWidth: number): string[] {
+  if (text.length <= maxWidth) return [text];
+
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      if (word.length > maxWidth) {
+        let remaining = word;
+        while (remaining.length > maxWidth) {
+          lines.push(remaining.slice(0, maxWidth));
+          remaining = remaining.slice(maxWidth);
+        }
+        currentLine = remaining;
+      } else {
+        currentLine = word;
+      }
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
+
+async function printWrappedItem(
+  quantity: number,
+  name: string,
+  variation?: string,
+  options?: any
+) {
+  const ReactNativePosPrinter = getPrinter();
+  if (!ReactNativePosPrinter) return;
+
+  const isFontC = options?.fontType === 'C';
+  const maxWidth = isFontC ? FONT_C_LINE_WIDTH : DEFAULT_LINE_WIDTH;
+  const prefix = `>> ${quantity}x `;
+  const contIndent = '   ';
+  const nameMaxWidth = Math.max(1, maxWidth - prefix.length);
+  const varMaxWidth = Math.max(1, maxWidth - contIndent.length);
+
+  const nameLines = wrapText(name, nameMaxWidth);
+  for (let i = 0; i < nameLines.length; i++) {
+    const line = i === 0 ? `${prefix}${nameLines[i]}` : `${contIndent}${nameLines[i]}`;
+    await ReactNativePosPrinter.printText(line, options);
+  }
+
+  if (variation) {
+    const varLines = wrapText(`(${variation})`, varMaxWidth);
+    for (const varLine of varLines) {
+      await ReactNativePosPrinter.printText(`${contIndent}${varLine}`, options);
+    }
+  }
+}
 
 // Print kitchen and bar token
 export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kitchen', printerAddress?: string): Promise<void> => {
@@ -78,7 +141,9 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
     await ReactNativePosPrinter.printText('*** ITEMS ***');
 
     for (const item of token.order_items || []) {
-      await ReactNativePosPrinter.printText(`>> ${item.quantity}x ${item.item.name_bn || item.item.name} ${item.item_variation ? `(${item.item_variation.name_bn})` : ''}`, { fontType: 'C' });
+      const itemName = item.item.name_bn || item.item.name;
+      const variationName = item.item_variation ? item.item_variation.name_bn : undefined;
+      await printWrappedItem(item.quantity, itemName, variationName, { fontType: 'C' });
     }
 
     await ReactNativePosPrinter.printText('-'.repeat(32));
@@ -135,8 +200,10 @@ export const printReceipt = async (order: Order, wifiName?: string, wifiPassword
 
         for (let i = 0; i < order.order_items.length; i++) {
             const item = order.order_items[i];
-            await ReactNativePosPrinter.printText(`>> ${item.quantity}x ${item.item?.name || 'Item'} ${item.item_variation ? `(${item.item_variation.name})` : ''}`);
-            await ReactNativePosPrinter.printText(`    ${CURRENCY_SYMBOL}${formatAmount(item.unit_price)} x ${item.quantity} = ${CURRENCY_SYMBOL}${formatAmount(item.total_price)}`);
+            const itemName = item.item?.name || 'Item';
+            const variationName = item.item_variation ? item.item_variation.name : undefined;
+            await printWrappedItem(item.quantity, itemName, variationName);
+            await ReactNativePosPrinter.printText(`    ${CURRENCY_SYMBOL_PRINT}${formatAmount(item.unit_price)} x ${item.quantity} = ${CURRENCY_SYMBOL_PRINT}${formatAmount(item.total_price)}`);
             if (i !== order.order_items.length - 1) await ReactNativePosPrinter.newLine();
         }
 
@@ -146,20 +213,20 @@ export const printReceipt = async (order: Order, wifiName?: string, wifiPassword
         const subtotal = order.order_items.reduce((sum, item) =>
             sum + (Number(item.total_price) || 0), 0
         );
-        await ReactNativePosPrinter.printText(`Subtotal: ${CURRENCY_SYMBOL}${formatAmount(subtotal)}`);
+        await ReactNativePosPrinter.printText(`Subtotal: ${CURRENCY_SYMBOL_PRINT}${formatAmount(subtotal)}`);
         if (order.discount_amount > 0) {
-            await ReactNativePosPrinter.printText(`Discount: -${CURRENCY_SYMBOL}${formatAmount(order.discount_amount)}`);
+            await ReactNativePosPrinter.printText(`Discount: -${CURRENCY_SYMBOL_PRINT}${formatAmount(order.discount_amount)}`);
         }
 
         // Points redemption (difference between subtotal-discount and total)
         const expectedTotal = subtotal - (order.discount_amount || 0);
         const pointsRedeemed = expectedTotal - order.total_amount;
         if (pointsRedeemed > 0) {
-            await ReactNativePosPrinter.printText(`Points Redeemed: -${CURRENCY_SYMBOL}${formatAmount(pointsRedeemed)}`);
+            await ReactNativePosPrinter.printText(`Points Redeemed: -${CURRENCY_SYMBOL_PRINT}${formatAmount(pointsRedeemed)}`);
         }
 
         // Total with emphasis
-        await ReactNativePosPrinter.printText(`*** TOTAL: ${CURRENCY_SYMBOL}${formatAmount(order.total_amount)} ***`, { bold: true, fontType: 'C' });
+        await ReactNativePosPrinter.printText(`*** TOTAL: ${CURRENCY_SYMBOL_PRINT}${formatAmount(order.total_amount)} ***`, { bold: true, fontType: 'C' });
         await ReactNativePosPrinter.printText(`Payment: ${order.payment_method || 'Not Set'}`);
 
         // Points summary section for customers (uses backend data directly)
@@ -167,7 +234,7 @@ export const printReceipt = async (order: Order, wifiName?: string, wifiPassword
             await ReactNativePosPrinter.printText('-'.repeat(32));
             await ReactNativePosPrinter.printText('*** LOYALTY POINTS ***');
             await ReactNativePosPrinter.printText(`Total Points: ${Number(order.customer.points).toFixed(0)}`);
-            await ReactNativePosPrinter.printText(`Balance: ${CURRENCY_SYMBOL}${formatAmount(order.customer.balance)}`);
+            await ReactNativePosPrinter.printText(`Balance: ${CURRENCY_SYMBOL_PRINT}${formatAmount(order.customer.balance)}`);
         }
 
         // Footer
@@ -240,8 +307,8 @@ export const printCustomerToken = async (order: Order, wifiName?: string, wifiPa
 
     for (const item of order.order_items) {
       const name = item.item?.name || 'Item';
-      const variation = item.item_variation ? ` (${item.item_variation.name || item.item_variation.name_bn})` : '';
-      await ReactNativePosPrinter.printText(`>> ${item.quantity}x ${name}${variation}`, { fontType: 'C' });
+      const variationName = item.item_variation ? (item.item_variation.name || item.item_variation.name_bn) : undefined;
+      await printWrappedItem(item.quantity, name, variationName, { fontType: 'C' });
     }
 
     if (wifiName) {
@@ -290,15 +357,15 @@ export const printSalesReport = async (report: any, printerAddress?: string): Pr
         await ReactNativePosPrinter.printText('-'.repeat(32));
 
         // Main Stats
-        await ReactNativePosPrinter.printText(`Total Sales: ${CURRENCY_SYMBOL}${formatAmount(report.total_sales)}`);
+        await ReactNativePosPrinter.printText(`Total Sales: ${CURRENCY_SYMBOL_PRINT}${formatAmount(report.total_sales)}`);
         await ReactNativePosPrinter.printText(`Total Orders: ${report.total_orders}`);
-        await ReactNativePosPrinter.printText(`Bar Sales: ${CURRENCY_SYMBOL}${formatAmount(report.bar_sales)}`);
+        await ReactNativePosPrinter.printText(`Bar Sales: ${CURRENCY_SYMBOL_PRINT}${formatAmount(report.bar_sales)}`);
         await ReactNativePosPrinter.printText(`Bar Orders: ${report.bar_orders}`);
-        await ReactNativePosPrinter.printText(`Kitchen Sales: ${CURRENCY_SYMBOL}${formatAmount(report.kitchen_sales)}`);
+        await ReactNativePosPrinter.printText(`Kitchen Sales: ${CURRENCY_SYMBOL_PRINT}${formatAmount(report.kitchen_sales)}`);
         await ReactNativePosPrinter.printText(`Kitchen Orders: ${report.kitchen_orders}`);
         await ReactNativePosPrinter.printText('-'.repeat(32));
-        await ReactNativePosPrinter.printText(`Total Expenses: ${CURRENCY_SYMBOL}${formatAmount(report.total_expenses)}`);
-        await ReactNativePosPrinter.printText(`Credit Amount: ${CURRENCY_SYMBOL}${formatAmount(report.credit_amount)}`, { bold: true });
+        await ReactNativePosPrinter.printText(`Total Expenses: ${CURRENCY_SYMBOL_PRINT}${formatAmount(report.total_expenses)}`);
+        await ReactNativePosPrinter.printText(`Credit Amount: ${CURRENCY_SYMBOL_PRINT}${formatAmount(report.credit_amount)}`, { bold: true });
         await ReactNativePosPrinter.printText('-'.repeat(32));
 
         // Footer
