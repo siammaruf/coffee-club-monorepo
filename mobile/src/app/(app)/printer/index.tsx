@@ -14,6 +14,14 @@ export default function PrinterScan() {
   const [selectedPrinter, setSelectedPrinter] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const handleBack = () => {
+    if (router.canGoBack && router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/(tabs)/orders');
+    }
+  };
+
   useEffect(() => {
     let available = false;
     try {
@@ -71,7 +79,7 @@ export default function PrinterScan() {
     return (
       <View
         className="flex-1 bg-gray-50 items-center justify-center px-8"
-        style={insets.top ? { paddingTop: insets.top } : { paddingTop: 10 }}
+        style={{ paddingTop: insets.top }}
       >
         <Ionicons name="print-outline" size={64} color="#D1D5DB" />
         <Text className="mt-4 text-gray-500 text-lg font-semibold text-center">
@@ -81,34 +89,35 @@ export default function PrinterScan() {
           Bluetooth printing requires a custom development build. It is not available in Expo Go.
         </Text>
         <TouchableOpacity
-          onPress={() => router.back()}
-          className="mt-6 px-6 py-3 bg-blue-600 rounded-xl"
+          onPress={handleBack}
+          className="mt-6 px-6 py-4 bg-blue-600 rounded-xl w-full"
         >
-          <Text className="text-white font-semibold">Go Back</Text>
+          <Text className="text-white font-semibold text-center text-lg">Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50"
-    style={ insets.top ? { paddingTop: insets.top } : {paddingTop: 10} }
-    >
-      {/* Fixed Header */}
-      <View className="bg-gray-50 px-4 pt-4 pb-2 border-b border-gray-200 z-10 absolute top-0 left-0 right-0">
+    <View className="flex-1 bg-gray-50">
+      {/* Header with safe area */}
+      <View
+        className="bg-gray-50 px-4 pb-2 border-b border-gray-200"
+        style={{ paddingTop: insets.top + 16 }}
+      >
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
             <TouchableOpacity
-              onPress={() => router.back()}
-              className="p-2 rounded-full bg-white border border-gray-200 mr-2"
+              onPress={handleBack}
+              className="p-3 rounded-full bg-white border border-gray-200 mr-2"
             >
-              <Ionicons name="arrow-back" size={22} color="#2563EB" />
+              <Ionicons name="arrow-back" size={24} color="#2563EB" />
             </TouchableOpacity>
             <Text className="text-lg font-bold text-gray-800">Scan Bluetooth Printers</Text>
           </View>
         </View>
       </View>
-      <View className="pt-20 flex-1">
+      <View className="flex-1">
         {loading ? (
           <View className="flex-1 items-center justify-center">
             <Ionicons name={"bluetooth-searching" as any} size={48} color="#2563EB" />

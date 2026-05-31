@@ -69,6 +69,9 @@ export class CacheService {
       this.logger.debug(`Deleted ${deletedCount} keys matching pattern: ${fullPattern}`);
     } catch (error) {
       this.logger.error(`Error deleting keys by pattern "${pattern}":`, error);
+      // Aggressive fallback: clear entire cache to prevent stale permission/user data
+      this.logger.warn('Falling back to cache.clear() due to pattern deletion failure');
+      await this.cache.clear();
     }
   }
 

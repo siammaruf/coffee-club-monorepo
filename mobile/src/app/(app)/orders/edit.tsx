@@ -327,9 +327,9 @@ export default function EditOrderScreen() {
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => router.back()}
-              className="mr-3 p-1.5 rounded-lg bg-gray-100"
+              className="mr-3 p-3 rounded-lg bg-gray-100"
             >
-              <Ionicons name="arrow-back" size={18} color="#374151" />
+              <Ionicons name="arrow-back" size={24} color="#374151" />
             </TouchableOpacity>
             <View>
               <Text className="text-lg font-bold text-gray-800">Edit Order</Text>
@@ -383,9 +383,9 @@ export default function EditOrderScreen() {
                 <Text className="text-sm font-semibold text-gray-800">Tables</Text>
                 <TouchableOpacity
                   onPress={() => { loadTables(); setShowTableModal(true); }}
-                  className="bg-blue-500 px-2 py-1 rounded"
+                  className="bg-blue-500 px-5 py-2.5 rounded-lg flex-row items-center"
                 >
-                  <Text className="text-white text-xs font-medium">Select</Text>
+                  <Text className="text-white text-sm font-semibold">Select</Text>
                 </TouchableOpacity>
               </View>
 
@@ -411,9 +411,10 @@ export default function EditOrderScreen() {
               <Text className="text-sm font-semibold text-gray-800">Items</Text>
               <TouchableOpacity
                 onPress={() => { loadProducts(); loadCategories(); setShowProductModal(true); }}
-                className="bg-green-500 px-4 py-2 rounded"
+                className="bg-green-500 px-5 py-2.5 rounded-lg flex-row items-center"
               >
-                <Text className="text-white text-xs font-medium">Add</Text>
+                <Ionicons name="add" size={18} color="#ffffff" />
+                <Text className="text-white text-sm font-semibold ml-1">Add</Text>
               </TouchableOpacity>
             </View>
 

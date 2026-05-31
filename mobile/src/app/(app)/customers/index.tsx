@@ -123,9 +123,9 @@ export default function CustomerListScreen() {
                     <View className="flex-row items-center">
                         <TouchableOpacity
                             onPress={() => router.back()}
-                            className="p-2 rounded-full bg-white border border-gray-200 mr-2"
+                            className="p-3 rounded-full bg-white border border-gray-200 mr-2"
                         >
-                            <Ionicons name="arrow-back" size={22} color="#F59E0B" />
+                            <Ionicons name="arrow-back" size={24} color="#F59E0B" />
                         </TouchableOpacity>
                         <Text className="text-2xl font-bold text-gray-800">Customers</Text>
                     </View>

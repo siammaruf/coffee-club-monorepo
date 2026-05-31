@@ -1,3 +1,4 @@
+const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require('nativewind/metro');
 const config = getDefaultConfig(__dirname);
@@ -14,4 +15,16 @@ const exclusionList = [
 
 config.resolver.blockList = exclusionList;
 
-module.exports = withNativeWind(config, { input: './global.css' });
+const finalConfig = withNativeWind(config, { 
+  input: './global.css',
+});
+
+// Fix 1: react-native-css-interop stores cssInterop_outputDirectory as a relative path,
+// but Metro passes absolute paths to the transformer. Force it to absolute.
+if (finalConfig.transformer?.cssInterop_outputDirectory) {
+  finalConfig.transformer.cssInterop_outputDirectory = path.resolve(
+    finalConfig.transformer.cssInterop_outputDirectory
+  );
+}
+
+module.exports = finalConfig;

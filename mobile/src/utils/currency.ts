@@ -1,4 +1,5 @@
 export const CURRENCY_SYMBOL = '\u09F3'; // ৳
+export const CURRENCY_SYMBOL_PRINT = 'Tk'; // Thermal printers do not support Bengali Unicode
 
 export function formatPrice(
   value: number | string | null | undefined,

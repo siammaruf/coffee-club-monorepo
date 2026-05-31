@@ -67,8 +67,8 @@ export default function ExpenseViewScreen() {
         >
             {/* Header */}
             <View className="flex-row items-center justify-between mb-4">
-                <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full bg-white border border-gray-200">
-                    <Ionicons name="arrow-back" size={22} color="#EF4444" />
+                <TouchableOpacity onPress={() => router.back()} className="p-3 rounded-full bg-white border border-gray-200">
+                    <Ionicons name="arrow-back" size={24} color="#EF4444" />
                 </TouchableOpacity>
                 <Text className="text-lg font-bold text-gray-800 flex-1 text-center">Expense Details</Text>
                 {expense.status !== 'approved' && (

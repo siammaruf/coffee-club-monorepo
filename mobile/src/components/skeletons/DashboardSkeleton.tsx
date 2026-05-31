@@ -6,7 +6,7 @@ const DashboardSkeleton = () => (
     <TitleBar showUserInfo={true} showLocation={true} showSearch={true} />
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
       {/* Welcome Section Skeleton */}
-      <View className="bg-gradient-to-r from-orange-500 to-orange-400 mx-4 mt-20 rounded-2xl h-24 flex-row items-center px-4">
+      <View className="bg-gradient-to-r from-orange-500 to-orange-400 mx-4 mt-4 rounded-2xl h-24 flex-row items-center px-4">
         <View className="flex-1">
           <View className="w-32 h-5 bg-gray-200 rounded mb-2" />
           <View className="w-40 h-4 bg-gray-200 rounded" />
