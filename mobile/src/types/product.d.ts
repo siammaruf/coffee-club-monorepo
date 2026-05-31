@@ -69,6 +69,7 @@ export interface GetAllProductsParams {
   type?: "BAR" | "KITCHEN";
   categorySlug?: string;
   status?: string;
+  statuses?: string[];
   sort?: 'name' | 'price' | 'created_at' | 'updated_at';
   order?: 'asc' | 'desc';
   min_price?: number;

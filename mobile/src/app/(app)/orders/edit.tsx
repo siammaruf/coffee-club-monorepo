@@ -94,7 +94,7 @@ export default function EditOrderScreen() {
     try {
       const response = await productService.getAll({
         categorySlug: categorySlug,
-        status: 'active'
+        statuses: ['active', 'available']
       });
       if (response && response.data) {
         setProducts(response.data);

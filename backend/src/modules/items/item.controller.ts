@@ -89,6 +89,7 @@ export class ItemController {
   @ApiQuery({ name: 'categorySlug', description: 'Filter by category slug', example: 'beverages', required: false })
   @ApiQuery({ name: 'type', description: 'Filter by item type', example: 'food', required: false })
   @ApiQuery({ name: 'status', description: 'Filter by item status', example: 'available', required: false })
+  @ApiQuery({ name: 'statuses', description: 'Filter by multiple item statuses (comma-separated)', example: 'active,available', required: false })
   @ApiResponse({ status: 200, description: 'List of items retrieved successfully' })
   async findAll(
     @Query('page') page?: string,
@@ -96,7 +97,8 @@ export class ItemController {
     @Query('search') search?: string,
     @Query('categorySlug') categorySlug?: string,
     @Query('type') type?: string,
-    @Query('status') status?: string
+    @Query('status') status?: string,
+    @Query('statuses') statuses?: string
   ): Promise<{
     data: ItemResponseDto[],
     total: number,
@@ -115,7 +117,8 @@ export class ItemController {
       search,
       categorySlug,
       type,
-      status
+      status,
+      statuses: statuses ? statuses.split(',').map(s => s.trim()) : undefined
     });
     const totalPages = Math.ceil(total / limitNumber);
     const responseData: ItemResponseDto[] = data.map(
