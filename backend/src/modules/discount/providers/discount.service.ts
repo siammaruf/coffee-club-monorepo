@@ -105,7 +105,10 @@ export class DiscountService {
             this.validateDiscountType(updateDiscountDto.discount_type);
         }
 
-        const discount = await this.findOne(id);
+        const discount = await this.discountRepository.findOne({ where: { id } });
+        if (!discount) {
+            throw new NotFoundException(`Discount with ID ${id} not found`);
+        }
         const updatedDiscount = Object.assign(discount, updateDiscountDto);
         const savedDiscount = await this.discountRepository.save(updatedDiscount);
         
