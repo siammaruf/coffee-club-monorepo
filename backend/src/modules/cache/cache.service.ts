@@ -44,12 +44,13 @@ export class CacheService {
         ? `${this.redisPrefix}:${pattern}`
         : pattern;
 
+      const keysToDelete: string[] = [];
       let cursor: string | number = '0';
-      let deletedCount = 0;
       do {
-        const result = await redisClient.scan(
-          cursor, 'MATCH', fullPattern, 'COUNT', 100,
-        );
+        const result = await redisClient.scan(cursor, {
+          MATCH: fullPattern,
+          COUNT: 100,
+        });
         // Support both ioredis ([cursor, keys]) and node-redis ({ cursor, keys })
         let nextCursor: string | number;
         let keys: string[];
@@ -60,26 +61,33 @@ export class CacheService {
           keys = result.keys;
         }
         cursor = nextCursor;
-        if (keys.length > 0) {
-          await redisClient.del(...keys);
-          // Also delete from primary (in-memory) cache. Cacheable.delete()
-          // removes from both tiers, so we pass the app-level key to clear
-          // the in-memory layer as well.
-          for (const key of keys) {
-            const appKey = this.redisPrefix && key.startsWith(`${this.redisPrefix}:`)
-              ? key.slice(`${this.redisPrefix}:`.length)
-              : key;
-            try {
-              await this.cache.delete(appKey);
-            } catch {
-              // Ignore errors deleting from primary cache
-            }
-          }
-          deletedCount += keys.length;
-        }
+        keysToDelete.push(...keys);
       } while (String(cursor) !== '0');
 
-      this.logger.debug(`Deleted ${deletedCount} keys matching pattern: ${fullPattern}`);
+      if (keysToDelete.length > 0) {
+        // Delete from Redis in batches to avoid argument limits
+        const batchSize = 100;
+        for (let i = 0; i < keysToDelete.length; i += batchSize) {
+          const batch = keysToDelete.slice(i, i + batchSize);
+          await redisClient.del(...batch);
+        }
+
+        // Also delete from primary (in-memory) cache. Cacheable.delete()
+        // removes from both tiers, so we pass the app-level key to clear
+        // the in-memory layer as well.
+        for (const key of keysToDelete) {
+          const appKey = this.redisPrefix && key.startsWith(`${this.redisPrefix}:`)
+            ? key.slice(`${this.redisPrefix}:`.length)
+            : key;
+          try {
+            await this.cache.delete(appKey);
+          } catch {
+            // Ignore errors deleting from primary cache
+          }
+        }
+      }
+
+      this.logger.debug(`Deleted ${keysToDelete.length} keys matching pattern: ${fullPattern}`);
     } catch (error) {
       this.logger.error(`Error deleting keys by pattern "${pattern}":`, error);
       // Aggressive fallback: clear entire cache to prevent stale permission/user data
@@ -110,9 +118,10 @@ export class CacheService {
       const found: string[] = [];
       let cursor: string | number = '0';
       do {
-        const result = await redisClient.scan(
-          cursor, 'MATCH', fullPattern, 'COUNT', 100,
-        );
+        const result = await redisClient.scan(cursor, {
+          MATCH: fullPattern,
+          COUNT: 100,
+        });
         let nextCursor: string | number;
         let keys: string[];
         if (Array.isArray(result)) {
