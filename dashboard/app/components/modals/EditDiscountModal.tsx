@@ -9,7 +9,7 @@ import type { Discount } from "~/types/discount";
 interface EditDiscountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (id: string, discount: Omit<Discount, "id">) => void;
+  onUpdate: (id: string, discount: Omit<Discount, "id">) => Promise<void>;
   discount: Discount | null;
 }
 
@@ -26,6 +26,7 @@ export default function EditDiscountModal({
     description: "",
     expiry_date: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (discount) {
@@ -33,7 +34,7 @@ export default function EditDiscountModal({
         name: discount.name,
         discount_type: discount.discount_type,
         discount_value: discount.discount_value,
-        description: discount.description,
+        description: discount.description || "",
         expiry_date: discount.expiry_date,
       });
     }
@@ -41,12 +42,18 @@ export default function EditDiscountModal({
 
   if (!isOpen || !discount) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate(discount.id, formData);
+    setIsSubmitting(true);
+    try {
+      await onUpdate(discount.id, formData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
     onClose();
   };
 
@@ -190,15 +197,16 @@ export default function EditDiscountModal({
               variant="outline"
               onClick={handleClose}
               className="px-6"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="px-6 bg-orange-600 hover:bg-orange-700"
-              disabled={!formData.name.trim() || !formData.discount_type || formData.discount_value <= 0}
+              disabled={!formData.name.trim() || !formData.discount_type || formData.discount_value <= 0 || isSubmitting}
             >
-              Update Discount
+              {isSubmitting ? "Updating..." : "Update Discount"}
             </Button>
           </div>
         </form>

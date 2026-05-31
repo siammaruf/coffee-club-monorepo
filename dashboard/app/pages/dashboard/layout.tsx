@@ -1,7 +1,7 @@
-import { Link, Outlet } from "react-router";
+import { Link, Outlet, useNavigate } from "react-router";
 import Sidebar from "../../components/layout/sidebar";
 import { AuthGuard } from "../../hooks/auth/AuthGuard";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import { SidebarProvider, useSidebar } from "../../hooks/useSidebar";
 import { Menu, User, LogOut, ChevronDown } from "lucide-react";
@@ -13,13 +13,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import { LogoutButton } from "../../hooks/auth/LogoutButton";
+import { logout } from "../../redux/features/authSlice";
+import { authService } from "../../services/httpServices/authService";
 
 const selectCurrentUser = (state: any) => state.auth?.user;
 
 function DashboardContent() {
   const currentUser = useSelector(selectCurrentUser);
   const { isOpen, toggle, close } = useSidebar();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      dispatch(logout());
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -93,11 +107,11 @@ function DashboardContent() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <LogoutButton className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 cursor-pointer">
+                  <DropdownMenuItem onSelect={handleLogout} className="text-red-600 hover:text-red-700 cursor-pointer focus:text-red-600">
+                    <div className="flex items-center gap-2">
                       <LogOut className="w-4 h-4" />
                       <span>Logout</span>
-                    </LogoutButton>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
