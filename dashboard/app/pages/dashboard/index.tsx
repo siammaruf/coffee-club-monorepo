@@ -290,7 +290,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Average Order Value"
-          value={dashboard?.average_order_value !== undefined ? `৳${dashboard.average_order_value}` : "--"}
+          value={dashboard?.average_order_value !== undefined ? `৳${Number(dashboard.average_order_value).toFixed(2)}` : "--"}
           subtitle="Avg. value today"
           icon={DollarSign}
           iconColor="text-indigo-600"
