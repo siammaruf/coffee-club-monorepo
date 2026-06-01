@@ -7,7 +7,8 @@ export interface LoginResponse {
   statusCode?: number;
   data?: {
     user: User;
-    token: string;
+    access_token: string;
+    refresh_token: string;
   };
 }
 
@@ -64,6 +65,17 @@ export interface ResetPasswordResponse {
   statusCode?: number;
   status?: string;
   token?: string;
+}
+
+export interface RefreshTokenResponse {
+  status: string;
+  message: string;
+  statusCode: number;
+  data: {
+    access_token: string;
+    token_type: string;
+  };
+  timestamp?: string;
 }
 
 export interface AuthMeResponse {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ImageBackground, Alert, BackHandler } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ImageBackground, Alert, BackHandler, Linking } from 'react-native';
+import Constants from 'expo-constants';
 import { useAuth } from '@/context/AuthContext';
 import InputField from '@/components/common/InputField';
 import type { LoginFormData } from '@/types/auth';
@@ -62,7 +63,9 @@ export default function LoginScreen() {
     };
 
     if (!isConnected) {
-        return <NoInternetScreen />;
+        return <NoInternetScreen onRetry={() => {
+            NetInfo.fetch().then(state => setIsConnected(state.isConnected ?? true));
+        }} />;
     }
 
     return (
@@ -151,6 +154,38 @@ export default function LoginScreen() {
                         {isLoading ? 'Signing In...' : 'Sign In'}
                     </Text>
                 </TouchableOpacity>
+
+                {/* Footer */}
+                <View className="mt-auto items-center pb-6 pt-4">
+                    <Text className="text-gray-400 text-xs text-center leading-5 tracking-wider">
+                        © {new Date().getFullYear()} {' '}
+                        <Text
+                            className="text-gray-500 font-medium"
+                            onPress={() => Linking.openURL('https://www.coffee2eat.com')}
+                        >
+                            Coffee Club
+                        </Text>
+                        . All rights reserved.{'\n'}
+                        Developed and maintained by {' '}
+                        <Text
+                            className="text-gray-500 font-medium"
+                            onPress={() => Linking.openURL('https://www.cofixer.com')}
+                        >
+                            CoFixer
+                        </Text>
+                        .{'\n'}{"\n"}
+                        <Text
+                            className="text-gray-500 text-xs font-medium tracking-widest uppercase"
+                            onPress={() => Linking.openURL('https://www.coffee2eat.com')}
+                        >
+                            www.coffee2eat.com
+                        </Text>
+                        {'\n'}
+                        <Text className="text-gray-400 text-[10px]">
+                            v{Constants.expoConfig?.version}
+                        </Text>
+                    </Text>
+                </View>
             </View>
         </View>
     );
