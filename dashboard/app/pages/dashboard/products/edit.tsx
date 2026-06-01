@@ -198,6 +198,16 @@ export default function EditProduct() {
     try {
       const form = new FormData();
 
+      let regularPrice = Number(data.regular_price);
+      if (hasVariations && variations.length > 0) {
+        const variationPrices = variations
+          .map((v) => Number(v.regular_price))
+          .filter((p) => p > 0);
+        if (variationPrices.length > 0) {
+          regularPrice = Math.min(...variationPrices);
+        }
+      }
+
       // Basic fields
       form.append('name', data.name);
       form.append('name_bn', data.name_bn || "");
@@ -205,7 +215,7 @@ export default function EditProduct() {
       form.append('description', data.description || "");
       form.append('type', data.type);
       form.append('status', data.status);
-      form.append('regular_price', Number(data.regular_price).toString());
+      form.append('regular_price', regularPrice.toString());
       form.append('sale_price', Number(data.sale_price).toString());
       form.append('has_variations', hasVariations ? "true" : "false");
 
