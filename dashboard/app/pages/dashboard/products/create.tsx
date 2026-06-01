@@ -149,7 +149,17 @@ export default function CreateProduct() {
     try {
       const formData = new FormData();
 
-      Object.entries(data).forEach(([key, value]) => {
+      let regularPrice = data.regular_price;
+      if (hasVariations && variations.length > 0) {
+        const variationPrices = variations
+          .map((v) => Number(v.regular_price))
+          .filter((p) => p > 0);
+        if (variationPrices.length > 0) {
+          regularPrice = Math.min(...variationPrices);
+        }
+      }
+
+      Object.entries({ ...data, regular_price: regularPrice }).forEach(([key, value]) => {
         if (key !== 'category') {
           formData.append(key, value?.toString() || "");
         }
