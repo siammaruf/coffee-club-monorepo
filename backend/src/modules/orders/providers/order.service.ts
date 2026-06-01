@@ -76,7 +76,8 @@ export class OrderService {
     const todayOrdersCount = await this.orderRepository.count({
       where: {
         created_at: Between(startOfDay, endOfDay)
-      }
+      },
+      withDeleted: true
     });
     
     const orderNumber = (todayOrdersCount + 1).toString().padStart(3, '0');
@@ -123,6 +124,7 @@ export class OrderService {
       } catch (error: any) {
         if (error?.code === '23505' && attempts < maxAttempts) {
           this.logger.warn(`Order ID collision detected, retrying (attempt ${attempts}/${maxAttempts})...`);
+          await new Promise((r) => setTimeout(r, 50 * attempts));
           continue;
         }
         throw error;
@@ -587,7 +589,7 @@ export class OrderService {
     const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
     const tokenNumber = `T-${dateStr}-${uniqueId.slice(-3)}`;
 
-    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber } });
+    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber }, withDeleted: true });
     if (existing) {
       const fallbackNumber = `T-${dateStr}-${timestamp.toString().slice(-3)}`;
       return fallbackNumber;
