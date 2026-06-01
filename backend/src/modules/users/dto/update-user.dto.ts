@@ -14,5 +14,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @IsString()
   @IsOptional()
-  refresh_token?: string | null;
+  refresh_token?: string;
 }
