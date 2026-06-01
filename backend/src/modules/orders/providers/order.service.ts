@@ -69,19 +69,25 @@ export class OrderService {
     const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
     const datePrefix = `${year}${month}${day}`; 
-    
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-    
-    const todayOrdersCount = await this.orderRepository.count({
-      where: {
-        created_at: Between(startOfDay, endOfDay)
-      },
-      withDeleted: true
-    });
-    
-    const orderNumber = (todayOrdersCount + 1).toString().padStart(3, '0');
-    return `ORD-${datePrefix}${orderNumber}`;
+    const prefix = `ORD-${datePrefix}`;
+
+    const lastOrder = await this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.order_id LIKE :prefix', { prefix: `${prefix}%` })
+      .withDeleted()
+      .orderBy('order.order_id', 'DESC')
+      .getOne();
+
+    let nextNumber = 1;
+    if (lastOrder && lastOrder.order_id) {
+      const suffix = lastOrder.order_id.replace(prefix, '');
+      const num = parseInt(suffix, 10);
+      if (!isNaN(num)) {
+        nextNumber = num + 1;
+      }
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(3, '0')}`;
   }
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
