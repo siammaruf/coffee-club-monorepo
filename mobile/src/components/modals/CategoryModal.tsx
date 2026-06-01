@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -43,7 +43,7 @@ export default function CategoryModal({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/40 justify-end">
-        <View className="bg-white rounded-t-3xl px-4 pt-6 pb-2 max-h-[32rem]" style={{ paddingBottom: 8 + insets.bottom }}>
+        <View className="bg-white rounded-t-3xl px-4 pt-6 pb-2 max-h-[85%]" style={{ paddingBottom: 8 + insets.bottom }}>
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg text-gray-800">Select Category</Text>
             <TouchableOpacity onPress={onClose}>
@@ -59,7 +59,7 @@ export default function CategoryModal({
               placeholderTextColor="#9CA3AF"
               value={search}
               onChangeText={setSearch}
-              autoFocus={false}
+              autoFocus={true}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')}>
@@ -67,89 +67,94 @@ export default function CategoryModal({
               </TouchableOpacity>
             )}
           </View>
-          <ScrollView style={{ maxHeight: 420 }}>
-            <View className="flex-row flex-wrap -mx-1">
-              {showAllOption && (
-                <View style={{ width: '33.3333%' }} className="p-1">
-                  <TouchableOpacity
-                    onPress={() => {
-                      onSelectCategory('');
-                      onClose();
-                    }}
-                    className={`rounded-xl border-2 p-4 items-center ${
-                      selectedCategory === '' ? 'bg-[#EF4444] border-[#EF4444]' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <Ionicons
-                      name="apps-outline"
-                      size={24}
-                      color={selectedCategory === '' ? '#FFFFFF' : '#EF4444'}
-                    />
-                    <Text
-                      className={`mt-2 text-center text-sm ${
-                        selectedCategory === '' ? 'text-white' : 'text-gray-800'
-                      }`}
-                    >
-                      All
-                    </Text>
-                    <Text
-                      className={`text-center text-sm ${
-                        selectedCategory === '' ? 'text-white' : 'text-gray-800'
-                      }`}
-                    >
-                      Products
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {filteredCategories.map((category, idx) => {
-                const isLast = idx === filteredCategories.length - 1 && category.slug === 'oven-baked-pasta';
-                return (
-                  <View
-                    key={category.id}
-                    style={{ width: isLast ? '66.6666%' : '33.3333%' }}
-                    className="p-1"
-                  >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <ScrollView
+              style={{ maxHeight: 420 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View className="flex-row flex-wrap -mx-1">
+                {showAllOption && (
+                  <View style={{ width: '33.3333%' }} className="p-1">
                     <TouchableOpacity
                       onPress={() => {
-                        onSelectCategory(category.slug);
+                        onSelectCategory('');
                         onClose();
                       }}
                       className={`rounded-xl border-2 p-4 items-center ${
-                        selectedCategory === category.slug
-                          ? 'bg-[#EF4444] border-[#EF4444]'
-                          : 'bg-white border-gray-200'
+                        selectedCategory === '' ? 'bg-[#EF4444] border-[#EF4444]' : 'bg-white border-gray-200'
                       }`}
                     >
                       <Ionicons
-                        name={category.icon || 'apps-outline'}
+                        name="apps-outline"
                         size={24}
-                        color={selectedCategory === category.slug ? '#FFFFFF' : '#EF4444'}
+                        color={selectedCategory === '' ? '#FFFFFF' : '#EF4444'}
                       />
                       <Text
                         className={`mt-2 text-center text-sm ${
-                          selectedCategory === category.slug
-                            ? 'text-white'
-                            : 'text-gray-800'
+                          selectedCategory === '' ? 'text-white' : 'text-gray-800'
                         }`}
                       >
-                        {category.name}
+                        All
                       </Text>
                       <Text
                         className={`text-center text-sm ${
-                          selectedCategory === category.slug
-                            ? 'text-white'
-                            : 'text-gray-800'
+                          selectedCategory === '' ? 'text-white' : 'text-gray-800'
                         }`}
                       >
-                        {category.name_bn}
+                        Products
                       </Text>
                     </TouchableOpacity>
                   </View>
-                );
-              })}
-            </View>
-          </ScrollView>
+                )}
+                {filteredCategories.map((category, idx) => {
+                  const isLast = idx === filteredCategories.length - 1 && category.slug === 'oven-baked-pasta';
+                  return (
+                    <View
+                      key={category.id}
+                      style={{ width: isLast ? '66.6666%' : '33.3333%' }}
+                      className="p-1"
+                    >
+                      <TouchableOpacity
+                        onPress={() => {
+                          onSelectCategory(category.slug);
+                          onClose();
+                        }}
+                        className={`rounded-xl border-2 p-4 items-center ${
+                          selectedCategory === category.slug
+                            ? 'bg-[#EF4444] border-[#EF4444]'
+                            : 'bg-white border-gray-200'
+                        }`}
+                      >
+                        <Ionicons
+                          name={category.icon || 'apps-outline'}
+                          size={24}
+                          color={selectedCategory === category.slug ? '#FFFFFF' : '#EF4444'}
+                        />
+                        <Text
+                          className={`mt-2 text-center text-sm ${
+                            selectedCategory === category.slug
+                              ? 'text-white'
+                              : 'text-gray-800'
+                          }`}
+                        >
+                          {category.name}
+                        </Text>
+                        <Text
+                          className={`text-center text-sm ${
+                            selectedCategory === category.slug
+                              ? 'text-white'
+                              : 'text-gray-800'
+                          }`}
+                        >
+                          {category.name_bn}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </TouchableWithoutFeedback>
         </View>
       </View>
     </Modal>

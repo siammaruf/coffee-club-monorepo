@@ -92,7 +92,7 @@ export default function OrderForm() {
       setLoadingProducts(true);
       const productsResponse = await productService.getAll({
         categorySlug: categorySlug,
-        status: 'active'
+        statuses: ['active', 'available']
       });
       setProducts(productsResponse.data || []);
     } catch (error) {
