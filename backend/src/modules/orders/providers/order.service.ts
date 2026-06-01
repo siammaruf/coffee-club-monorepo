@@ -69,18 +69,25 @@ export class OrderService {
     const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
     const datePrefix = `${year}${month}${day}`; 
-    
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-    
-    const todayOrdersCount = await this.orderRepository.count({
-      where: {
-        created_at: Between(startOfDay, endOfDay)
+    const prefix = `ORD-${datePrefix}`;
+
+    const lastOrder = await this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.order_id LIKE :prefix', { prefix: `${prefix}%` })
+      .withDeleted()
+      .orderBy('order.order_id', 'DESC')
+      .getOne();
+
+    let nextNumber = 1;
+    if (lastOrder && lastOrder.order_id) {
+      const suffix = lastOrder.order_id.replace(prefix, '');
+      const num = parseInt(suffix, 10);
+      if (!isNaN(num)) {
+        nextNumber = num + 1;
       }
-    });
-    
-    const orderNumber = (todayOrdersCount + 1).toString().padStart(3, '0');
-    return `ORD-${datePrefix}${orderNumber}`;
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(3, '0')}`;
   }
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -123,6 +130,7 @@ export class OrderService {
       } catch (error: any) {
         if (error?.code === '23505' && attempts < maxAttempts) {
           this.logger.warn(`Order ID collision detected, retrying (attempt ${attempts}/${maxAttempts})...`);
+          await new Promise((r) => setTimeout(r, 50 * attempts));
           continue;
         }
         throw error;
@@ -587,7 +595,7 @@ export class OrderService {
     const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
     const tokenNumber = `T-${dateStr}-${uniqueId.slice(-3)}`;
 
-    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber } });
+    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber }, withDeleted: true });
     if (existing) {
       const fallbackNumber = `T-${dateStr}-${timestamp.toString().slice(-3)}`;
       return fallbackNumber;
