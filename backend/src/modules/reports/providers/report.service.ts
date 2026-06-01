@@ -359,7 +359,7 @@ export class ReportService implements OnModuleInit {
             throw new NotFoundException('No daily reports found for the provided IDs');
         }
         await this.invalidateReportCaches();
-        return { deleted: result.affected };
+        return { deleted: result.affected ?? 0 };
     }
 
     async getOverallFinancialSummary(): Promise<{
