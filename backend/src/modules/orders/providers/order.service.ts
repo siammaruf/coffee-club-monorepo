@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
@@ -97,20 +97,41 @@ export class OrderService {
     
     const totalAmount = order_items?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
     const discountAmount = this.calculateDiscountAmount(totalAmount, discount);
-    const order_id = await this.generateOrderId();
-    const token_number = await this.generateUnifiedTokenNumber();
 
-    const order = this.orderRepository.create({
-      ...rest,
-      order_id,
-      token_number,
-      tables,
-      discount,
-      user: createOrderDto.user_id ? { id: createOrderDto.user_id } : undefined,
-      total_amount: totalAmount,
-      discount_amount: discountAmount
-    });
-    const savedOrder = await this.orderRepository.save(order);
+    let savedOrder: Order | undefined;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        const order_id = await this.generateOrderId();
+        const token_number = await this.generateUnifiedTokenNumber();
+
+        const order = this.orderRepository.create({
+          ...rest,
+          order_id,
+          token_number,
+          tables,
+          discount,
+          user: createOrderDto.user_id ? { id: createOrderDto.user_id } : undefined,
+          total_amount: totalAmount,
+          discount_amount: discountAmount
+        });
+        savedOrder = await this.orderRepository.save(order);
+        break;
+      } catch (error: any) {
+        if (error?.code === '23505' && attempts < maxAttempts) {
+          this.logger.warn(`Order ID collision detected, retrying (attempt ${attempts}/${maxAttempts})...`);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (!savedOrder) {
+      throw new InternalServerErrorException('Failed to create order after maximum attempts');
+    }
     
     if (savedOrder.status !== OrderStatus.COMPLETED && savedOrder.status !== OrderStatus.CANCELLED) {
       for (const table of tables) {
