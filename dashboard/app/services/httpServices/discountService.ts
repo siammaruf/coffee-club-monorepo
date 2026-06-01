@@ -4,7 +4,7 @@ import type { Discount, DiscountListResponse, DiscountResponse, GetAllDiscountsP
 export const discountService = {
   create: (discount: FormData) => httpService.post<Discount>('/discounts', discount),
   getById: (id: string) => httpService.get<DiscountResponse>(`/discounts/${id}`),
-  update: (id: string, discount: FormData) => httpService.put<Discount>(`/discounts/${id}`, discount),
+  update: (id: string, discount: FormData) => httpService.patch<Discount>(`/discounts/${id}`, discount),
   delete: (id: string) => httpService.delete(`/discounts/${id}`),
   getAll: (params?: GetAllDiscountsParams) => {
     const config = params ? { params } : undefined;

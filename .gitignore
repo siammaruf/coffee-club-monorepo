@@ -51,3 +51,5 @@ client_secret_833710685013-vptmbjuroh4dlj6naribcbi3a7oh3oag.apps.googleuserconte
 .qa-runs/
 .mcp
 kitchen-template.xlsx
+.playwright
+.playwright-cli
