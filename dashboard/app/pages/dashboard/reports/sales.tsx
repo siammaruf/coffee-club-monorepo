@@ -144,9 +144,7 @@ export default function SalesReportPage() {
     setLoading(true);
     try {
       const params: any = {};
-      if (statusFilter) params.status = statusFilter;
-      if (dateFilter) params.date = dateFilter;
-      if (debouncedSearch) params.search = debouncedSearch;
+      if (dateFilter) params.dateFilter = dateFilter;
       const res = await reportService.getAll(params) as { data?: SalesReport[] };
       setReports(res.data || []);
     } catch (error) {
@@ -163,7 +161,7 @@ export default function SalesReportPage() {
     }
     try {
       await reportService.generate({ report_date: generateDate });
-      fetchReports();
+      await fetchReports();
       setDialog({ open: true, type: "success", message: "Report generated successfully!" });
     } catch (error) {
       setDialog({ open: true, type: "error", message: "Failed to generate report." });
@@ -177,7 +175,7 @@ export default function SalesReportPage() {
     }
     try {
       await reportService.regenerate(regenerateDate);
-      fetchReports();
+      await fetchReports();
       setDialog({ open: true, type: "success", message: "Report regenerated successfully!" });
     } catch (error) {
       setDialog({ open: true, type: "error", message: "Failed to regenerate report." });
@@ -188,7 +186,7 @@ export default function SalesReportPage() {
     if (!deleteDialog.reportId) return;
     try {
       await reportService.delete(deleteDialog.reportId);
-      fetchReports();
+      await fetchReports();
     } catch (error) {
       setDialog({ open: true, type: "error", message: "Failed to delete report." });
     } finally {
@@ -202,7 +200,7 @@ export default function SalesReportPage() {
     try {
       await Promise.all(Array.from(selectedIds).map(id => reportService.delete(id)));
       clearSelection();
-      fetchReports();
+      await fetchReports();
     } catch {
       setDialog({ open: true, type: "error", message: "Some reports could not be deleted." });
     } finally {
