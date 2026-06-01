@@ -242,4 +242,21 @@ export class AuthController {
     };
   }
 
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  async refreshToken(@Body() body: { refresh_token: string }) {
+    if (!body.refresh_token) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+    const result = await this.authService.refreshAccessToken(body.refresh_token);
+    return {
+      status: 'success',
+      message: 'Token refreshed successfully',
+      statusCode: HttpStatus.OK,
+      data: result,
+    };
+  }
+
 }

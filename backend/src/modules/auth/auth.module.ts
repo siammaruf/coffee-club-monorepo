@@ -10,6 +10,7 @@ import { UserModule } from '../users/user.module';
 import { EmailModule } from '../email/email.module';
 import { SmsModule } from '../sms/sms.module';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { User } from '../users/entities/user.entity';
 import { CacheModule } from '../cache/cache.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { WhatsAppModule } from '../whatsapp/whatsapp.module';
@@ -27,7 +28,7 @@ import { WhatsAppModule } from '../whatsapp/whatsapp.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([PasswordResetToken]),
+    TypeOrmModule.forFeature([PasswordResetToken, User]),
     EmailModule,
     SmsModule,
     CacheModule,

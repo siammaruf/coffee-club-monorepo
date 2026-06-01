@@ -1,5 +1,4 @@
-
-import { AuthMeResponse, ForgotPasswordResponse, LoginFormData, LoginResponse, ResetPasswordResponse, VerifyOTPResponse } from '../../types/auth';
+import { AuthMeResponse, ForgotPasswordResponse, LoginFormData, LoginResponse, RefreshTokenResponse, ResetPasswordResponse, VerifyOTPResponse } from '../../types/auth';
 import { httpService } from '../httpService';
 
 export const authService = {
@@ -9,5 +8,6 @@ export const authService = {
   resetPassword: (token: string, password: string) => httpService.post<ResetPasswordResponse>('/auth/reset-password', { token, password }),
   newUserPassword: (token: string, password: string) => httpService.post<ResetPasswordResponse>('/auth/new-user-password', { token, password }),
   checkAuthStatus: () => httpService.get<AuthMeResponse>('/auth/me'),
+  refreshToken: (refresh_token: string) => httpService.post<RefreshTokenResponse>('/auth/refresh', { refresh_token }),
   logout: () => httpService.post('/auth/logout'),
 };

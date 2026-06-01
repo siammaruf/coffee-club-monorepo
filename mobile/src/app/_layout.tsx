@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ReduxProvider from '@/redux/store';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import '../lib/nativewind-setup';
 import '../../global.css';
 
@@ -77,19 +78,22 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
 
+  const inAuthGroup = segments[0] === '(auth)';
+
   useEffect(() => {
     if (isLoading) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(app)/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, segments, inAuthGroup]);
 
+  // Keep loading screen until auth is resolved AND we know which screen to show.
+  // This prevents the dashboard from flashing before redirecting to login.
   if (isLoading) return <LoadingScreen />;
+  if (!isAuthenticated && !inAuthGroup) return <LoadingScreen />;
 
   return <Slot />;
 }
@@ -102,12 +106,14 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ReduxProvider>
-      <AuthProvider>
-        <SafeAreaProvider>
-          <RootLayoutNav />
-        </SafeAreaProvider>
-      </AuthProvider>
-    </ReduxProvider>
+    <ErrorBoundary>
+      <ReduxProvider>
+        <AuthProvider>
+          <SafeAreaProvider>
+            <RootLayoutNav />
+          </SafeAreaProvider>
+        </AuthProvider>
+      </ReduxProvider>
+    </ErrorBoundary>
   );
 }
