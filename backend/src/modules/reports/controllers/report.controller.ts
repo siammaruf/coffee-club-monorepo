@@ -576,6 +576,20 @@ export class SalesReportController {
         };
     }
 
+    @Delete('bulk/delete')
+    @ApiOperation({ summary: 'Bulk delete daily sales reports' })
+    @ApiBody({ schema: { type: 'object', properties: { ids: { type: 'array', items: { type: 'string' } } } } })
+    @ApiResponse({ status: 200, description: 'Daily sales reports deleted successfully' })
+    async bulkRemove(@Body() body: { ids: string[] }) {
+        const response = await this.reportService.bulkRemove(body.ids);
+        return {
+            data: response,
+            status: 'success',
+            message: `${response.deleted} daily sales report(s) deleted successfully`,
+            statusCode: HttpStatus.OK
+        };
+    }
+
     @Delete(':id')
     @ApiOperation({ summary: 'Delete daily sales report' })
     @ApiParam({ name: 'id', description: 'Daily sales report UUID' })

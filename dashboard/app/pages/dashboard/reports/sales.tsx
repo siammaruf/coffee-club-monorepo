@@ -187,6 +187,7 @@ export default function SalesReportPage() {
     try {
       await reportService.delete(deleteDialog.reportId);
       await fetchReports();
+      setDialog({ open: true, type: "success", message: "Report deleted successfully." });
     } catch (error) {
       setDialog({ open: true, type: "error", message: "Failed to delete report." });
     } finally {
@@ -196,13 +197,15 @@ export default function SalesReportPage() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
     setBulkLoading(true);
     try {
-      await Promise.all(Array.from(selectedIds).map(id => reportService.delete(id)));
+      await reportService.bulkDelete(Array.from(selectedIds));
       clearSelection();
       await fetchReports();
+      setDialog({ open: true, type: "success", message: `${count} report(s) deleted successfully.` });
     } catch {
-      setDialog({ open: true, type: "error", message: "Some reports could not be deleted." });
+      setDialog({ open: true, type: "error", message: "Failed to delete selected reports." });
     } finally {
       setBulkLoading(false);
     }

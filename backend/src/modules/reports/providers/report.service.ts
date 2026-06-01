@@ -350,6 +350,18 @@ export class ReportService implements OnModuleInit {
         return { deleted: true };
     }
 
+    async bulkRemove(ids: string[]): Promise<{ deleted: number }> {
+        if (!ids || ids.length === 0) {
+            throw new BadRequestException('No report IDs provided');
+        }
+        const result = await this.dailyReportRepository.delete({ id: In(ids) });
+        if (result.affected === 0) {
+            throw new NotFoundException('No daily reports found for the provided IDs');
+        }
+        await this.invalidateReportCaches();
+        return { deleted: result.affected };
+    }
+
     async getOverallFinancialSummary(): Promise<{
         total_sales: number;
         total_expenses: number;
