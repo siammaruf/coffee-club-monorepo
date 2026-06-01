@@ -485,7 +485,13 @@ export default function OrdersPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{order.order_id}...</div>
+                        <Link
+                          to={`/dashboard/orders/${order.id}`}
+                          state={{ fromPage: currentPage }}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {order.order_id}
+                        </Link>
                         <div className="text-xs text-gray-500">
                           Discount: {formatPrice(order.discount_amount || 0)}
                         </div>
