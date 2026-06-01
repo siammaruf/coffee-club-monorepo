@@ -1,33 +1,30 @@
-import { Alert } from 'react-native';
 import type { AxiosError } from 'axios';
 import type { ApiErrorResponse } from '../types/HttpService';
 
 export const handleAxiosError = (error: unknown): Error => {
   if (error instanceof Error && 'isAxiosError' in error) {
     const axiosError = error as AxiosError<ApiErrorResponse>;
-    
-    // Handle different status codes
+
+    // Handle different status codes — return descriptive errors without UI alerts
+    // to avoid alert storms when multiple requests fail simultaneously.
     switch (axiosError.response?.status) {
       case 400:
         return new Error(axiosError.response?.data?.message || 'Bad Request');
       case 401:
-        return new Error(axiosError.response?.data?.message || 'Unauthorized');
+        return new Error(axiosError.response?.data?.message || 'Session expired. Please log in again.');
       case 403:
-        Alert.alert('Access Denied', 'You do not have permission to perform this action.');
-        return new Error(axiosError.response?.data?.message || 'Forbidden');
+        return new Error(axiosError.response?.data?.message || 'Access Denied');
       case 404:
         return new Error(axiosError.response?.data?.message || 'Not Found');
       case 422:
         return new Error(axiosError.response?.data?.message || 'Validation Error');
       case 429:
-        Alert.alert('Rate Limit', 'Too many requests. Please try again later.');
-        return new Error('Too Many Requests');
+        return new Error('Too Many Requests. Please try again later.');
       case 500:
       case 502:
       case 503:
       case 504:
-        Alert.alert('Server Error', 'Something went wrong on our end. Please try again later.');
-        return new Error('Server Error');
+        return new Error('Server Error. Please try again later.');
       default:
         return new Error(axiosError.response?.data?.message || axiosError.message || 'An error occurred');
     }

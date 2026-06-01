@@ -37,7 +37,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         try {
             const response = await authService.login(credentials);
-            console.log('Login response:', response);
 
             const loginUser = response.data?.user;
             const userRole = loginUser?.role?.toLowerCase();
@@ -50,10 +49,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 throw new Error('Access denied. Only managers are allowed to login.');
             }
 
-            // Store auth token for Bearer authentication
-            const token = response.data?.token;
-            if (token) {
-                await StorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+            // Store tokens for Bearer authentication
+            const accessToken = response.data?.access_token;
+            const refreshToken = response.data?.refresh_token;
+            if (accessToken) {
+                await StorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
+            }
+            if (refreshToken) {
+                await StorageService.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
             }
 
             await StorageService.setUserSession(loginUser);
@@ -71,6 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         try {
             await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
             await StorageService.clearUserSession();
             authService.logout().catch(error => {
                 console.error('Logout API failed:', error);
@@ -98,6 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             const userRole = response.data?.role?.toLowerCase();
             if (userRole !== 'manager') {
+                await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
                 await StorageService.clearUserSession();
                 setUser(null);
                 setIsAuthenticated(false);
@@ -108,15 +114,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(response.data);
             setIsAuthenticated(true);
         } catch (error: any) {
-            const cachedUser = await StorageService.getUserSession();
-            if (cachedUser && cachedUser.role?.toLowerCase() === 'manager') {
-                setUser(cachedUser);
-                setIsAuthenticated(true);
-            } else {
-                await StorageService.clearUserSession();
-                setUser(null);
-                setIsAuthenticated(false);
-            }
+            // On any auth failure (401, network error, timeout), do NOT fall back to cached user.
+            // Clear everything and force re-login to avoid zombie authenticated state.
+            await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+            await StorageService.clearUserSession();
+            setUser(null);
+            setIsAuthenticated(false);
         } finally {
             setIsLoading(false);
         }

@@ -1,11 +1,13 @@
 import { Injectable, Logger, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../users/providers/user.service';
 import { UserStatus } from '../../users/enum/user-status.enum';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PasswordResetToken } from '../entities/password-reset-token.entity';
 import { Repository } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 import { EmailService } from 'src/modules/email/email.service';
 import { SmsService } from 'src/modules/sms/sms.service';
 import { WhatsAppMessageService } from '../../whatsapp/providers/whatsapp-message.service';
@@ -17,8 +19,11 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private configService: ConfigService,
     @InjectRepository(PasswordResetToken)
     private passwordResetTokenRepository: Repository<PasswordResetToken>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private emailService: EmailService,
     private smsService: SmsService,
     @Optional() private whatsappMessageService: WhatsAppMessageService,
@@ -108,12 +113,42 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
     const refresh_token = this.jwtService.sign(payload, { expiresIn: refreshTokenExpiry });
 
+    // Store refresh token hash in DB so we can revoke/rotate it
+    user.refresh_token = refresh_token;
+    await this.userService.update(user.id, { refresh_token });
+
     return {
       user,
       access_token,
       refresh_token,
       token_type: 'bearer'
     };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+      });
+      if (!user || user.refresh_token !== refreshToken) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const accessTokenExpiry = '15m';
+      const new_access_token = this.jwtService.sign(
+        { sub: user.id, email: user.email, role: user.role },
+        { expiresIn: accessTokenExpiry },
+      );
+
+      return {
+        access_token: new_access_token,
+        token_type: 'bearer',
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 
   private generateOtp(): string {

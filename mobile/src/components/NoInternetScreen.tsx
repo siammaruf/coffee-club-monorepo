@@ -1,7 +1,19 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
-export default function NoInternetScreen() {
+interface NoInternetScreenProps {
+    onRetry?: () => void;
+}
+
+export default function NoInternetScreen({ onRetry }: NoInternetScreenProps) {
+    const handleRetry = async () => {
+        const state = await NetInfo.fetch();
+        if (state.isConnected && onRetry) {
+            onRetry();
+        }
+    };
+
     return (
         <View className="flex-1 justify-center items-center bg-[#F3FAF9] px-6">
             <Image
@@ -21,6 +33,7 @@ export default function NoInternetScreen() {
             <TouchableOpacity
                 className="bg-[#EF4444] py-2 px-7 rounded-2xl mt-2 shadow"
                 activeOpacity={0.7}
+                onPress={handleRetry}
             >
                 <Text className="text-white text-base">
                     Retry

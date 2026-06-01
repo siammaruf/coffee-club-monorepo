@@ -61,6 +61,9 @@ export class User {
   @Column({nullable: true})
   picture: string;
 
+  @Column({nullable: true})
+  refresh_token: string | null;
+
   @Column({
     type: 'decimal',
     precision: 10,
