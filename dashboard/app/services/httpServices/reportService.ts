@@ -10,6 +10,7 @@ const reportService = {
   getAll: (params?: any) => httpService.get(BASE_URL, { params }),
   getById: (id: string) => httpService.get(`${BASE_URL}/${id}`),
   delete: (id: string) => httpService.delete(`${BASE_URL}/${id}`),
+  bulkDelete: (ids: string[]) => httpService.delete(`${BASE_URL}/bulk/delete`, { data: { ids } }),
   getDashboard: () => httpService.get(`${BASE_URL}/dashboard`),
   getSalesProgressChart: (params?: any) => httpService.get(`${BASE_URL}/charts/sales-progress`, { params }),
   getExpensesChart: (params?: any) => httpService.get(`${BASE_URL}/charts/expenses`, { params }),
