@@ -104,9 +104,6 @@ export class OrderTokensService {
       relations: ['order', 'order_items', 'order_items.item'] 
     });
 
-    console.log('token', token);
-    console.log('Order Item dto', dto.order_items);
-
     if (!token) throw new NotFoundException('Order token not found');
     if (dto.orderId) {
       const order = await this.orderRepository.findOne({ where: { id: dto.orderId } });
@@ -119,8 +116,6 @@ export class OrderTokensService {
       if (items.length !== itemIds.length) throw new BadRequestException('Some order items not found');
       token.order_items = items;
     }
-
-    console.log('Order Item', token.order_items);
 
     // Update other fields
     if (dto.token) token.token = dto.token;

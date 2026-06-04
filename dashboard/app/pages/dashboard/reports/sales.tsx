@@ -452,13 +452,14 @@ export default function SalesReportPage() {
                 <TableHead className="text-center">Total Sales</TableHead>
                 <TableHead className="text-center">Total Orders</TableHead>
                 <TableHead className="text-center">Total Expenses</TableHead>
+                <TableHead className="text-center">Net Amount</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-400">
+                    <TableCell colSpan={7} className="text-center text-gray-400">
                     Loading...
                   </TableCell>
                 </TableRow>
@@ -475,6 +476,7 @@ export default function SalesReportPage() {
                     <TableCell className="text-center">{formatCurrency(report.total_sales)}</TableCell>
                     <TableCell className="text-center">{report.total_orders}</TableCell>
                     <TableCell className="text-center">{formatCurrency(report.total_expenses)}</TableCell>
+                    <TableCell className="text-center">{formatCurrency(report.credit_amount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -504,7 +506,7 @@ export default function SalesReportPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-400">
+                  <TableCell colSpan={7} className="text-center text-gray-400">
                     No sales reports found.
                   </TableCell>
                 </TableRow>
