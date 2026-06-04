@@ -53,7 +53,7 @@ export default function EditExpenseModal({
   useEffect(() => {
     if (open) {
       expenseCategoryService.getAll().then((res: any) => {
-        setCategories(res.data?.data || []);
+        setCategories(res?.data || []);
       });
     }
   }, [open]);

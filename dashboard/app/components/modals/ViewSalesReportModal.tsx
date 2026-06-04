@@ -92,9 +92,9 @@ export default function ViewSalesReportModal({
               <span className="text-xs text-gray-500">Auto Generated</span>
               <span className="font-semibold">{report.is_auto_generated ? "Yes" : "No"}</span>
             </div>
-            {/* Credit Amount: full width and highlighted */}
+            {/* Net Amount: full width and highlighted */}
             <div className="col-span-1 sm:col-span-2 bg-blue-50 border border-blue-200 rounded p-4 flex flex-col mt-2">
-              <span className="text-xs text-blue-700 font-semibold uppercase tracking-wide">Credit Amount</span>
+              <span className="text-xs text-blue-700 font-semibold uppercase tracking-wide">Net Amount</span>
               <span className="text-2xl font-bold text-blue-900">{formatCurrency(report.credit_amount)}</span>
             </div>
           </div>
