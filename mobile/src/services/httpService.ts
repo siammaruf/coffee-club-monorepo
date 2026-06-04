@@ -13,7 +13,7 @@ import { STORAGE_KEYS } from '../utils/config/api';
 class HttpService {
   private api: AxiosInstance;
   private isRefreshing = false;
-  private refreshSubscribers: Array<(token: string) => void> = [];
+  private refreshSubscribers: Array<(token: string | null) => void> = [];
 
   constructor() {
     this.api = axios.create({
@@ -61,8 +61,12 @@ class HttpService {
         if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
           if (this.isRefreshing) {
             // Queue the request until refresh is complete
-            return new Promise((resolve) => {
-              this.refreshSubscribers.push((token: string) => {
+            return new Promise((resolve, reject) => {
+              this.refreshSubscribers.push((token: string | null) => {
+                if (!token) {
+                  reject(new Error('Token refresh failed'));
+                  return;
+                }
                 originalRequest.headers.Authorization = `Bearer ${token}`;
                 resolve(this.api(originalRequest));
               });
@@ -75,6 +79,10 @@ class HttpService {
           try {
             const refreshToken = await StorageService.getItem(STORAGE_KEYS.REFRESH_TOKEN);
             if (!refreshToken) {
+              // No refresh token means auth is permanently broken; clear everything
+              await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+              await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+              await StorageService.clearUserSession();
               throw new Error('No refresh token available');
             }
 
@@ -83,12 +91,16 @@ class HttpService {
               refresh_token: refreshToken,
             }, { timeout: API_CONFIG.TIMEOUT });
             const newAccessToken = refreshResponse.data?.data?.access_token;
+            const newRefreshToken = refreshResponse.data?.data?.refresh_token;
 
             if (!newAccessToken) {
               throw new Error('Refresh token response did not contain access_token');
             }
 
             await StorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, newAccessToken);
+            if (newRefreshToken) {
+              await StorageService.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+            }
 
             // Notify all queued requests
             this.refreshSubscribers.forEach((callback) => callback(newAccessToken));
@@ -96,11 +108,19 @@ class HttpService {
 
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return this.api(originalRequest);
-          } catch (refreshError) {
-            // Refresh failed — clear auth state and reject
-            await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-            await StorageService.clearUserSession();
+          } catch (refreshError: any) {
+            // Clear auth only if the server explicitly rejected the refresh token (401).
+            // For network errors, timeouts, or server errors, keep the tokens
+            // so the user stays logged in and the next request can retry.
+            const isAuthError = refreshError?.response?.status === 401;
+            if (isAuthError) {
+              await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+              await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+              await StorageService.clearUserSession();
+            }
+            // Reject all queued requests so they don't hang forever
+            this.refreshSubscribers.forEach((callback) => callback(null));
+            this.refreshSubscribers = [];
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;

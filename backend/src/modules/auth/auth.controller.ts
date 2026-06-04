@@ -255,7 +255,11 @@ export class AuthController {
       status: 'success',
       message: 'Token refreshed successfully',
       statusCode: HttpStatus.OK,
-      data: result,
+      data: {
+        access_token: result.access_token,
+        refresh_token: result.refresh_token,
+        token_type: result.token_type,
+      },
     };
   }
 

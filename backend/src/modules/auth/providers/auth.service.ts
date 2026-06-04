@@ -111,7 +111,10 @@ export class AuthService {
     const refreshTokenExpiry = rememberMe ? '30d' : '7d';
 
     const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
-    const refresh_token = this.jwtService.sign(payload, { expiresIn: refreshTokenExpiry });
+    const refresh_token = this.jwtService.sign(
+      { ...payload, rememberMe },
+      { expiresIn: refreshTokenExpiry },
+    );
 
     // Store refresh token hash in DB so we can revoke/rotate it
     user.refresh_token = refresh_token;
@@ -136,14 +139,26 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const accessTokenExpiry = '15m';
+      const rememberMe = payload.rememberMe === true;
+      const accessTokenExpiry = rememberMe ? '24h' : '15m';
+      const refreshTokenExpiry = rememberMe ? '30d' : '7d';
+
       const new_access_token = this.jwtService.sign(
         { sub: user.id, email: user.email, role: user.role },
         { expiresIn: accessTokenExpiry },
       );
 
+      // Rotate refresh token
+      const new_refresh_token = this.jwtService.sign(
+        { sub: user.id, email: user.email, role: user.role, rememberMe },
+        { expiresIn: refreshTokenExpiry },
+      );
+      user.refresh_token = new_refresh_token;
+      await this.userService.update(user.id, { refresh_token: new_refresh_token });
+
       return {
         access_token: new_access_token,
+        refresh_token: new_refresh_token,
         token_type: 'bearer',
       };
     } catch (error) {
