@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { authService } from '../services/httpServices/authService';
 import { StorageService } from '../services/storageService';
 import { STORAGE_KEYS } from '../utils/config/api';
@@ -93,12 +93,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const checkAuthStatus = async () => {
         setIsLoading(true);
         try {
-            const response = await Promise.race([
-                authService.checkAuthStatus(),
-                new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error('Auth check timeout')), 8000)
-                ),
-            ]);
+            // If there is no access token, skip the API call to avoid an unnecessary 401
+            // that triggers a refresh attempt with a missing refresh token.
+            const accessToken = await StorageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
+            if (!accessToken) {
+                const cachedSession = await StorageService.getUserSession();
+                if (cachedSession) {
+                    setUser(cachedSession);
+                    setIsAuthenticated(true);
+                } else {
+                    setUser(null);
+                    setIsAuthenticated(false);
+                }
+                return;
+            }
+
+            const response = await authService.checkAuthStatus();
 
             const userRole = response.data?.role?.toLowerCase();
             if (userRole !== 'manager') {
@@ -114,13 +124,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(response.data);
             setIsAuthenticated(true);
         } catch (error: any) {
-            // On any auth failure (401, network error, timeout), do NOT fall back to cached user.
-            // Clear everything and force re-login to avoid zombie authenticated state.
-            await StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            await StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-            await StorageService.clearUserSession();
-            setUser(null);
-            setIsAuthenticated(false);
+            // If tokens are gone, the interceptor already cleared them due to an
+            // irrecoverable auth failure (401 or missing refresh token).
+            const accessToken = await StorageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
+            const refreshToken = await StorageService.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (!accessToken && !refreshToken) {
+                setUser(null);
+                setIsAuthenticated(false);
+                return;
+            }
+
+            // For transient errors (network, timeout, 5xx), keep the cached session
+            // so the user isn't kicked out when offline or on a slow connection.
+            const cachedSession = await StorageService.getUserSession();
+            if (cachedSession) {
+                setUser(cachedSession);
+                setIsAuthenticated(true);
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -128,6 +151,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     useEffect(() => {
         checkAuthStatus();
+    }, []);
+
+    // Refresh auth when app comes back from background to prevent token expiry issues
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active') {
+                authService.checkAuthStatus().then((response) => {
+                    const userRole = response.data?.role?.toLowerCase();
+                    if (userRole === 'manager') {
+                        StorageService.setUserSession(response.data);
+                        setUser(response.data);
+                        setIsAuthenticated(true);
+                    } else {
+                        StorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                        StorageService.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+                        StorageService.clearUserSession();
+                        setUser(null);
+                        setIsAuthenticated(false);
+                    }
+                }).catch(async () => {
+                    // If the interceptor cleared tokens during the catch, update state
+                    const accessToken = await StorageService.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                    const refreshToken = await StorageService.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+                    if (!accessToken && !refreshToken) {
+                        setUser(null);
+                        setIsAuthenticated(false);
+                    }
+                    // Otherwise it's a transient error; keep current state
+                });
+            }
+        });
+        return () => subscription.remove();
     }, []);
 
     const value: AuthContextType = {
