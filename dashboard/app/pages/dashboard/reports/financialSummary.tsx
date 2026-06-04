@@ -264,7 +264,7 @@ export default function FinancialSummaryPage() {
                       <th className="p-2 border">Kitchen Orders</th>
                       <th className="p-2 border">Total Expenses</th>
                       <th className="p-2 border">Expense Items</th>
-                      <th className="p-2 border">Credit Amount</th>
+                      <th className="p-2 border">Net Amount</th>
                     </tr>
                   </thead>
                   <tbody>
