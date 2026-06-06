@@ -108,14 +108,14 @@ export default function OrderDetailsPage() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
+    switch (status) {
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
+      case 'PREPARING':
         return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -123,14 +123,14 @@ export default function OrderDetailsPage() {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
+    switch (status) {
+      case 'COMPLETED':
         return <CheckCircle className="w-4 h-4" />;
-      case 'pending':
+      case 'PENDING':
         return <AlertCircle className="w-4 h-4" />;
-      case 'processing':
+      case 'PREPARING':
         return <Package className="w-4 h-4" />;
-      case 'cancelled':
+      case 'CANCELLED':
         return <XCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
@@ -253,7 +253,7 @@ export default function OrderDetailsPage() {
   const subtotal = order.sub_total || 0;
   const discount = order.discount_amount || 0;
   const total = order.total_amount || 0;
-  const isPending = order.status?.toLowerCase() === 'pending';
+  const isPending = order.status === 'PENDING';
 
   return (
     <PermissionGuard permission="orders.view">
@@ -279,7 +279,7 @@ export default function OrderDetailsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {order.status && order.status.toLowerCase() !== 'cancelled' && (
+          {order.status && order.status !== 'CANCELLED' && (
             <Button
               variant="outline"
               size="sm"
