@@ -14,6 +14,6 @@ import { ItemVariation } from '../items/entities/item-variation.entity';
   ],
   controllers: [OrderItemController],
   providers: [OrderItemService],
-  exports: [OrderItemService],
+  exports: [TypeOrmModule, OrderItemService],
 })
 export class OrderItemModule {}

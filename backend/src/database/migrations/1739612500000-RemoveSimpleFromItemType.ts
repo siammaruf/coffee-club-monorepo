@@ -3,6 +3,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class RemoveSimpleFromItemType1739612500000
   implements MigrationInterface
 {
+  transaction = false;
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     const tableExists = await queryRunner.query(
       `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'cc_items'`,
