@@ -7,12 +7,14 @@ import { WebsiteContentService } from './website-content.service';
 import { WebsiteContentController } from './website-content.controller';
 import { SettingsModule } from '../settings/settings.module';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([HeroSlide, Advantage, Testimonial]),
     SettingsModule,
     CloudinaryModule,
+    CacheModule,
   ],
   controllers: [WebsiteContentController],
   providers: [WebsiteContentService],
