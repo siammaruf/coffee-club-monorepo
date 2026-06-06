@@ -9,12 +9,14 @@ import { Table } from '../table/entities/table.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { CartModule } from '../cart/cart.module';
 import { EmailModule } from '../email/email.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, Item, Table, Customer]),
     CartModule,
     EmailModule,
+    CacheModule,
   ],
   controllers: [CustomerOrdersController],
   providers: [CustomerOrdersService],
