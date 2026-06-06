@@ -7,6 +7,7 @@ import { databaseConfig } from './config/database.config';
 import { featureModules } from './config/modules.config';
 import { EncryptionUtil } from './common/utils/encryption.util';
 import { CacheModule } from './modules/cache/cache.module';
+import { Order } from './modules/orders/entities/order.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CacheModule } from './modules/cache/cache.module';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync(databaseConfig),
+    TypeOrmModule.forFeature([Order]),
     ...featureModules,
     CacheModule,
   ],

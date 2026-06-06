@@ -9,13 +9,25 @@ import { Reservation } from './entities/reservation.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ReservationStatus } from './enum/reservation-status.enum';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
+    private readonly cacheService: CacheService,
   ) {}
+
+  private async invalidateCache(): Promise<void> {
+    const patterns = ['reservations:*', 'reservation:*'];
+    for (const pattern of patterns) {
+      const keys = await this.cacheService.getKeys(pattern);
+      if (keys.length > 0) {
+        await this.cacheService.deleteMany(keys);
+      }
+    }
+  }
 
   async create(dto: CreateReservationDto, customerId?: string): Promise<Reservation> {
     // Validate date is today or in the future
@@ -33,7 +45,9 @@ export class ReservationsService {
       special_requests: dto.special_requests || null,
     });
 
-    return this.reservationRepository.save(reservation);
+    const saved = await this.reservationRepository.save(reservation);
+    await this.invalidateCache();
+    return saved;
   }
 
   async findAll(options: {
@@ -43,39 +57,45 @@ export class ReservationsService {
     status?: ReservationStatus;
   }): Promise<{ data: Reservation[]; total: number }> {
     const { page, limit, search, status } = options;
+    const cacheKey = `reservations:page:${page}:limit:${limit}:search:${search || 'none'}:status:${status || 'none'}`;
 
-    const query = this.reservationRepository.createQueryBuilder('reservation');
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const query = this.reservationRepository.createQueryBuilder('reservation');
 
-    if (status) {
-      query.andWhere('reservation.status = :status', { status });
-    }
+      if (status) {
+        query.andWhere('reservation.status = :status', { status });
+      }
 
-    if (search) {
-      query.andWhere(
-        '(LOWER(reservation.name) LIKE :search OR LOWER(reservation.email) LIKE :search OR reservation.phone LIKE :search)',
-        { search: `%${search.toLowerCase()}%` },
-      );
-    }
+      if (search) {
+        query.andWhere(
+          '(LOWER(reservation.name) LIKE :search OR LOWER(reservation.email) LIKE :search OR reservation.phone LIKE :search)',
+          { search: `%${search.toLowerCase()}%` },
+        );
+      }
 
-    query.orderBy('reservation.date', 'ASC')
-      .addOrderBy('reservation.time', 'ASC')
-      .addOrderBy('reservation.id', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      query.orderBy('reservation.date', 'ASC')
+        .addOrderBy('reservation.time', 'ASC')
+        .addOrderBy('reservation.id', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
-    return { data, total };
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
+    }, 120);
   }
 
   async findOne(id: string): Promise<Reservation> {
-    const reservation = await this.reservationRepository.findOne({
-      where: { id },
-      relations: ['customer'],
-    });
-    if (!reservation) {
-      throw new NotFoundException(`Reservation with ID ${id} not found`);
-    }
-    return reservation;
+    const cacheKey = `reservation:${id}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const reservation = await this.reservationRepository.findOne({
+        where: { id },
+        relations: ['customer'],
+      });
+      if (!reservation) {
+        throw new NotFoundException(`Reservation with ID ${id} not found`);
+      }
+      return reservation;
+    }, 120);
   }
 
   async update(id: string, dto: UpdateReservationDto): Promise<Reservation> {
@@ -101,12 +121,15 @@ export class ReservationsService {
     if (dto.special_requests !== undefined) reservation.special_requests = dto.special_requests || null;
     if (dto.status !== undefined) reservation.status = dto.status;
 
-    return this.reservationRepository.save(reservation);
+    const updated = await this.reservationRepository.save(reservation);
+    await this.invalidateCache();
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
     const reservation = await this.findOne(id);
     await this.reservationRepository.softDelete(id);
+    await this.invalidateCache();
   }
 
   // Customer-facing
@@ -116,21 +139,25 @@ export class ReservationsService {
     limit: number;
   }): Promise<{ data: Reservation[]; total: number }> {
     const { page, limit } = options;
+    const cacheKey = `reservations:customer:${customerId}:page:${page}:limit:${limit}`;
 
-    const query = this.reservationRepository.createQueryBuilder('reservation')
-      .where('reservation.customer_id = :customerId', { customerId })
-      .orderBy('reservation.date', 'DESC')
-      .addOrderBy('reservation.time', 'DESC')
-      .addOrderBy('reservation.id', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const query = this.reservationRepository.createQueryBuilder('reservation')
+        .where('reservation.customer_id = :customerId', { customerId })
+        .orderBy('reservation.date', 'DESC')
+        .addOrderBy('reservation.time', 'DESC')
+        .addOrderBy('reservation.id', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
-    return { data, total };
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
+    }, 120);
   }
 
     async bulkSoftDelete(ids: string[]): Promise<void> {
         await this.reservationRepository.softDelete(ids);
+        await this.invalidateCache();
     }
 
     async findTrashed(options: { page: number, limit: number, search?: string }) {
@@ -154,6 +181,7 @@ export class ReservationsService {
 
     async restore(id: string): Promise<void> {
         await this.reservationRepository.restore(id);
+        await this.invalidateCache();
     }
 
     async permanentDelete(id: string): Promise<void> {
@@ -165,10 +193,12 @@ export class ReservationsService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
         await this.reservationRepository.delete(id);
+        await this.invalidateCache();
     }
 
     async bulkRestore(ids: string[]): Promise<void> {
         await this.reservationRepository.restore(ids);
+        await this.invalidateCache();
     }
 
     async bulkPermanentDelete(ids: string[]): Promise<{ deleted: string[]; failed: { id: string; reason: string }[] }> {
@@ -196,6 +226,7 @@ export class ReservationsService {
             }
         }
 
+        await this.invalidateCache();
         return { deleted, failed };
     }
 }
