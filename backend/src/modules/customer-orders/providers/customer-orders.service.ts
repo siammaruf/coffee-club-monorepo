@@ -13,6 +13,7 @@ import { Table } from '../../table/entities/table.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { CartService } from '../../cart/providers/cart.service';
 import { EmailService } from '../../email/email.service';
+import { CacheService } from '../../cache/cache.service';
 import { CreateCustomerOrderDto } from '../dto/create-customer-order.dto';
 import { OrderStatus } from '../../orders/enum/order-status.enum';
 import { OrderType } from '../../orders/enum/order-type.enum';
@@ -35,6 +36,7 @@ export class CustomerOrdersService {
     private readonly customerRepository: Repository<Customer>,
     private readonly cartService: CartService,
     private readonly emailService: EmailService,
+    private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -46,6 +48,16 @@ export class CustomerOrdersService {
     const datePrefix = `${year}${month}${day}`;
     const timestamp = Date.now().toString().slice(-5);
     return `WEB-${datePrefix}${timestamp}`;
+  }
+
+  private async invalidateCache(): Promise<void> {
+    const patterns = ['customer-orders:*', 'orders:*', 'order:*'];
+    for (const pattern of patterns) {
+      const keys = await this.cacheService.getKeys(pattern);
+      if (keys.length > 0) {
+        await this.cacheService.deleteMany(keys);
+      }
+    }
   }
 
   async placeOrder(
@@ -253,6 +265,7 @@ export class CustomerOrdersService {
       throw new NotFoundException('Order not found after creation');
     }
 
+    await this.invalidateCache();
     return fullOrder;
   }
 
@@ -267,50 +280,56 @@ export class CustomerOrdersService {
     limit: number;
     totalPages: number;
   }> {
-    const offset = (page - 1) * limit;
+    const cacheKey = `customer-orders:${customerId}:page:${page}:limit:${limit}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const offset = (page - 1) * limit;
 
-    const [data, total] = await this.orderRepository.findAndCount({
-      where: { customer: { id: customerId } },
-      relations: ['orderItems', 'orderItems.item', 'orderItems.variation', 'tables'],
-      order: { created_at: 'DESC', id: 'ASC' as const },
-      skip: offset,
-      take: limit,
-    });
+      const [data, total] = await this.orderRepository.findAndCount({
+        where: { customer: { id: customerId } },
+        relations: ['orderItems', 'orderItems.item', 'orderItems.variation', 'tables'],
+        order: { created_at: 'DESC', id: 'ASC' as const },
+        skip: offset,
+        take: limit,
+      });
 
-    const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / limit);
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    }, 30);
   }
 
   async getOrder(customerId: string, orderId: string): Promise<Order> {
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId },
-      relations: [
-        'orderItems',
-        'orderItems.item',
-        'orderItems.variation',
-        'tables',
-        'customer',
-        'discount',
-      ],
-    });
+    const cacheKey = `customer-orders:order:${orderId}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+        relations: [
+          'orderItems',
+          'orderItems.item',
+          'orderItems.variation',
+          'tables',
+          'customer',
+          'discount',
+        ],
+      });
 
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
 
-    // Verify ownership
-    if (!order.customer || order.customer.id !== customerId) {
-      throw new ForbiddenException('You do not have access to this order');
-    }
+      // Verify ownership
+      if (!order.customer || order.customer.id !== customerId) {
+        throw new ForbiddenException('You do not have access to this order');
+      }
 
-    return order;
+      return order;
+    }, 30);
   }
 
   async cancelOrder(customerId: string, orderId: string): Promise<Order> {
@@ -350,6 +369,7 @@ export class CustomerOrdersService {
       }
     }
 
+    await this.invalidateCache();
     return updatedOrder;
   }
 }

@@ -9,5 +9,8 @@ else
   sleep 5
 fi
 
+echo "Running database migrations..."
+npx typeorm migration:run -d dist/src/database/data-source.js || echo "Warning: Migration step failed, continuing startup..."
+
 echo "Starting application..."
 exec node dist/src/main

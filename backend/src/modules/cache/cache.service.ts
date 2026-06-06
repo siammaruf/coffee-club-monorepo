@@ -22,6 +22,16 @@ export class CacheService {
     await this.cache.set(key, value, ttl);
   }
 
+  async getOrSet<T>(key: string, factory: () => Promise<T>, ttl?: number | string): Promise<T> {
+    const cached = await this.get<T>(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const value = await factory();
+    await this.set(key, value, ttl);
+    return value;
+  }
+
   async delete(key: string): Promise<void> {
     if (key.includes('*')) {
       await this.deleteByPattern(key);

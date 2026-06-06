@@ -7,6 +7,7 @@ import { Item } from '../../items/entities/item.entity';
 import { AddToCartDto } from '../dto/add-to-cart.dto';
 import { UpdateCartItemDto } from '../dto/update-cart-item.dto';
 import { CartResponseDto } from '../dto/cart-response.dto';
+import { CacheService } from '../../cache/cache.service';
 
 @Injectable()
 export class CartService {
@@ -17,9 +18,26 @@ export class CartService {
     private readonly cartItemRepository: Repository<CartItem>,
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
+    private readonly cacheService: CacheService,
   ) {}
 
+  private async invalidateCache(customerId: string): Promise<void> {
+    const patterns = [`cart:${customerId}*`, 'cart:customer*'];
+    for (const pattern of patterns) {
+      const keys = await this.cacheService.getKeys(pattern);
+      if (keys.length > 0) {
+        await this.cacheService.deleteMany(keys);
+      }
+    }
+  }
+
   async getOrCreateCart(customerId: string): Promise<Cart> {
+    const cacheKey = `cart:customer:${customerId}`;
+    const cached = await this.cacheService.get<Cart>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     let cart = await this.cartRepository.findOne({
       where: { customer: { id: customerId } },
       relations: ['items', 'items.item'],
@@ -33,12 +51,16 @@ export class CartService {
       cart.items = [];
     }
 
+    await this.cacheService.set(cacheKey, cart, 15);
     return cart;
   }
 
   async getCart(customerId: string): Promise<CartResponseDto> {
-    const cart = await this.getOrCreateCart(customerId);
-    return new CartResponseDto(cart);
+    const cacheKey = `cart:${customerId}:response`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const cart = await this.getOrCreateCart(customerId);
+      return new CartResponseDto(cart);
+    }, 15);
   }
 
   async addItem(customerId: string, dto: AddToCartDto): Promise<CartResponseDto> {
@@ -80,6 +102,7 @@ export class CartService {
       await this.cartItemRepository.save(cartItem);
     }
 
+    await this.invalidateCache(customerId);
     return this.getCart(customerId);
   }
 
@@ -116,6 +139,7 @@ export class CartService {
     }
 
     await this.cartItemRepository.save(cartItem);
+    await this.invalidateCache(customerId);
     return this.getCart(customerId);
   }
 
@@ -134,6 +158,7 @@ export class CartService {
     }
 
     await this.cartItemRepository.remove(cartItem);
+    await this.invalidateCache(customerId);
     return this.getCart(customerId);
   }
 
@@ -142,6 +167,7 @@ export class CartService {
 
     await this.cartItemRepository.delete({ cart: { id: cart.id } });
 
+    await this.invalidateCache(customerId);
     return this.getCart(customerId);
   }
 }

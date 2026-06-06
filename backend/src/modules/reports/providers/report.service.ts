@@ -373,48 +373,47 @@ export class ReportService implements OnModuleInit {
         kitchen_sales: number;
         summary_date: Date;
     }> {
-        const allOrders = await this.orderRepository.find({
-            relations: ['orderTokens']
-        });
+        const cacheKey = 'reports:financial-summary:overall';
+        return this.cacheService.getOrSet(cacheKey, async () => {
+            const allOrders = await this.orderRepository.find({
+                relations: ['orderTokens']
+            });
 
-        const allOrderTokens = await this.orderTokenRepository.find({
-            relations: ['order', 'order_items']
-        });
+            const allOrderTokens = await this.orderTokenRepository.find({
+                relations: ['order', 'order_items']
+            });
 
-        const allExpenses = await this.expensesRepository.find();
-        const totalSales = allOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
-        const barTokens = allOrderTokens.filter(token => token.token_type === TokenType.BAR);
-        const kitchenTokens = allOrderTokens.filter(token => token.token_type === TokenType.KITCHEN);
+            const allExpenses = await this.expensesRepository.find();
+            const totalSales = allOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+            const barTokens = allOrderTokens.filter(token => token.token_type === TokenType.BAR);
+            const kitchenTokens = allOrderTokens.filter(token => token.token_type === TokenType.KITCHEN);
 
-        const barSales = barTokens.reduce((sum, token) => {
-            const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
-            return sum + tokenSales;
-        }, 0);
+            const barSales = barTokens.reduce((sum, token) => {
+                const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
+                return sum + tokenSales;
+            }, 0);
 
-        const kitchenSales = kitchenTokens.reduce((sum, token) => {
-            const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
-            return sum + tokenSales;
-        }, 0);
+            const kitchenSales = kitchenTokens.reduce((sum, token) => {
+                const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
+                return sum + tokenSales;
+            }, 0);
 
-        const totalExpenses = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-        const totalCredit = totalSales;
-        const currentFund = totalSales - totalExpenses;
+            const totalExpenses = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+            const totalCredit = totalSales;
+            const currentFund = totalSales - totalExpenses;
 
-        const result = {
-            total_sales: totalSales,
-            total_expenses: totalExpenses,
-            total_credit: totalCredit,
-            current_fund: currentFund,
-            total_orders: allOrders.length,
-            total_expense_items: allExpenses.length,
-            bar_sales: barSales,
-            kitchen_sales: kitchenSales,
-            summary_date: new Date()
-        };
-        
-        const cacheKey = 'financial-summary:overall';
-        await this.cacheService.set(cacheKey, result, '1h');
-        return result;
+            return {
+                total_sales: totalSales,
+                total_expenses: totalExpenses,
+                total_credit: totalCredit,
+                current_fund: currentFund,
+                total_orders: allOrders.length,
+                total_expense_items: allExpenses.length,
+                bar_sales: barSales,
+                kitchen_sales: kitchenSales,
+                summary_date: new Date()
+            };
+        }, '1h');
     }
 
     async getDashboardMetrics(): Promise<{
@@ -436,65 +435,70 @@ export class ReportService implements OnModuleInit {
         total_sales_reports: number;
         generated_at: Date;
     }> {
-        const today = moment().tz('Asia/Dhaka').startOf('day').toDate();
-        const endOfToday = moment().tz('Asia/Dhaka').endOf('day').toDate();
-    
-        const todaysOrders = await this.orderRepository.find({
-            where: {
-                created_at: Between(today, endOfToday)
-            },
-            relations: ['orderItems']
-        });
-    
-        const activeOrders = await this.orderRepository.count({
-            where: {
-                status: In(['PENDING', 'PREPARING']),
-                created_at: Between(today, endOfToday)
-            }
-        });
-    
-        const todaysExpenses = await this.expensesRepository.find({
-            where: {
-                created_at: Between(today, endOfToday)
-            }
-        });
-    
-        const totalCustomers = await this.customerRepository.count();
-        const totalActiveCustomers = await this.customerRepository.count({ where: { is_active: true }});
-        const totalTables = await this.tableRepository.count();
-        const totalItems = await this.itemRepository.count();
-        const totalSalesReports = await this.dailyReportRepository.count();
-    
-        const todaysTotalSales = todaysOrders.filter(order => order.status === 'COMPLETED').reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-        const todaysExpensesTotal = todaysExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-        const pendingOrders = todaysOrders.filter(order => order.status === 'PENDING').length;
-        const takeawayOrders = todaysOrders.filter(order => order.order_type === 'TAKEAWAY').length;
-        const dineinOrders = todaysOrders.filter(order => order.order_type === 'DINEIN').length;
-        const completedOrders = todaysOrders.filter(order => order.status === 'COMPLETED').length;
-        const cancelledOrders = todaysOrders.filter(order => order.status === 'CANCELLED').length;
-        const todaysProfit = todaysTotalSales - todaysExpensesTotal;
-        const totalOrdersToday = todaysOrders.length;
-        const averageOrderValue = completedOrders > 0 ? todaysTotalSales / completedOrders : 0;
-    
-        return {
-            todays_total_sales: todaysTotalSales,
-            active_orders: activeOrders,
-            todays_expenses: todaysExpensesTotal,
-            pending_orders: pendingOrders,
-            takeaway_orders: takeawayOrders,
-            dinein_orders: dineinOrders,
-            completed_orders: completedOrders,
-            cancelled_orders: cancelledOrders,
-            todays_profit: todaysProfit,
-            total_orders_today: totalOrdersToday,
-            average_order_value: averageOrderValue,
-            total_customers: totalCustomers,
-            total_active_customers: totalActiveCustomers,
-            total_tables: totalTables,
-            total_items: totalItems,
-            total_sales_reports: totalSalesReports,
-            generated_at: moment().tz('Asia/Dhaka').toDate()
-        };
+        const todayKey = moment().tz('Asia/Dhaka').format('YYYY-MM-DD');
+        const cacheKey = `reports:dashboard-metrics:${todayKey}`;
+
+        return this.cacheService.getOrSet(cacheKey, async () => {
+            const today = moment().tz('Asia/Dhaka').startOf('day').toDate();
+            const endOfToday = moment().tz('Asia/Dhaka').endOf('day').toDate();
+
+            const todaysOrders = await this.orderRepository.find({
+                where: {
+                    created_at: Between(today, endOfToday)
+                },
+                relations: ['orderItems']
+            });
+
+            const activeOrders = await this.orderRepository.count({
+                where: {
+                    status: In(['PENDING', 'PREPARING']),
+                    created_at: Between(today, endOfToday)
+                }
+            });
+
+            const todaysExpenses = await this.expensesRepository.find({
+                where: {
+                    created_at: Between(today, endOfToday)
+                }
+            });
+
+            const totalCustomers = await this.customerRepository.count();
+            const totalActiveCustomers = await this.customerRepository.count({ where: { is_active: true }});
+            const totalTables = await this.tableRepository.count();
+            const totalItems = await this.itemRepository.count();
+            const totalSalesReports = await this.dailyReportRepository.count();
+
+            const todaysTotalSales = todaysOrders.filter(order => order.status === 'COMPLETED').reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+            const todaysExpensesTotal = todaysExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+            const pendingOrders = todaysOrders.filter(order => order.status === 'PENDING').length;
+            const takeawayOrders = todaysOrders.filter(order => order.order_type === 'TAKEAWAY').length;
+            const dineinOrders = todaysOrders.filter(order => order.order_type === 'DINEIN').length;
+            const completedOrders = todaysOrders.filter(order => order.status === 'COMPLETED').length;
+            const cancelledOrders = todaysOrders.filter(order => order.status === 'CANCELLED').length;
+            const todaysProfit = todaysTotalSales - todaysExpensesTotal;
+            const totalOrdersToday = todaysOrders.length;
+            const averageOrderValue = completedOrders > 0 ? todaysTotalSales / completedOrders : 0;
+
+            return {
+                todays_total_sales: todaysTotalSales,
+                active_orders: activeOrders,
+                todays_expenses: todaysExpensesTotal,
+                pending_orders: pendingOrders,
+                takeaway_orders: takeawayOrders,
+                dinein_orders: dineinOrders,
+                completed_orders: completedOrders,
+                cancelled_orders: cancelledOrders,
+                todays_profit: todaysProfit,
+                total_orders_today: totalOrdersToday,
+                average_order_value: averageOrderValue,
+                total_customers: totalCustomers,
+                total_active_customers: totalActiveCustomers,
+                total_tables: totalTables,
+                total_items: totalItems,
+                total_sales_reports: totalSalesReports,
+                generated_at: moment().tz('Asia/Dhaka').toDate()
+            };
+        }, 300);
     }
 
     async getFilteredReportsWithSummary(

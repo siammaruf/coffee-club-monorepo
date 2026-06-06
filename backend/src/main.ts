@@ -5,17 +5,20 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
+import { CacheInvalidationInterceptor } from './common/interceptors/cache-invalidation.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { PermissionsService } from './modules/permissions/providers/permissions.service';
+import { CacheService } from './modules/cache/cache.service';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   // Serve static files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
@@ -23,6 +26,7 @@ async function bootstrap() {
   app.set('trust proxy', 1); // Trust X-Forwarded-Proto from reverse proxy (nginx) so req.protocol returns 'https' in production
   app.setGlobalPrefix('api/v1');
   app.use(cookieParser());
+  app.use(compression());
 
   const config = new DocumentBuilder()
     .setTitle('Coffee Club API')
@@ -53,6 +57,8 @@ async function bootstrap() {
     new RolesGuard(reflector),
     new PermissionsGuard(reflector, permissionsService),
   );
+  const cacheService = app.get(CacheService);
+  app.useGlobalInterceptors(new CacheInvalidationInterceptor(cacheService));
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new DatabaseExceptionFilter());
 
