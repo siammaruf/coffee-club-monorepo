@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, Logger, NotFoundException, Op
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
+import { OrderItem } from '../../order-items/entities/order-item.entity';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { Table } from '../../table/entities/table.entity';
@@ -27,6 +28,8 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    @InjectRepository(OrderItem)
+    private readonly orderItemRepository: Repository<OrderItem>,
     private readonly orderItemService: OrderItemService,
     private readonly orderTokensService: OrderTokensService,
     private readonly customerService: CustomerService,
@@ -385,23 +388,20 @@ export class OrderService {
       return cached;
     }
 
-    const queryBuilder = this.orderRepository.createQueryBuilder('order')
-      .leftJoinAndSelect('order.tables', 'tables')
+    // Step 1: Query orders with only ManyToOne relations (avoids Cartesian product)
+    const orderQueryBuilder = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.customer', 'customer')
       .leftJoinAndSelect('order.user', 'user')
-      .leftJoinAndSelect('order.discount', 'discount')
-      .leftJoinAndSelect('order.orderItems', 'order_items')
-      .leftJoinAndSelect('order_items.item', 'item')
-      .leftJoinAndSelect('order_items.variation', 'variation');
+      .leftJoinAndSelect('order.discount', 'discount');
 
     // Status filter
     if (status) {
-      queryBuilder.andWhere('order.status = :status', { status });
+      orderQueryBuilder.andWhere('order.status = :status', { status });
     }
 
     // Search filter
     if (search) {
-      queryBuilder.andWhere(
+      orderQueryBuilder.andWhere(
         '(order.order_type ILIKE :search OR order.status ILIKE :search OR order.payment_method ILIKE :search OR customer.name ILIKE :search OR user.name ILIKE :search)',
         { search: `%${search}%` }
       );
@@ -413,7 +413,7 @@ export class OrderService {
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-        queryBuilder.andWhere('order.created_at BETWEEN :startOfDay AND :endOfDay', {
+        orderQueryBuilder.andWhere('order.created_at BETWEEN :startOfDay AND :endOfDay', {
           startOfDay,
           endOfDay
         });
@@ -421,19 +421,49 @@ export class OrderService {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-        queryBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+        orderQueryBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
           startDate: start,
           endDate: end
         });
       }
     }
 
-    const [data, total] = await queryBuilder
+    const [orders, total] = await orderQueryBuilder
       .orderBy('order.created_at', 'DESC')
       .addOrderBy('order.id', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
+
+    // Step 2: Load tables and orderItems separately to avoid Cartesian product
+    const orderIds = orders.map(o => o.id);
+    if (orderIds.length > 0) {
+      // Load tables (ManyToMany)
+      const ordersWithTables = await this.orderRepository.find({
+        where: { id: In(orderIds) },
+        relations: ['tables'],
+      });
+      const tableMap = new Map(ordersWithTables.map(o => [o.id, o.tables || []]));
+
+      // Load orderItems with item and variation
+      const orderItems = await this.orderItemRepository.find({
+        where: { order: { id: In(orderIds) } },
+        relations: ['item', 'variation'],
+      });
+      const orderItemMap = new Map<string, OrderItem[]>();
+      for (const oi of orderItems) {
+        const orderId = (oi as any).order?.id || (oi as any).order_id;
+        const existing = orderItemMap.get(orderId) || [];
+        existing.push(oi);
+        orderItemMap.set(orderId, existing);
+      }
+
+      // Attach to orders
+      for (const order of orders) {
+        order.tables = tableMap.get(order.id) || [];
+        order.orderItems = orderItemMap.get(order.id) || [];
+      }
+    }
 
     const totalPages = Math.ceil(total / limit);
 
@@ -481,7 +511,7 @@ export class OrderService {
     }
 
     const result = {
-      data,
+      data: orders,
       total,
       page,
       limit,

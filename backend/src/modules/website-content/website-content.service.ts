@@ -11,6 +11,7 @@ import { Advantage } from './entities/advantage.entity';
 import { Testimonial } from './entities/testimonial.entity';
 import { SettingsService } from '../settings/settings.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { CacheService } from '../cache/cache.service';
 import { CreateHeroSlideDto } from './dto/create-hero-slide.dto';
 import { UpdateHeroSlideDto } from './dto/update-hero-slide.dto';
 import { CreateAdvantageDto } from './dto/create-advantage.dto';
@@ -31,10 +32,21 @@ export class WebsiteContentService implements OnModuleInit {
     private readonly testimonialRepository: Repository<Testimonial>,
     private readonly settingsService: SettingsService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async onModuleInit(): Promise<void> {
     await this.seedDefaults();
+  }
+
+  private async invalidateCache(): Promise<void> {
+    const patterns = ['website-content:*', 'website:*', 'public:*'];
+    for (const pattern of patterns) {
+      const keys = await this.cacheService.getKeys(pattern);
+      if (keys.length > 0) {
+        await this.cacheService.deleteMany(keys);
+      }
+    }
   }
 
   // =====================
@@ -53,7 +65,9 @@ export class WebsiteContentService implements OnModuleInit {
       subtitle: dto.subtitle || null,
       heading: dto.heading || null,
     });
-    return this.heroSlideRepository.save(slide);
+    const saved = await this.heroSlideRepository.save(slide);
+    await this.invalidateCache();
+    return saved;
   }
 
   async findAllHeroSlides(options: {
@@ -62,32 +76,38 @@ export class WebsiteContentService implements OnModuleInit {
     search?: string;
   }): Promise<{ data: HeroSlide[]; total: number }> {
     const { page, limit, search } = options;
+    const cacheKey = `website-content:hero-slides:${page}:${limit}:${search || 'none'}`;
 
-    const query = this.heroSlideRepository.createQueryBuilder('slide');
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const query = this.heroSlideRepository.createQueryBuilder('slide');
 
-    if (search) {
-      query.andWhere(
-        '(LOWER(slide.title) LIKE :search OR LOWER(slide.description) LIKE :search)',
-        { search: `%${search.toLowerCase()}%` },
-      );
-    }
+      if (search) {
+        query.andWhere(
+          '(LOWER(slide.title) LIKE :search OR LOWER(slide.description) LIKE :search)',
+          { search: `%${search.toLowerCase()}%` },
+        );
+      }
 
-    query.orderBy('slide.sort_order', 'ASC')
-      .addOrderBy('slide.created_at', 'DESC')
-      .addOrderBy('slide.id', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      query.orderBy('slide.sort_order', 'ASC')
+        .addOrderBy('slide.created_at', 'DESC')
+        .addOrderBy('slide.id', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
-    return { data, total };
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
+    }, 600);
   }
 
   async findOneHeroSlide(id: string): Promise<HeroSlide> {
-    const slide = await this.heroSlideRepository.findOne({ where: { id } });
-    if (!slide) {
-      throw new NotFoundException(`Hero slide with ID ${id} not found`);
-    }
-    return slide;
+    const cacheKey = `website-content:hero-slide:${id}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const slide = await this.heroSlideRepository.findOne({ where: { id } });
+      if (!slide) {
+        throw new NotFoundException(`Hero slide with ID ${id} not found`);
+      }
+      return slide;
+    }, 600);
   }
 
   async updateHeroSlide(id: string, dto: UpdateHeroSlideDto): Promise<HeroSlide> {
@@ -109,19 +129,25 @@ export class WebsiteContentService implements OnModuleInit {
     if (dto.sort_order !== undefined) slide.sort_order = dto.sort_order;
     if (dto.is_active !== undefined) slide.is_active = dto.is_active;
 
-    return this.heroSlideRepository.save(slide);
+    const updated = await this.heroSlideRepository.save(slide);
+    await this.invalidateCache();
+    return updated;
   }
 
   async removeHeroSlide(id: string): Promise<void> {
     const slide = await this.findOneHeroSlide(id);
     await this.heroSlideRepository.remove(slide);
+    await this.invalidateCache();
   }
 
   async findAllActiveHeroSlides(): Promise<HeroSlide[]> {
-    return this.heroSlideRepository.find({
-      where: { is_active: true },
-      order: { sort_order: 'ASC' },
-    });
+    const cacheKey = 'website-content:active-hero-slides';
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      return this.heroSlideRepository.find({
+        where: { is_active: true },
+        order: { sort_order: 'ASC' },
+      });
+    }, 600);
   }
 
   // =====================
@@ -138,7 +164,9 @@ export class WebsiteContentService implements OnModuleInit {
       ...dto,
       icon,
     });
-    return this.advantageRepository.save(advantage);
+    const saved = await this.advantageRepository.save(advantage);
+    await this.invalidateCache();
+    return saved;
   }
 
   async findAllAdvantages(options: {
@@ -147,32 +175,38 @@ export class WebsiteContentService implements OnModuleInit {
     search?: string;
   }): Promise<{ data: Advantage[]; total: number }> {
     const { page, limit, search } = options;
+    const cacheKey = `website-content:advantages:${page}:${limit}:${search || 'none'}`;
 
-    const query = this.advantageRepository.createQueryBuilder('advantage');
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const query = this.advantageRepository.createQueryBuilder('advantage');
 
-    if (search) {
-      query.andWhere(
-        '(LOWER(advantage.title) LIKE :search OR LOWER(advantage.description) LIKE :search)',
-        { search: `%${search.toLowerCase()}%` },
-      );
-    }
+      if (search) {
+        query.andWhere(
+          '(LOWER(advantage.title) LIKE :search OR LOWER(advantage.description) LIKE :search)',
+          { search: `%${search.toLowerCase()}%` },
+        );
+      }
 
-    query.orderBy('advantage.sort_order', 'ASC')
-      .addOrderBy('advantage.created_at', 'DESC')
-      .addOrderBy('advantage.id', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      query.orderBy('advantage.sort_order', 'ASC')
+        .addOrderBy('advantage.created_at', 'DESC')
+        .addOrderBy('advantage.id', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
-    return { data, total };
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
+    }, 600);
   }
 
   async findOneAdvantage(id: string): Promise<Advantage> {
-    const advantage = await this.advantageRepository.findOne({ where: { id } });
-    if (!advantage) {
-      throw new NotFoundException(`Advantage with ID ${id} not found`);
-    }
-    return advantage;
+    const cacheKey = `website-content:advantage:${id}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const advantage = await this.advantageRepository.findOne({ where: { id } });
+      if (!advantage) {
+        throw new NotFoundException(`Advantage with ID ${id} not found`);
+      }
+      return advantage;
+    }, 600);
   }
 
   async updateAdvantage(id: string, dto: UpdateAdvantageDto): Promise<Advantage> {
@@ -189,19 +223,25 @@ export class WebsiteContentService implements OnModuleInit {
     if (dto.sort_order !== undefined) advantage.sort_order = dto.sort_order;
     if (dto.is_active !== undefined) advantage.is_active = dto.is_active;
 
-    return this.advantageRepository.save(advantage);
+    const updated = await this.advantageRepository.save(advantage);
+    await this.invalidateCache();
+    return updated;
   }
 
   async removeAdvantage(id: string): Promise<void> {
     const advantage = await this.findOneAdvantage(id);
     await this.advantageRepository.remove(advantage);
+    await this.invalidateCache();
   }
 
   async findAllActiveAdvantages(): Promise<Advantage[]> {
-    return this.advantageRepository.find({
-      where: { is_active: true },
-      order: { sort_order: 'ASC' },
-    });
+    const cacheKey = 'website-content:active-advantages';
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      return this.advantageRepository.find({
+        where: { is_active: true },
+        order: { sort_order: 'ASC' },
+      });
+    }, 600);
   }
 
   // =====================
@@ -218,7 +258,9 @@ export class WebsiteContentService implements OnModuleInit {
       ...dto,
       image,
     });
-    return this.testimonialRepository.save(testimonial);
+    const saved = await this.testimonialRepository.save(testimonial);
+    await this.invalidateCache();
+    return saved;
   }
 
   async findAllTestimonials(options: {
@@ -227,32 +269,38 @@ export class WebsiteContentService implements OnModuleInit {
     search?: string;
   }): Promise<{ data: Testimonial[]; total: number }> {
     const { page, limit, search } = options;
+    const cacheKey = `website-content:testimonials:${page}:${limit}:${search || 'none'}`;
 
-    const query = this.testimonialRepository.createQueryBuilder('testimonial');
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const query = this.testimonialRepository.createQueryBuilder('testimonial');
 
-    if (search) {
-      query.andWhere(
-        '(LOWER(testimonial.name) LIKE :search OR LOWER(testimonial.quote) LIKE :search)',
-        { search: `%${search.toLowerCase()}%` },
-      );
-    }
+      if (search) {
+        query.andWhere(
+          '(LOWER(testimonial.name) LIKE :search OR LOWER(testimonial.quote) LIKE :search)',
+          { search: `%${search.toLowerCase()}%` },
+        );
+      }
 
-    query.orderBy('testimonial.sort_order', 'ASC')
-      .addOrderBy('testimonial.created_at', 'DESC')
-      .addOrderBy('testimonial.id', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit);
+      query.orderBy('testimonial.sort_order', 'ASC')
+        .addOrderBy('testimonial.created_at', 'DESC')
+        .addOrderBy('testimonial.id', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
-    return { data, total };
+      const [data, total] = await query.getManyAndCount();
+      return { data, total };
+    }, 600);
   }
 
   async findOneTestimonial(id: string): Promise<Testimonial> {
-    const testimonial = await this.testimonialRepository.findOne({ where: { id } });
-    if (!testimonial) {
-      throw new NotFoundException(`Testimonial with ID ${id} not found`);
-    }
-    return testimonial;
+    const cacheKey = `website-content:testimonial:${id}`;
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const testimonial = await this.testimonialRepository.findOne({ where: { id } });
+      if (!testimonial) {
+        throw new NotFoundException(`Testimonial with ID ${id} not found`);
+      }
+      return testimonial;
+    }, 600);
   }
 
   async updateTestimonial(id: string, dto: UpdateTestimonialDto): Promise<Testimonial> {
@@ -270,19 +318,25 @@ export class WebsiteContentService implements OnModuleInit {
     if (dto.sort_order !== undefined) testimonial.sort_order = dto.sort_order;
     if (dto.is_active !== undefined) testimonial.is_active = dto.is_active;
 
-    return this.testimonialRepository.save(testimonial);
+    const updated = await this.testimonialRepository.save(testimonial);
+    await this.invalidateCache();
+    return updated;
   }
 
   async removeTestimonial(id: string): Promise<void> {
     const testimonial = await this.findOneTestimonial(id);
     await this.testimonialRepository.remove(testimonial);
+    await this.invalidateCache();
   }
 
   async findAllActiveTestimonials(): Promise<Testimonial[]> {
-    return this.testimonialRepository.find({
-      where: { is_active: true },
-      order: { sort_order: 'ASC' },
-    });
+    const cacheKey = 'website-content:active-testimonials';
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      return this.testimonialRepository.find({
+        where: { is_active: true },
+        order: { sort_order: 'ASC' },
+      });
+    }, 600);
   }
 
   // =====================
@@ -290,16 +344,19 @@ export class WebsiteContentService implements OnModuleInit {
   // =====================
 
   async getWebsiteSettings(): Promise<Record<string, string>> {
-    const allSettings = await this.settingsService.getAllSettings();
-    const websiteSettings: Record<string, string> = {};
+    const cacheKey = 'website-content:settings';
+    return this.cacheService.getOrSet(cacheKey, async () => {
+      const allSettings = await this.settingsService.getAllSettings();
+      const websiteSettings: Record<string, string> = {};
 
-    for (const setting of allSettings) {
-      if (setting.key.startsWith('website_')) {
-        websiteSettings[setting.key] = setting.value;
+      for (const setting of allSettings) {
+        if (setting.key.startsWith('website_')) {
+          websiteSettings[setting.key] = setting.value;
+        }
       }
-    }
 
-    return websiteSettings;
+      return websiteSettings;
+    }, 600);
   }
 
   async updateWebsiteSettings(data: Record<string, string>): Promise<Record<string, string>> {
@@ -308,6 +365,7 @@ export class WebsiteContentService implements OnModuleInit {
         await this.settingsService.setSetting(key, value);
       }
     }
+    await this.invalidateCache();
     return this.getWebsiteSettings();
   }
 

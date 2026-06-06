@@ -10,10 +10,19 @@ import { API_CONFIG } from '../utils/config/api';
 import { handleAxiosError } from '../utils/errorHandler';
 import { StorageService } from './storageService';
 import { STORAGE_KEYS } from '../utils/config/api';
+
+interface CacheEntry {
+  data: any;
+  expiry: number;
+}
+
 class HttpService {
   private api: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: Array<(token: string | null) => void> = [];
+  private cache = new Map<string, CacheEntry>();
+  private inFlight = new Map<string, Promise<any>>();
+  private readonly CACHE_TTL_MS = 15000; // 15 seconds cache for GET requests
 
   constructor() {
     this.api = axios.create({
@@ -132,50 +141,140 @@ class HttpService {
     );
   }
 
-  // Enhanced error handling for HTTP methods
-  public async get<T>(url: string, config?: AxiosRequestConfig<any>) {
-    try {
-      const response = await this.api.get<T>(url, config);
-      return response.data;
-    } catch (error) {
-      throw handleAxiosError(error);
+  private buildCacheKey(url: string, config?: AxiosRequestConfig): string {
+    const params = config?.params ? JSON.stringify(config.params) : '';
+    return `${url}|${params}`;
+  }
+
+  private shouldCache(url: string): boolean {
+    // Only cache safe, idempotent GET requests that are not auth-related
+    if (!url) return false;
+    const noCachePaths = ['/auth/', '/login', '/logout', '/refresh', '/me'];
+    return !noCachePaths.some((path) => url.includes(path));
+  }
+
+  private async requestWithRetry<T>(
+    method: 'get' | 'post' | 'put' | 'delete' | 'patch',
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
+    const maxRetries = API_CONFIG.RETRY_ATTEMPTS || 3;
+    const retryDelay = API_CONFIG.RETRY_DELAY || 1000;
+    let lastError: any;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        let response;
+        switch (method) {
+          case 'get':
+            response = await this.api.get<T>(url, config);
+            break;
+          case 'post':
+            response = await this.api.post<T>(url, data, config);
+            break;
+          case 'put':
+            response = await this.api.put<T>(url, data, config);
+            break;
+          case 'delete':
+            response = await this.api.delete<T>(url, config);
+            break;
+          case 'patch':
+            response = await this.api.patch<T>(url, data, config);
+            break;
+        }
+        return response.data;
+      } catch (error: any) {
+        lastError = error;
+        const isNetworkError = !error.response;
+        const isTimeout = error.code === 'ECONNABORTED';
+        const isServerError = error.response?.status >= 500;
+        const isRetryable = isNetworkError || isTimeout || isServerError;
+
+        if (!isRetryable || attempt >= maxRetries) {
+          break;
+        }
+
+        // Exponential backoff: delay * 2^attempt (max 5s)
+        const delay = Math.min(retryDelay * Math.pow(2, attempt), 5000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
+
+    throw handleAxiosError(lastError);
+  }
+
+  public async get<T>(url: string, config?: AxiosRequestConfig<any>) {
+    const cacheKey = this.buildCacheKey(url, config);
+
+    // Return cached data immediately for GET requests
+    if (this.shouldCache(url)) {
+      const cached = this.cache.get(cacheKey);
+      if (cached && cached.expiry > Date.now()) {
+        return cached.data as T;
+      }
+    }
+
+    // Deduplicate concurrent identical requests
+    const inFlightKey = `GET|${cacheKey}`;
+    if (this.inFlight.has(inFlightKey)) {
+      return this.inFlight.get(inFlightKey) as Promise<T>;
+    }
+
+    const requestPromise = this.requestWithRetry<T>('get', url, undefined, config)
+      .then((data) => {
+        if (this.shouldCache(url)) {
+          this.cache.set(cacheKey, { data, expiry: Date.now() + this.CACHE_TTL_MS });
+        }
+        this.inFlight.delete(inFlightKey);
+        return data;
+      })
+      .catch((error) => {
+        this.inFlight.delete(inFlightKey);
+        throw error;
+      });
+
+    this.inFlight.set(inFlightKey, requestPromise);
+    return requestPromise;
   }
 
   public async post<T>(url: string, data?: any, config?: AxiosRequestConfig<any>) {
-    try {
-      const response = await this.api.post<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleAxiosError(error);
-    }
+    // Invalidate cache on mutations to keep data fresh
+    this.invalidateRelatedCache(url);
+    return this.requestWithRetry<T>('post', url, data, config);
   }
 
   public async put<T>(url: string, data?: any, config?: AxiosRequestConfig<any>) {
-    try {
-      const response = await this.api.put<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleAxiosError(error);
-    }
+    this.invalidateRelatedCache(url);
+    return this.requestWithRetry<T>('put', url, data, config);
   }
 
   public async delete<T>(url: string, config?: AxiosRequestConfig<any>) {
-    try {
-      const response = await this.api.delete<T>(url, config);
-      return response.data;
-    } catch (error) {
-      throw handleAxiosError(error);
-    }
+    this.invalidateRelatedCache(url);
+    return this.requestWithRetry<T>('delete', url, undefined, config);
   }
 
   public async patch<T>(url: string, data?: any, config?: AxiosRequestConfig<any>) {
-    try {
-      const response = await this.api.patch<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      throw handleAxiosError(error);
+    this.invalidateRelatedCache(url);
+    return this.requestWithRetry<T>('patch', url, data, config);
+  }
+
+  private invalidateRelatedCache(url: string): void {
+    // Simple heuristic: if a mutation happens on /orders/123, clear all cache keys starting with /orders
+    const segments = url.split('/').filter(Boolean);
+    if (segments.length >= 1) {
+      const resource = `/${segments[0]}`;
+      for (const key of this.cache.keys()) {
+        if (key.startsWith(resource)) {
+          this.cache.delete(key);
+        }
+      }
     }
+  }
+
+  public clearCache(): void {
+    this.cache.clear();
+    this.inFlight.clear();
   }
 }
 
