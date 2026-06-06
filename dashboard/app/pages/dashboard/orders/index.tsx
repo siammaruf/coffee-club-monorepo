@@ -237,14 +237,14 @@ export default function OrdersPage() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
+    switch (status) {
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
+      case 'PREPARING':
         return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -273,11 +273,11 @@ export default function OrdersPage() {
 
   // Safe calculations with null checks
   const totalSales = orders.reduce((sum, order) =>
-    order.status?.toLowerCase() !== 'cancelled' ? sum + Number(order.total_amount || 0) : sum, 0);
+    order.status !== 'CANCELLED' ? sum + Number(order.total_amount || 0) : sum, 0);
 
-  const completedOrders = orders.filter(order => order.status?.toLowerCase() === 'completed').length;
-  const pendingOrders = orders.filter(order => order.status?.toLowerCase() === 'pending').length;
-  const cancelledOrders = orders.filter(order => order.status?.toLowerCase() === 'cancelled').length;
+  const completedOrders = orders.filter(order => order.status === 'COMPLETED').length;
+  const pendingOrders = orders.filter(order => order.status === 'PENDING').length;
+  const cancelledOrders = orders.filter(order => order.status === 'CANCELLED').length;
 
   return (
     <PermissionGuard permission="orders.view">
@@ -405,10 +405,10 @@ export default function OrdersPage() {
                 className="w-40"
               >
                 <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="PENDING">Pending</option>
+                <option value="PREPARING">Preparing</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
               </Select>
 
               <Select
