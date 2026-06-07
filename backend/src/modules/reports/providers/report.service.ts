@@ -375,30 +375,48 @@ export class ReportService implements OnModuleInit {
     }> {
         const cacheKey = 'reports:financial-summary:overall';
         return this.cacheService.getOrSet(cacheKey, async () => {
-            const allOrders = await this.orderRepository.find({
-                relations: ['orderTokens']
-            });
+            // Use SQL aggregation instead of loading all rows into memory
+            const totalSalesResult = await this.orderRepository
+                .createQueryBuilder('order')
+                .select('SUM(order.total_amount)', 'total')
+                .getRawOne();
+            const totalSales = Number(totalSalesResult?.total || 0);
 
-            const allOrderTokens = await this.orderTokenRepository.find({
-                relations: ['order', 'order_items']
-            });
+            const totalOrdersResult = await this.orderRepository
+                .createQueryBuilder('order')
+                .select('COUNT(*)', 'count')
+                .getRawOne();
+            const totalOrders = Number(totalOrdersResult?.count || 0);
 
-            const allExpenses = await this.expensesRepository.find();
-            const totalSales = allOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
-            const barTokens = allOrderTokens.filter(token => token.token_type === TokenType.BAR);
-            const kitchenTokens = allOrderTokens.filter(token => token.token_type === TokenType.KITCHEN);
+            const totalExpensesResult = await this.expensesRepository
+                .createQueryBuilder('expense')
+                .select('SUM(expense.amount)', 'total')
+                .getRawOne();
+            const totalExpenses = Number(totalExpensesResult?.total || 0);
 
-            const barSales = barTokens.reduce((sum, token) => {
-                const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
-                return sum + tokenSales;
-            }, 0);
+            const totalExpenseItemsResult = await this.expensesRepository
+                .createQueryBuilder('expense')
+                .select('COUNT(*)', 'count')
+                .getRawOne();
+            const totalExpenseItems = Number(totalExpenseItemsResult?.count || 0);
 
-            const kitchenSales = kitchenTokens.reduce((sum, token) => {
-                const tokenSales = token.order_items.reduce((itemSum, item) => itemSum + Number(item.total_price), 0);
-                return sum + tokenSales;
-            }, 0);
+            // Bar/Kitchen sales via order_tokens joined with order_items
+            const barSalesResult = await this.orderTokenRepository
+                .createQueryBuilder('token')
+                .leftJoin('token.order_items', 'item')
+                .where('token.token_type = :type', { type: TokenType.BAR })
+                .select('SUM(item.total_price)', 'total')
+                .getRawOne();
+            const barSales = Number(barSalesResult?.total || 0);
 
-            const totalExpenses = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+            const kitchenSalesResult = await this.orderTokenRepository
+                .createQueryBuilder('token')
+                .leftJoin('token.order_items', 'item')
+                .where('token.token_type = :type', { type: TokenType.KITCHEN })
+                .select('SUM(item.total_price)', 'total')
+                .getRawOne();
+            const kitchenSales = Number(kitchenSalesResult?.total || 0);
+
             const totalCredit = totalSales;
             const currentFund = totalSales - totalExpenses;
 
@@ -407,8 +425,8 @@ export class ReportService implements OnModuleInit {
                 total_expenses: totalExpenses,
                 total_credit: totalCredit,
                 current_fund: currentFund,
-                total_orders: allOrders.length,
-                total_expense_items: allExpenses.length,
+                total_orders: totalOrders,
+                total_expense_items: totalExpenseItems,
                 bar_sales: barSales,
                 kitchen_sales: kitchenSales,
                 summary_date: new Date()
@@ -442,41 +460,91 @@ export class ReportService implements OnModuleInit {
             const today = moment().tz('Asia/Dhaka').startOf('day').toDate();
             const endOfToday = moment().tz('Asia/Dhaka').endOf('day').toDate();
 
-            const todaysOrders = await this.orderRepository.find({
-                where: {
-                    created_at: Between(today, endOfToday)
-                },
-                relations: ['orderItems']
-            });
+            // Run independent counts in parallel
+            const [
+                totalCustomers,
+                totalActiveCustomers,
+                totalTables,
+                totalItems,
+                totalSalesReports,
+                activeOrders,
+                todaysExpensesTotal,
+                todaysTotalSales,
+                pendingOrders,
+                takeawayOrders,
+                dineinOrders,
+                completedOrders,
+                cancelledOrders,
+                totalOrdersToday,
+            ] = await Promise.all([
+                this.customerRepository.count(),
+                this.customerRepository.count({ where: { is_active: true } }),
+                this.tableRepository.count(),
+                this.itemRepository.count(),
+                this.dailyReportRepository.count(),
+                this.orderRepository.count({
+                    where: {
+                        status: In(['PENDING', 'PREPARING']),
+                        created_at: Between(today, endOfToday)
+                    }
+                }),
+                this.expensesRepository
+                    .createQueryBuilder('expense')
+                    .where('expense.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .select('SUM(expense.amount)', 'total')
+                    .getRawOne()
+                    .then(r => Number(r?.total || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.status = :status', { status: 'COMPLETED' })
+                    .select('SUM(order.total_amount)', 'total')
+                    .getRawOne()
+                    .then(r => Number(r?.total || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.status = :status', { status: 'PENDING' })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.order_type = :type', { type: 'TAKEAWAY' })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.order_type = :type', { type: 'DINEIN' })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.status = :status', { status: 'COMPLETED' })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .andWhere('order.status = :status', { status: 'CANCELLED' })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+                this.orderRepository
+                    .createQueryBuilder('order')
+                    .where('order.created_at BETWEEN :today AND :endOfToday', { today, endOfToday })
+                    .select('COUNT(*)', 'count')
+                    .getRawOne()
+                    .then(r => Number(r?.count || 0)),
+            ]);
 
-            const activeOrders = await this.orderRepository.count({
-                where: {
-                    status: In(['PENDING', 'PREPARING']),
-                    created_at: Between(today, endOfToday)
-                }
-            });
-
-            const todaysExpenses = await this.expensesRepository.find({
-                where: {
-                    created_at: Between(today, endOfToday)
-                }
-            });
-
-            const totalCustomers = await this.customerRepository.count();
-            const totalActiveCustomers = await this.customerRepository.count({ where: { is_active: true }});
-            const totalTables = await this.tableRepository.count();
-            const totalItems = await this.itemRepository.count();
-            const totalSalesReports = await this.dailyReportRepository.count();
-
-            const todaysTotalSales = todaysOrders.filter(order => order.status === 'COMPLETED').reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-            const todaysExpensesTotal = todaysExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-            const pendingOrders = todaysOrders.filter(order => order.status === 'PENDING').length;
-            const takeawayOrders = todaysOrders.filter(order => order.order_type === 'TAKEAWAY').length;
-            const dineinOrders = todaysOrders.filter(order => order.order_type === 'DINEIN').length;
-            const completedOrders = todaysOrders.filter(order => order.status === 'COMPLETED').length;
-            const cancelledOrders = todaysOrders.filter(order => order.status === 'CANCELLED').length;
             const todaysProfit = todaysTotalSales - todaysExpensesTotal;
-            const totalOrdersToday = todaysOrders.length;
             const averageOrderValue = completedOrders > 0 ? todaysTotalSales / completedOrders : 0;
 
             return {

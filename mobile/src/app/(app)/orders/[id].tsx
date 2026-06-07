@@ -14,7 +14,7 @@ import { customerService } from '@/services/httpServices/customerService';
 import { discountService } from '@/services/httpServices/discountService';
 import type { Discount } from '@/types/discount';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { printBarToken, printKitchenToken, printReceipt, printCustomerToken } from '@/utils/printer';
+import { printBarToken, printKitchenToken, printReceipt, printCustomerToken, hasSelectedPrinter } from '@/utils/printer';
 import { settingsService } from '@/services/httpServices/settingsService';
 import { formatPrice } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
@@ -390,11 +390,28 @@ export default function OrderDetails() {
     );
   };
 
+  const ensurePrinterReady = async (): Promise<boolean> => {
+    const ready = await hasSelectedPrinter();
+    if (!ready) {
+      Alert.alert(
+        'No Printer Selected',
+        'Please go to the Printer page and select a printer first.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Printer', onPress: () => router.push('/(app)/printer') }
+        ]
+      );
+      return false;
+    }
+    return true;
+  };
+
   const handlePrintKitchenToken = async () => {
     if (!order) return;
+    if (!(await ensurePrinterReady())) return;
     try {
       setIsPrinting(true);
-      await withTimeout(printKitchenToken(order), 2000);
+      await withTimeout(printKitchenToken(order), 10000);
     } catch (err) {
       Alert.alert('Print Error', 'Failed to print kitchen token');
     } finally {
@@ -404,9 +421,10 @@ export default function OrderDetails() {
 
   const handlePrintBarToken = async () => {
     if (!order) return;
+    if (!(await ensurePrinterReady())) return;
     try {
       setIsPrinting(true);
-      await withTimeout(printBarToken(order), 2000);
+      await withTimeout(printBarToken(order), 10000);
     } catch (err) {
       Alert.alert('Print Error', 'Failed to print bar token');
     } finally {
@@ -416,10 +434,11 @@ export default function OrderDetails() {
 
   const handlePrintCustomerToken = async () => {
     if (!order) return;
+    if (!(await ensurePrinterReady())) return;
     try {
       setIsPrinting(true);
       const wifi = await settingsService.getWifiSettings();
-      await withTimeout(printCustomerToken(order, wifi.wifi_name, wifi.wifi_password), 2000);
+      await withTimeout(printCustomerToken(order, wifi.wifi_name, wifi.wifi_password), 10000);
     } catch (err) {
       Alert.alert('Print Error', 'Failed to print customer token');
     } finally {
@@ -430,10 +449,11 @@ export default function OrderDetails() {
   const handlePrintReceipt = async (orderToPrint?: Order) => {
     const target = orderToPrint || order;
     if (!target) return;
+    if (!(await ensurePrinterReady())) return;
     try {
       setIsPrinting(true);
       const wifi = await settingsService.getWifiSettings();
-      await withTimeout(printReceipt(target, wifi.wifi_name, wifi.wifi_password), 2000);
+      await withTimeout(printReceipt(target, wifi.wifi_name, wifi.wifi_password), 10000);
     } catch (err) {
       Alert.alert('Print Error', 'Failed to print receipt');
     } finally {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseFetchOptions {
     immediate?: boolean;
@@ -13,7 +13,7 @@ interface UseFetchResult<T> {
 }
 
 /**
- * Generic data fetching hook.
+ * Generic data fetching hook with cancellation support.
  *
  * @param fetchFn - An async function that returns data of type T.
  * @param options - Options to control fetch behavior.
@@ -36,27 +36,56 @@ export function useFetch<T>(
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState<boolean>(immediate);
     const [error, setError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const isMountedRef = useRef(true);
+    const fetchFnRef = useRef(fetchFn);
+
+    // Keep the refetch function stable but always call the latest fetchFn
+    fetchFnRef.current = fetchFn;
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     const refetch = useCallback(async () => {
+        // Cancel any previous in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         setLoading(true);
         setError(null);
         try {
-            const result = await fetchFn();
-            setData(result);
+            const result = await fetchFnRef.current();
+            if (isMountedRef.current && !controller.signal.aborted) {
+                setData(result);
+            }
         } catch (err: any) {
-            const message = err?.message || 'An error occurred while fetching data.';
-            setError(message);
-            console.error('useFetch error:', err);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                const message = err?.message || 'An error occurred while fetching data.';
+                setError(message);
+                console.error('useFetch error:', err);
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                setLoading(false);
+            }
         }
-    }, [fetchFn]);
+    }, []);
 
     useEffect(() => {
         if (immediate) {
             refetch();
         }
-    }, []);
+    }, [immediate, refetch]);
 
     return { data, loading, error, refetch, setData };
 }

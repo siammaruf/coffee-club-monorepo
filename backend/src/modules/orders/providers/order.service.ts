@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
 import { OrderItem } from '../../order-items/entities/order-item.entity';
 import { CreateOrderDto } from '../dto/create-order.dto';
@@ -145,31 +146,27 @@ export class OrderService {
     }
     
     if (savedOrder.status !== OrderStatus.COMPLETED && savedOrder.status !== OrderStatus.CANCELLED) {
-      for (const table of tables) {
-        if (table.status !== TableStatus.RESERVED) {
-          table.status = TableStatus.OCCUPIED;
-          await this.tableRepository.save(table);
-        }
+      const tablesToUpdate = tables.filter(t => t.status !== TableStatus.RESERVED);
+      if (tablesToUpdate.length > 0) {
+        tablesToUpdate.forEach(t => (t.status = TableStatus.OCCUPIED));
+        await this.tableRepository.save(tablesToUpdate);
       }
     }
     
     const createdOrderItems: OrderItemResponseDto[] = [];
     if (order_items && order_items.length > 0) {
-      for (const orderItemDto of order_items) {
-        const orderItemData = {
-          quantity: orderItemDto.quantity,
-          unit_price: orderItemDto.unit_price,
-          item: orderItemDto.item,
-          order: savedOrder,
-        };
-        const createdItem = await this.orderItemService.create({
-          ...orderItemData,
-          total_price: orderItemData.quantity * orderItemData.unit_price,
-          item_id: orderItemDto.item_id,
-          item_variation_id: orderItemDto.item_variation_id,
-        });
-        createdOrderItems.push(createdItem);
-      }
+      // Batch-create order items to avoid N+1 service calls
+      const orderItemEntities = order_items.map(orderItemDto => ({
+        quantity: orderItemDto.quantity,
+        unit_price: orderItemDto.unit_price,
+        item: orderItemDto.item,
+        order: savedOrder,
+        total_price: orderItemDto.quantity * orderItemDto.unit_price,
+        item_id: orderItemDto.item_id,
+        item_variation_id: orderItemDto.item_variation_id,
+      }));
+      const savedItems = await this.orderItemRepository.save(orderItemEntities);
+      createdOrderItems.push(...savedItems);
     }
 
     if (createdOrderItems.length > 0) {
@@ -216,55 +213,61 @@ export class OrderService {
       const updatedItemIds = updateOrderDto.order_items
         .filter(item => 'id' in item && item.id)
         .map(item => (item as any).id as string);
-    
-      for (const existingItem of existingItems) {
-        if (!updatedItemIds.includes(existingItem.id)) {
-          await this.orderItemService.remove(existingItem.id);
-        }
+
+      // Batch remove items that are no longer in the update
+      const itemsToRemove = existingItems.filter(item => !updatedItemIds.includes(item.id));
+      if (itemsToRemove.length > 0) {
+        await this.orderItemRepository.remove(itemsToRemove);
       }
-    
+
       const createdOrderItems: OrderItemResponseDto[] = [];
+      const updatePromises: Promise<OrderItemResponseDto>[] = [];
+      const createPromises: Promise<OrderItemResponseDto>[] = [];
+
       for (const orderItemDto of updateOrderDto.order_items) {
         if ('id' in orderItemDto && orderItemDto.id) {
-          const updatedItem = await this.orderItemService.update(orderItemDto.id as string, {
-            quantity: orderItemDto.quantity,
-            unit_price: orderItemDto.unit_price,
-            item: orderItemDto.item,
-            item_id: orderItemDto.item_id,
-            item_variation_id: orderItemDto.item_variation_id,
-          });
-          createdOrderItems.push(updatedItem);
+          updatePromises.push(
+            this.orderItemService.update(orderItemDto.id as string, {
+              quantity: orderItemDto.quantity,
+              unit_price: orderItemDto.unit_price,
+              item: orderItemDto.item,
+              item_id: orderItemDto.item_id,
+              item_variation_id: orderItemDto.item_variation_id,
+            }),
+          );
         } else {
-          const orderItemData = {
-            quantity: orderItemDto.quantity,
-            unit_price: orderItemDto.unit_price,
-            item: orderItemDto.item,
-            order: order,
-            order_id: order.id,
-          };
-    
-          const createdItem = await this.orderItemService.create({
-            ...orderItemData,
-            total_price: orderItemData.quantity * orderItemData.unit_price,
-            item_id: orderItemDto.item_id,
-            item_variation_id: orderItemDto.item_variation_id,
-          });
-          createdOrderItems.push(createdItem);
+          createPromises.push(
+            this.orderItemService.create({
+              quantity: orderItemDto.quantity,
+              unit_price: orderItemDto.unit_price,
+              item: orderItemDto.item,
+              order: order,
+              total_price: orderItemDto.quantity * orderItemDto.unit_price,
+              item_id: orderItemDto.item_id,
+              item_variation_id: orderItemDto.item_variation_id,
+            }),
+          );
         }
       }
-    
+
+      // Batch execute updates and creates in parallel
+      const updatedItems = await Promise.all(updatePromises);
+      const createdItems = await Promise.all(createPromises);
+      createdOrderItems.push(...updatedItems, ...createdItems);
+
       if (createdOrderItems.length > 0) {
         await this.createTokensByItemType(order.id, createdOrderItems);
       } else {
         const existingTokens = await this.orderTokensService.findByOrderId(order.id);
-        for (const token of existingTokens) {
-          await this.orderTokensService.remove(token.id);
+        if (existingTokens.length > 0) {
+          await this.orderTokensService.removeMany(existingTokens.map(t => t.id));
         }
       }
-    
+
+      // Lightweight reload: only the relations we need
       const reloadedOrder = await this.orderRepository.findOne({
         where: { id: order.id },
-        relations: ['orderItems', 'orderItems.item', 'orderTokens', 'tables', 'customer', 'user', 'discount']
+        relations: ['orderItems', 'orderItems.item', 'orderItems.variation', 'orderTokens', 'tables', 'customer', 'user', 'discount']
       });
       if (reloadedOrder) {
         Object.assign(order, reloadedOrder);
@@ -287,12 +290,12 @@ export class OrderService {
     Object.assign(order, updateOrderDto);
     const updatedOrder = await this.orderRepository.save(order);
 
-    if ((updatedOrder.status === OrderStatus.COMPLETED || updatedOrder.status === OrderStatus.CANCELLED) && 
-        previousStatus !== OrderStatus.COMPLETED && 
+    if ((updatedOrder.status === OrderStatus.COMPLETED || updatedOrder.status === OrderStatus.CANCELLED) &&
+        previousStatus !== OrderStatus.COMPLETED &&
         previousStatus !== OrderStatus.CANCELLED) {
-      for (const table of updatedOrder.tables) {
-        table.status = TableStatus.AVAILABLE;
-        await this.tableRepository.save(table);
+      if (updatedOrder.tables?.length > 0) {
+        updatedOrder.tables.forEach(t => (t.status = TableStatus.AVAILABLE));
+        await this.tableRepository.save(updatedOrder.tables);
       }
     }
 
@@ -308,20 +311,20 @@ export class OrderService {
           where: { id: updatedOrder.id },
           relations: ['orderTokens']
         });
-        
+
         if (orderWithTokens?.orderTokens && orderWithTokens.orderTokens.length > 0) {
-          for (const token of orderWithTokens.orderTokens) {
-            await this.orderTokensService.update(token.id, {
-              status: OrderTokenStatus.DELIVERED
-            });
-          }
+          const tokenUpdates = orderWithTokens.orderTokens.map(token => ({
+            ...token,
+            status: OrderTokenStatus.DELIVERED,
+          }));
+          await this.orderTokensService.updateMany(tokenUpdates);
         }
       } catch (error) {
-        console.error('Failed to update order tokens status:', error);
+        this.logger.warn('Failed to update order tokens status: ' + (error?.message || error));
       }
     }
 
-    if (updatedOrder.status === OrderStatus.COMPLETED && 
+    if (updatedOrder.status === OrderStatus.COMPLETED &&
         previousStatus !== OrderStatus.COMPLETED && updateOrderDto.customer_id) {
       try {
         const finalAmount = updatedOrder.total_amount - (updatedOrder.discount_amount || 0);
@@ -331,16 +334,16 @@ export class OrderService {
             updateOrderDto.customer_id ? updateOrderDto.customer_id as any : (updatedOrder.customer?.id || null),
             updateOrderDto.redeem_amount
           );
-          console.log(`Redeemed ${updateOrderDto.redeem_amount} Taka from customer points`);
+          this.logger.log(`Redeemed ${updateOrderDto.redeem_amount} Taka from customer points`);
         }
-        
+
         await this.customerService.addPointsFromOrder(
           updateOrderDto.customer_id ? updateOrderDto.customer_id as any : (updatedOrder.customer?.id || null),
           finalAmount
         );
-        
+
       } catch (error) {
-        console.error('Failed to process customer points:', error);
+        this.logger.error('Failed to process customer points: ' + (error?.message || error));
       }
     }
 
@@ -349,7 +352,7 @@ export class OrderService {
       if (phoneTarget) {
         const message = this.formatOrderCompletionSms(updatedOrder);
         this.smsService.sendSms(phoneTarget, message).catch((err) =>
-          console.error('Order completion SMS failed:', err),
+          this.logger.error('Order completion SMS failed: ' + (err?.message || err)),
         );
       }
     }
@@ -557,8 +560,8 @@ export class OrderService {
 
   private async createTokensByItemType(orderId: string, createdOrderItems: OrderItemResponseDto[]): Promise<void> {
     const existingTokens = await this.orderTokensService.findByOrderId(orderId);
-    for (const token of existingTokens) {
-      await this.orderTokensService.remove(token.id);
+    if (existingTokens.length > 0) {
+      await this.orderTokensService.removeMany(existingTokens.map(t => t.id));
     }
     
     const barItems = createdOrderItems.filter(item => {
@@ -574,82 +577,85 @@ export class OrderService {
     });
   
     if (barItems.length > 0) {
-      const barTokenNumber = await this.generateTokenNumber('B');
-      const barTokenDto = {
-        token: barTokenNumber,
-        token_type: TokenType.BAR,
-        orderId: orderId,
-        order_items: barItems.map(item => ({ id: item.id })),
-        priority: OrderTokenPriority.NORMAL,
-        status: OrderTokenStatus.PENDING,
-      };
-  
-      await this.orderTokensService.create({
-        token: barTokenDto.token,
-        token_type: barTokenDto.token_type,
-        orderId: barTokenDto.orderId,
-        order_items: barItems,
-        priority: barTokenDto.priority,
-        status: barTokenDto.status
-      });
+      await this.createTokenWithRetry('B', orderId, barItems);
     }
     
     if (kitchenItems.length > 0) {
-      const kitchenTokenNumber = await this.generateTokenNumber('K');
-      const kitchenTokenDto = {
-        token: kitchenTokenNumber,
-        token_type: TokenType.KITCHEN,
-        orderId: orderId,
-        order_items: kitchenItems.map(item => ({ id: item.id })),
-        priority: OrderTokenPriority.NORMAL,
-        status: OrderTokenStatus.PENDING,
-      };
-  
-      await this.orderTokensService.create({
-        token: kitchenTokenDto.token,
-        token_type: kitchenTokenDto.token_type,
-        orderId: kitchenTokenDto.orderId,
-        order_items: kitchenItems,
-        priority: kitchenTokenDto.priority,
-        status: kitchenTokenDto.status
-      });
+      await this.createTokenWithRetry('K', orderId, kitchenItems);
     }
   }
 
+  private async createTokenWithRetry(
+    prefix: string,
+    orderId: string,
+    items: OrderItemResponseDto[],
+  ): Promise<void> {
+    const tokenType = prefix === 'B' ? TokenType.BAR : TokenType.KITCHEN;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        const tokenNumber = await this.generateTokenNumber(prefix);
+        await this.orderTokensService.create({
+          token: tokenNumber,
+          token_type: tokenType,
+          orderId: orderId,
+          order_items: items,
+          priority: OrderTokenPriority.NORMAL,
+          status: OrderTokenStatus.PENDING,
+        });
+        return;
+      } catch (error: any) {
+        if (error?.code === '23505' && attempts < maxAttempts) {
+          this.logger.warn(
+            `Order token collision (${prefix}), retrying (attempt ${attempts}/${maxAttempts})...`,
+          );
+          await new Promise((r) => setTimeout(r, 50 * attempts));
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new InternalServerErrorException(
+      `Failed to create ${prefix === 'B' ? 'bar' : 'kitchen'} token after maximum attempts`,
+    );
+  }
+
+  /**
+   * Generates a short daily order token in the format T-YYMMDD-XXXX
+   * - T = unified order prefix
+   * - YYMMDD = date (e.g. 260607 = 7 June 2026)
+   * - XXXX = 4-digit random number (1000-9999)
+   * Total length: 13 characters. Example: T-260607-4829
+   */
   private async generateUnifiedTokenNumber(): Promise<string> {
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
-    const tokenNumber = `T-${dateStr}-${uniqueId.slice(-3)}`;
-
-    const existing = await this.orderRepository.findOne({ where: { token_number: tokenNumber }, withDeleted: true });
-    if (existing) {
-      const fallbackNumber = `T-${dateStr}-${timestamp.toString().slice(-3)}`;
-      return fallbackNumber;
-    }
-
-    return tokenNumber;
+    const dateStr = this.getShortDateStr();
+    const random = randomInt(1000, 10000).toString(); // 1000-9999
+    return `T-${dateStr}-${random}`;
   }
 
+  /**
+   * Generates a short daily kitchen/bar token in the format K-YYMMDD-XXXX
+   * - K/B = kitchen/bar prefix
+   * - YYMMDD = date (e.g. 260607 = 7 June 2026)
+   * - XXXX = 4-digit random number (1000-9999)
+   * Total length: 13 characters. Example: K-260607-4829
+   */
   private async generateTokenNumber(prefix: string): Promise<string> {
+    const dateStr = this.getShortDateStr();
+    const random = randomInt(1000, 10000).toString(); // 1000-9999
+    return `${prefix}-${dateStr}-${random}`;
+  }
+
+  private getShortDateStr(): string {
     const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const uniqueId = `${timestamp.toString().slice(-6)}${random}`;
-    const tokenNumber = `${prefix}-${dateStr}-${uniqueId.slice(-3)}`;
-
-    const existingToken = await this.orderTokensService.findByToken(tokenNumber);
-    if (existingToken) {
-      const fallbackNumber = `${prefix}-${dateStr}-${timestamp.toString().slice(-3)}`;
-      return fallbackNumber;
-    }
-
-    return tokenNumber;
+    const year = today.getFullYear().toString().slice(-2); // last 2 digits
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+    return `${year}${month}${day}`; // e.g. "260607"
   }
 
   async remove(id: string): Promise<Order> {
@@ -663,11 +669,10 @@ export class OrderService {
 
     // Release occupied tables
     if (order.tables && order.tables.length > 0) {
-        for (const table of order.tables) {
-            if (table.status === TableStatus.OCCUPIED) {
-                table.status = TableStatus.AVAILABLE;
-                await this.tableRepository.save(table);
-            }
+        const tablesToRelease = order.tables.filter(t => t.status === TableStatus.OCCUPIED);
+        if (tablesToRelease.length > 0) {
+            tablesToRelease.forEach(t => (t.status = TableStatus.AVAILABLE));
+            await this.tableRepository.save(tablesToRelease);
         }
     }
 
@@ -729,18 +734,14 @@ export class OrderService {
             throw new NotFoundException(`Record with ID ${id} is not in trash`);
         }
 
-        // Delete order tokens first (cleans up order_token_items junction)
+        // Batch delete order tokens first (cleans up order_token_items junction)
         if (entity.orderTokens?.length) {
-            for (const token of entity.orderTokens) {
-                await this.orderTokensService.forceDelete(token.id);
-            }
+            await this.orderTokensService.forceDeleteMany(entity.orderTokens.map(t => t.id));
         }
 
-        // Delete order items
+        // Batch delete order items
         if (entity.orderItems?.length) {
-            for (const item of entity.orderItems) {
-                await this.orderItemService.forceDelete(item.id);
-            }
+            await this.orderItemService.forceDeleteMany(entity.orderItems.map(i => i.id));
         }
 
         // Clear order_tables join table
@@ -781,18 +782,14 @@ export class OrderService {
                     continue;
                 }
 
-                // Delete order tokens first (cleans up order_token_items junction)
+                // Batch delete order tokens first (cleans up order_token_items junction)
                 if (entity.orderTokens?.length) {
-                    for (const token of entity.orderTokens) {
-                        await this.orderTokensService.forceDelete(token.id);
-                    }
+                    await this.orderTokensService.forceDeleteMany(entity.orderTokens.map(t => t.id));
                 }
 
-                // Delete order items
+                // Batch delete order items
                 if (entity.orderItems?.length) {
-                    for (const item of entity.orderItems) {
-                        await this.orderItemService.forceDelete(item.id);
-                    }
+                    await this.orderItemService.forceDeleteMany(entity.orderItems.map(i => i.id));
                 }
 
                 // Clear order_tables join table

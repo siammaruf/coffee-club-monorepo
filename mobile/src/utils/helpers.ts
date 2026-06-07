@@ -41,5 +41,5 @@ export const formatPrettyDateOnly = (dateStr: string) => {
 export const withTimeout = <T>(promise: Promise<T>, timeoutMs = 10000): Promise<T> =>
   Promise.race([
     promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(undefined as T), timeoutMs)),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)),
   ]);

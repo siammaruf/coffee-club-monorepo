@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import CategoryModal from '@/components/modals/CategoryModal';
 import ProductSkeleton from '@/components/skeletons/ProductSkeleton';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function ProductListScreen() {
     const [products, setProducts] = useState<any[]>([]);
@@ -20,21 +21,31 @@ export default function ProductListScreen() {
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const isMountedRef = useRef(true);
 
     const router = useRouter();
+    const debouncedSearch = useDebounce(search, 400);
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const response = await categoryService.getAll({ limit: 100 });
-            if (response && response.data) {
+            if (isMountedRef.current && response && response.data) {
                 setCategories(response.data);
             }
         } catch (error) {
             // handle error if needed
         }
-    };
+    }, []);
 
-    const fetchProducts = async (pageNumber = 1, replace = false, searchValue = '', categorySlug = '') => {
+    const fetchProducts = useCallback(async (pageNumber = 1, replace = false, searchValue = '', categorySlug = '') => {
+        // Cancel previous request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         try {
             if (replace) {
                 setLoading(true);
@@ -49,64 +60,76 @@ export default function ProductListScreen() {
                 categorySlug: categorySlug || undefined,
             }) as { data?: any[], totalPages?: number };
 
-            if (response && response.data) {
-                setProducts(prev => {
-                    if (replace) return response.data ?? [];
-                    const existingIds = new Set(prev.map((p: any) => p.id));
-                    const newItems = (response.data ?? []).filter((p: any) => !existingIds.has(p.id));
-                    return [...prev, ...newItems];
-                });
-                setPage(pageNumber);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                if (response && response.data) {
+                    setProducts(prev => {
+                        if (replace) return response.data ?? [];
+                        const existingIds = new Set(prev.map((p: any) => p.id));
+                        const newItems = (response.data ?? []).filter((p: any) => !existingIds.has(p.id));
+                        return [...prev, ...newItems];
+                    });
+                    setPage(pageNumber);
 
-                if (!response.data.length || (response.totalPages && pageNumber >= response.totalPages)) {
-                    setHasMore(false);
+                    if (!response.data.length || (response.totalPages && pageNumber >= response.totalPages)) {
+                        setHasMore(false);
+                    } else {
+                        setHasMore(true);
+                    }
                 } else {
-                    setHasMore(true);
+                    setHasMore(false);
                 }
-            } else {
+            }
+        } catch (error: any) {
+            if (isMountedRef.current && !controller.signal.aborted) {
                 setHasMore(false);
             }
-        } catch (error) {
-            setHasMore(false);
         } finally {
-            setLoading(false);
-            setRefreshing(false);
-            setIsPaginating(false);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                setLoading(false);
+                setRefreshing(false);
+                setIsPaginating(false);
+            }
         }
-    };
+    }, []);
 
     useEffect(() => {
+        isMountedRef.current = true;
         fetchCategories();
-    }, []);
+        return () => {
+            isMountedRef.current = false;
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [fetchCategories]);
 
     useEffect(() => {
         setPage(1);
         setHasMore(true);
-        fetchProducts(1, true, search, selectedCategory);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, selectedCategory]);
+        fetchProducts(1, true, debouncedSearch, selectedCategory);
+    }, [debouncedSearch, selectedCategory, fetchProducts]);
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchProducts(1, true, search, selectedCategory);
-    }, [search, selectedCategory]);
+        fetchProducts(1, true, debouncedSearch, selectedCategory);
+    }, [debouncedSearch, selectedCategory, fetchProducts]);
 
     const handleLoadMore = useCallback(() => {
         if (!isPaginating && hasMore && products.length > 0) {
-            fetchProducts(page + 1, false, search, selectedCategory);
+            fetchProducts(page + 1, false, debouncedSearch, selectedCategory);
         }
-    }, [isPaginating, hasMore, products.length, page, search, selectedCategory]);
+    }, [isPaginating, hasMore, products.length, page, debouncedSearch, selectedCategory, fetchProducts]);
 
-    const handleSearchChange = (text: string) => {
+    const handleSearchChange = useCallback((text: string) => {
         setSearch(text);
-    };
+    }, []);
 
-    const handleCategorySelect = (slug: string) => {
+    const handleCategorySelect = useCallback((slug: string) => {
         setSelectedCategory(slug);
         setShowCategoryModal(false);
-    };
+    }, []);
 
-    const renderProduct = ({ item }: { item: any }) => {
+    const renderProduct = useCallback(({ item }: { item: any }) => {
         return (
             <TouchableOpacity
                 onPress={() => router.push(`/(app)/products/${item.id}`)}
@@ -165,7 +188,7 @@ export default function ProductListScreen() {
                 </View>
             </TouchableOpacity>
         );
-    };
+    }, [router]);
 
     return (
         <View className="flex-1 bg-gray-50">

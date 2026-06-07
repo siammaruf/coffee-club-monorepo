@@ -159,4 +159,9 @@ export class OrderItemService {
     async forceDelete(id: string): Promise<void> {
         await this.orderItemRepository.delete(id);
     }
+
+    async forceDeleteMany(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+        await this.orderItemRepository.delete(ids);
+    }
 }

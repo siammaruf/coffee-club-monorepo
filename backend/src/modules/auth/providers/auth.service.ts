@@ -80,7 +80,7 @@ export class AuthService {
       }
       return new Date() <= resetToken.expiresAt;
     } catch (error) {
-      console.error('Error verifying reset token:', error);
+      this.logger.error('Error verifying reset token: ' + (error?.message || error));
       return false;
     }
   }
@@ -223,7 +223,7 @@ export class AuthService {
         message: 'OTP sent to your registered email and phone number'
       };
     } catch (error) {
-      console.error('Error in forgotPassword:', error);
+      this.logger.error('Error in forgotPassword: ' + (error?.message || error));
       return { success: false, message: 'Failed to process password reset request' };
     }
   }
@@ -271,7 +271,7 @@ export class AuthService {
         token: passwordResetToken
       };
     } catch (error) {
-      console.error('Error verifying OTP:', error);
+      this.logger.error('Error verifying OTP: ' + (error?.message || error));
       return { success: false, message: 'Failed to verify OTP' };
     }
   }

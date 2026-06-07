@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TitleBar from '@/components/common/TitleBar';
@@ -31,19 +31,17 @@ export default function ExpensesListScreen() {
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [showDateModal, setShowDateModal] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const isMountedRef = useRef(true);
     const router = useRouter();
 
-    useFocusEffect(
-        useCallback(() => {
-            setPage(1);
-            fetchExpenses(1, true);
-            fetchCategories();
-        }, [statusFilter, dateFilter, startDate, endDate, activeFilter])
-    );
+    const fetchExpenses = useCallback(async (pageNumber = 1, replace = false) => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
-    const fetchExpenses = async (pageNumber = 1, replace = false) => {
-        if (loading && !replace) return;
-        if (isPaginating && !replace) return;
         if (replace) {
             setLoading(true);
         } else {
@@ -59,7 +57,7 @@ export default function ExpensesListScreen() {
                 endDate: dateFilter === 'custom' ? endDate : undefined,
                 category: activeFilter === 'all' ? undefined : activeFilter,
             }) as { data: ExpenseItem[], totalPages?: number };
-            if (response && response.data && Array.isArray(response.data)) {
+            if (isMountedRef.current && !controller.signal.aborted && response && response.data && Array.isArray(response.data)) {
                 setExpenses(prev =>
                     replace ? response.data : [...prev, ...response.data]
                 );
@@ -69,29 +67,48 @@ export default function ExpensesListScreen() {
                 } else {
                     setHasMore(response.data.length === 20);
                 }
-            } else {
+            } else if (isMountedRef.current && !controller.signal.aborted) {
                 setHasMore(false);
             }
-        } catch (error) {
-            console.error('Error loading expenses:', error);
-            Alert.alert('Error', 'Failed to load expenses. Please try again.');
-            setHasMore(false);
+        } catch (error: any) {
+            if (isMountedRef.current && !controller.signal.aborted) {
+                console.error('Error loading expenses:', error);
+                Alert.alert('Error', 'Failed to load expenses. Please try again.');
+                setHasMore(false);
+            }
         }
-        setLoading(false);
-        setIsPaginating(false);
-        setRefreshing(false);
-    };
+        if (isMountedRef.current && !controller.signal.aborted) {
+            setLoading(false);
+            setIsPaginating(false);
+            setRefreshing(false);
+        }
+    }, [statusFilter, dateFilter, startDate, endDate, activeFilter]);
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const response = await expenseCategoryService.getAll() as { data: ExpenseCategory[] };
-            if (response && response.data && Array.isArray(response.data)) {
+            if (isMountedRef.current && response && response.data && Array.isArray(response.data)) {
                 setCategories(response.data);
             }
         } catch (error) {
             // Handle error as needed
         }
-    };
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            isMountedRef.current = true;
+            setPage(1);
+            fetchExpenses(1, true);
+            fetchCategories();
+            return () => {
+                isMountedRef.current = false;
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                }
+            };
+        }, [fetchExpenses, fetchCategories])
+    );
 
     const allCategories = categories.map(cat => ({
         id: cat.id,
@@ -104,21 +121,55 @@ export default function ExpensesListScreen() {
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
         fetchExpenses(1, true);
-    }, []);
+    }, [fetchExpenses]);
 
     const handleLoadMore = useCallback(() => {
         if (!loading && !isPaginating && hasMore) {
             fetchExpenses(page + 1);
         }
-    }, [loading, isPaginating, hasMore, page]);
+    }, [loading, isPaginating, hasMore, page, fetchExpenses]);
 
-    const handleDateFilterSelect = (key: string) => {
+    const handleDateFilterSelect = useCallback((key: string) => {
         setDateFilter(key as 'all' | 'today' | 'week' | 'month' | 'custom');
         if (key === 'custom') {
             setShowDatePicker(true);
         }
         setShowDateModal(false);
-    };
+    }, []);
+
+    const renderExpenseItem = useCallback(({ item }: { item: ExpenseItem }) => (
+        <TouchableOpacity className='px-3' onPress={() => router.push(`/(app)/expenses/${item.id}` as any)} activeOpacity={0.8}>
+            <View className="bg-white rounded-xl shadow-sm border border-gray-100 px-2 py-2 mb-3">
+                <View className="flex-row items-center justify-between pb-1">
+                    <Ionicons
+                        name={'bag-remove-outline'}
+                        size={32}
+                        color={'#F59E0B'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                        <Text className="text-base font-semibold text-black">{item.title}</Text>
+                        <Text className="text-xs text-gray-500">{item.category?.name}</Text>
+                        <Text className="text-xs text-gray-400">{formatPrettyDate(item.created_at)}</Text>
+                    </View>
+                    <View className="items-end ml-2 pr-1">
+                        <PriceText className="text-lg font-bold text-orange-500">
+                            {formatPrice(item.amount)}
+                        </PriceText>
+                        <Text className={`text-xs mt-1 ${
+                            item.status === 'approved'
+                                ? 'text-green-600'
+                                : item.status === 'pending'
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                        }`}>
+                            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        </TouchableOpacity>
+    ), [router]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -243,39 +294,7 @@ export default function ExpensesListScreen() {
             ) : (
                 <FlatList
                     data={expenses}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity className='px-3' onPress={() => router.push(`/(app)/expenses/${item.id}` as any)} activeOpacity={0.8}>
-                            <View className="bg-white rounded-xl shadow-sm border border-gray-100 px-2 py-2 mb-3">
-                                <View className="flex-row items-center justify-between pb-1">
-                                    <Ionicons
-                                        name={'bag-remove-outline'}
-                                        size={32}
-                                        color={'#F59E0B'}
-                                        style={{ marginRight: 6 }}
-                                    />
-                                    <View style={{ flex: 1 }}>
-                                        <Text className="text-base font-semibold text-black">{item.title}</Text>
-                                        <Text className="text-xs text-gray-500">{item.category?.name}</Text>
-                                        <Text className="text-xs text-gray-400">{formatPrettyDate(item.created_at)}</Text>
-                                    </View>
-                                    <View className="items-end ml-2 pr-1">
-                                        <PriceText className="text-lg font-bold text-orange-500">
-                                            {formatPrice(item.amount)}
-                                        </PriceText>
-                                        <Text className={`text-xs mt-1 ${
-                                            item.status === 'approved'
-                                                ? 'text-green-600'
-                                                : item.status === 'pending'
-                                                ? 'text-yellow-600'
-                                                : 'text-red-600'
-                                        }`}>
-                                            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    )}
+                    renderItem={renderExpenseItem}
                     keyExtractor={(item) => item.id}
                     refreshing={refreshing}
                     onRefresh={handleRefresh}

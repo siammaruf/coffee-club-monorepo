@@ -26,6 +26,21 @@ const selectedPrinter = async () => {
     return printer?.device?.address;
 }
 
+export const hasSelectedPrinter = async (): Promise<boolean> => {
+    const address = await selectedPrinter();
+    return !!address;
+}
+
+async function initPrinter() {
+    const ReactNativePosPrinter = getPrinter();
+    if (!ReactNativePosPrinter) return;
+    try {
+        await ReactNativePosPrinter.init();
+    } catch (e) {
+        // init may already have been called; ignore failure
+    }
+}
+
 const formatDateWithOrdinal = (d: Date) => {
   const day = d.getDate();
   const ord = (day % 100 > 10 && day % 100 < 14) ? 'th' : (['th','st','nd','rd'][day % 10] || 'th');
@@ -105,6 +120,7 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
   const ReactNativePosPrinter = getPrinter();
   if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
 
+  await initPrinter();
   const printer = printerAddress || await selectedPrinter();
   try {
     const token = order.order_tokens?.[section];
@@ -163,6 +179,7 @@ export const printReceipt = async (order: Order, wifiName?: string, wifiPassword
     const ReactNativePosPrinter = getPrinter();
     if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
 
+    await initPrinter();
     const printer = printerAddress || await selectedPrinter();
     try{
         if (!order.order_items || order.order_items.length === 0) {
@@ -271,6 +288,7 @@ export const printCustomerToken = async (order: Order, wifiName?: string, wifiPa
   const ReactNativePosPrinter = getPrinter();
   if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
 
+  await initPrinter();
   const printer = printerAddress || await selectedPrinter();
   try {
     if (!order.order_items || order.order_items.length === 0) {
@@ -337,6 +355,7 @@ export const printSalesReport = async (report: any, printerAddress?: string): Pr
     const ReactNativePosPrinter = getPrinter();
     if (!ReactNativePosPrinter) { showPrinterUnavailable(); return; }
 
+    await initPrinter();
     const printer = printerAddress || await selectedPrinter();
     try {
         const printerInstance = await ReactNativePosPrinter.connectPrinter(printer);

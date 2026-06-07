@@ -143,6 +143,16 @@ export class OrderTokensService {
     return { deleted: true };
   }
 
+  async removeMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.orderTokenRepository.softDelete(ids);
+  }
+
+  async updateMany(tokens: OrderToken[]): Promise<void> {
+    if (tokens.length === 0) return;
+    await this.orderTokenRepository.save(tokens);
+  }
+
   async countTokensByPrefixAndDate(prefix: string, startDate: Date, endDate: Date): Promise<number> {
     return await this.orderTokenRepository.count({
       where: {
@@ -202,5 +212,10 @@ export class OrderTokensService {
 
     async forceDelete(id: string): Promise<void> {
         await this.orderTokenRepository.delete(id);
+    }
+
+    async forceDeleteMany(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+        await this.orderTokenRepository.delete(ids);
     }
 }
