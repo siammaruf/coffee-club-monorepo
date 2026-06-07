@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import expenseService from '@/services/httpServices/expenseService';
 import expenseCategoryService from '@/services/httpServices/expenseCategoryService';
@@ -12,6 +13,7 @@ import FilterModal from '@/components/modals/FilterModal';
 import ExpenseSkeleton from '@/components/skeletons/ExpenseSkeleton';
 
 export default function ExpenseDateDetailScreen() {
+    const insets = useSafeAreaInsets();
     const { date } = useLocalSearchParams<{ date: string }>();
     const router = useRouter();
 
@@ -157,7 +159,7 @@ export default function ExpenseDateDetailScreen() {
     const totalForDay = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
             {/* Header */}
             <View className="bg-white px-4 pt-4 pb-3 border-b border-gray-200">
                 <View className="flex-row items-center mb-2">

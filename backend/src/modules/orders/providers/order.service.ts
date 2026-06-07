@@ -418,7 +418,15 @@ export class OrderService {
 
     // Date filter
     if (dateFilter && dateFilter !== 'all') {
-      if (dateFilter === 'today') {
+      if (dateFilter === 'today' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        orderQueryBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+          startDate: start,
+          endDate: end
+        });
+      } else if (dateFilter === 'today') {
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -497,7 +505,15 @@ export class OrderService {
     }
 
     if (dateFilter && dateFilter !== 'all') {
-      if (dateFilter === 'today') {
+      if (dateFilter === 'today' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        countsBuilder.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+          startDate: start,
+          endDate: end
+        });
+      } else if (dateFilter === 'today') {
         const today = new Date();
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
