@@ -73,6 +73,11 @@ export default function OrderListScreen() {
 
     if (selectedDateFilter === 'today') {
       params.dateFilter = 'today';
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      params.startDate = formatDate(startOfDay);
+      params.endDate = formatDate(endOfDay);
     } else if (selectedDateFilter === 'custom') {
       params.dateFilter = 'custom';
       params.startDate = formatDate(selectedDate);
