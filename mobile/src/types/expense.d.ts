@@ -53,3 +53,9 @@ export interface ExpenseCategory {
     icon?: string;
     color?: string;
 }
+
+export interface ExpenseGroup {
+    date: string;
+    totalAmount: number;
+    count: number;
+}

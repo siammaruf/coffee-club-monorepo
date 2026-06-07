@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="expenses/create" />
       <Stack.Screen name="expenses/edit" />
       <Stack.Screen name="expenses/[id]" />
+      <Stack.Screen name="expenses/date-detail" />
       <Stack.Screen name="reports/[id]" />
       <Stack.Screen name="printer/index" />
     </Stack>

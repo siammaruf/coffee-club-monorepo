@@ -1,4 +1,4 @@
-import type { ExpenseCreate, ExpenseItem, ExpenseUpdate } from '../../types/expense';
+import type { ExpenseCreate, ExpenseGroup, ExpenseItem, ExpenseUpdate } from '../../types/expense';
 import { httpService } from '../httpService';
 
 interface ExpenseListResponse {
@@ -21,10 +21,19 @@ interface ExpenseResponse {
   timestamp: string;
 }
 
+interface ExpenseGroupedResponse {
+  data: ExpenseGroup[];
+  status: string;
+  message: string;
+  statusCode: number;
+  timestamp: string;
+}
+
 const BASE_URL = '/expenses';
 
 const expenseService = {
   getAll: (params?: any) => httpService.get<ExpenseListResponse>(BASE_URL, { params }),
+  getGrouped: (params?: any) => httpService.get<ExpenseGroupedResponse>(`${BASE_URL}/grouped`, { params }),
   getById: (id: string) => httpService.get<ExpenseResponse>(`${BASE_URL}/${id}`),
   create: (data: ExpenseCreate) => httpService.post<ExpenseResponse>(BASE_URL, data),
   update: (id: string, data: ExpenseUpdate) => httpService.put<ExpenseResponse>(`${BASE_URL}/${id}`, data),

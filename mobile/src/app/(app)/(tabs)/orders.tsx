@@ -26,6 +26,7 @@ export default function OrderListScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [showOrderTypeModal, setShowOrderTypeModal] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
 
@@ -38,6 +39,7 @@ export default function OrderListScreen() {
   const statusColors: Record<string, { bg: string; text: string; border: string; bgLight: string }> = {
     pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-200', bgLight: 'bg-yellow-50' },
     completed: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', bgLight: 'bg-green-50' },
+    cancelled: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', bgLight: 'bg-red-50' },
   };
 
   const defaultStatusColor = { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', bgLight: 'bg-gray-50'};
@@ -66,7 +68,7 @@ export default function OrderListScreen() {
     }
 
     if (selectedOrderType !== 'all') {
-      params.order_type = selectedOrderType;
+      params.orderType = selectedOrderType;
     }
 
     if (selectedDateFilter === 'today') {
@@ -251,6 +253,17 @@ export default function OrderListScreen() {
     }
   }, [selectedDateFilter, selectedDate, formatDisplayDate]);
 
+  const getOrderTypeFilterLabel = useCallback(() => {
+    if (selectedOrderType === 'all') {
+      return 'All Types';
+    } else if (selectedOrderType === OrderType.DINEIN) {
+      return 'Table';
+    } else if (selectedOrderType === OrderType.TAKEAWAY) {
+      return 'Takeaway';
+    }
+    return 'All Types';
+  }, [selectedOrderType]);
+
   const renderItem = useCallback(({ item: order }: { item: Order }) => (
     <TouchableOpacity
       onPress={() => order.id && handleOrderDetails(order.id)}
@@ -268,16 +281,38 @@ export default function OrderListScreen() {
           </View>
           <View>
             <Text className="font-bold text-sm text-gray-800">{order.order_id}</Text>
+            <Text className="text-xs text-gray-500 mt-1">
+              {order.created_at ? new Date(order.created_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+              }) : ''}
+            </Text>
           </View>
         </View>
-        <View className={`px-1.5 py-0.5 rounded border ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].bg : defaultStatusColor.bg} ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].border : defaultStatusColor.border}`}>
-          <Text className={`text-xs font-medium ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].text : defaultStatusColor.text}`}>
-            {order.status ? order.status.toUpperCase() : 'UNKNOWN'}
-          </Text>
+        <View className="items-end">
+          <View className={`px-1.5 py-0.5 rounded border ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].bg : defaultStatusColor.bg} ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].border : defaultStatusColor.border}`}>
+            <Text className={`text-xs font-medium ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].text : defaultStatusColor.text}`}>
+              {order.status ? order.status.toUpperCase() : 'UNKNOWN'}
+            </Text>
+          </View>
+          {order.order_type === 'DINEIN' && order.tables && order.tables.length > 0 ? (
+            <View className="flex-row items-center bg-blue-50 border border-blue-200 px-2.5 py-1 rounded mt-2">
+              <Ionicons name="restaurant" size={12} color="#2563EB" />
+              <Text className="text-xs font-semibold text-blue-700 ml-1">
+                Table {order.tables.map(t => `#${t.number ?? ''}`).join(', ')}
+              </Text>
+            </View>
+          ) : order.order_type === 'TAKEAWAY' ? (
+            <View className="flex-row items-center bg-orange-50 border border-orange-200 px-2.5 py-1 rounded mt-2">
+              <Ionicons name="bag" size={12} color="#EA580C" />
+              <Text className="text-xs font-semibold text-orange-700 ml-1">
+                Takeaway
+              </Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
-      {/* Compact Customer & Table / Takeaway Info */}
+      {/* Compact Customer Info */}
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-1">
           <Text className="text-sm font-medium text-gray-800">
@@ -285,47 +320,32 @@ export default function OrderListScreen() {
               ? (order.customer as { name?: string }).name || 'Walk-in'
               : 'Walk-in'}
           </Text>
-          <View className="flex-row items-center flex-wrap mt-1">
-            {order.order_type === 'DINEIN' && order.tables && order.tables.length > 0 ? (
-              <View className="flex-row items-center bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                <Ionicons name="restaurant" size={12} color="#2563EB" />
-                <Text className="text-xs font-semibold text-blue-700 ml-1">
-                  Table {order.tables.map(t => `#${t.number ?? ''}`).join(', ')}
-                </Text>
-              </View>
-            ) : order.order_type === 'TAKEAWAY' ? (
-              <View className="flex-row items-center bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-                <Ionicons name="bag" size={12} color="#EA580C" />
-                <Text className="text-xs font-semibold text-orange-700 ml-1">
-                  Takeaway
-                </Text>
-              </View>
-            ) : null}
-            {order.customer?.phone && (
-              <View className="flex-row items-center ml-2">
-                <Ionicons name="call-outline" size={12} color="#6B7280" />
-                <Text className="text-xs text-gray-500 ml-1">{order.customer.phone}</Text>
-              </View>
-            )}
-          </View>
+          {order.customer?.phone && (
+            <View className="flex-row items-center mt-1">
+              <Ionicons name="call-outline" size={12} color="#6B7280" />
+              <Text className="text-xs text-gray-500 ml-1">{order.customer.phone}</Text>
+            </View>
+          )}
         </View>
       </View>
 
       {/* Compact Items Preview */}
-      <View className="mb-2">
-        <Text className="text-xs text-gray-600">
-          {(order.order_items ?? []).length} item{(order.order_items ?? []).length > 1 ? 's' : ''}: {' '}
-          {(order.order_items ?? [])
-            .slice(0, 2)
-            .map(item => item.item ? `${item.item.name} x${item.quantity}` : '')
-            .filter(Boolean)
-            .join(', ')}
-          {(order.order_items ?? []).length > 2 && ` +${(order.order_items ?? []).length - 2} more`}
-        </Text>
-      </View>
+      {(order.order_items ?? []).length > 0 && (
+        <View className="mb-2">
+          <Text className="text-xs text-gray-600">
+            {(order.order_items ?? []).length} item{(order.order_items ?? []).length > 1 ? 's' : ''}: {' '}
+            {(order.order_items ?? [])
+              .slice(0, 2)
+              .map(item => item.item ? `${item.item.name} x${item.quantity}` : '')
+              .filter(Boolean)
+              .join(', ')}
+            {(order.order_items ?? []).length > 2 && ` +${(order.order_items ?? []).length - 2} more`}
+          </Text>
+        </View>
+      )}
 
       {/* Compact Order Footer */}
-      <View className="flex-row items-center justify-between border-t border-gray-100 pt-2">
+      <View className={`flex-row items-center justify-between border-t pt-2 ${(order.status && statusColors[order.status.toLowerCase()]) ? statusColors[order.status.toLowerCase()].border : defaultStatusColor.border}`}>
         <View>
           <PriceText className="font-bold text-base text-[#EF4444]">{formatPrice(order.total_amount)}</PriceText>
         </View>
@@ -374,11 +394,11 @@ export default function OrderListScreen() {
           </View>
         </View>
 
-        {/* Compact Date Filter */}
-        <View className="px-4 pb-2 mb-1">
+        {/* Compact Filter Row: Date + Order Type */}
+        <View className="px-4 pb-2 mb-1 flex-row space-x-2 gap-2">
           <TouchableOpacity
             onPress={() => setShowDateModal(true)}
-            className="flex-row items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200"
+            className="flex-1 flex-row items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200"
           >
             <View className="flex-row items-center">
               <Ionicons
@@ -392,36 +412,24 @@ export default function OrderListScreen() {
             </View>
             <Ionicons name="chevron-down" size={14} color="#6B7280" />
           </TouchableOpacity>
-        </View>
 
-        {/* Compact Order Type Filter */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="px-4 pb-2"
-        >
-          <View className="flex-row space-x-2 gap-1">
-            {orderTypeFilters.map((filter) => (
-              <TouchableOpacity
-                key={filter.key}
-                onPress={() => setSelectedOrderType(filter.key as OrderType | 'all')}
-                className={`px-4 py-2 rounded-lg border ${
-                  selectedOrderType === filter.key
-                    ? 'bg-blue-500 border-blue-500'
-                    : 'bg-white border-gray-200'
-                }`}
-              >
-                <Text className={`font-medium text-xs ${
-                  selectedOrderType === filter.key
-                    ? 'text-white'
-                    : 'text-gray-600'
-                }`}>
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+          <TouchableOpacity
+            onPress={() => setShowOrderTypeModal(true)}
+            className="flex-1 flex-row items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200"
+          >
+            <View className="flex-row items-center">
+              <Ionicons
+                name={selectedOrderType === 'all' ? 'filter-outline' : selectedOrderType === OrderType.DINEIN ? 'restaurant' : 'bag'}
+                size={16}
+                color="#6B7280"
+              />
+              <Text className="text-gray-700 font-medium ml-2 text-sm">
+                {getOrderTypeFilterLabel()}
+              </Text>
+            </View>
+            <Ionicons name="chevron-down" size={14} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
 
         {/* Compact Status Filter */}
         <ScrollView
@@ -440,7 +448,7 @@ export default function OrderListScreen() {
                     : 'bg-white border-gray-200'
                 }`}
               >
-                <Text className={`font-medium text-xs ${
+                <Text className={`font-medium text-sm ${
                   selectedStatus === filter.key
                     ? 'text-white'
                     : 'text-gray-600'
@@ -575,6 +583,58 @@ export default function OrderListScreen() {
                   }}
                 />
               )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Compact Order Type Filter Modal */}
+      <Modal
+        visible={showOrderTypeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowOrderTypeModal(false)}
+      >
+        <View className="flex-1 bg-black/50">
+          <View className="flex-1 justify-end">
+            <View className="bg-white rounded-t-3xl p-4" style={{ paddingBottom: 16 + insets.bottom }}>
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-lg font-bold text-gray-800">Filter by Order Type</Text>
+                <TouchableOpacity onPress={() => setShowOrderTypeModal(false)}>
+                  <Ionicons name="close" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+
+              <View className="space-y-2">
+                {orderTypeFilters.map((filter) => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    onPress={() => {
+                      setSelectedOrderType(filter.key as OrderType | 'all');
+                      setShowOrderTypeModal(false);
+                    }}
+                    className={`flex-row items-center p-3 mb-1 rounded-lg border ${
+                      selectedOrderType === filter.key
+                        ? 'bg-[#EF4444]/10 border-[#EF4444]'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Ionicons
+                      name={filter.key === 'all' ? 'filter-outline' : filter.key === OrderType.DINEIN ? 'restaurant' : 'bag'}
+                      size={20}
+                      color={selectedOrderType === filter.key ? '#EF4444' : '#6B7280'}
+                    />
+                    <Text className={`ml-3 font-medium text-sm ${
+                      selectedOrderType === filter.key ? 'text-[#EF4444]' : 'text-gray-700'
+                    }`}>
+                      {filter.label}
+                    </Text>
+                    {selectedOrderType === filter.key && (
+                      <Ionicons name="checkmark" size={16} color="#EF4444" style={{ marginLeft: 'auto' }} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
         </View>

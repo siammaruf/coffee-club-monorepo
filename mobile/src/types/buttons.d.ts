@@ -3,4 +3,5 @@ export interface ButtonProps {
     onPress: () => void;
     variant?: 'primary' | 'secondary';
     className?: string;
+    disabled?: boolean;
 }

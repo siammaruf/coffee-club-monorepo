@@ -81,6 +81,8 @@ export class ExpensesController {
   @ApiQuery({ name: 'categoryId', required: false, type: String, description: 'Filter by category ID' })
   @ApiQuery({ name: 'status', required: false, enum: ExpenseStatus, enumName: 'ExpenseStatus', description: 'Filter by status' })
   @ApiQuery({ name: 'dateFilter', required: false, enum: ['today', 'week', 'month', 'all'], description: 'Filter by date range' })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiResponse({ status: 200, description: 'Returns a paginated list of expenses', type: [ExpensesResponseDto] })
@@ -88,6 +90,8 @@ export class ExpensesController {
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: ExpenseStatus,
     @Query('dateFilter') dateFilter?: 'today' | 'week' | 'month' | 'all',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ): Promise<{
@@ -102,27 +106,65 @@ export class ExpensesController {
   }> {
     const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNumber = limit ? parseInt(limit, 10) : 10;
-    
+
     if (page && isNaN(pageNumber)) {
       throw new BadRequestException('Page must be a number');
     }
-    
+
     if (limit && isNaN(limitNumber)) {
       throw new BadRequestException('Limit must be a number');
     }
-    
+
     const result = await this.expensesService.findAll({
       categoryId,
       status,
       dateFilter,
+      startDate,
+      endDate,
       page: pageNumber,
       limit: limitNumber
     });
-    
+
     return {
       ...result,
       status: 'success',
       message: 'Expenses retrieved successfully',
+      statusCode: HttpStatus.OK
+    };
+  }
+
+  @Get('grouped')
+  @ApiOperation({ summary: 'Get expenses grouped by date' })
+  @ApiQuery({ name: 'categoryId', required: false, type: String, description: 'Filter by category ID' })
+  @ApiQuery({ name: 'status', required: false, enum: ExpenseStatus, enumName: 'ExpenseStatus', description: 'Filter by status' })
+  @ApiQuery({ name: 'dateFilter', required: false, enum: ['today', 'week', 'month', 'all'], description: 'Filter by date range' })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
+  @ApiResponse({ status: 200, description: 'Returns expenses grouped by date with totals' })
+  async getGroupedByDate(
+    @Query('categoryId') categoryId?: string,
+    @Query('status') status?: ExpenseStatus,
+    @Query('dateFilter') dateFilter?: 'today' | 'week' | 'month' | 'all',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<{
+    data: { date: string; totalAmount: number; count: number }[];
+    status: string;
+    message: string;
+    statusCode: HttpStatus;
+  }> {
+    const result = await this.expensesService.getGroupedByDate({
+      categoryId,
+      status,
+      dateFilter,
+      startDate,
+      endDate,
+    });
+
+    return {
+      data: result,
+      status: 'success',
+      message: 'Expenses grouped by date retrieved successfully',
       statusCode: HttpStatus.OK
     };
   }
