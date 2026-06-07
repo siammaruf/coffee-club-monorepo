@@ -322,11 +322,25 @@ export default function OrderDetails() {
 
         setOrder(updatedOrder);
 
-        await handlePrintReceipt(updatedOrder);
-        Alert.alert('Success', 'The Order completed successfully!', [{
-          text: 'OK',
-          onPress: () => router.push('/(app)/(tabs)/orders')
-        }], { cancelable: false });
+        Alert.alert(
+          'Order Completed',
+          'Do you want to print the receipt?',
+          [
+            {
+              text: 'No',
+              style: 'cancel',
+              onPress: () => router.push('/(app)/(tabs)/orders'),
+            },
+            {
+              text: 'Print Receipt',
+              onPress: async () => {
+                await handlePrintReceipt(updatedOrder);
+                router.push('/(app)/(tabs)/orders');
+              },
+            },
+          ],
+          { cancelable: false }
+        );
       }
     } catch (error) {
       console.error('Error completing order:', error);
@@ -594,6 +608,33 @@ export default function OrderDetails() {
         </View>
       </View>
 
+      {/* Order Type / Table Highlight */}
+      <View className="px-4 pt-3">
+        {order.order_type === 'DINEIN' && order.tables && order.tables.length > 0 ? (
+          <View className="bg-orange-50 rounded-xl p-4 border border-orange-200 flex-row items-center">
+            <View className="bg-orange-100 p-2.5 rounded-full mr-3">
+              <Ionicons name="restaurant" size={22} color="#F97316" />
+            </View>
+            <View>
+              <Text className="text-xs text-orange-600 font-medium">Dine In</Text>
+              <Text className="text-xl font-bold text-orange-800">
+                Table {order.tables.map((t) => `#${t.number}`).join(', ')}
+              </Text>
+            </View>
+          </View>
+        ) : order.order_type === 'TAKEAWAY' ? (
+          <View className="bg-blue-50 rounded-xl p-4 border border-blue-200 flex-row items-center">
+            <View className="bg-blue-100 p-2.5 rounded-full mr-3">
+              <Ionicons name="bag-outline" size={22} color="#3B82F6" />
+            </View>
+            <View>
+              <Text className="text-xs text-blue-600 font-medium">Order Type</Text>
+              <Text className="text-xl font-bold text-blue-800">Takeaway</Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
+
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-3">
           {/* Customer & Payment Section */}
@@ -737,7 +778,7 @@ export default function OrderDetails() {
                         loadDiscounts();
                         setShowDiscountModal(true);
                       }}
-                      className="bg-blue-500 px-4 py-2 rounded-lg min-w-[80px]"
+                      className="bg-purple-500 px-4 py-2 rounded-lg min-w-[80px]"
                     >
                       <Text className="text-white text-sm font-semibold text-center">
                         {selectedDiscount ? 'Change' : 'Apply'}
@@ -876,16 +917,6 @@ export default function OrderDetails() {
             <View className="border-t border-gray-100 pt-3 mt-3">
               <Text className="text-sm font-semibold text-gray-800 mb-2">Summary</Text>
               <View className="space-y-1">
-
-                {/* Table Numbers */}
-                {order.tables && order.tables.length > 0 && (
-                  <View className="flex-row justify-between border-b border-gray-200 pb-1 mb-1">
-                    <Text className="text-sm text-orange-600">Table(s)</Text>
-                    <Text className="text-lg text-orange-500 font-medium">
-                      {order.tables.map(t => t.number).join(', ')}
-                    </Text>
-                  </View>
-                )}
 
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-gray-600">Subtotal</Text>

@@ -60,6 +60,8 @@ export class ExpensesService {
         categoryId?: string;
         status?: ExpenseStatus;
         dateFilter?: 'today' | 'week' | 'month' | 'all';
+        startDate?: string;
+        endDate?: string;
         page?: number;
         limit?: number;
     }): Promise<{
@@ -74,9 +76,11 @@ export class ExpensesService {
         const categoryId = options?.categoryId || '';
         const status = options?.status || '';
         const dateFilter = options?.dateFilter || 'all';
-        
-        const cacheKey = `expenses:page:${page}:limit:${limit}:category:${categoryId}:status:${status}:date:${dateFilter}`;
-        
+        const startDate = options?.startDate || '';
+        const endDate = options?.endDate || '';
+
+        const cacheKey = `expenses:page:${page}:limit:${limit}:category:${categoryId}:status:${status}:date:${dateFilter}:start:${startDate}:end:${endDate}`;
+
         const cachedResult = await this.cacheService.get(cacheKey);
         if (cachedResult) {
             return {
@@ -87,54 +91,59 @@ export class ExpensesService {
                 totalPages: (cachedResult as any).totalPages
             };
         }
-        
+
         const queryBuilder = this.expensesRepository.createQueryBuilder('expense')
             .leftJoinAndSelect('expense.category', 'category');
-        
+
         if (options?.categoryId) {
             queryBuilder.andWhere('category.id = :categoryId', { categoryId: options.categoryId });
         }
-        
+
         if (options?.status) {
             queryBuilder.andWhere('expense.status = :status', { status: options.status });
         }
-        
-        if (options?.dateFilter && options.dateFilter !== 'all') {
+
+        if (options?.startDate && options?.endDate) {
+            const s = new Date(options.startDate);
+            const e = new Date(options.endDate);
+            e.setHours(23, 59, 59, 999);
+            queryBuilder.andWhere('expense.created_at >= :startDate AND expense.created_at <= :endDate', { startDate: s, endDate: e });
+        } else if (options?.dateFilter && options.dateFilter !== 'all') {
             const now = new Date();
             let startDate: Date;
-            
+
             switch (options.dateFilter) {
                 case 'today':
                     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
                     break;
-                    
+
                 case 'week':
                     const dayOfWeek = now.getDay();
                     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToSubtract);
                     queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
                     break;
-                    
+
                 case 'month':
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                     queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
                     break;
-                    
+
                 default:
                     break;
             }
         }
-        
+
         queryBuilder
             .orderBy('expense.created_at', 'DESC')
             .addOrderBy('expense.id', 'ASC')
             .skip((page - 1) * limit)
             .take(limit);
-        
+
         const [expenses, total] = await queryBuilder.getManyAndCount();
         const totalPages = Math.ceil(total / limit);
-        
+
         const result = {
             data: expenses.map(expense => new ExpensesResponseDto(expense)),
             total,
@@ -142,10 +151,95 @@ export class ExpensesService {
             limit,
             totalPages
         };
-        
+
         await this.cacheService.set(cacheKey, result, 3600);
-        
+
         return result;
+    }
+
+    async getGroupedByDate(options?: {
+        categoryId?: string;
+        status?: ExpenseStatus;
+        dateFilter?: 'today' | 'week' | 'month' | 'all';
+        startDate?: string;
+        endDate?: string;
+    }): Promise<{
+        date: string;
+        totalAmount: number;
+        count: number;
+    }[]> {
+        const categoryId = options?.categoryId || '';
+        const status = options?.status || '';
+        const dateFilter = options?.dateFilter || 'all';
+        const startDate = options?.startDate || '';
+        const endDate = options?.endDate || '';
+
+        const cacheKey = `expenses:grouped:category:${categoryId}:status:${status}:date:${dateFilter}:start:${startDate}:end:${endDate}`;
+
+        const cachedResult = await this.cacheService.get(cacheKey);
+        if (cachedResult) {
+            return cachedResult as { date: string; totalAmount: number; count: number }[];
+        }
+
+        const queryBuilder = this.expensesRepository.createQueryBuilder('expense')
+            .leftJoin('expense.category', 'category')
+            .select("DATE(expense.created_at)", 'date')
+            .addSelect("SUM(expense.amount)", 'totalAmount')
+            .addSelect("COUNT(expense.id)", 'count')
+            .groupBy("DATE(expense.created_at)")
+            .orderBy("DATE(expense.created_at)", 'DESC');
+
+        if (options?.categoryId) {
+            queryBuilder.andWhere('category.id = :categoryId', { categoryId: options.categoryId });
+        }
+
+        if (options?.status) {
+            queryBuilder.andWhere('expense.status = :status', { status: options.status });
+        }
+
+        if (options?.startDate && options?.endDate) {
+            const s = new Date(options.startDate);
+            const e = new Date(options.endDate);
+            e.setHours(23, 59, 59, 999);
+            queryBuilder.andWhere('expense.created_at >= :startDate AND expense.created_at <= :endDate', { startDate: s, endDate: e });
+        } else if (options?.dateFilter && options.dateFilter !== 'all') {
+            const now = new Date();
+            let startDate: Date;
+
+            switch (options.dateFilter) {
+                case 'today':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
+                    break;
+
+                case 'week':
+                    const dayOfWeek = now.getDay();
+                    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToSubtract);
+                    queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
+                    break;
+
+                case 'month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    queryBuilder.andWhere('expense.created_at >= :startDate', { startDate });
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        const result = await queryBuilder.getRawMany();
+
+        const mapped = result.map(row => ({
+            date: row.date,
+            totalAmount: Number(row.totalAmount),
+            count: Number(row.count),
+        }));
+
+        await this.cacheService.set(cacheKey, mapped, 3600);
+
+        return mapped;
     }
 
     async findOne(id: string): Promise<ExpensesResponseDto> {
