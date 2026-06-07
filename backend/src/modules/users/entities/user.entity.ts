@@ -61,7 +61,7 @@ export class User {
   @Column({nullable: true})
   picture: string;
 
-  @Column({nullable: true})
+  @Column({ type: 'varchar', nullable: true })
   refresh_token: string | null;
 
   @Column({
