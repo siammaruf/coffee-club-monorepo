@@ -1,7 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DatabaseExceptionFilter } from './common/filters/exception.filter';
@@ -17,7 +17,9 @@ import { BasicAuthOptions, swaggerCustomOptions } from './config/swagger.config'
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new Logger('Bootstrap'),
+  });
 
   // Serve static files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
@@ -72,18 +74,26 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrgins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true
+    credentials: true,
+    maxAge: 86400,
   });
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port, '0.0.0.0');
-  
+  const server = await app.listen(port, '0.0.0.0');
+
+  // Set HTTP timeouts to prevent hung connections from exhausting the pool
+  const serverTimeout = configService.get<number>('SERVER_TIMEOUT', 30000);
+  server.setTimeout(serverTimeout);
+  server.keepAliveTimeout = configService.get<number>('SERVER_KEEP_ALIVE_TIMEOUT', 5000);
+  server.headersTimeout = configService.get<number>('SERVER_HEADERS_TIMEOUT', 60000);
+
+  const logger = new Logger('Bootstrap');
   const serverUrl = `http://localhost:${port}`;
   const docsUrl = `${serverUrl}/api/v1/docs`;
 
-  console.log('\n🚀 Application is running on:', serverUrl);
-  console.log('📚 API Documentation:', docsUrl);
-  console.log('🔌 Socket.IO:', serverUrl);
-  console.log('   └─ WhatsApp:', `${serverUrl}/whatsapp`, '\n');
+  logger.log('\n🚀 Application is running on: ' + serverUrl);
+  logger.log('📚 API Documentation: ' + docsUrl);
+  logger.log('🔌 Socket.IO: ' + serverUrl);
+  logger.log('   └─ WhatsApp: ' + `${serverUrl}/whatsapp` + '\n');
 }
 bootstrap();

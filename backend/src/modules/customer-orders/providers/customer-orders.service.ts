@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
@@ -23,6 +24,8 @@ import { TableStatus } from '../../table/enum/table-status.enum';
 
 @Injectable()
 export class CustomerOrdersService {
+  private readonly logger = new Logger(CustomerOrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -232,7 +235,7 @@ export class CustomerOrdersService {
       await this.cartService.clearCart(customerId);
     } catch (error) {
       // Cart clearing failure should not fail the order
-      console.error('Failed to clear cart after order:', error);
+      this.logger.warn('Failed to clear cart after order: ' + (error?.message || error));
     }
 
     // 8. Send confirmation email
@@ -244,7 +247,7 @@ export class CustomerOrdersService {
         );
       } catch (error) {
         // Email failure should not fail the order
-        console.error('Failed to send order confirmation email:', error);
+        this.logger.warn('Failed to send order confirmation email: ' + (error?.message || error));
       }
     }
 

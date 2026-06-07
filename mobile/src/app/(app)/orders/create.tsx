@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/components/common/Button';
@@ -15,10 +15,13 @@ import { OrderStatus, OrderType } from '@/enums/orderEnum';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatPrice, formatPriceRange } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function OrderForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [orderType, setOrderType] = useState<OrderType>(OrderType.DINEIN);
   const [orderItems, setOrderItems] = useState<any[]>([]);
@@ -36,71 +39,110 @@ export default function OrderForm() {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [variationModal, setVariationModal] = useState<{visible: boolean, product: any | null}>({visible: false, product: null});
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-  useEffect(() => {
-    if (selectedCategory) {
-      loadProductsByCategory(selectedCategory);
+  const loadInitialData = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-  }, [selectedCategory]);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-  const loadInitialData = async () => {
     try {
       setIsLoading(true);
       const user = await authService.checkAuthStatus();
-      setCurrentUser(user);
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setCurrentUser(user);
+      }
 
       await loadCategories();
 
       const tablesData = await tableService.getAll();
-      setTables(tablesData.data || []);
-
-      const reservedTables: any[] = (tablesData.data || []).filter((table: any) => table.status === 'reserved');
-      if (reservedTables.length > 0) {
-        setSelectedTables(reservedTables);
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setTables(tablesData.data || []);
+        const reservedTables: any[] = (tablesData.data || []).filter((table: any) => table.status === 'reserved');
+        if (reservedTables.length > 0) {
+          setSelectedTables(reservedTables);
+        }
       }
-
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'Failed to load data. Please try again.');
+    } catch (error: any) {
+      if (isMountedRef.current && !controller.signal.aborted) {
+        console.error('Error loading initial data:', error);
+        Alert.alert('Error', 'Failed to load data. Please try again.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       setLoadingCategories(true);
-      const categoriesResponse = await categoryService.getAll({limit: 1000});
+      // Paginated category loading instead of loading all 1000 at once
+      const categoriesResponse = await categoryService.getAll({limit: 50});
       const categoriesData = categoriesResponse.data || [];
-      setCategories(categoriesData);
-
-      if (categoriesData.length > 0 && !selectedCategory) {
-        setSelectedCategory(categoriesData[0].slug);
+      if (isMountedRef.current) {
+        setCategories(categoriesData);
+        if (categoriesData.length > 0 && !selectedCategory) {
+          setSelectedCategory(categoriesData[0].slug);
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to load categories.');
+      if (isMountedRef.current) {
+        Alert.alert('Error', 'Failed to load categories.');
+      }
     } finally {
-      setLoadingCategories(false);
+      if (isMountedRef.current) {
+        setLoadingCategories(false);
+      }
     }
-  };
+  }, [selectedCategory]);
 
-  const loadProductsByCategory = async (categorySlug: string) => {
+  const loadProductsByCategory = useCallback(async (categorySlug: string) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       setLoadingProducts(true);
       const productsResponse = await productService.getAll({
         categorySlug: categorySlug,
         statuses: ['active', 'available']
       });
-      setProducts(productsResponse.data || []);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load products for this category.');
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setProducts(productsResponse.data || []);
+      }
+    } catch (error: any) {
+      if (isMountedRef.current && !controller.signal.aborted) {
+        Alert.alert('Error', 'Failed to load products for this category.');
+      }
     } finally {
-      setLoadingProducts(false);
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setLoadingProducts(false);
+      }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadInitialData();
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      loadProductsByCategory(selectedCategory);
+    }
+  }, [selectedCategory, loadProductsByCategory]);
 
   const addItem = (product: any, variation?: any) => {
     // If product has variations and no variation selected, open modal
@@ -161,10 +203,15 @@ export default function OrderForm() {
   };
 
   const currentCategory = categories.find(cat => cat.slug === selectedCategory);
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProducts = React.useMemo(() => {
+    if (!debouncedSearch.trim()) return products;
+    const search = debouncedSearch.toLowerCase();
+    return products.filter(product =>
+      product.name.toLowerCase().includes(search) ||
+      (product.name_bn && product.name_bn.toLowerCase().includes(search)) ||
+      (product.description && product.description.toLowerCase().includes(search))
+    );
+  }, [products, debouncedSearch]);
 
   const totalAmount = orderItems.reduce((sum, item) => {
     const itemTotal = Number(item.total_price) || 0;

@@ -22,8 +22,9 @@ const LoadingScreen = () => {
   ).current;
 
   useEffect(() => {
+    const animations: Animated.CompositeAnimation[] = [];
     anims.forEach((anim, idx) => {
-      Animated.loop(
+      const animation = Animated.loop(
         Animated.sequence([
           Animated.delay(idx * 60),
           Animated.timing(anim, {
@@ -39,8 +40,14 @@ const LoadingScreen = () => {
             easing: Easing.in(Easing.quad),
           }),
         ]),
-      ).start();
+      );
+      animation.start();
+      animations.push(animation);
     });
+
+    return () => {
+      animations.forEach(anim => anim.stop());
+    };
   }, [anims]);
 
   return (

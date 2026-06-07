@@ -3,12 +3,15 @@ import {
   Catch,
   ExceptionFilter,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { QueryFailedError } from 'typeorm';
 
 @Catch(QueryFailedError)
 export class DatabaseExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(DatabaseExceptionFilter.name);
+
   catch(exception: QueryFailedError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -19,13 +22,10 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     let messages: string[] = ['Database constraint violation'];
     const detail = (exception as any).detail || '';
 
-    console.log('Database error:', {
-      code: (exception as any).code,
-      detail: (exception as any).detail,
-      constraint: (exception as any).constraint,
-      message: exception.message,
-      query: (exception as any).query,
-    });
+    // Log concisely without full SQL query to avoid blocking event loop
+    this.logger.warn(
+      `Database error [${errorCode}]: ${exception.message.slice(0, 200)}`,
+    );
 
     if (errorCode === '23505') {
       // Unique violation in PostgreSQL

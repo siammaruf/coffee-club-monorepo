@@ -101,17 +101,18 @@ export class CacheInvalidationInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async () => {
-        try {
-          for (const pattern of patterns) {
-            const keys = await this.cacheService.getKeys(pattern);
-            if (keys.length > 0) {
-              await this.cacheService.deleteMany(keys);
+      tap(() => {
+        // Defer cache invalidation to the next tick so it doesn't block
+        // the event loop immediately after the HTTP response is sent.
+        setImmediate(async () => {
+          try {
+            for (const pattern of patterns) {
+              await this.cacheService.delete(pattern);
             }
+          } catch (error) {
+            // Silently fail cache invalidation so the mutation still succeeds
           }
-        } catch (error) {
-          // Silently fail cache invalidation so the mutation still succeeds
-        }
+        });
       }),
     );
   }
