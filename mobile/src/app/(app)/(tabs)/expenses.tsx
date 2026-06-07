@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TitleBar from '@/components/common/TitleBar';
 import expenseService from '@/services/httpServices/expenseService';
 import { ExpenseGroup } from '@/types/expense';
@@ -13,6 +14,7 @@ import ExpenseSkeleton from '@/components/skeletons/ExpenseSkeleton';
 import { formatPrettyDateOnly } from '@/utils/helpers';
 
 export default function ExpensesListScreen() {
+    const insets = useSafeAreaInsets();
     const [groups, setGroups] = useState<ExpenseGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
@@ -117,18 +119,22 @@ export default function ExpensesListScreen() {
                         </Text>
                     </View>
                 </View>
-                <View className="items-end">
-                    <PriceText className="text-lg font-bold text-orange-500">
-                        {formatPrice(item.totalAmount)}
-                    </PriceText>
-                    <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                <View className="flex-row items-center">
+                    <View className="items-end mr-3">
+                        <PriceText className="text-lg font-bold text-orange-500">
+                            {formatPrice(item.totalAmount)}
+                        </PriceText>
+                    </View>
+                    <View className="bg-gray-100 rounded-full p-2">
+                        <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+                    </View>
                 </View>
             </View>
         </TouchableOpacity>
     ), [router]);
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
             <TitleBar showUserInfo={true} />
             <View className="px-3 py-2 mb-1">
                 <View className="flex-row items-center justify-between">
