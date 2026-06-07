@@ -136,6 +136,13 @@ export class OrderController {
     description: 'Filter orders by status',
     example: 'PENDING'
   })
+  @ApiQuery({
+    name: 'orderType',
+    enum: ['DINEIN', 'TAKEAWAY', 'DELIVERY'],
+    required: false,
+    description: 'Filter orders by order type',
+    example: 'DINEIN'
+  })
   @ApiResponse({ 
     status: 200, 
     description: 'Orders retrieved successfully',
@@ -238,12 +245,13 @@ export class OrderController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('status') status?: string,
+    @Query('orderType') orderType?: string,
   ): Promise<{ data: OrderResponseDto[]; total: number; page: number; limit: number; totalPages: number; statusCounts: Record<string, number>; status: string; message: string; statusCode: HttpStatus }> {
     const pageNumber = page ? Math.max(1, parseInt(page, 10)) : 1;
     const limitNumber = limit ? Math.max(1, parseInt(limit, 10)) : 10;
     const orderStatus = status ? (status as OrderStatus) : undefined;
 
-    const result = await this.orderService.findAll(pageNumber, limitNumber, search, dateFilter, startDate, endDate, orderStatus);
+    const result = await this.orderService.findAll(pageNumber, limitNumber, search, dateFilter, startDate, endDate, orderStatus, orderType);
     return {
       data: result.data.map(order => new OrderResponseDto(order)),
       total: result.total,
