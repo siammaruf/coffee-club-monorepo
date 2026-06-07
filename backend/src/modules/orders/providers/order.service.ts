@@ -454,14 +454,15 @@ export class OrderService {
       });
       const tableMap = new Map(ordersWithTables.map(o => [o.id, o.tables || []]));
 
-      // Load orderItems with item and variation
+      // Load orderItems with item, variation and order relation
       const orderItems = await this.orderItemRepository.find({
         where: { order: { id: In(orderIds) } },
-        relations: ['item', 'variation'],
+        relations: ['item', 'variation', 'order'],
       });
       const orderItemMap = new Map<string, OrderItem[]>();
       for (const oi of orderItems) {
-        const orderId = (oi as any).order?.id || (oi as any).order_id;
+        const orderId = oi.order?.id;
+        if (!orderId) continue;
         const existing = orderItemMap.get(orderId) || [];
         existing.push(oi);
         orderItemMap.set(orderId, existing);
