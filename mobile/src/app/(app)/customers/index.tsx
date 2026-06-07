@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { customerService } from '@/services/httpServices/customerService';
 import CreateCustomerModal from '@/components/modals/CreateCustomerModal';
 import { formatPrice } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function CustomerListScreen() {
     const [customers, setCustomers] = useState<any[]>([]);
@@ -15,13 +16,19 @@ export default function CustomerListScreen() {
     const [hasMore, setHasMore] = useState(true);
     const [isPaginating, setIsPaginating] = useState(false);
     const [search, setSearch] = useState('');
-    const [searching, setSearching] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const isMountedRef = useRef(true);
     const router = useRouter();
+    const debouncedSearch = useDebounce(search, 400);
 
-    const fetchCustomers = async (pageNumber = 1, replace = false, searchValue = '') => {
-        if (loading && !replace) return;
-        if (isPaginating && !replace) return;
+    const fetchCustomers = useCallback(async (pageNumber = 1, replace = false, searchValue = '') => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         if (!replace) setIsPaginating(true);
         else setLoading(true);
 
@@ -34,53 +41,66 @@ export default function CustomerListScreen() {
                 }
             ) as { data?: any[], totalPages?: number };
 
-            if (response && response.data) {
-                setCustomers(prev =>
-                    replace ? (response.data ?? []) : [...prev, ...(response.data ?? [])]
-                );
-                setPage(pageNumber);
-                if (
-                    !response.data.length ||
-                    (response.totalPages && pageNumber >= response.totalPages)
-                ) {
-                    setHasMore(false);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                if (response && response.data) {
+                    setCustomers(prev =>
+                        replace ? (response.data ?? []) : [...prev, ...(response.data ?? [])]
+                    );
+                    setPage(pageNumber);
+                    if (
+                        !response.data.length ||
+                        (response.totalPages && pageNumber >= response.totalPages)
+                    ) {
+                        setHasMore(false);
+                    } else {
+                        setHasMore(true);
+                    }
                 } else {
-                    setHasMore(true);
+                    setHasMore(false);
                 }
-            } else {
+            }
+        } catch (error: any) {
+            if (isMountedRef.current && !controller.signal.aborted) {
                 setHasMore(false);
             }
-        } catch (error) {
-            setHasMore(false);
-            // handle error if needed
         }
-        setLoading(false);
-        setRefreshing(false);
-        setIsPaginating(false);
-        setSearching(false);
-    };
+        if (isMountedRef.current && !controller.signal.aborted) {
+            setLoading(false);
+            setRefreshing(false);
+            setIsPaginating(false);
+        }
+    }, []);
 
     useEffect(() => {
-        fetchCustomers(1, true, search);
-    }, [search]);
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        fetchCustomers(1, true, debouncedSearch);
+    }, [debouncedSearch, fetchCustomers]);
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchCustomers(1, true, search);
-    }, [search]);
+        fetchCustomers(1, true, debouncedSearch);
+    }, [debouncedSearch, fetchCustomers]);
 
-    const handleLoadMore = () => {
+    const handleLoadMore = useCallback(() => {
         if (!loading && !isPaginating && hasMore) {
-            fetchCustomers(page + 1, false, search);
+            fetchCustomers(page + 1, false, debouncedSearch);
         }
-    };
+    }, [loading, isPaginating, hasMore, page, debouncedSearch, fetchCustomers]);
 
-    const handleSearchChange = (text: string) => {
+    const handleSearchChange = useCallback((text: string) => {
         setSearch(text);
-        setSearching(true);
-    };
+    }, []);
 
-    const renderCustomer = ({ item }: { item: any }) => (
+    const renderCustomer = useCallback(({ item }: { item: any }) => (
         <TouchableOpacity
             onPress={() => router.push(`/(app)/customers/${item.id}`)}
             activeOpacity={0.85}
@@ -114,7 +134,7 @@ export default function CustomerListScreen() {
                 )}
             </View>
         </TouchableOpacity>
-    );
+    ), [router]);
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -160,7 +180,7 @@ export default function CustomerListScreen() {
                     )}
                 </View>
             </View>
-            {(loading && customers.length === 0) || searching ? (
+            {loading && customers.length === 0 ? (
                 <ActivityIndicator size="large" color="#F59E0B" style={{ marginTop: 40 }} />
             ) : (
                 <FlatList

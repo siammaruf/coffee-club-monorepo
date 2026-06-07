@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { ConflictException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, HttpStatus, Injectable, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FindOptionsWhere, Repository, Like } from "typeorm";
 import { User } from "../entities/user.entity";
@@ -20,6 +20,8 @@ import { CloudinaryService } from "src/modules/cloudinary/cloudinary.service";
 
 @Injectable()
 export class UserService {
+    private readonly logger = new Logger(UserService.name);
+
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
@@ -133,16 +135,30 @@ export class UserService {
           userStatus = UserStatus.INACTIVE;
         }
 
-        // Auto-upload external image URLs to Cloudinary
+        // Auto-upload external image URLs to Cloudinary in parallel
+        const cloudinaryUploads: Promise<void>[] = [];
         if (userData.picture) {
-          userData.picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.picture, 'coffee-club/users') ?? undefined;
+          cloudinaryUploads.push(
+            this.cloudinaryService.ensureCloudinaryUrl(userData.picture, 'coffee-club/users').then(url => {
+              userData.picture = url ?? undefined;
+            }),
+          );
         }
         if (userData.nid_front_picture) {
-          userData.nid_front_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_front_picture, 'coffee-club/users') ?? undefined;
+          cloudinaryUploads.push(
+            this.cloudinaryService.ensureCloudinaryUrl(userData.nid_front_picture, 'coffee-club/users').then(url => {
+              userData.nid_front_picture = url ?? undefined;
+            }),
+          );
         }
         if (userData.nid_back_picture) {
-          userData.nid_back_picture = await this.cloudinaryService.ensureCloudinaryUrl(userData.nid_back_picture, 'coffee-club/users') ?? undefined;
+          cloudinaryUploads.push(
+            this.cloudinaryService.ensureCloudinaryUrl(userData.nid_back_picture, 'coffee-club/users').then(url => {
+              userData.nid_back_picture = url ?? undefined;
+            }),
+          );
         }
+        await Promise.all(cloudinaryUploads);
 
         const user = this.userRepository.create({
           ...userData,
@@ -161,11 +177,13 @@ export class UserService {
         if (savedUser.email) {
             try {
                 const token = await this.createPasswordResetToken(savedUser.id);
-                await this.emailService.sendWelcomeEmail(savedUser.email, savedUser.first_name, token);
-                await this.smsService.sendWelcomeSms(savedUser.phone, savedUser.first_name, savedUser.email);
-                console.log(`Welcome email sent to ${savedUser.email}`);
+                // Send welcome email and SMS in parallel
+                await Promise.all([
+                    this.emailService.sendWelcomeEmail(savedUser.email, savedUser.first_name, token),
+                    this.smsService.sendWelcomeSms(savedUser.phone, savedUser.first_name, savedUser.email),
+                ]);
             } catch (error) {
-                console.error('Failed to send welcome email:', error);
+                this.logger.error('Failed to send welcome email: ' + (error?.message || error));
             }
         }
 
@@ -178,20 +196,21 @@ export class UserService {
     }
 
     async findById(id: string): Promise<UserResponseDto> {
-        const cacheKey = `user:${id}`;
-        let user = await this.cacheService.get<User>(cacheKey);
-
-        if (!user) {
-          user = await this.findUserOrFail({ id });
-          await this.cacheService.set(cacheKey, user, 3600 * 1000);
+        const cacheKey = `user:full:${id}`;
+        const cached = await this.cacheService.get<UserResponseDto>(cacheKey);
+        if (cached) {
+          return cached;
         }
 
+        const user = await this.findUserOrFail({ id });
         const banks = await this.bankService.findByUserId(id);
         // Clone to avoid mutating the cached object reference
         const userCopy = { ...user };
         if (userCopy.role) userCopy.role = userCopy.role.toLowerCase() as any;
         const userResponse = new UserResponseDto(userCopy);
         userResponse.banks = banks;
+
+        await this.cacheService.set(cacheKey, userResponse, 3600);
         return userResponse;
       }
 
@@ -303,7 +322,7 @@ export class UserService {
             await this.emailService.sendWelcomeEmail(user.email, user.first_name, token);
             return new UserResponseDto(user);
         } catch (error) {
-            console.error('Failed to send password reset email:', error);
+            this.logger.error('Failed to send password reset email: ' + (error?.message || error));
             throw new ConflictException({
                 status: 'error',
                 message: 'Failed to send password reset email',

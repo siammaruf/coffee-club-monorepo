@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from '../../customers/entities/customer.entity';
 import { Request } from 'express';
+import { CacheService } from '../../cache/cache.service';
 
 @Injectable()
 export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jwt') {
@@ -13,6 +14,7 @@ export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jw
     private configService: ConfigService,
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    private readonly cacheService: CacheService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -29,9 +31,19 @@ export class CustomerJwtStrategy extends PassportStrategy(Strategy, 'customer-jw
       throw new UnauthorizedException('Invalid token type');
     }
 
+    const cacheKey = `customer:session:${payload.sub}`;
+    const cached = await this.cacheService.get<Customer>(cacheKey);
+    if (cached && cached.is_active) {
+      return cached;
+    }
+
     const customer = await this.customerRepository.findOne({
       where: { id: payload.sub },
     });
+
+    if (customer && customer.is_active) {
+      await this.cacheService.set(cacheKey, customer, 900);
+    }
 
     if (!customer || !customer.is_active) {
       throw new UnauthorizedException('Customer not found or inactive');

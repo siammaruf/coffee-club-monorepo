@@ -215,7 +215,7 @@ export class AuthController {
 
     // Permissions fetched separately so busting permissions:role:{role} is sufficient
     const permissions = await this.permissionsService.getPermissionsForRole(
-      dbUser.role as UserRole,
+      dbUser.role,
     );
 
     return {

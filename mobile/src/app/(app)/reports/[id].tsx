@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import reportService from '@/services/httpServices/reportService';
 import { formatPriceCompact } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
-import { printSalesReport } from '@/utils/printer';
+import { printSalesReport, hasSelectedPrinter } from '@/utils/printer';
 
 // Helper for pretty date
 const formatPrettyDate = (dateStr: string) => {
@@ -54,6 +54,7 @@ export default function SalesReportDetailsScreen() {
 
     const [report, setReport] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     useEffect(() => {
         fetchReport();
@@ -70,6 +71,30 @@ export default function SalesReportDetailsScreen() {
             Alert.alert('Error', 'Failed to load report details');
         }
         setLoading(false);
+    };
+
+    const handlePrint = async () => {
+        if (!report) return;
+        const ready = await hasSelectedPrinter();
+        if (!ready) {
+            Alert.alert(
+                'No Printer Selected',
+                'Please go to the Printer page and select a printer first.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Go to Printer', onPress: () => router.push('/(app)/printer') }
+                ]
+            );
+            return;
+        }
+        setIsPrinting(true);
+        try {
+            await printSalesReport(report);
+        } catch (error) {
+            Alert.alert('Print Error', 'Failed to print sales report');
+        } finally {
+            setIsPrinting(false);
+        }
     };
 
     if (loading) {
@@ -146,12 +171,13 @@ export default function SalesReportDetailsScreen() {
 
             <View className="mb-4 px-2">
                 <TouchableOpacity
-                    className="flex-row items-center bg-orange-500 px-4 py-3 rounded-full justify-center w-full"
-                    onPress={() => printSalesReport(report)}
+                    className={`flex-row items-center px-4 py-3 rounded-full justify-center w-full ${isPrinting ? 'bg-gray-400' : 'bg-orange-500'}`}
+                    onPress={handlePrint}
+                    disabled={isPrinting}
                     activeOpacity={0.85}
                 >
                     <Ionicons name="print-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-                    <Text className="text-white font-semibold text-base">Print</Text>
+                    <Text className="text-white font-semibold text-base">{isPrinting ? 'Printing...' : 'Print'}</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>

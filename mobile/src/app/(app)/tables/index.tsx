@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -13,58 +13,77 @@ export default function TableListScreen() {
     const [hasMore, setHasMore] = useState(true);
     const [isPaginating, setIsPaginating] = useState(false);
     const [releasingId, setReleasingId] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const isMountedRef = useRef(true);
 
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
-    const fetchTables = async (pageNumber = 1, replace = false) => {
-        if (loading && !replace) return;
-        if (isPaginating && !replace) return;
+    const fetchTables = useCallback(async (pageNumber = 1, replace = false) => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         if (!replace) setIsPaginating(true);
         else setLoading(true);
 
         try {
             const response = await tableService.getAll({ page: pageNumber, limit: 20 }) as { data?: any[], totalPages?: number };
-            if (response && response.data) {
-                setTables(prev =>
-                    replace ? (response.data ?? []) : [...prev, ...(response.data ?? [])]
-                );
-                setPage(pageNumber);
-                if (
-                    !response.data.length ||
-                    (response.totalPages && pageNumber >= response.totalPages)
-                ) {
-                    setHasMore(false);
+            if (isMountedRef.current && !controller.signal.aborted) {
+                if (response && response.data) {
+                    setTables(prev =>
+                        replace ? (response.data ?? []) : [...prev, ...(response.data ?? [])]
+                    );
+                    setPage(pageNumber);
+                    if (
+                        !response.data.length ||
+                        (response.totalPages && pageNumber >= response.totalPages)
+                    ) {
+                        setHasMore(false);
+                    } else {
+                        setHasMore(true);
+                    }
                 } else {
-                    setHasMore(true);
+                    setHasMore(false);
                 }
-            } else {
+            }
+        } catch (error: any) {
+            if (isMountedRef.current && !controller.signal.aborted) {
                 setHasMore(false);
             }
-        } catch (error) {
-            setHasMore(false);
         }
-        setLoading(false);
-        setRefreshing(false);
-        setIsPaginating(false);
-    };
+        if (isMountedRef.current && !controller.signal.aborted) {
+            setLoading(false);
+            setRefreshing(false);
+            setIsPaginating(false);
+        }
+    }, []);
 
     useEffect(() => {
+        isMountedRef.current = true;
         fetchTables(1, true);
-    }, []);
+        return () => {
+            isMountedRef.current = false;
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [fetchTables]);
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
         fetchTables(1, true);
-    }, []);
+    }, [fetchTables]);
 
-    const handleLoadMore = () => {
+    const handleLoadMore = useCallback(() => {
         if (!loading && !isPaginating && hasMore) {
             fetchTables(page + 1, false);
         }
-    };
+    }, [loading, isPaginating, hasMore, page, fetchTables]);
 
-    const handleFree = async (id: string) => {
+    const handleFree = useCallback(async (id: string) => {
         Alert.alert(
             'Free Table',
             'Are you sure you want to make this table available?',
@@ -77,9 +96,11 @@ export default function TableListScreen() {
                         setReleasingId(id);
                         try {
                             await tableService.changeStatus(id, 'available');
-                            setTables(prev =>
-                                prev.map(t => (t.id === id ? { ...t, status: 'available' } : t))
-                            );
+                            if (isMountedRef.current) {
+                                setTables(prev =>
+                                    prev.map(t => (t.id === id ? { ...t, status: 'available' } : t))
+                                );
+                            }
                             Alert.alert('Success', 'Table freed successfully');
                         } catch (error) {
                             Alert.alert('Error', 'Failed to free table. Please try again.');
@@ -90,9 +111,9 @@ export default function TableListScreen() {
                 },
             ]
         );
-    };
+    }, []);
 
-    const renderTable = ({ item }: { item: any }) => {
+    const renderTable = useCallback(({ item }: { item: any }) => {
         const isNotAvailable = item.status !== 'available';
         const isReleasing = releasingId === item.id;
 
@@ -137,7 +158,7 @@ export default function TableListScreen() {
                 </View>
             </View>
         );
-    };
+    }, [releasingId, handleFree]);
 
     return (
         <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>

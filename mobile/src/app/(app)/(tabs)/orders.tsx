@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -25,6 +25,8 @@ export default function OrderListScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
@@ -39,24 +41,20 @@ export default function OrderListScreen() {
 
   const defaultStatusColor = { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', bgLight: 'bg-gray-50'};
 
-  const formatDate = (date: Date) => {
+  const formatDate = useCallback((date: Date) => {
     return date.toISOString().split('T')[0];
-  };
+  }, []);
 
-  const getTodayDate = () => {
-    return formatDate(new Date());
-  };
-
-  const formatDisplayDate = (date: Date) => {
+  const formatDisplayDate = useCallback((date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
-  };
+  }, []);
 
-  const buildQueryParams = (page: number = 1) => {
+  const buildQueryParams = useCallback((page: number = 1) => {
     const params: any = {
       page,
       limit,
@@ -75,9 +73,15 @@ export default function OrderListScreen() {
     }
 
     return params;
-  };
+  }, [selectedStatus, selectedDateFilter, selectedDate, formatDate]);
 
-  const loadOrders = async (page: number = 1, append: boolean = false) => {
+  const loadOrders = useCallback(async (page: number = 1, append: boolean = false) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       if (page === 1) {
         setLoading(true);
@@ -88,54 +92,67 @@ export default function OrderListScreen() {
       const queryParams = buildQueryParams(page);
       const response = await orderService.getAll(queryParams);
 
-      if (response && response.data) {
-        const newOrders = response.data;
-        const total = response.total || 0;
+      if (isMountedRef.current && !controller.signal.aborted) {
+        if (response && response.data) {
+          const newOrders = response.data;
+          const total = response.total || 0;
 
-        if (append && page > 1) {
-          setOrders(prev => [...prev, ...newOrders]);
+          if (append && page > 1) {
+            setOrders(prev => [...prev, ...newOrders]);
+          } else {
+            setOrders(newOrders);
+          }
+
+          setTotalOrders(total);
+          if (response.statusCounts) {
+            setStatusCounts(response.statusCounts);
+          }
+          setCurrentPage(page);
+
+          if (!newOrders.length || page >= (response.totalPages || 1)) {
+            setHasMoreData(false);
+          } else {
+            setHasMoreData(true);
+          }
         } else {
-          setOrders(newOrders);
-        }
-
-        setTotalOrders(total);
-        if (response.statusCounts) {
-          setStatusCounts(response.statusCounts);
-        }
-        setCurrentPage(page);
-
-        if (!newOrders.length || page >= (response.totalPages || 1)) {
           setHasMoreData(false);
-        } else {
-          setHasMoreData(true);
         }
-      } else {
+      }
+    } catch (error: any) {
+      if (isMountedRef.current && !controller.signal.aborted) {
+        console.error('Error loading orders:', error);
+        Alert.alert('Error', 'Failed to load orders. Please try again.');
         setHasMoreData(false);
       }
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      Alert.alert('Error', 'Failed to load orders. Please try again.');
-      setHasMoreData(false);
     } finally {
-      setLoading(false);
-      setIsPaginating(false);
-      setRefreshing(false);
+      if (isMountedRef.current && !controller.signal.aborted) {
+        setLoading(false);
+        setIsPaginating(false);
+        setRefreshing(false);
+      }
     }
-  };
+  }, [buildQueryParams]);
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       setCurrentPage(1);
       setHasMoreData(true);
       loadOrders(1, false);
-    }, [selectedStatus, selectedDateFilter, selectedDate])
+      return () => {
+        isMountedRef.current = false;
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
+    }, [selectedStatus, selectedDateFilter, selectedDate, loadOrders])
   );
 
   const handleLoadMore = useCallback(() => {
     if (!isPaginating && hasMoreData && orders.length > 0) {
       loadOrders(currentPage + 1, true);
     }
-  }, [isPaginating, hasMoreData, orders.length, currentPage]);
+  }, [isPaginating, hasMoreData, orders.length, currentPage, loadOrders]);
 
   const allCount = (statusCounts.PENDING ?? 0) + (statusCounts.PREPARING ?? 0) + (statusCounts.COMPLETED ?? 0) + (statusCounts.CANCELLED ?? 0);
 
@@ -152,14 +169,14 @@ export default function OrderListScreen() {
     { key: 'all', label: 'All Dates', icon: 'calendar-outline' },
   ];
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     setCurrentPage(1);
     setHasMoreData(true);
     loadOrders(1, false);
-  };
+  }, [loadOrders]);
 
-  const handleUpdateStatus = async (orderId: string, newStatus: Order['status']) => {
+  const handleUpdateStatus = useCallback(async (orderId: string, newStatus: Order['status']) => {
     Alert.alert(
       'Update Order Status',
       `Are you sure you want to mark this order as ${newStatus}?`,
@@ -170,13 +187,13 @@ export default function OrderListScreen() {
           onPress: async () => {
             try {
               await orderService.update(orderId, { status: newStatus });
-
-              setOrders(prev =>
-                prev.map(order =>
-                  order.id === orderId ? { ...order, status: newStatus } : order
-                )
-              );
-
+              if (isMountedRef.current) {
+                setOrders(prev =>
+                  prev.map(order =>
+                    order.id === orderId ? { ...order, status: newStatus } : order
+                  )
+                );
+              }
               Alert.alert('Success', 'Order status updated successfully.');
             } catch (error) {
               console.error('Error updating order status:', error);
@@ -186,23 +203,23 @@ export default function OrderListScreen() {
         }
       ]
     );
-  };
+  }, []);
 
-  const handleCreateOrder = () => {
+  const handleCreateOrder = useCallback(() => {
     router.push('/(app)/orders/create');
-  };
+  }, [router]);
 
-  const handleOrderDetails = async (orderId: string) => {
+  const handleOrderDetails = useCallback((orderId: string) => {
     if (!orderId) return;
     router.push(`/(app)/orders/${orderId}` as any);
-  };
+  }, [router]);
 
-  const handleCustomDateSelect = () => {
+  const handleCustomDateSelect = useCallback(() => {
     setShowDatePicker(false);
     setShowDateModal(false);
-  };
+  }, []);
 
-  const getStatusActions = (order: Order) => {
+  const getStatusActions = useCallback((order: Order) => {
     switch (order.status) {
       case OrderStatus.PENDING:
         return [
@@ -211,9 +228,9 @@ export default function OrderListScreen() {
       default:
         return [];
     }
-  };
+  }, []);
 
-  const getDateFilterLabel = () => {
+  const getDateFilterLabel = useCallback(() => {
     if (selectedDateFilter === 'today') {
       return 'Today';
     } else if (selectedDateFilter === 'custom') {
@@ -221,7 +238,7 @@ export default function OrderListScreen() {
     } else {
       return 'All Dates';
     }
-  };
+  }, [selectedDateFilter, selectedDate, formatDisplayDate]);
 
   const renderItem = useCallback(({ item: order }: { item: Order }) => (
     <TouchableOpacity
@@ -315,7 +332,7 @@ export default function OrderListScreen() {
         </View>
       </View>
     </TouchableOpacity>
-  ), []);
+  ), [handleOrderDetails, handleUpdateStatus, getStatusActions]);
 
   return (
     <View className="flex-1 bg-gray-50">

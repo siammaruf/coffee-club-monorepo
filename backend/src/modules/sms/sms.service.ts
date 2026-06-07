@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,6 +8,8 @@ import { SmsLogStatus } from './enum/sms-log-status.enum';
 
 @Injectable()
 export class SmsService {
+  private readonly logger = new Logger(SmsService.name);
+
   constructor(
     private configService: ConfigService,
     @InjectRepository(SmsLog)
@@ -24,7 +26,7 @@ export class SmsService {
       const senderId = this.configService.get<string>('SMS_SENDER_ID', '');
       const url = `http://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedNumber}&senderid=${senderId}&message=${encodeURIComponent(message)}`;
       const response = await axios.get(url);
-      console.log('SMS API Response:', response.data);
+      this.logger.debug('SMS API Response: ' + JSON.stringify(response.data).slice(0, 200));
 
       await this.smsLogRepository
         .save(this.smsLogRepository.create({ phone: formattedNumber, message, status: SmsLogStatus.SENT }))
@@ -32,7 +34,7 @@ export class SmsService {
 
       return true;
     } catch (error) {
-      console.error('Error sending SMS:', error);
+      this.logger.error('Error sending SMS: ' + (error?.message || error));
 
       await this.smsLogRepository
         .save(this.smsLogRepository.create({
