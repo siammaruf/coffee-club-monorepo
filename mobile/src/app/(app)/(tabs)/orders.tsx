@@ -9,7 +9,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { orderService } from '@/services/httpServices/orderService';
 import { Order } from '@/types/order';
 import OrdersSkeleton from '@/components/skeletons/OrdersSkeleton';
-import { OrderStatus } from '@/enums/orderEnum';
+import { OrderStatus, OrderType } from '@/enums/orderEnum';
 import { formatPrice } from '@/utils/currency';
 import { PriceText } from '@/components/ui/PriceText';
 
@@ -21,6 +21,7 @@ export default function OrderListScreen() {
   const [loading, setLoading] = useState(false);
   const [isPaginating, setIsPaginating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'all'>('all');
+  const [selectedOrderType, setSelectedOrderType] = useState<OrderType | 'all'>('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState<'today' | 'custom' | 'all'>('today');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -64,6 +65,10 @@ export default function OrderListScreen() {
       params.status = selectedStatus;
     }
 
+    if (selectedOrderType !== 'all') {
+      params.order_type = selectedOrderType;
+    }
+
     if (selectedDateFilter === 'today') {
       params.dateFilter = 'today';
     } else if (selectedDateFilter === 'custom') {
@@ -73,7 +78,7 @@ export default function OrderListScreen() {
     }
 
     return params;
-  }, [selectedStatus, selectedDateFilter, selectedDate, formatDate]);
+  }, [selectedStatus, selectedOrderType, selectedDateFilter, selectedDate, formatDate]);
 
   const loadOrders = useCallback(async (page: number = 1, append: boolean = false) => {
     if (abortControllerRef.current) {
@@ -145,7 +150,7 @@ export default function OrderListScreen() {
           abortControllerRef.current.abort();
         }
       };
-    }, [selectedStatus, selectedDateFilter, selectedDate, loadOrders])
+    }, [selectedStatus, selectedOrderType, selectedDateFilter, selectedDate, loadOrders])
   );
 
   const handleLoadMore = useCallback(() => {
@@ -167,6 +172,12 @@ export default function OrderListScreen() {
     { key: 'today', label: 'Today', icon: 'today' },
     { key: 'custom', label: 'Custom Date', icon: 'calendar' },
     { key: 'all', label: 'All Dates', icon: 'calendar-outline' },
+  ];
+
+  const orderTypeFilters = [
+    { key: 'all', label: 'All Types' },
+    { key: OrderType.DINEIN, label: 'Table' },
+    { key: OrderType.TAKEAWAY, label: 'Takeaway' },
   ];
 
   const onRefresh = useCallback(() => {
@@ -266,7 +277,7 @@ export default function OrderListScreen() {
         </View>
       </View>
 
-      {/* Compact Customer & Table Info */}
+      {/* Compact Customer & Table / Takeaway Info */}
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-1">
           <Text className="text-sm font-medium text-gray-800">
@@ -274,20 +285,27 @@ export default function OrderListScreen() {
               ? (order.customer as { name?: string }).name || 'Walk-in'
               : 'Walk-in'}
           </Text>
-          <View className="flex-row items-center flex-wrap">
-            {order.tables && order.tables.length > 0 && (
-              <>
-                <Ionicons name="location-outline" size={12} color="#6B7280" />
-                <Text className="text-xs text-gray-500 ml-1">
-                  {order.tables.map(t => `#${t.number ?? ''}`).join(', ')}
+          <View className="flex-row items-center flex-wrap mt-1">
+            {order.order_type === 'DINEIN' && order.tables && order.tables.length > 0 ? (
+              <View className="flex-row items-center bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                <Ionicons name="restaurant" size={12} color="#2563EB" />
+                <Text className="text-xs font-semibold text-blue-700 ml-1">
+                  Table {order.tables.map(t => `#${t.number ?? ''}`).join(', ')}
                 </Text>
-              </>
-            )}
+              </View>
+            ) : order.order_type === 'TAKEAWAY' ? (
+              <View className="flex-row items-center bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                <Ionicons name="bag" size={12} color="#EA580C" />
+                <Text className="text-xs font-semibold text-orange-700 ml-1">
+                  Takeaway
+                </Text>
+              </View>
+            ) : null}
             {order.customer?.phone && (
-              <>
-                <Ionicons name="call-outline" size={12} color="#6B7280" style={{ marginLeft: 8 }} />
+              <View className="flex-row items-center ml-2">
+                <Ionicons name="call-outline" size={12} color="#6B7280" />
                 <Text className="text-xs text-gray-500 ml-1">{order.customer.phone}</Text>
-              </>
+              </View>
             )}
           </View>
         </View>
@@ -376,6 +394,35 @@ export default function OrderListScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Compact Order Type Filter */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="px-4 pb-2"
+        >
+          <View className="flex-row space-x-2 gap-1">
+            {orderTypeFilters.map((filter) => (
+              <TouchableOpacity
+                key={filter.key}
+                onPress={() => setSelectedOrderType(filter.key as OrderType | 'all')}
+                className={`px-4 py-2 rounded-lg border ${
+                  selectedOrderType === filter.key
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'bg-white border-gray-200'
+                }`}
+              >
+                <Text className={`font-medium text-xs ${
+                  selectedOrderType === filter.key
+                    ? 'text-white'
+                    : 'text-gray-600'
+                }`}>
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
         {/* Compact Status Filter */}
         <ScrollView
           horizontal
@@ -431,11 +478,11 @@ export default function OrderListScreen() {
                 No orders found
               </Text>
               <Text className="text-gray-400 text-center mt-1 text-sm">
-                {selectedStatus === 'all'
+                {selectedStatus === 'all' && selectedOrderType === 'all'
                   ? `No orders found for ${getDateFilterLabel().toLowerCase()}`
-                  : `No ${selectedStatus} orders for ${getDateFilterLabel().toLowerCase()}`}
+                  : `No ${selectedOrderType !== 'all' ? `${selectedOrderType.toLowerCase()} ` : ''}${selectedStatus !== 'all' ? selectedStatus.toLowerCase() + ' ' : ''}orders for ${getDateFilterLabel().toLowerCase()}`}
               </Text>
-              {selectedStatus === 'all' && selectedDateFilter === 'today' && (
+              {selectedStatus === 'all' && selectedOrderType === 'all' && selectedDateFilter === 'today' && (
                 <TouchableOpacity
                   onPress={handleCreateOrder}
                   className="bg-[#EF4444] px-4 py-2 rounded-lg mt-3"

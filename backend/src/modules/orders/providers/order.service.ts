@@ -368,7 +368,8 @@ export class OrderService {
     dateFilter?: 'today' | 'custom' | 'all',
     startDate?: string,
     endDate?: string,
-    status?: OrderStatus
+    status?: OrderStatus,
+    orderType?: string,
   ): Promise<{
     data: Order[];
     total: number;
@@ -377,7 +378,7 @@ export class OrderService {
     totalPages: number;
     statusCounts: Record<string, number>;
   }> {
-    const cacheKey = `orders:all:${page}:${limit}:${search || ''}:${dateFilter || ''}:${startDate || ''}:${endDate || ''}:${status || ''}`;
+    const cacheKey = `orders:all:${page}:${limit}:${search || ''}:${dateFilter || ''}:${startDate || ''}:${endDate || ''}:${status || ''}:${orderType || ''}`;
     const cached = await this.cacheService.get<{
       data: Order[];
       total: number;
@@ -400,6 +401,11 @@ export class OrderService {
     // Status filter
     if (status) {
       orderQueryBuilder.andWhere('order.status = :status', { status });
+    }
+
+    // Order type filter
+    if (orderType) {
+      orderQueryBuilder.andWhere('order.order_type = :orderType', { orderType });
     }
 
     // Search filter
@@ -483,6 +489,10 @@ export class OrderService {
           '(order.order_type ILIKE :search OR order.status ILIKE :search OR order.payment_method ILIKE :search OR customer.name ILIKE :search OR user.name ILIKE :search)',
           { search: `%${search}%` }
         );
+    }
+
+    if (orderType) {
+      countsBuilder.andWhere('order.order_type = :orderType', { orderType });
     }
 
     if (dateFilter && dateFilter !== 'all') {

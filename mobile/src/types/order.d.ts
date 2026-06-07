@@ -123,6 +123,7 @@ export interface GetAllOrdersParams {
   page?: number;
   limit?: number;
   search?: string;
+  order_type?: OrderType;
   [key: string]: any;
 }
 

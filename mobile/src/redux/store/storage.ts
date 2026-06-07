@@ -4,19 +4,19 @@ import Constants from 'expo-constants';
 type MMKVLike = {
     set: (key: string, value: string) => void;
     getString: (key: string) => string | undefined;
-    delete: (key: string) => void;
+    remove: (key: string) => boolean;
 };
 
 function createDefaultStorage(): MMKVLike {
     try {
-        const { MMKV } = require('react-native-mmkv');
-        const mmkv = new MMKV();
+        const { createMMKV } = require('react-native-mmkv');
+        const mmkv = createMMKV();
         // Verify MMKV is actually functional by doing a test read/write
         const testKey = '__mmkv_test__';
         const testValue = '__test_value__';
         mmkv.set(testKey, testValue);
         const readValue = mmkv.getString(testKey);
-        mmkv.delete(testKey);
+        mmkv.remove(testKey);
         if (readValue !== testValue) {
             throw new Error('MMKV read/write verification failed');
         }
@@ -37,8 +37,8 @@ const ENCRYPTION_KEY = baseKey.length >= 32 ? baseKey.slice(0, 32) : baseKey.pad
 
 function createSecureStorage(): MMKVLike {
     try {
-        const { MMKV } = require('react-native-mmkv');
-        const mmkv = new MMKV({
+        const { createMMKV } = require('react-native-mmkv');
+        const mmkv = createMMKV({
             id: 'coffee-club-secure',
             encryptionKey: ENCRYPTION_KEY,
         });
@@ -46,13 +46,13 @@ function createSecureStorage(): MMKVLike {
         // One-time migration: move existing auth tokens from the default (unencrypted)
         // instance into the new encrypted instance so users are not logged out on update.
         try {
-            const defaultMmkv = new MMKV();
+            const defaultMmkv = createMMKV();
             const authKeys = ['authToken', 'refreshToken', 'userSession'];
             for (const key of authKeys) {
                 const value = defaultMmkv.getString(key);
                 if (value) {
                     mmkv.set(key, value);
-                    defaultMmkv.delete(key);
+                    defaultMmkv.remove(key);
                 }
             }
         } catch {
@@ -64,7 +64,7 @@ function createSecureStorage(): MMKVLike {
         const testValue = '__test__';
         mmkv.set(testKey, testValue);
         const readValue = mmkv.getString(testKey);
-        mmkv.delete(testKey);
+        mmkv.remove(testKey);
         if (readValue !== testValue) {
             throw new Error('Secure MMKV read/write verification failed');
         }
@@ -91,7 +91,7 @@ export const reduxStorage: Storage = {
         return Promise.resolve(value);
     },
     removeItem: (key) => {
-        defaultStorage.delete(key);
+        defaultStorage.remove(key);
         return Promise.resolve();
     },
 };
@@ -106,7 +106,7 @@ export const secureMmkvStorage: Storage = {
         return Promise.resolve(value);
     },
     removeItem: (key) => {
-        secureStorage.delete(key);
+        secureStorage.remove(key);
         return Promise.resolve();
     },
 };
