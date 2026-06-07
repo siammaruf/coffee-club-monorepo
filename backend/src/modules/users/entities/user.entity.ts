@@ -62,7 +62,7 @@ export class User {
   picture: string;
 
   @Column({nullable: true})
-  refresh_token: string;
+  refresh_token: string | null;
 
   @Column({
     type: 'decimal',

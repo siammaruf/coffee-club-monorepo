@@ -9,5 +9,5 @@ export const authService = {
   newUserPassword: (token: string, password: string) => httpService.post<ResetPasswordResponse>('/auth/new-user-password', { token, password }),
   checkAuthStatus: () => httpService.get<AuthMeResponse>('/auth/me'),
   refreshToken: (refresh_token: string) => httpService.post<RefreshTokenResponse>('/auth/refresh', { refresh_token }),
-  logout: () => httpService.post('/auth/logout'),
+  logout: (refresh_token?: string) => httpService.post('/auth/logout', refresh_token ? { refresh_token } : undefined),
 };
