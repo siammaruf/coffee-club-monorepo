@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { Injectable, Logger, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -15,6 +16,57 @@ import { WhatsAppMessageService } from '../../whatsapp/providers/whatsapp-messag
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
+  /**
+   * Hash a raw refresh token with HMAC-SHA256 using a server-side pepper.
+   * This prevents attackers from using stolen DB tokens directly, because
+   * they would need BOTH the database dump AND the pepper to compute valid hashes.
+   */
+  private hashRefreshToken(token: string): string {
+    const pepper = this.configService.get<string>('REFRESH_TOKEN_PEPPER');
+    if (!pepper) {
+      this.logger.warn(
+        'REFRESH_TOKEN_PEPPER is not set in environment variables. ' +
+        'Refresh token storage is using a fallback pepper. ' +
+        'Set REFRESH_TOKEN_PEPPER to a strong random string for production.',
+      );
+    }
+    return createHmac('sha256', pepper || 'coffee-club-default-pepper')
+      .update(token)
+      .digest('hex');
+  }
+
+  /**
+   * Invalidate a user's refresh token in the database (e.g., on logout).
+   */
+  async revokeRefreshToken(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      user.refresh_token = null;
+      await this.userService.update(user.id, { refresh_token: null });
+    }
+  }
+
+  /**
+   * Revoke a refresh token by its raw value (used by public logout endpoint).
+   * Hashes the incoming token and finds the matching user to invalidate.
+   */
+  async revokeRefreshTokenByHash(rawRefreshToken: string): Promise<void> {
+    const hash = this.hashRefreshToken(rawRefreshToken);
+    let user = await this.userRepository.findOne({
+      where: { refresh_token: hash },
+    });
+    // Fallback for legacy raw tokens still in the DB during transition
+    if (!user) {
+      user = await this.userRepository.findOne({
+        where: { refresh_token: rawRefreshToken },
+      });
+    }
+    if (user) {
+      user.refresh_token = null;
+      await this.userService.update(user.id, { refresh_token: null });
+    }
+  }
 
   constructor(
     private userService: UserService,
@@ -117,8 +169,8 @@ export class AuthService {
     );
 
     // Store refresh token hash in DB so we can revoke/rotate it
-    user.refresh_token = refresh_token;
-    await this.userService.update(user.id, { refresh_token });
+    user.refresh_token = this.hashRefreshToken(refresh_token);
+    await this.userService.update(user.id, { refresh_token: user.refresh_token });
 
     return {
       user,
@@ -135,7 +187,23 @@ export class AuthService {
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
       });
-      if (!user || user.refresh_token !== refreshToken) {
+
+      const incomingHash = this.hashRefreshToken(refreshToken);
+      let isValid = false;
+
+      if (user) {
+        // Primary: compare hashed token (new secure path)
+        if (user.refresh_token === incomingHash) {
+          isValid = true;
+        }
+        // Fallback: compare raw token for graceful transition of existing sessions.
+        // Once a token rotates, the DB value becomes hashed, so this path disappears.
+        else if (user.refresh_token === refreshToken) {
+          isValid = true;
+        }
+      }
+
+      if (!isValid || !user) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
@@ -148,13 +216,13 @@ export class AuthService {
         { expiresIn: accessTokenExpiry },
       );
 
-      // Rotate refresh token
+      // Rotate refresh token and store only its hash
       const new_refresh_token = this.jwtService.sign(
         { sub: user.id, email: user.email, role: user.role, rememberMe },
         { expiresIn: refreshTokenExpiry },
       );
-      user.refresh_token = new_refresh_token;
-      await this.userService.update(user.id, { refresh_token: new_refresh_token });
+      user.refresh_token = this.hashRefreshToken(new_refresh_token);
+      await this.userService.update(user.id, { refresh_token: user.refresh_token });
 
       return {
         access_token: new_access_token,

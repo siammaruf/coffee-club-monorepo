@@ -84,18 +84,28 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const hasHiddenSplash = useRef(false);
 
   const inAuthGroup = segments[0] === '(auth)';
 
   useEffect(() => {
     if (isLoading) return;
 
+    // Hide the native splash screen once auth state is resolved so the user
+    // never sees an unstyled flash between splash and the auth-protected UI.
+    if (!hasHiddenSplash.current) {
+      hasHiddenSplash.current = true;
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore errors if splash was already hidden
+      });
+    }
+
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(app)/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments, inAuthGroup]);
+  }, [isAuthenticated, isLoading, segments, inAuthGroup, router]);
 
   // Keep loading screen until auth is resolved AND we know which screen to show.
   // This prevents the dashboard from flashing before redirecting to login.
@@ -108,9 +118,6 @@ function RootLayoutNav() {
 export default function RootLayout() {
   // Fonts are preloaded at build time by the expo-font plugin in app.json.
   // Do NOT use useFonts() here — it causes the font to fail in production builds.
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
 
   return (
     <ErrorBoundary>

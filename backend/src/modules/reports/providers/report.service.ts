@@ -1,6 +1,6 @@
 import { Injectable, Logger, ConflictException, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In } from 'typeorm';
+import { Repository, Between, In, Not } from 'typeorm';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import moment from 'moment-timezone';
@@ -13,6 +13,7 @@ import { Table } from '../../table/entities/table.entity';
 import { Item } from '../../items/entities/item.entity';
 import { DailyReportResponseDto } from '../dto/report-response.dto';
 import { TokenType } from '../../order-tokens/enum/TokenType.enum';
+import { OrderStatus } from '../../orders/enum/order-status.enum';
 import { CacheService } from 'src/modules/cache/cache.service';
 import { WhatsAppConfig } from '../../whatsapp/entities/whatsapp-config.entity';
 
@@ -138,27 +139,33 @@ export class ReportService implements OnModuleInit {
     private async getOrdersData(startOfDay: Date, endOfDay: Date) {
         const orders = await this.orderRepository.find({
             where: {
-                created_at: Between(startOfDay, endOfDay)
+                created_at: Between(startOfDay, endOfDay),
+                status: Not(OrderStatus.CANCELLED)
             },
             relations: ['orderTokens']
         });
-        
+
         const orderTokens = await this.orderTokenRepository.find({
             where: {
                 createdAt: Between(startOfDay, endOfDay)
             },
             relations: ['order', 'order_items']
         });
-    
+
+        // Exclude tokens from cancelled orders
+        const validOrderTokens = orderTokens.filter(
+            token => token.order?.status !== OrderStatus.CANCELLED
+        );
+
         const totalSales = orders.reduce((sum, order) => sum + Number(order.total_amount), 0);
-        
+
         let barSales = 0;
         let kitchenSales = 0;
         let barOrders = 0;
         let kitchenOrders = 0;
 
-        const barTokens = orderTokens.filter(token => token.token_type === TokenType.BAR);
-        const kitchenTokens = orderTokens.filter(token => token.token_type === TokenType.KITCHEN);
+        const barTokens = validOrderTokens.filter(token => token.token_type === TokenType.BAR);
+        const kitchenTokens = validOrderTokens.filter(token => token.token_type === TokenType.KITCHEN);
 
         barOrders = barTokens.length;
         kitchenOrders = kitchenTokens.length;
@@ -378,12 +385,14 @@ export class ReportService implements OnModuleInit {
             // Use SQL aggregation instead of loading all rows into memory
             const totalSalesResult = await this.orderRepository
                 .createQueryBuilder('order')
+                .where('order.status != :status', { status: OrderStatus.CANCELLED })
                 .select('SUM(order.total_amount)', 'total')
                 .getRawOne();
             const totalSales = Number(totalSalesResult?.total || 0);
 
             const totalOrdersResult = await this.orderRepository
                 .createQueryBuilder('order')
+                .where('order.status != :status', { status: OrderStatus.CANCELLED })
                 .select('COUNT(*)', 'count')
                 .getRawOne();
             const totalOrders = Number(totalOrdersResult?.count || 0);
@@ -404,7 +413,9 @@ export class ReportService implements OnModuleInit {
             const barSalesResult = await this.orderTokenRepository
                 .createQueryBuilder('token')
                 .leftJoin('token.order_items', 'item')
+                .leftJoin('token.order', 'order')
                 .where('token.token_type = :type', { type: TokenType.BAR })
+                .andWhere('order.status != :status', { status: OrderStatus.CANCELLED })
                 .select('SUM(item.total_price)', 'total')
                 .getRawOne();
             const barSales = Number(barSalesResult?.total || 0);
@@ -412,7 +423,9 @@ export class ReportService implements OnModuleInit {
             const kitchenSalesResult = await this.orderTokenRepository
                 .createQueryBuilder('token')
                 .leftJoin('token.order_items', 'item')
+                .leftJoin('token.order', 'order')
                 .where('token.token_type = :type', { type: TokenType.KITCHEN })
+                .andWhere('order.status != :status', { status: OrderStatus.CANCELLED })
                 .select('SUM(item.total_price)', 'total')
                 .getRawOne();
             const kitchenSales = Number(kitchenSalesResult?.total || 0);
