@@ -1,10 +1,17 @@
-import { reduxStorage } from '../redux/store/storage';
+import { reduxStorage, secureMmkvStorage } from '../redux/store/storage';
 import { Logger } from './logger';
 
+// Keys that contain sensitive auth data and should be stored in the encrypted MMKV instance
+const SECURE_KEYS = new Set(['authToken', 'refreshToken', 'userSession']);
+
 export class StorageService {
+    private static selectStorage(key: string) {
+        return SECURE_KEYS.has(key) ? secureMmkvStorage : reduxStorage;
+    }
+
     static async getItem(key: string): Promise<string | null> {
         try {
-            return await reduxStorage.getItem(key);
+            return await this.selectStorage(key).getItem(key);
         } catch (error) {
             Logger.logError(`Failed to get ${key} from storage:`, error);
             return null;
@@ -13,7 +20,7 @@ export class StorageService {
 
     static async setItem(key: string, value: string): Promise<void> {
         try {
-            await reduxStorage.setItem(key, value);
+            await this.selectStorage(key).setItem(key, value);
         } catch (error) {
             Logger.logError(`Failed to set ${key} to storage:`, error);
         }
@@ -21,7 +28,7 @@ export class StorageService {
 
     static async removeItem(key: string): Promise<void> {
         try {
-            await reduxStorage.removeItem(key);
+            await this.selectStorage(key).removeItem(key);
         } catch (error) {
             Logger.logError(`Failed to remove ${key} from storage:`, error);
         }

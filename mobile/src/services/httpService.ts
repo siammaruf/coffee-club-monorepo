@@ -111,9 +111,17 @@ class HttpService {
               await StorageService.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
             }
 
-            // Notify all queued requests
-            this.refreshSubscribers.forEach((callback) => callback(newAccessToken));
+            // Notify all queued requests safely so one failing subscriber
+            // does not block the rest and leave the array uncleared.
+            const subscribers = this.refreshSubscribers.slice();
             this.refreshSubscribers = [];
+            subscribers.forEach((callback) => {
+              try {
+                callback(newAccessToken);
+              } catch (e) {
+                // Ignore subscriber errors
+              }
+            });
 
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return this.api(originalRequest);
@@ -128,8 +136,15 @@ class HttpService {
               await StorageService.clearUserSession();
             }
             // Reject all queued requests so they don't hang forever
-            this.refreshSubscribers.forEach((callback) => callback(null));
+            const subscribers = this.refreshSubscribers.slice();
             this.refreshSubscribers = [];
+            subscribers.forEach((callback) => {
+              try {
+                callback(null);
+              } catch (e) {
+                // Ignore subscriber errors
+              }
+            });
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;

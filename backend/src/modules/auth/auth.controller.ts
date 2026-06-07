@@ -78,7 +78,15 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User logout' })
-  logout(@Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Body() body: { refresh_token?: string },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // If a refresh token is provided (e.g., mobile Bearer clients),
+    // hash it and revoke the matching user's token in the database.
+    if (body?.refresh_token) {
+      await this.authService.revokeRefreshTokenByHash(body.refresh_token);
+    }
     response.clearCookie('access');
     response.clearCookie('refresh');
     return { message: 'Logout successful' };

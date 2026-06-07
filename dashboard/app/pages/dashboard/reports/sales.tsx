@@ -49,7 +49,6 @@ export default function SalesReportPage() {
   const activeTab: TabId = rawTab === "settings" ? rawTab : "reports";
 
   const [reports, setReports] = useState<SalesReport[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 400);
@@ -82,7 +81,7 @@ export default function SalesReportPage() {
 
   useEffect(() => {
     fetchReports();
-  }, [statusFilter, dateFilter, debouncedSearch]);
+  }, [dateFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchReportConfig();
@@ -378,16 +377,6 @@ export default function SalesReportPage() {
         <CardHeader>
           <CardTitle>Sales Report</CardTitle>
           <div className="flex gap-4 mt-4 flex-wrap">
-            <Select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="w-40"
-            >
-              <option value="">All Statuses</option>
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="cancelled">Cancelled</option>
-            </Select>
             <Select
               value={dateFilter}
               onChange={e => setDateFilter(e.target.value)}
