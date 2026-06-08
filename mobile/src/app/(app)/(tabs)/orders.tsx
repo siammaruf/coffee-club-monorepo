@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -45,7 +45,10 @@ export default function OrderListScreen() {
   const defaultStatusColor = { bg: 'bg-gray-100', text: 'text-gray-800', border: 'border-gray-200', bgLight: 'bg-gray-50'};
 
   const formatDate = useCallback((date: Date) => {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, []);
 
   const formatDisplayDate = useCallback((date: Date) => {
@@ -159,6 +162,23 @@ export default function OrderListScreen() {
       };
     }, [selectedStatus, selectedOrderType, selectedDateFilter, selectedDate, loadOrders])
   );
+
+  // Refetch when filters change while screen is focused
+  const isInitialFilterMount = useRef(true);
+  useEffect(() => {
+    if (!isInitialFilterMount.current) {
+      setCurrentPage(1);
+      setHasMoreData(true);
+      loadOrders(1, false);
+    }
+    isInitialFilterMount.current = false;
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [selectedStatus, selectedOrderType, selectedDateFilter, selectedDate, loadOrders]);
 
   const handleLoadMore = useCallback(() => {
     if (!isPaginating && hasMoreData && orders.length > 0) {
@@ -341,7 +361,7 @@ export default function OrderListScreen() {
             {(order.order_items ?? []).length} item{(order.order_items ?? []).length > 1 ? 's' : ''}: {' '}
             {(order.order_items ?? [])
               .slice(0, 2)
-              .map(item => item.item ? `${item.item.name} x${item.quantity}` : '')
+              .map(item => `${item.item?.name || 'Item'} x${item.quantity}`)
               .filter(Boolean)
               .join(', ')}
             {(order.order_items ?? []).length > 2 && ` +${(order.order_items ?? []).length - 2} more`}
