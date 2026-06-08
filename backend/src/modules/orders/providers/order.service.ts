@@ -165,10 +165,14 @@ export class OrderService {
       const itemIds = order_items.map(i => i.item_id).filter((id): id is string => !!id);
       const variationIds = order_items.map(i => i.item_variation_id).filter((id): id is string => !!id);
 
-      const items = itemIds.length > 0 ? await this.itemRepository.findBy({ id: In(itemIds) }) : [];
+      const items = itemIds.length > 0
+        ? await this.itemRepository.find({ where: { id: In(itemIds) }, withDeleted: true })
+        : [];
       const itemMap = new Map(items.map(i => [i.id, i]));
 
-      const variations = variationIds.length > 0 ? await this.itemVariationRepository.findBy({ id: In(variationIds) }) : [];
+      const variations = variationIds.length > 0
+        ? await this.itemVariationRepository.find({ where: { id: In(variationIds) }, withDeleted: true })
+        : [];
       const variationMap = new Map(variations.map(v => [v.id, v]));
 
       // Batch-create order items with proper relations
@@ -186,7 +190,14 @@ export class OrderService {
         });
       });
       const savedItems = await this.orderItemRepository.save(orderItemEntities);
-      createdOrderItems.push(...savedItems);
+      // Reload to ensure item/variation relations are populated for token creation
+      const reloadedItems = savedItems.length > 0
+        ? await this.orderItemRepository.find({
+            where: { id: In(savedItems.map(s => s.id)) },
+            relations: ['item', 'variation'],
+          })
+        : [];
+      createdOrderItems.push(...reloadedItems);
     }
 
     if (createdOrderItems.length > 0) {
@@ -522,6 +533,65 @@ export class OrderService {
         order.tables = tableMap.get(order.id) || [];
         order.orderItems = orderItemMap.get(order.id) || [];
       }
+
+      // Reload order items for any order that still has missing items
+      // (handles stale cache or soft-deleted items that didn't load initially)
+      const ordersWithMissingItems = orders.filter(o => o.orderItems?.some(oi => !oi.item));
+      if (ordersWithMissingItems.length > 0) {
+        const missingOrderIds = ordersWithMissingItems.map(o => o.id);
+        const reloadedItems = await this.orderItemRepository.find({
+          where: { order: { id: In(missingOrderIds) } },
+          relations: ['item', 'variation'],
+        });
+
+        // Load soft-deleted items/variations separately and attach manually
+        const missingItemIds = reloadedItems
+          .filter(oi => !oi.item)
+          .map(oi => (oi as any).item_id)
+          .filter((id): id is string => !!id);
+        const missingVariationIds = reloadedItems
+          .filter(oi => !oi.variation)
+          .map(oi => (oi as any).variation_id)
+          .filter((id): id is string => !!id);
+
+        if (missingItemIds.length > 0) {
+          const deletedItems = await this.itemRepository.find({
+            where: { id: In(missingItemIds) },
+            withDeleted: true,
+          });
+          const itemMap = new Map(deletedItems.map(i => [i.id, i]));
+          for (const oi of reloadedItems) {
+            if (!oi.item && (oi as any).item_id) {
+              oi.item = itemMap.get((oi as any).item_id) as Item;
+            }
+          }
+        }
+
+        if (missingVariationIds.length > 0) {
+          const deletedVariations = await this.itemVariationRepository.find({
+            where: { id: In(missingVariationIds) },
+            withDeleted: true,
+          });
+          const varMap = new Map(deletedVariations.map(v => [v.id, v]));
+          for (const oi of reloadedItems) {
+            if (!oi.variation && (oi as any).variation_id) {
+              oi.variation = varMap.get((oi as any).variation_id) || null;
+            }
+          }
+        }
+
+        const reloadedMap = new Map<string, OrderItem[]>();
+        for (const oi of reloadedItems) {
+          const oid = oi.order?.id;
+          if (!oid) continue;
+          const existing = reloadedMap.get(oid) || [];
+          existing.push(oi);
+          reloadedMap.set(oid, existing);
+        }
+        for (const order of ordersWithMissingItems) {
+          order.orderItems = reloadedMap.get(order.id) || order.orderItems || [];
+        }
+      }
     }
 
     const totalPages = Math.ceil(total / limit);
@@ -598,7 +668,7 @@ export class OrderService {
     const cacheKey = `orders:${id}`;
     const cached = await this.cacheService.get<Order>(cacheKey);
     
-    if (cached) {
+    if (cached && !cached.orderItems?.some(oi => !oi.item)) {
       return cached;
     }
     
@@ -620,6 +690,54 @@ export class OrderService {
     });
     if (!order) {
       throw new NotFoundException('Order not found');
+    }
+
+    // If any order items have a null item relation (stale cache or soft-deleted item),
+    // reload them explicitly and invalidate the old cache entry.
+    if (order.orderItems?.some(oi => !oi.item)) {
+      const reloadedItems = await this.orderItemRepository.find({
+        where: { order: { id } },
+        relations: ['item', 'variation'],
+      });
+
+      // Load soft-deleted items separately and attach them manually
+      const missingItemIds = reloadedItems
+        .filter(oi => !oi.item)
+        .map(oi => (oi as any).item_id)
+        .filter((id): id is string => !!id);
+      const missingVariationIds = reloadedItems
+        .filter(oi => !oi.variation)
+        .map(oi => (oi as any).variation_id)
+        .filter((id): id is string => !!id);
+
+      if (missingItemIds.length > 0) {
+        const deletedItems = await this.itemRepository.find({
+          where: { id: In(missingItemIds) },
+          withDeleted: true,
+        });
+        const itemMap = new Map(deletedItems.map(i => [i.id, i]));
+        for (const oi of reloadedItems) {
+          if (!oi.item && (oi as any).item_id) {
+            oi.item = itemMap.get((oi as any).item_id) as Item;
+          }
+        }
+      }
+
+      if (missingVariationIds.length > 0) {
+        const deletedVariations = await this.itemVariationRepository.find({
+          where: { id: In(missingVariationIds) },
+          withDeleted: true,
+        });
+        const varMap = new Map(deletedVariations.map(v => [v.id, v]));
+        for (const oi of reloadedItems) {
+          if (!oi.variation && (oi as any).variation_id) {
+            oi.variation = varMap.get((oi as any).variation_id) || null;
+          }
+        }
+      }
+
+      order.orderItems = reloadedItems;
+      await this.cacheService.delete(cacheKey);
     }
     
     await this.cacheService.set(cacheKey, order, 3600);
@@ -651,6 +769,75 @@ export class OrderService {
     if (kitchenItems.length > 0) {
       await this.createTokenWithRetry('K', orderId, kitchenItems);
     }
+  }
+
+  async regenerateTokens(orderId: string): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['orderItems', 'orderItems.item', 'orderItems.variation'],
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Reload order items explicitly to ensure soft-deleted items are included
+    const orderItems = await this.orderItemRepository.find({
+      where: { order: { id: orderId } },
+      relations: ['item', 'variation'],
+    });
+
+    // Load soft-deleted items/variations separately and attach manually
+    const missingItemIds = orderItems
+      .filter(oi => !oi.item)
+      .map(oi => (oi as any).item_id)
+      .filter((id): id is string => !!id);
+    const missingVariationIds = orderItems
+      .filter(oi => !oi.variation)
+      .map(oi => (oi as any).variation_id)
+      .filter((id): id is string => !!id);
+
+    if (missingItemIds.length > 0) {
+      const deletedItems = await this.itemRepository.find({
+        where: { id: In(missingItemIds) },
+        withDeleted: true,
+      });
+      const itemMap = new Map(deletedItems.map(i => [i.id, i]));
+      for (const oi of orderItems) {
+        if (!oi.item && (oi as any).item_id) {
+          oi.item = itemMap.get((oi as any).item_id) as Item;
+        }
+      }
+    }
+
+    if (missingVariationIds.length > 0) {
+      const deletedVariations = await this.itemVariationRepository.find({
+        where: { id: In(missingVariationIds) },
+        withDeleted: true,
+      });
+      const varMap = new Map(deletedVariations.map(v => [v.id, v]));
+      for (const oi of orderItems) {
+        if (!oi.variation && (oi as any).variation_id) {
+          oi.variation = varMap.get((oi as any).variation_id) || null;
+        }
+      }
+    }
+
+    const mappedItems = orderItems.map(oi => ({
+      id: oi.id,
+      quantity: oi.quantity,
+      unit_price: oi.unit_price,
+      total_price: oi.total_price,
+      item: oi.item,
+      item_variation: oi.variation || undefined,
+      created_at: oi.created_at,
+      updated_at: oi.updated_at,
+    })) as OrderItemResponseDto[];
+
+    await this.createTokensByItemType(orderId, mappedItems);
+
+    // Invalidate cache and reload full order
+    await this.cacheService.delete(`orders:${orderId}`);
+    return this.findOne(orderId);
   }
 
   private async createTokenWithRetry(

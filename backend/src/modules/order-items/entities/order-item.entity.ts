@@ -21,11 +21,11 @@ export class OrderItem {
     @JoinColumn({ name: 'order_id' })
     order: Relation<Order>;
 
-    @ManyToOne(() => Item, { eager: true, withDeleted: true })
+    @ManyToOne(() => Item, { eager: true })
     @JoinColumn({ name: 'item_id' })
     item: Item;
 
-    @ManyToOne(() => ItemVariation, { eager: true, nullable: true, withDeleted: true })
+    @ManyToOne(() => ItemVariation, { eager: true, nullable: true })
     @JoinColumn({ name: 'variation_id' })
     variation: ItemVariation | null;
 

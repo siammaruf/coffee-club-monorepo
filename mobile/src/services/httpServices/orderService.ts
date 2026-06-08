@@ -9,5 +9,6 @@ export const orderService = {
   create: (order: Partial<Order>) => httpService.post<OrderResponse>('/orders', order),
   update: (id: string, order: Partial<Order>) => httpService.put<OrderResponse>(`/orders/${id}`, order),
   getById: (id: string) => httpService.get<OrderResponse>(`/orders/${id}`),
+  regenerateTokens: (id: string) => httpService.post<OrderResponse>(`/orders/${id}/regenerate-tokens`, {}),
   delete: (id: string) => httpService.delete<{ message: string }>(`/orders/${id}`),
 };
