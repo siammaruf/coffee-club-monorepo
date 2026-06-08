@@ -7,6 +7,8 @@ import { OrderItem } from '../../order-items/entities/order-item.entity';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { Table } from '../../table/entities/table.entity';
+import { Item } from '../../items/entities/item.entity';
+import { ItemVariation } from '../../items/entities/item-variation.entity';
 import { OrderItemService } from '../../order-items/providers/order-item.service';
 import { OrderTokensService } from '../../order-tokens/provider/order-tokens.service';
 import { OrderItemResponseDto } from '../../order-items/dto/order-item-response.dto';
@@ -31,6 +33,10 @@ export class OrderService {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Item)
+    private readonly itemRepository: Repository<Item>,
+    @InjectRepository(ItemVariation)
+    private readonly itemVariationRepository: Repository<ItemVariation>,
     private readonly orderItemService: OrderItemService,
     private readonly orderTokensService: OrderTokensService,
     private readonly customerService: CustomerService,
@@ -155,16 +161,30 @@ export class OrderService {
     
     const createdOrderItems: OrderItemResponseDto[] = [];
     if (order_items && order_items.length > 0) {
-      // Batch-create order items to avoid N+1 service calls
-      const orderItemEntities = order_items.map(orderItemDto => ({
-        quantity: orderItemDto.quantity,
-        unit_price: orderItemDto.unit_price,
-        item: orderItemDto.item,
-        order: savedOrder,
-        total_price: orderItemDto.quantity * orderItemDto.unit_price,
-        item_id: orderItemDto.item_id,
-        item_variation_id: orderItemDto.item_variation_id,
-      }));
+      // Batch-fetch items and variations to properly populate relations
+      const itemIds = order_items.map(i => i.item_id).filter((id): id is string => !!id);
+      const variationIds = order_items.map(i => i.item_variation_id).filter((id): id is string => !!id);
+
+      const items = itemIds.length > 0 ? await this.itemRepository.findBy({ id: In(itemIds) }) : [];
+      const itemMap = new Map(items.map(i => [i.id, i]));
+
+      const variations = variationIds.length > 0 ? await this.itemVariationRepository.findBy({ id: In(variationIds) }) : [];
+      const variationMap = new Map(variations.map(v => [v.id, v]));
+
+      // Batch-create order items with proper relations
+      const orderItemEntities = order_items.map(orderItemDto => {
+        const item = orderItemDto.item_id ? itemMap.get(orderItemDto.item_id) : undefined;
+        const variation = orderItemDto.item_variation_id ? variationMap.get(orderItemDto.item_variation_id) : undefined;
+
+        return this.orderItemRepository.create({
+          quantity: orderItemDto.quantity,
+          unit_price: orderItemDto.unit_price,
+          item,
+          variation,
+          order: savedOrder,
+          total_price: orderItemDto.quantity * orderItemDto.unit_price,
+        });
+      });
       const savedItems = await this.orderItemRepository.save(orderItemEntities);
       createdOrderItems.push(...savedItems);
     }
@@ -179,6 +199,27 @@ export class OrderService {
     this.whatsappMessageService?.notifyNewOrder(savedOrder).catch((err) =>
       this.logger.warn(`WhatsApp order notification failed: ${err.message}`),
     );
+
+    // Reload order with all relations so the response includes populated order_items and tokens
+    const reloadedOrder = await this.orderRepository.findOne({
+      where: { id: savedOrder.id },
+      relations: [
+        'tables',
+        'customer',
+        'user',
+        'discount',
+        'orderItems',
+        'orderItems.item',
+        'orderItems.variation',
+        'orderTokens',
+        'orderTokens.order_items',
+        'orderTokens.order_items.item',
+        'orderTokens.order_items.variation',
+      ]
+    });
+    if (reloadedOrder) {
+      return reloadedOrder;
+    }
 
     return savedOrder;
   }
