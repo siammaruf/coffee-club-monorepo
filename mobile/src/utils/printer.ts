@@ -157,7 +157,7 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
     await ReactNativePosPrinter.printText('*** ITEMS ***');
 
     for (const item of token.order_items || []) {
-      const itemName = item.item.name_bn || item.item.name;
+      const itemName = item.item?.name_bn || item.item?.name || 'Unknown Item';
       const variationName = item.item_variation ? (item.item_variation.name_bn || item.item_variation.name) : undefined;
       await printWrappedItem(item.quantity, itemName, variationName, { fontType: 'C' });
     }
@@ -217,7 +217,7 @@ export const printReceipt = async (order: Order, wifiName?: string, wifiPassword
 
         for (let i = 0; i < order.order_items.length; i++) {
             const item = order.order_items[i];
-            const itemName = item.item?.name || 'Item';
+            const itemName = item.item?.name || 'Unknown Item';
             const variationName = item.item_variation ? item.item_variation.name : undefined;
             await printWrappedItem(item.quantity, itemName, variationName);
             await ReactNativePosPrinter.printText(`    ${CURRENCY_SYMBOL_PRINT}${formatAmount(item.unit_price)} x ${item.quantity} = ${CURRENCY_SYMBOL_PRINT}${formatAmount(item.total_price)}`);
@@ -324,7 +324,7 @@ export const printCustomerToken = async (order: Order, wifiName?: string, wifiPa
     await ReactNativePosPrinter.printText('*** ITEMS ***');
 
     for (const item of order.order_items) {
-      const name = item.item?.name || 'Item';
+      const name = item.item?.name || 'Unknown Item';
       const variationName = item.item_variation ? (item.item_variation.name || item.item_variation.name_bn) : undefined;
       await printWrappedItem(item.quantity, name, variationName, { fontType: 'C' });
     }

@@ -34,6 +34,7 @@ export default function OrderDetails() {
   const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
   const [isPointsRedemptionApplied, setIsPointsRedemptionApplied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isRegeneratingTokens, setIsRegeneratingTokens] = useState(false);
   const insets = useSafeAreaInsets();
 
   const loadOrder = async () => {
@@ -285,6 +286,23 @@ export default function OrderDetails() {
     } catch (error) {
       console.error('Error updating payment method:', error);
       Alert.alert('Error', 'Failed to update payment method');
+    }
+  };
+
+  const handleRegenerateTokens = async () => {
+    if (!order) return;
+    try {
+      setIsRegeneratingTokens(true);
+      const response = await orderService.regenerateTokens(order.id);
+      if (response && response.data) {
+        setOrder(response.data);
+        Alert.alert('Success', 'Tokens regenerated successfully!');
+      }
+    } catch (error) {
+      console.error('Error regenerating tokens:', error);
+      Alert.alert('Error', 'Failed to regenerate tokens');
+    } finally {
+      setIsRegeneratingTokens(false);
     }
   };
 
@@ -892,7 +910,7 @@ export default function OrderDetails() {
                 <View key={item.id} className="flex-row justify-between items-center">
                   <View className="flex-1">
                     <Text className="text-sm font-medium text-gray-800">
-                      {item.item?.name || 'Item'}
+                      {item.item?.name || 'Unknown Item'}
                       {item.item_variation && (
                         <Text className="text-xs text-gray-500"> ({item.item_variation.name})</Text>
                       )}
@@ -959,6 +977,21 @@ export default function OrderDetails() {
           className="bg-white border-t border-gray-200 p-3"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
+          {/* Regenerate tokens if missing */}
+          {(!order.order_tokens?.kitchen && !order.order_tokens?.bar) && (
+            <TouchableOpacity
+              onPress={handleRegenerateTokens}
+              disabled={isRegeneratingTokens}
+              className={`py-3 rounded-lg mb-2 ${isRegeneratingTokens ? 'bg-gray-400' : 'bg-blue-500'}`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Ionicons name="refresh" size={16} color="#ffffff" />
+                <Text className="text-white ml-2 text-sm font-medium">
+                  {isRegeneratingTokens ? 'Regenerating...' : 'Regenerate Tokens'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <View className="flex-row gap-2 mb-2">
             <TouchableOpacity
               onPress={handlePrintKitchenToken}

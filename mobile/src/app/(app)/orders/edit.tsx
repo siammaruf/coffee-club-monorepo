@@ -62,7 +62,7 @@ export default function EditOrderScreen() {
           quantity: item.quantity || 1,
           unit_price: Number(item.unit_price) || 0,
           total_price: Number(item.total_price) || (Number(item.unit_price) || 0) * (item.quantity || 1),
-          product_name: item.product_name || item.item?.name || 'Item',
+          product_name: item.product_name || item.item?.name || 'Unknown Item',
           product_type: item.product_type || item.item?.type || '',
           item: item.item || null
         }));
@@ -423,7 +423,7 @@ export default function EditOrderScreen() {
                 <View key={`order-item-${item.item?.id}-${index}`} className="flex-row items-center bg-gray-50 p-2 rounded-lg mb-3">
                   <View className="flex-1">
                     <Text className="text-sm font-medium text-gray-800">
-                      {item.item?.name || 'Item'}
+                      {item.item?.name || 'Unknown Item'}
                       {item.item_variation && (
                         <Text className="text-xs text-gray-500"> ({item.item_variation.name})</Text>
                       )}
