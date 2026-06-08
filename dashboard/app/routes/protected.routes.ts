@@ -44,6 +44,8 @@ export const protectedRoutes = [
   route("reservations", "pages/dashboard/reservations/index.tsx"),
   route("contact-messages", "pages/dashboard/contact-messages/index.tsx"),
   route("partners", "pages/dashboard/partners/index.tsx"),
+  route("vendors", "pages/dashboard/vendors/index.tsx"),
+  route("vendor-payments", "pages/dashboard/vendor-payments/index.tsx"),
   route("settings/roles-permissions", "pages/dashboard/settings/roles-permissions.tsx"),
   route("settings/wifi", "pages/dashboard/settings/wifi.tsx"),
   route("settings/whatsapp", "pages/dashboard/settings/whatsapp/index.tsx"),

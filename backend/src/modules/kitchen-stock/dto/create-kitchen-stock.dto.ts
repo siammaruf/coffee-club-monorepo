@@ -41,4 +41,9 @@ export class CreateKitchenStockDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @ApiProperty({ description: 'Vendor ID (UUID)', required: false })
+  @IsUUID()
+  @IsOptional()
+  vendor_id?: string;
 }

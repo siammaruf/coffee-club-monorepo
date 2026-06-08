@@ -370,6 +370,7 @@ export default function KitchenStockPage() {
                       <TableHead>Quantity</TableHead>
                       <TableHead>Price / Cost</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Vendor</TableHead>
                       <TableHead>Note</TableHead>
                       {(canEdit || canDelete) && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
@@ -395,6 +396,9 @@ export default function KitchenStockPage() {
                           {entry.entry_type === "USAGE" ? "—" : formatCurrency(entry.purchase_price)}
                         </TableCell>
                         <TableCell>{entry.purchase_date}</TableCell>
+                        <TableCell className="text-sm">
+                          {entry.vendor?.vendor_name || "—"}
+                        </TableCell>
                         <TableCell className="text-gray-500 text-sm max-w-[200px] truncate">
                           {entry.note || "—"}
                         </TableCell>
