@@ -619,6 +619,34 @@ export class OrderController {
     };
   }
 
+  @Post(':id/regenerate-tokens')
+  @RequirePermission('orders.edit')
+  @ApiOperation({ summary: 'Regenerate order tokens', description: 'Regenerates kitchen and bar tokens for an existing order' })
+  @ApiParam({ name: 'id', description: 'Order ID', type: 'string', format: 'uuid' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Tokens regenerated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { $ref: '#/components/schemas/OrderResponseDto' },
+        status: { type: 'string', example: 'success' },
+        message: { type: 'string', example: 'Tokens regenerated successfully.' },
+        statusCode: { type: 'number', example: 200 }
+      }
+    }
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Order not found' })
+  async regenerateTokens(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: OrderResponseDto; status: string; message: string; statusCode: HttpStatus }> {
+    const order = await this.orderService.regenerateTokens(id);
+    return {
+      data: new OrderResponseDto(order),
+      status: 'success',
+      message: 'Tokens regenerated successfully.',
+      statusCode: HttpStatus.OK
+    };
+  }
+
   @Delete(':id')
   @RequirePermission('orders.delete')
   @ApiOperation({ summary: 'Delete order', description: 'Delete an order by its unique identifier' })

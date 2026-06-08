@@ -361,7 +361,7 @@ export default function OrderListScreen() {
             {(order.order_items ?? []).length} item{(order.order_items ?? []).length > 1 ? 's' : ''}: {' '}
             {(order.order_items ?? [])
               .slice(0, 2)
-              .map(item => `${item.item?.name || 'Item'} x${item.quantity}`)
+              .map(item => `${item.item?.name || 'Unknown Item'} x${item.quantity}`)
               .filter(Boolean)
               .join(', ')}
             {(order.order_items ?? []).length > 2 && ` +${(order.order_items ?? []).length - 2} more`}
