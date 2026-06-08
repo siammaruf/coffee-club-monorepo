@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
+import { Vendor } from '../../vendors/entities/vendor.entity';
 import { KitchenStockUnit } from '../enum/kitchen-stock-unit.enum';
 import { KitchenStockEntryType } from '../enum/kitchen-stock-entry-type.enum';
 
@@ -41,6 +42,13 @@ export class KitchenStock {
 
   @Column({ type: 'enum', enum: KitchenStockEntryType, default: KitchenStockEntryType.PURCHASE })
   entry_type: KitchenStockEntryType;
+
+  @Column({ type: 'uuid', nullable: true })
+  vendor_id: string | null;
+
+  @ManyToOne(() => Vendor, { eager: false, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'vendor_id' })
+  vendor: Vendor | null;
 
   @Column({ type: 'uuid', nullable: true })
   created_by_id: string | null;

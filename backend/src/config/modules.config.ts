@@ -32,6 +32,8 @@ import { KitchenReportsModule } from 'src/modules/kitchen-reports/kitchen-report
 import { KitchenStockModule } from 'src/modules/kitchen-stock/kitchen-stock.module';
 import { PermissionsModule } from 'src/modules/permissions/permissions.module';
 import { WhatsAppModule } from 'src/modules/whatsapp/whatsapp.module';
+import { VendorsModule } from 'src/modules/vendors/vendors.module';
+import { VendorPaymentsModule } from 'src/modules/vendor-payments/vendor-payments.module';
 
 export const featureModules = [
     UserModule,
@@ -68,4 +70,6 @@ export const featureModules = [
     KitchenStockModule,
     PermissionsModule,
     WhatsAppModule,
+    VendorsModule,
+    VendorPaymentsModule,
 ];

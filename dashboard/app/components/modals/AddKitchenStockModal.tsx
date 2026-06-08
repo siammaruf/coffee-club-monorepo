@@ -11,7 +11,9 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Select } from "~/components/ui/select";
 import { kitchenItemsService } from "~/services/httpServices/kitchenItemsService";
+import { vendorService } from "~/services/httpServices/vendorService";
 import type { KitchenItem } from "~/types/kitchenItem";
+import type { Vendor } from "~/types/vendor";
 import type { CreateKitchenStockInput } from "~/types/kitchenStock";
 
 interface StockForm {
@@ -21,6 +23,7 @@ interface StockForm {
   unit_price: number;
   purchase_date: string;
   note: string;
+  vendor_id: string;
 }
 
 interface AddKitchenStockModalProps {
@@ -37,6 +40,7 @@ export default function AddKitchenStockModal({
   onCreate,
 }: AddKitchenStockModalProps) {
   const [kitchenItems, setKitchenItems] = useState<KitchenItem[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const {
     register,
     handleSubmit,
@@ -52,6 +56,7 @@ export default function AddKitchenStockModal({
       unit_price: 0,
       purchase_date: new Date().toISOString().split("T")[0],
       note: "",
+      vendor_id: "",
     },
   });
 
@@ -63,6 +68,9 @@ export default function AddKitchenStockModal({
     if (open) {
       kitchenItemsService.getAll({ limit: 200 }).then((res: any) => {
         setKitchenItems(res?.data || []);
+      });
+      vendorService.getActive().then((res: any) => {
+        setVendors(res?.data || []);
       });
     }
   }, [open]);
@@ -76,6 +84,7 @@ export default function AddKitchenStockModal({
         unit: data.unit,
         purchase_price: computedPurchasePrice,
         note: data.note || undefined,
+        vendor_id: data.vendor_id || undefined,
       });
       reset();
       onSuccess();
@@ -118,6 +127,23 @@ export default function AddKitchenStockModal({
             {errors.kitchen_item_id && (
               <span className="text-red-600 text-xs">{errors.kitchen_item_id.message}</span>
             )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vendor <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <Select
+              {...register("vendor_id")}
+              className="w-full"
+              defaultValue=""
+            >
+              <option value="">Select vendor</option>
+              {vendors.map((vendor) => (
+                <option key={vendor.id} value={vendor.id}>
+                  {vendor.vendor_name}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

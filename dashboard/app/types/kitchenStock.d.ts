@@ -13,6 +13,11 @@ export interface KitchenStockEntry {
   purchase_price: number;
   purchase_date: string;
   entry_type: KitchenStockEntryType;
+  vendor_id: string | null;
+  vendor: {
+    id: string;
+    vendor_name: string;
+  } | null;
   created_by_id: string | null;
   note: string | null;
   created_at: string;
@@ -63,6 +68,7 @@ export interface CreateKitchenStockInput {
   purchase_date: string;
   entry_type?: KitchenStockEntryType;
   note?: string;
+  vendor_id?: string;
 }
 
 export interface CreateUsageStockInput {
@@ -80,4 +86,5 @@ export interface UpdateKitchenStockInput {
   purchase_price?: number;
   purchase_date?: string;
   note?: string;
+  vendor_id?: string;
 }

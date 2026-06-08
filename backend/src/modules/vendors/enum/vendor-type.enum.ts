@@ -1,0 +1,4 @@
+export enum VendorType {
+  FOOD_SUPPLIER = 'FOOD_SUPPLIER',
+  NON_FOOD_SUPPLIER = 'NON_FOOD_SUPPLIER',
+}

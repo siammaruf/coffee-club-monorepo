@@ -11,7 +11,9 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Select } from "~/components/ui/select";
 import { kitchenItemsService } from "~/services/httpServices/kitchenItemsService";
+import { vendorService } from "~/services/httpServices/vendorService";
 import type { KitchenItem } from "~/types/kitchenItem";
+import type { Vendor } from "~/types/vendor";
 import type { KitchenStockEntry, UpdateKitchenStockInput } from "~/types/kitchenStock";
 
 interface StockForm {
@@ -21,6 +23,7 @@ interface StockForm {
   unit_price: number;
   purchase_date: string;
   note: string;
+  vendor_id: string;
 }
 
 interface EditKitchenStockModalProps {
@@ -39,6 +42,7 @@ export default function EditKitchenStockModal({
   onUpdate,
 }: EditKitchenStockModalProps) {
   const [kitchenItems, setKitchenItems] = useState<KitchenItem[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const {
     register,
     handleSubmit,
@@ -57,6 +61,9 @@ export default function EditKitchenStockModal({
       kitchenItemsService.getAll({ limit: 200 }).then((res: any) => {
         setKitchenItems(res?.data || []);
       });
+      vendorService.getActive().then((res: any) => {
+        setVendors(res?.data || []);
+      });
     }
   }, [open]);
 
@@ -69,6 +76,7 @@ export default function EditKitchenStockModal({
         unit_price: entry.quantity > 0 ? Number((entry.purchase_price / entry.quantity).toFixed(4)) : 0,
         purchase_date: entry.purchase_date,
         note: entry.note || "",
+        vendor_id: entry.vendor_id || "",
       });
     }
   }, [entry, reset]);
@@ -83,6 +91,7 @@ export default function EditKitchenStockModal({
         unit: data.unit,
         purchase_price: computedPurchasePrice,
         note: data.note || undefined,
+        vendor_id: data.vendor_id || undefined,
       });
       onSuccess();
     } catch (err: any) {
@@ -123,6 +132,22 @@ export default function EditKitchenStockModal({
             {errors.kitchen_item_id && (
               <span className="text-red-600 text-xs">{errors.kitchen_item_id.message}</span>
             )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vendor <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <Select
+              {...register("vendor_id")}
+              className="w-full"
+            >
+              <option value="">Select vendor</option>
+              {vendors.map((vendor) => (
+                <option key={vendor.id} value={vendor.id}>
+                  {vendor.vendor_name}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

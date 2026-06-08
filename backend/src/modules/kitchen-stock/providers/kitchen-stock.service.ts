@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KitchenStock } from '../entities/kitchen-stock.entity';
 import { KitchenItems } from '../../kitchen-items/entities/kitchen-item.entity';
+import { Vendor } from '../../vendors/entities/vendor.entity';
 import { CreateKitchenStockDto } from '../dto/create-kitchen-stock.dto';
 import { UpdateKitchenStockDto } from '../dto/update-kitchen-stock.dto';
 import { KitchenStockResponseDto, StockSummaryItemDto } from '../dto/kitchen-stock-response.dto';
@@ -16,11 +17,18 @@ export class KitchenStockService {
     private readonly stockRepo: Repository<KitchenStock>,
     @InjectRepository(KitchenItems)
     private readonly kitchenItemRepo: Repository<KitchenItems>,
+    @InjectRepository(Vendor)
+    private readonly vendorRepo: Repository<Vendor>,
   ) {}
 
   async create(dto: CreateKitchenStockDto, userId?: string): Promise<KitchenStockResponseDto> {
     const item = await this.kitchenItemRepo.findOne({ where: { id: dto.kitchen_item_id } });
     if (!item) throw new NotFoundException('Kitchen item not found');
+
+    if (dto.vendor_id) {
+      const vendor = await this.vendorRepo.findOne({ where: { id: dto.vendor_id } });
+      if (!vendor) throw new NotFoundException('Vendor not found');
+    }
 
     const entry = this.stockRepo.create({
       ...dto,
@@ -29,7 +37,8 @@ export class KitchenStockService {
       created_by_id: userId ?? null,
     });
     const saved = await this.stockRepo.save(entry);
-    return this.toResponse(saved, item);
+    const loaded = await this.stockRepo.findOne({ where: { id: saved.id }, relations: ['kitchen_item', 'vendor'] });
+    return this.toResponse(loaded!, loaded!.kitchen_item, loaded!.vendor);
   }
 
   async findAll(params: {
@@ -40,13 +49,15 @@ export class KitchenStockService {
     start_date?: string;
     end_date?: string;
     entry_type?: KitchenStockEntryType;
+    vendor_id?: string;
   }): Promise<{ data: KitchenStockResponseDto[]; total: number; page: number; limit: number; totalPages: number }> {
-    const { page = 1, limit = 20, type, kitchen_item_id, start_date, end_date, entry_type } = params;
+    const { page = 1, limit = 20, type, kitchen_item_id, start_date, end_date, entry_type, vendor_id } = params;
     const skip = (page - 1) * limit;
 
     const qb = this.stockRepo
       .createQueryBuilder('ks')
       .leftJoinAndSelect('ks.kitchen_item', 'ki')
+      .leftJoinAndSelect('ks.vendor', 'v')
       .where('ks.deleted_at IS NULL')
       .orderBy('ks.purchase_date', 'DESC')
       .addOrderBy('ks.created_at', 'DESC')
@@ -68,23 +79,26 @@ export class KitchenStockService {
     if (entry_type) {
       qb.andWhere('ks.entry_type = :entry_type', { entry_type });
     }
+    if (vendor_id) {
+      qb.andWhere('ks.vendor_id = :vendor_id', { vendor_id });
+    }
 
     const [entries, total] = await qb.getManyAndCount();
-    const data = entries.map(e => this.toResponse(e, e.kitchen_item));
+    const data = entries.map(e => this.toResponse(e, e.kitchen_item, e.vendor));
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string): Promise<KitchenStockResponseDto> {
     const entry = await this.stockRepo.findOne({
       where: { id },
-      relations: ['kitchen_item'],
+      relations: ['kitchen_item', 'vendor'],
     });
     if (!entry) throw new NotFoundException('Stock entry not found');
-    return this.toResponse(entry, entry.kitchen_item);
+    return this.toResponse(entry, entry.kitchen_item, entry.vendor);
   }
 
   async update(id: string, dto: UpdateKitchenStockDto): Promise<KitchenStockResponseDto> {
-    const entry = await this.stockRepo.findOne({ where: { id }, relations: ['kitchen_item'] });
+    const entry = await this.stockRepo.findOne({ where: { id }, relations: ['kitchen_item', 'vendor'] });
     if (!entry) throw new NotFoundException('Stock entry not found');
 
     if (dto.kitchen_item_id && dto.kitchen_item_id !== entry.kitchen_item_id) {
@@ -92,10 +106,15 @@ export class KitchenStockService {
       if (!item) throw new NotFoundException('Kitchen item not found');
     }
 
+    if (dto.vendor_id) {
+      const vendor = await this.vendorRepo.findOne({ where: { id: dto.vendor_id } });
+      if (!vendor) throw new NotFoundException('Vendor not found');
+    }
+
     Object.assign(entry, dto);
     const saved = await this.stockRepo.save(entry);
-    const updated = await this.stockRepo.findOne({ where: { id: saved.id }, relations: ['kitchen_item'] });
-    return this.toResponse(updated!, updated!.kitchen_item);
+    const updated = await this.stockRepo.findOne({ where: { id: saved.id }, relations: ['kitchen_item', 'vendor'] });
+    return this.toResponse(updated!, updated!.kitchen_item, updated!.vendor);
   }
 
   async softDelete(id: string): Promise<void> {
@@ -158,7 +177,7 @@ export class KitchenStockService {
     return summary.filter(item => item.is_low_stock);
   }
 
-  private toResponse(entry: KitchenStock, item: KitchenItems): KitchenStockResponseDto {
+  private toResponse(entry: KitchenStock, item: KitchenItems, vendor: Vendor | null): KitchenStockResponseDto {
     return {
       id: entry.id,
       kitchen_item_id: entry.kitchen_item_id,
@@ -170,6 +189,10 @@ export class KitchenStockService {
       purchase_price: parseFloat(entry.purchase_price as unknown as string),
       purchase_date: entry.purchase_date,
       entry_type: entry.entry_type,
+      vendor_id: entry.vendor_id,
+      vendor: vendor
+        ? { id: vendor.id, vendor_name: vendor.vendor_name }
+        : null,
       created_by_id: entry.created_by_id,
       note: entry.note,
       deleted_at: entry.deleted_at,
