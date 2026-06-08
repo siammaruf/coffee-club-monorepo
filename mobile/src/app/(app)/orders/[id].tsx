@@ -892,7 +892,7 @@ export default function OrderDetails() {
                 <View key={item.id} className="flex-row justify-between items-center">
                   <View className="flex-1">
                     <Text className="text-sm font-medium text-gray-800">
-                      {item.item?.name}
+                      {item.item?.name || 'Item'}
                       {item.item_variation && (
                         <Text className="text-xs text-gray-500"> ({item.item_variation.name})</Text>
                       )}
