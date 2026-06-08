@@ -158,7 +158,7 @@ export const printToken = async (order: Order, section: 'kitchen' | 'bar' = 'kit
 
     for (const item of token.order_items || []) {
       const itemName = item.item.name_bn || item.item.name;
-      const variationName = item.item_variation ? item.item_variation.name_bn : undefined;
+      const variationName = item.item_variation ? (item.item_variation.name_bn || item.item_variation.name) : undefined;
       await printWrappedItem(item.quantity, itemName, variationName, { fontType: 'C' });
     }
 
