@@ -56,6 +56,7 @@ export class KitchenStockController {
   @ApiQuery({ name: 'start_date', required: false })
   @ApiQuery({ name: 'end_date', required: false })
   @ApiQuery({ name: 'entry_type', enum: KitchenStockEntryType, required: false })
+  @ApiQuery({ name: 'vendor_id', required: false })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -64,6 +65,7 @@ export class KitchenStockController {
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
     @Query('entry_type') entry_type?: KitchenStockEntryType,
+    @Query('vendor_id') vendor_id?: string,
   ) {
     const result = await this.kitchenStockService.findAll({
       page: page ? Number(page) : 1,
@@ -73,6 +75,7 @@ export class KitchenStockController {
       start_date,
       end_date,
       entry_type,
+      vendor_id,
     });
     return { ...result, status: 'success', message: 'Stock entries fetched.', statusCode: HttpStatus.OK };
   }

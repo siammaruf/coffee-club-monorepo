@@ -7,6 +7,11 @@ export class KitchenItemRefDto {
   @ApiProperty() type: string;
 }
 
+export class VendorRefDto {
+  @ApiProperty() id: string;
+  @ApiProperty() vendor_name: string;
+}
+
 export class KitchenStockResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() kitchen_item_id: string;
@@ -16,6 +21,8 @@ export class KitchenStockResponseDto {
   @ApiProperty() purchase_price: number;
   @ApiProperty() purchase_date: string;
   @ApiProperty({ enum: KitchenStockEntryType }) entry_type: KitchenStockEntryType;
+  @ApiProperty({ nullable: true }) vendor_id: string | null;
+  @ApiProperty({ type: () => VendorRefDto, nullable: true }) vendor: VendorRefDto | null;
   @ApiProperty({ nullable: true }) created_by_id: string | null;
   @ApiProperty({ nullable: true }) note: string | null;
   @ApiProperty({ nullable: true }) deleted_at: Date | null;

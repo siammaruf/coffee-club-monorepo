@@ -110,7 +110,7 @@ export default function Sidebar() {
   const showCustomerSection = can('customers.view');
   const showRestaurantSection = can('products.view') || can('orders.view') || can('categories.view') || can('tables.view') || can('discounts.view');
   const showKitchenSection = can('kitchen_items.view') || can('kitchen_stock.view');
-  const showFinancialSection = can('expenses.view');
+  const showFinancialSection = can('expenses.view') || can('vendors.view') || can('vendor_payments.view');
   const showReportsSection = can('reports.view');
   const showDataMgmtSection = can('data_management.view');
   const showWebsiteSection = can('website.view') || can('blog.view') || can('reservations.view') || can('contact_messages.view') || can('partners.view');
@@ -260,6 +260,18 @@ export default function Sidebar() {
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>Categories</span>
                 </SidebarLink>
+                {can('vendors.view') && (
+                  <SidebarLink to="/dashboard/vendors" className={linkClass}>
+                    <Users className="w-4 h-4" />
+                    <span>Vendors</span>
+                  </SidebarLink>
+                )}
+                {can('vendor_payments.view') && (
+                  <SidebarLink to="/dashboard/vendor-payments" className={linkClass}>
+                    <DollarSign className="w-4 h-4" />
+                    <span>Vendor Payments</span>
+                  </SidebarLink>
+                )}
               </div>
             )}
           </div>
