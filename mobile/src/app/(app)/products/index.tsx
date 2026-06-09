@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { productService } from '@/services/httpServices/productService';
 import { categoryService } from '@/services/httpServices/categoryService';
 import CategoryModal from '@/components/modals/CategoryModal';
@@ -25,6 +26,7 @@ export default function ProductListScreen() {
     const isMountedRef = useRef(true);
 
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const debouncedSearch = useDebounce(search, 400);
 
     const fetchCategories = useCallback(async () => {
@@ -171,7 +173,7 @@ export default function ProductListScreen() {
                         ) : (
                             <>
                                 <PriceText className="text-base font-bold text-green-600">{formatPrice(item.regular_price)}</PriceText>
-                                {item.sale_price && item.sale_price !== '0.00' && (
+                                {!!item.sale_price && item.sale_price !== '0.00' && (
                                     <PriceText className="text-xs text-pink-500">Sale: {formatPrice(item.sale_price)}</PriceText>
                                 )}
                             </>
@@ -191,7 +193,7 @@ export default function ProductListScreen() {
     }, [router]);
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
             <View className="px-3 pt-4 pb-1">
                 <View className="flex-row items-center justify-between mb-4">
                     <View className="flex-row items-center">
@@ -243,7 +245,7 @@ export default function ProductListScreen() {
                     data={products}
                     renderItem={renderProduct}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16 }}
+                    contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16 + insets.bottom }}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
                     }
