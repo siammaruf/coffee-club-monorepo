@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { customerService } from '@/services/httpServices/customerService';
 import CreateCustomerModal from '@/components/modals/CreateCustomerModal';
 import { formatPrice } from '@/utils/currency';
@@ -20,6 +21,7 @@ export default function CustomerListScreen() {
     const abortControllerRef = useRef<AbortController | null>(null);
     const isMountedRef = useRef(true);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const debouncedSearch = useDebounce(search, 400);
 
     const fetchCustomers = useCallback(async (pageNumber = 1, replace = false, searchValue = '') => {
@@ -137,7 +139,7 @@ export default function CustomerListScreen() {
     ), [router]);
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
             <View className="px-4 pt-4 pb-2">
                 <View className="flex-row items-center justify-between mb-2">
                     <View className="flex-row items-center">
@@ -187,7 +189,7 @@ export default function CustomerListScreen() {
                     data={customers}
                     renderItem={renderCustomer}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 + insets.bottom }}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
                     }
