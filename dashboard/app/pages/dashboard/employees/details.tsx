@@ -1,9 +1,9 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PermissionGuard } from '~/hooks/auth/PermissionGuard';
 import { useParams, useNavigate } from 'react-router';
 import { useBackToList } from '~/hooks/useBackToList';
 import { useSelector } from 'react-redux';
-import { ArrowLeft, Edit, UserX, UserCheck, Trash2, MapPin, Phone, Mail, CreditCard, Calendar, Building, MailIcon, RefreshCw, DollarSign } from 'lucide-react';
+import { ArrowLeft, Edit, UserX, UserCheck, Trash2, MapPin, Phone, Mail, CreditCard, Calendar, Building, MailIcon, RefreshCw, DollarSign, KeyRound } from 'lucide-react';
 import type { User } from '~/types/user';
 import { userService } from '~/services/httpServices/userService';
 import { getStatusColor } from '~/data/employees';
@@ -12,6 +12,16 @@ import { Button } from '~/components/ui/button';
 import { EmployeeDetailsSkeleton } from '~/components/skeleton/EmployeeDetailsSkeleton';
 import { ConfirmDialog } from '~/components/ui/confirm-dialog';
 import { StatusDialog } from '~/components/ui/status-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 import type { RootState } from '~/redux/store/rootReducer';
 
 export default function EmployeeDetails() {
@@ -26,9 +36,11 @@ export default function EmployeeDetails() {
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   
   const isCurrentUser = currentUser && user && (
-    currentUser.id === user.id || 
+    currentUser.id === user.id ||
     currentUser.id === id
   );
+
+  const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
   
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -56,6 +68,11 @@ export default function EmployeeDetails() {
     message: '',
     type: 'info',
   });
+
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -179,7 +196,7 @@ export default function EmployeeDetails() {
 
   const handleSendResetPasswordAction = async () => {
     if (!user || !id) return;
-    
+
     try {
       setActionLoading('reset-password');
       await userService.sendResetPasswordEmail(id);
@@ -189,6 +206,31 @@ export default function EmployeeDetails() {
       showStatusDialog('Error', 'Failed to send password reset email', 'error', 5000);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!id) return;
+    if (newPassword.length < 6) {
+      showStatusDialog('Error', 'Password must be at least 6 characters', 'error', 3000);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showStatusDialog('Error', 'Passwords do not match', 'error', 3000);
+      return;
+    }
+    setChangePasswordLoading(true);
+    try {
+      await userService.resetPassword(id, newPassword);
+      showStatusDialog('Success', 'Password changed successfully', 'success', 3000);
+      setChangePasswordOpen(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      showStatusDialog('Error', error?.response?.data?.message || 'Failed to change password', 'error', 5000);
+    } finally {
+      setChangePasswordLoading(false);
     }
   };
 
@@ -270,8 +312,8 @@ export default function EmployeeDetails() {
               </Button>
             )}
             
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleSendResetPasswordConfirm}
               disabled={actionLoading === 'reset-password'}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
@@ -283,7 +325,23 @@ export default function EmployeeDetails() {
               )}
               Reset Password
             </Button>
-            
+
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setChangePasswordOpen(true)}
+                disabled={changePasswordLoading}
+                className="flex items-center gap-2 text-purple-600 hover:text-purple-700 border-purple-200 hover:border-purple-300"
+              >
+                {changePasswordLoading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <KeyRound className="h-4 w-4" />
+                )}
+                Change Password
+              </Button>
+            )}
+
             {!isCurrentUser && (
               <Button 
                 variant="destructive" 
@@ -449,6 +507,60 @@ export default function EmployeeDetails() {
           )}
         </div>
       </div>
+
+      <Dialog open={changePasswordOpen} onOpenChange={(open) => {
+        if (!open) {
+          setChangePasswordOpen(false);
+          setNewPassword('');
+          setConfirmPassword('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {user ? `${user.first_name} ${user.last_name}` : 'this employee'}. They will need to use this password to log in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Re-Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setChangePasswordOpen(false);
+              setNewPassword('');
+              setConfirmPassword('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword} disabled={changePasswordLoading}>
+              {changePasswordLoading ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Change Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmDialog.open}

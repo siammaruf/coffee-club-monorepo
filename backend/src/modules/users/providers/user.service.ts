@@ -546,14 +546,22 @@ export class UserService {
 
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         const user = await this.findUserOrFail({ id: userId });
-        
+
         const [storedPassword, storedIv] = user.password.split(':');
         const isCurrentPasswordValid = await EncryptionUtil.verifyPassword(currentPassword, storedPassword, storedIv);
-        
+
         if (!isCurrentPasswordValid) {
             throw new UnauthorizedException('Current password is incorrect');
         }
-        
+
+        const encryptedNewPassword = await this.encryptPassword(newPassword);
+        await this.userRepository.update(userId, { password: encryptedNewPassword });
+        await this.invalidateCache();
+    }
+
+    async resetUserPassword(userId: string, newPassword: string): Promise<void> {
+        const user = await this.findUserOrFail({ id: userId });
+
         const encryptedNewPassword = await this.encryptPassword(newPassword);
         await this.userRepository.update(userId, { password: encryptedNewPassword });
         await this.invalidateCache();
