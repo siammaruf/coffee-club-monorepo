@@ -5,6 +5,7 @@ import { UserService } from './providers/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { UserStatus } from './enum/user-status.enum';
@@ -706,10 +707,38 @@ export class UserController {
             changePasswordDto.currentPassword,
             changePasswordDto.newPassword
         );
-        
+
         return {
             status: 'success',
             message: 'Password has been changed successfully',
+            statusCode: HttpStatus.OK
+        };
+    }
+
+    @Patch(':id/reset-password')
+    @RequirePermission('employees.edit')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Reset user password (admin)' })
+    @ApiResponse({
+        status: 200,
+        description: 'Password reset successfully',
+        schema: {
+            example: {
+                status: 'success',
+                message: 'User password has been reset successfully',
+                statusCode: 200
+            }
+        }
+    })
+    @ApiResponse({ status: 404, description: 'User not found' })
+    async resetPassword(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: ResetUserPasswordDto,
+    ) {
+        await this.userService.resetUserPassword(id, dto.newPassword);
+        return {
+            status: 'success',
+            message: 'User password has been reset successfully',
             statusCode: HttpStatus.OK
         };
     }
