@@ -22,6 +22,8 @@ export const userService = {
   sendResetPasswordEmail: (id: string) => httpService.post(`/users/${id}/resend-password-reset`, {}),
   changePassword: (id: string, data: { currentPassword: string; newPassword: string }) =>
     httpService.patch(`/users/${id}/change-password`, data),
+  resetPassword: (id: string, newPassword: string) =>
+    httpService.patch(`/users/${id}/reset-password`, { newPassword }),
   updateProfilePicture: (id: string, formData: FormData) =>
     httpService.patch(`/users/${id}/profile-picture`, formData, {
       headers: { "Content-Type": "multipart/form-data" }
